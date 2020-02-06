@@ -113,11 +113,11 @@ defmodule Actuator.Controller do
     target = round(value_ms * 4) # 1/4us resolution
     lsb = Bitwise.&&&(target, 0x7F)
     msb = Bitwise.>>>(target, 7) |> Bitwise.&&&(0x7F)
-    message = [0x84, channel, lsb, msb]
-    message ++ [calculate_checksum(message)]
+    packet = [0x84, channel, lsb, msb]
+    packet ++ [get_checksum_for_packet(packet)]
   end
 
-  def calculate_checksum(packet) do
+  def get_checksum_for_packet(packet) do
     packet_length = length(packet)
     # https://www.pololu.com/docs/0J40/5.d
     {message_sum, _} = Enum.reduce(packet,{0,0}, fn (byte, acc)->

@@ -1,4 +1,4 @@
-defmodule NervesGroundRobotTest do
+defmodule Actuator.ControllerTest do
   use ExUnit.Case
   doctest Actuator.Controller
 
@@ -8,6 +8,6 @@ defmodule NervesGroundRobotTest do
     assert Actuator.Controller.output_to_ms(0.25, false, 1100, 1900) == 1300
     assert Actuator.Controller.output_to_ms(0.25, true, 1100, 1900) == 1700
     assert Actuator.Controller.output_to_ms(1.5, true, 1100, 1900) == nil
-    assert Actuator.Controller.calculate_checksum([0x83, 0x01]) == 23
+    assert Actuator.Controller.get_checksum_for_packet([0x83, 0x01]) == 23
   end
 end
