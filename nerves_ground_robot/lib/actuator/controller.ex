@@ -56,9 +56,11 @@ defmodule Actuator.Controller do
     # Logger.debug("move_actuator on #{actuator_name} to #{output}")
     actuator = get_in(state, [:actuators, actuator_name])
     channel_number = actuator.channel_number
-    pwm_ms = output_to_ms(actuator, output)
+    pwm_ms = output_to_ms(output, actuator.reversed, actuator.min_pw_ms, actuator.max_pw_ms)
     # Logger.debug("channel/number/output/ms: #{channel}/#{channel_number}/#{output}/#{inspect(pwm_ms)}")
-    write_microseconds(state.uart_ref, channel_number, pwm_ms)
+    unless pwm_ms == nil do
+      write_microseconds(state.uart_ref, channel_number, pwm_ms)
+    end
     {:noreply, state}
   end
 
@@ -87,27 +89,35 @@ defmodule Actuator.Controller do
     end
   end
 
-  defp output_to_ms(actuator, output) do
+  def output_to_ms(output, reversed, min_pw_ms, max_pw_ms) do
     # Output will arrive in range [0,1]
-    case actuator.reversed do
-      false ->
-        actuator.min_pw_ms + output*(actuator.max_pw_ms - actuator.min_pw_ms)
-      true ->
-        actuator.max_pw_ms - output*(actuator.max_pw_ms - actuator.min_pw_ms)
+    if (output < 0) || (output > 1) do
+      nil
+    else
+      case reversed do
+        false ->
+          min_pw_ms + output*(max_pw_ms - min_pw_ms)
+        true ->
+          max_pw_ms - output*(max_pw_ms - min_pw_ms)
+      end
     end
   end
 
   defp write_microseconds(uart_ref, channel, value_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
-    target = round(value_ms * 4) # 1/4us resolution
-    msb = Bitwise.&&&(target, 0x7F)
-    lsb = Bitwise.>>>(target, 7) |> Bitwise.&&&(0x7F)
-    packet = [0x84, channel, msb, lsb]
-    packet = packet ++ [calculate_checksum(packet)]
-    Sensors.Uart.Utils.write(uart_ref, :binary.list_to_bin(packet), 10)
+    message = build_message(channel, value_ms)
+    Sensors.Uart.Utils.write(uart_ref, :binary.list_to_bin(message), 10)
   end
 
-  defp calculate_checksum(packet) do
+  def build_message(channel, value_ms) do
+    target = round(value_ms * 4) # 1/4us resolution
+    lsb = Bitwise.&&&(target, 0x7F)
+    msb = Bitwise.>>>(target, 7) |> Bitwise.&&&(0x7F)
+    message = [0x84, channel, lsb, msb]
+    message ++ [calculate_checksum(message)]
+  end
+
+  def calculate_checksum(packet) do
     packet_length = length(packet)
     # https://www.pololu.com/docs/0J40/5.d
     {message_sum, _} = Enum.reduce(packet,{0,0}, fn (byte, acc)->
