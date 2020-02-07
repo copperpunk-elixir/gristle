@@ -1,7 +1,7 @@
 defmodule Comms.NodeConnection do
   require Logger
 
-  @udp_port 8780 #arbitrary port
+  @default_udp_port 8780 #arbitrary port
 
   def get_ip_address_tuple(interface) do
     Logger.debug("Get IP address")
@@ -21,18 +21,25 @@ defmodule Comms.NodeConnection do
     Node.set_cookie(cookie)
   end
 
-  def open_socket() do
-    Logger.debug("open socken on port #{@udp_port}")
-    {:ok, socket} = :gen_udp.open(@udp_port, [broadcast: true, active: true])
+  def open_socket_active(port \\ @default_udp_port) do
+    Logger.debug("open socken on port #{port}")
+    {:ok, socket} = :gen_udp.open(port, [broadcast: true, active: true])
     Logger.debug(inspect(socket))
     socket
   end
 
-  def broadcast_node(socket, ip_address_tuple, node_name_with_domain) do
+  def open_socket_passive(port \\ @default_udp_port) do
+    Logger.debug("open socken on port #{port}")
+    {:ok, socket} = :gen_udp.open(port, [broadcast: true, active: false])
+    Logger.debug(inspect(socket))
+    socket
+  end
+
+  def broadcast_node(socket, ip_address_tuple, node_name_with_domain, port \\ @default_udp_port) do
     Logger.debug("Broadcast")
     Logger.debug("host: #{inspect(ip_address_tuple)}")
     broadcast_address = put_elem(ip_address_tuple,3,255)
-    :gen_udp.send(socket, broadcast_address, @udp_port, "connect:" <> node_name_with_domain)
+    :gen_udp.send(socket, broadcast_address, port, "connect:" <> node_name_with_domain)
   end
 
   def process_udp_message(_socket, source_ip, _port, msg, dest_ip) do

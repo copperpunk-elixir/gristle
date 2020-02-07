@@ -44,7 +44,7 @@ defmodule Comms.Operator do
         ip_address_tuple ->
           node_name_with_domain = Comms.NodeConnection.get_node_name_with_domain(state.node_name, ip_address_tuple)
           Comms.NodeConnection.start_node(node_name_with_domain, state.cookie)
-          socket = Comms.NodeConnection.open_socket()
+          socket = Comms.NodeConnection.open_socket_active()
           broadcast_timer = start_broadcast_timer(state.broadcast_timer_interval_ms)
           create_and_join_global_groups(state.groups)
           %{state | ip_address_tuple: ip_address_tuple, node_name_with_domain: node_name_with_domain, socket: socket, broadcast_timer: broadcast_timer}
