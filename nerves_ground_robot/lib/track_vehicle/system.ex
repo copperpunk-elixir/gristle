@@ -1,6 +1,6 @@
 defmodule TrackVehicle.System do
   def start_link(config) do
-    Common.Utils.start_registry(:topic_registry)
+    Common.Utils.Comms.start_registry(:topic_registry)
 
     Supervisor.start_link(
       [

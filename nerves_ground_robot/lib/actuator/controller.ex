@@ -33,7 +33,7 @@ defmodule Actuator.Controller do
 
   @impl GenServer
   def handle_cast(:actuators_ready, state) do
-    Common.Utils.dispatch_cast(
+    Common.Utils.Comms.dispatch_cast(
       :topic_registry,
       :actuator_status,
       {:actuator_status, :ready}
@@ -43,7 +43,7 @@ defmodule Actuator.Controller do
 
   @impl GenServer
   def handle_cast(:actuators_not_ready, state) do
-    Common.Utils.dispatch_cast(
+    Common.Utils.Comms.dispatch_cast(
       :topic_registry,
       :actuator_status,
       {:actuator_status, :not_ready}
@@ -64,9 +64,21 @@ defmodule Actuator.Controller do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_call({:get_output, actuator_name}, _from, state) do
+    actuator = get_in(state, [:actuators, actuator_name])
+    channel_number = actuator.channel_number
+    output = get_output_for_channel(state.uart_ref, channel_number)
+    {:reply, output, state}
+  end
+
   def move_actuator(actuator_name, output) do
     # Logger.debug("move actuator for #{actuator_name}")
     GenServer.cast(__MODULE__, {:move_actuator, actuator_name, output})
+  end
+
+  def get_output_for_actuator(actuator_name) do
+    GenServer.call(__MODULE__, {:get_output, actuator_name})
   end
 
   defp begin() do
@@ -82,8 +94,8 @@ defmodule Actuator.Controller do
   end
 
   defp open_port(uart_ref, port, baud) do
-    Logger.debug("uart_ref: #{inspect(uart_ref)}")
-    case Sensors.Uart.Utils.open_active(uart_ref,port,baud) do
+    # Logger.debug("uart_ref: #{inspect(uart_ref)}")
+    case Sensors.Uart.Utils.open_passive(uart_ref,port,baud) do
       {:error, error} -> Logger.error("Error opening UART: #{inspect(error)}")
       _success -> Logger.debug("ActuatorController opened UART")
     end
@@ -103,18 +115,30 @@ defmodule Actuator.Controller do
     end
   end
 
-  defp write_microseconds(uart_ref, channel, value_ms) do
+  def write_microseconds(uart_ref, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
-    message = build_message(channel, value_ms)
+    message = get_message_for_channel_and_output_ms(channel, output_ms)
     Sensors.Uart.Utils.write(uart_ref, :binary.list_to_bin(message), 10)
   end
 
-  def build_message(channel, value_ms) do
-    target = round(value_ms * 4) # 1/4us resolution
+  def get_message_for_channel_and_output_ms(channel, output_ms) do
+    target = round(output_ms * 4) # 1/4us resolution
     lsb = Bitwise.&&&(target, 0x7F)
     msb = Bitwise.>>>(target, 7) |> Bitwise.&&&(0x7F)
     packet = [0x84, channel, lsb, msb]
     packet ++ [get_checksum_for_packet(packet)]
+  end
+
+  defp get_output_for_channel(uart_ref, channel) do
+    packet = [0x90, channel]
+    message = packet ++ [get_checksum_for_packet(packet)]
+    Sensors.Uart.Utils.write(uart_ref, :binary.list_to_bin(message), 10)
+    response = Sensors.Uart.Utils.read(uart_ref, 100)
+    if length(response) == 2 do
+      (Bitwise.<<<(Enum.at(response, 1),8) |> Bitwise.bor(Enum.at(response, 0))) / 4
+    else
+      nil
+    end
   end
 
   def get_checksum_for_packet(packet) do

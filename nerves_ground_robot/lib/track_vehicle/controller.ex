@@ -25,7 +25,7 @@ defmodule TrackVehicle.Controller do
   @impl GenServer
   def handle_cast(:register_subscribers, state) do
     Logger.debug("Gimbal - Register subs")
-    Common.Utils.register_subscriber_list(:topic_registry, state.subscriber_topics)
+    Common.Utils.Comms.register_subscriber_list(:topic_registry, state.subscriber_topics)
     # Enum.each(state.subscriber_topics, fn {registry, topic} ->
     #   Logger.debug("#{registry}/#{topic}")
     #   Registry.register(registry, topic, topic)
@@ -92,8 +92,8 @@ defmodule TrackVehicle.Controller do
       else
         {0, 0.5}
       end
-      left_track_cmd = 0.5 + Common.Utils.constrain(state.turn_and_speed_cmd.speed + state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
-      right_track_cmd = 0.5 + Common.Utils.constrain(state.turn_and_speed_cmd.speed - state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
+      left_track_cmd = 0.5 + Common.Utils.Math.constrain(state.turn_and_speed_cmd.speed + state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
+      right_track_cmd = 0.5 + Common.Utils.Math.constrain(state.turn_and_speed_cmd.speed - state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
       Logger.debug("Move actuator L/R: #{left_track_cmd}, #{right_track_cmd}")
       Actuator.Controller.move_actuator(:left_track, left_track_cmd)
       Actuator.Controller.move_actuator(:right_track, right_track_cmd)

@@ -55,13 +55,13 @@ defmodule Comms.Operator do
   @impl GenServer
   def handle_cast({:publish, group, message}, state) do
     # Logger.debug("publish to group #{group}: #{inspect(message)}")
-    Common.Utils.global_dispatch_cast(group, message, self())
+    Common.Utils.Comms.global_dispatch_cast(group, message, self())
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:global,{registry, topic, message}}, state) do
-    Common.Utils.dispatch_cast(
+    Common.Utils.Comms.dispatch_cast(
       registry,
       topic,
       message

@@ -34,7 +34,7 @@ defmodule Gimbal.Controller do
   @impl GenServer
   def handle_cast(:register_subscribers, state) do
     Logger.debug("Gimbal - Register subs")
-    Common.Utils.register_subscriber_list(:topic_registry, state.subscriber_topics)
+    Common.Utils.Comms.register_subscriber_list(:topic_registry, state.subscriber_topics)
     # Enum.each(state.subscriber_topics, fn {registry, topic} ->
     #   Logger.debug("#{registry}/#{topic}")
     #   Registry.register(registry, topic, topic)

@@ -1,4 +1,4 @@
-defmodule Common.Utils do
+defmodule Common.Utils.Math do
   require Logger
 
   def quat_in_bounds?(quat, error_bounds \\ 0.02) do
@@ -153,70 +153,4 @@ defmodule Common.Utils do
   def dec2str(value, decimals) do
     :erlang.float_to_binary(value, [decimals: decimals])
   end
-
-  def file2json(filename) do
-    {:ok, body} = File.read(filename)
-    body
-    |> String.replace(" ","")
-    |> String.replace("\n","")
-  end
-
-  def assert_list(value_or_list) do
-    if is_list(value_or_list) do
-      value_or_list
-    else
-      [value_or_list]
-    end
-  end
-
-  def start_registry_list(registry_list) do
-    registry_list = assert_list(registry_list)
-    Enum.each(registry_list, fn registry ->
-      start_registry(registry)
-    end)
-  end
-
-  def start_registry(registry) do
-    Logger.debug("Start Registry for #{registry}")
-    case Registry.start_link(keys: :duplicate, name: registry, partitions: System.schedulers_online()) do
-      {:ok, _} -> Logger.debug("Registry successfully started")
-      {:error, {:already_started, pid}} -> Logger.debug("Registry already started at #{inspect(pid)}. This is fine.")
-    end
-  end
-
-  def register_subscriber_list(registry, subscriber_list) do
-    subscriber_list = assert_list(subscriber_list)
-    Enum.each(subscriber_list, fn registry_params ->
-      register_subscriber(registry, registry_params)
-    end)
-  end
-
-  def register_subscriber(registry, topic) do
-    # case registry_params do
-      # {topic, callback_topic} ->
-      #   Logger.debug("#{registry}/#{topic}/#{callback_topic}")
-      #   Registry.register(registry, topic, callback_topic)
-      # topic ->
-    Logger.debug("#{registry}/#{topic}")
-    Registry.register(registry, topic, [])
-    # end
-  end
-
-  def dispatch_cast(registry, topic, message) do
-    Registry.dispatch(registry, topic, fn entries ->
-      for {pid, _} <- entries do
-        GenServer.cast(pid, message)
-      end
-    end)
-  end
-
-  def global_dispatch_cast(group, message, sender \\ nil) do
-    Enum.each(:pg2.get_members(group), fn pid ->
-      if pid != sender do
-       # Logger.debug("Send #{inspect(message)} to #{inspect(pid)}")
-        GenServer.cast(pid, {:global, message})
-      end
-    end)
-  end
-
 end

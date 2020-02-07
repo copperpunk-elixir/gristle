@@ -20,10 +20,10 @@ defmodule Sensors.Uart.Utils do
   end
 
   def read(pid, timeout) do
-    IO.puts("read: #{inspect(pid)}")
+    # IO.puts("read: #{inspect(pid)}")
     case UART.read(pid, timeout) do
       {:ok, binary} ->
-        Logger.debug("Good read: #{binary}")
+        # Logger.debug("Good read: #{binary}")
         :binary.bin_to_list(binary)
       {msg, _} ->
         Logger.debug("No read: #{msg}")

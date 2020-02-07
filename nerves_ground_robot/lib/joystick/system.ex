@@ -7,7 +7,7 @@ defmodule Joystick.System do
       Common.ProcessRegistry,
       {Comms.Operator, config.comms}
     ]
-    children = Enum.reduce(Common.Utils.assert_list(config.joystick_controller),children, fn (joystick_controller, acc) ->
+    children = Enum.reduce(Common.Utils.Enum.assert_list(config.joystick_controller),children, fn (joystick_controller, acc) ->
       id = Map.get(joystick_controller, :name, Joystick.Controller)
       acc ++ [Supervisor.child_spec({Joystick.Controller, joystick_controller}, id: id)]
     end)

@@ -92,7 +92,7 @@ defmodule Sensors.Uart.Bno080 do
 
   @impl GenServer
   def handle_cast(:imu_ready, state) do
-    Common.Utils.dispatch_cast(
+    Common.Utils.Comms.dispatch_cast(
       :topic_registry,
       :imu_status,
       {:imu_status, :ready}
@@ -103,7 +103,7 @@ defmodule Sensors.Uart.Bno080 do
   @impl GenServer
   def handle_cast(:imu_not_ready, state) do
     Logger.debug("Received call: imu_not_ready")
-    Common.Utils.dispatch_cast(
+    Common.Utils.Comms.dispatch_cast(
       :topic_registry,
       :imu_status,
       {:imu_status, :not_ready}
@@ -116,7 +116,7 @@ defmodule Sensors.Uart.Bno080 do
     state = parse_input_report(state, :binary.bin_to_list(data))
     #TODO put the following in its own function
     state = if(state.attitude.available) do
-      Common.Utils.dispatch_cast(
+      Common.Utils.Comms.dispatch_cast(
         :topic_registry,
         :euler_eulerrate_dt,
         {:euler_eulerrate_dt, state.attitude.euler, state.attitude.euler_rate, state.attitude.dt}
@@ -439,8 +439,8 @@ defmodule Sensors.Uart.Bno080 do
   end
 
   defp apply_rotation_with_sanity_check(quat, quat_prev, euler_prev, dt) do
-    if (Common.Utils.quat_in_bounds?(quat)) do
-      euler = Common.Utils.quat2euler(quat)
+    if (Common.Utils.Math.quat_in_bounds?(quat)) do
+      euler = Common.Utils.Math.quat2euler(quat)
       {
         quat,
         euler,

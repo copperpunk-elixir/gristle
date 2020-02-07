@@ -28,7 +28,7 @@ defmodule CommandSorter.Sorter do
   @impl GenServer
   def handle_call(:get_command, _from, state) do
     # Logger.debug("Available commands: #{inspect(state.commands)}")
-    {cmd, remaining_valid_commands} = get_most_urgent(state.commands, state.max_priority)
+    {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(state.commands, state.max_priority)
     # Logger.debug("Most urgent cmd: #{inspect(cmd)}")
     {:reply, cmd, %{state | commands: remaining_valid_commands}}
   end
@@ -41,7 +41,7 @@ defmodule CommandSorter.Sorter do
     GenServer.call(via_tuple(name), :get_command, 60000)
   end
 
-  defp get_most_urgent(cmds, max_priority) do
+  def get_most_urgent_and_return_remaining(cmds, max_priority) do
     cmds = prune_old_commands(cmds)
     # Logger.debug("commands after pruning: #{inspect(cmds)}")
     most_urgent_stream = sort_most_urgent_to_stream(cmds, 0, max_priority)
@@ -53,7 +53,7 @@ defmodule CommandSorter.Sorter do
     end
   end
 
-  defp prune_old_commands(cmds) do
+  def prune_old_commands(cmds) do
     current_time_ms = :erlang.monotonic_time(:millisecond)
     Enum.reject(cmds, &(&1.expiration_mono_ms < current_time_ms))
   end

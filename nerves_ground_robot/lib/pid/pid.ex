@@ -26,12 +26,12 @@ defmodule Pid.Pid do
 
   def handle_call({:update_cmd, pos_error, rate_act, dt}, _from, state) do
     # pos_error_max = @correction_rate_max
-    # pos_error = Common.Utils.constrain(pos_error, -pos_error_max, pos_error_max)
+    # pos_error = Common.Utils.Math.constrain(pos_error, -pos_error_max, pos_error_max)
     rate_cmd_p = state.kp*pos_error
     {rate_cmd_i, integrator} =
     if (state.integrator_enabled) && (state.ki != 0) do
       integrator = state.integrator + pos_error*dt
-      corr_i = Common.Utils.constrain(state.ki*integrator, -@integrator_max, @integrator_max)
+      corr_i = Common.Utils.Math.constrain(state.ki*integrator, -@integrator_max, @integrator_max)
       integrator = corr_i / state.ki
       {corr_i, integrator}
     else
@@ -44,7 +44,7 @@ defmodule Pid.Pid do
         :rate -> rate_output
         :position -> state.output + rate_output
       end
-    output = Common.Utils.constrain(output, 0.0, 1.0)
+    output = Common.Utils.Math.constrain(output, 0.0, 1.0)
     # error_string = :erlang.float_to_binary(Common.Utils.rad2deg(pos_error), [decimals: 2])
     # rate_error_string = :erlang.float_to_binary(Common.Utils.rad2deg(rate_error), [decimals: 2])
     # delta_output_string = :erlang.float_to_binary(delta_output, [decimals: 2])
