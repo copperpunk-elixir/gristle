@@ -1,4 +1,4 @@
-defmodule Sensors.Gpio.Utils do
+defmodule Peripherals.Gpio.Utils do
   alias Circuits.GPIO
 
   def get_gpio_ref_input(pin) do

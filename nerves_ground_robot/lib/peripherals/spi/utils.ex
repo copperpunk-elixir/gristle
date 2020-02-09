@@ -1,4 +1,4 @@
-defmodule Sensors.Spi.Utils do
+defmodule Peripherals.Spi.Utils do
   alias Circuits.SPI
 
   def get_bus_ref(bus, opts \\ []) do

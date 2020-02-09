@@ -41,7 +41,7 @@ defmodule Pid.Pid do
     rate_output = state.kd*rate_error
     output =
       case state.rate_or_position do
-        :rate -> rate_output
+        :rate -> get_initial_output(state.one_or_two_sided) + rate_output
         :position -> state.output + rate_output
       end
     output = Common.Utils.Math.constrain(output, 0.0, 1.0)
@@ -51,6 +51,10 @@ defmodule Pid.Pid do
     # output_string = :erlang.float_to_binary(output, [decimals: 2])
     # IO.puts("pos_error/rate_error/output: #{error_string}/#{rate_error_string}/#{delta_output_string}/#{output_string}")
     {:reply, output, %{state | integrator: integrator, output: output}}
+  end
+
+  def handle_call(:get_last_cmd, _from, state) do
+    {:reply, state.output, state}
   end
 
   def handle_cast({:set_pid_gain, gain_name, gain_value}, state) do
@@ -72,6 +76,10 @@ defmodule Pid.Pid do
     GenServer.call(via_tuple(channel_name), {:update_cmd, cmd_error, rate_act, dt})
   end
 
+  def get_last_cmd(channel_name) do
+    GenServer.call(via_tuple(channel_name), :get_last_cmd)
+  end
+
   def set_pid_gain(channel_name, gain_name, gain_value) do
     GenServer.cast(via_tuple(channel_name), {:set_pid_gain, gain_name, gain_value})
   end
@@ -84,7 +92,7 @@ defmodule Pid.Pid do
     GenServer.cast(channel_name, :disable_integrator)
   end
 
-  defp get_initial_output(one_or_two_sided) do
+  def get_initial_output(one_or_two_sided) do
     case one_or_two_sided do
       :one_sided -> 0.0
       :two_sided -> 0.5

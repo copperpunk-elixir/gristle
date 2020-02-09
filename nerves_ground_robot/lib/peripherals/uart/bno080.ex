@@ -1,4 +1,4 @@
-defmodule Sensors.Uart.Bno080 do
+defmodule Peripherals.Uart.Bno080 do
   use Bitwise
   use GenServer
   require Logger
@@ -65,9 +65,9 @@ defmodule Sensors.Uart.Bno080 do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        uart_ref: Sensors.Uart.Utils.get_uart_ref(),
-        reset_ref: Sensors.Gpio.Utils.get_gpio_ref_output(config.interface.reset_pin),
-        wake_ref: Sensors.Gpio.Utils.get_gpio_ref_output(config.interface.wake_pin),
+        uart_ref: Peripherals.Uart.Utils.get_uart_ref(),
+        reset_ref: Peripherals.Gpio.Utils.get_gpio_ref_output(config.interface.reset_pin),
+        wake_ref: Peripherals.Gpio.Utils.get_gpio_ref_output(config.interface.wake_pin),
         port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
         update_interval_ms: config.interface.update_interval_ms,
@@ -144,7 +144,7 @@ defmodule Sensors.Uart.Bno080 do
 
   defp open_port(uart_ref, port, baud) do
     Logger.debug("uart_ref: #{inspect(uart_ref)}")
-    Logger.debug(Sensors.Uart.Utils.open_active(uart_ref,port,baud))
+    Logger.debug(Peripherals.Uart.Utils.open_active(uart_ref,port,baud))
   end
 
   # defp soft_reset(state) do
@@ -185,8 +185,8 @@ defmodule Sensors.Uart.Bno080 do
     # Logger.debug("Byte packet of len #{packet_length}: #{inspect(data_packet)}")
     total_packet = [@flag_byte,1] ++ check_packet_for_escape_chars(data_packet) ++ [@flag_byte]
     # Logger.debug("Byte packet after adding/checking escape chars: #{inspect(:binary.list_to_bin(total_packet))}")
-    Enum.each(total_packet, fn x -> Sensors.Uart.Utils.write(state.uart_ref,<<x>>,10) end)
-    # Sensors.I2c.Utils.write_packet(state.bus_ref, state.address, total_packet)
+    Enum.each(total_packet, fn x -> Peripherals.Uart.Utils.write(state.uart_ref,<<x>>,10) end)
+    # Peripherals.I2c.Utils.write_packet(state.bus_ref, state.address, total_packet)
     seq_nums = put_elem(seq_nums, channel, seq+1)
     %{state | sequence_numbers: seq_nums}
   end

@@ -7,7 +7,7 @@ defmodule Gimbal.System do
         Common.ProcessRegistry,
         {Comms.Operator, config.comms},
         {CommandSorter.System, nil},
-        {Sensors.Uart.Bno080, config.imu},
+        {Peripherals.Uart.Bno080, config.imu},
         {Gimbal.Controller, config.gimbal_controller},
         {Pid.Controller, config.pid_controller},
         {Actuator.Controller, config.actuator_controller}

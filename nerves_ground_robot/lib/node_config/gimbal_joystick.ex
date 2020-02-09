@@ -3,7 +3,6 @@ defmodule NodeConfig.GimbalJoystick do
     # --- COMMS ---
     comms = %{
       node_name: :gimbal_joystick,
-      nodes_to_connect: [],
       groups: [:gimbal_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -26,12 +25,12 @@ defmodule NodeConfig.GimbalJoystick do
     }
 
     joystick_controller = %{
+      joystick_driver_config: %{driver: :adsadc},
       send_msg_switch_pin: 25,
-      joystick_cmd_message: %{group: :gimbal_commands, topic: :attitude_cmd},
-      joystick_cmd_sorting: %{priority: 1, authority: 1, time_validity_ms: 20},
+      joystick_cmd_header: %{group: :gimbal_commands, topic: :attitude_cmd},
+      joystick_cmd_classification: %{priority: 1, authority: 1, time_validity_ms: 20},
       joystick_loop_interval_ms: 10,
-      joystick_config: %{},
-      channels: [x_axis, y_axis]
+      channels: %{roll: x_axis, pitch: y_axis}
     }
 
     # --- RETURN ---

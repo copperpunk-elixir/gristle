@@ -3,7 +3,6 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
     # --- COMMS ---
     comms = %{
       node_name: :track_vehicle_and_gimbal_joystick,
-      nodes_to_connect: [],
       groups: [:gimbal_commands, :track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -27,10 +26,10 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
 
     joystick_controller_gimbal = %{
       name: :joystick_gimbal,
+      joystick_driver_config: %{driver: :adsadc, address: 0x48},
       send_msg_switch_pin: 25,
       joystick_cmd_message: %{group: :gimbal_commands, topic: :attitude_cmd},
       joystick_loop_interval_ms: 10,
-      joystick_config: %{address: 0x48},
       channels: [x_axis_gimbal, y_axis_gimbal]
     }
 
@@ -52,10 +51,10 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
 
     joystick_controller_track_vehicle = %{
       name: :joystick_track_vehicle,
+      joystick_driver_config: %{driver: :adsadc, address: 0x49},
       send_msg_switch_pin: 25,
-      joystick_cmd_message: %{group: :track_vehicle_commands, topic: :turn_and_speed_cmd},
+      joystick_cmd_message: %{group: :track_vehicle_commands, topic: :speed_and_turn_cmd},
       joystick_loop_interval_ms: 10,
-      joystick_config: %{address: 0x49},
       channels: [x_axis_track_vehicle, y_axis_track_vehicle]
     }
 

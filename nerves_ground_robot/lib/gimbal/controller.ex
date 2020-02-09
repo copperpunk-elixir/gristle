@@ -5,8 +5,8 @@ defmodule Gimbal.Controller do
   def start_link(config) do
     Logger.debug("Start GimbalController")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    GenServer.cast(__MODULE__, :register_subscribers)
-    GenServer.cast(__MODULE__, :start_command_sorters)
+    register_subscribers()
+    start_command_sorters()
     {:ok, pid}
   end
 
@@ -44,10 +44,13 @@ defmodule Gimbal.Controller do
 
   @impl GenServer
   def handle_cast(:start_command_sorters, state) do
-    Logger.debug("Start command sorters")
-    CommandSorter.System.start_sorter({__MODULE__, :roll}, state.command_priority_max)
-    CommandSorter.System.start_sorter({__MODULE__, :pitch}, state.command_priority_max)
-    CommandSorter.System.start_sorter({__MODULE__, :yaw}, state.command_priority_max)
+    Enum.each(state.actuator_pids, fn {_actuator_name, actuator_pid} ->
+      CommandSorter.System.start_sorter({__MODULE__, actuator_pid.process_variable}, state.command_priority_max)
+    end)
+    # Logger.debug("Start command sorters: #{inspect(cmd_variables)}")
+    # CommandSorter.System.start_sorter({__MODULE__, :roll}, state.command_priority_max)
+    # CommandSorter.System.start_sorter({__MODULE__, :pitch}, state.command_priority_max)
+    # CommandSorter.System.start_sorter({__MODULE__, :yaw}, state.command_priority_max)
     {:noreply, state}
   end
 
@@ -92,14 +95,14 @@ defmodule Gimbal.Controller do
   @impl GenServer
   def handle_cast({:actuator_status, :ready}, state) do
     Logger.debug("Gimbal: Actuators ready!")
-    arm_actuators()
+    GenServer.cast(__MODULE__, :start_actuator_loop)
     {:noreply, %{state | actuators_ready: true}}
   end
 
   @impl GenServer
   def handle_cast({:actuator_status, :not_ready}, state) do
     Logger.debug("Gimbal: Actuators not ready!")
-    disarm_actuators()
+    GenServer.cast(__MODULE__, :stop_actuator_loop)
     {:noreply, %{state | actuators_ready: false}}
   end
 
@@ -162,6 +165,11 @@ defmodule Gimbal.Controller do
   end
 
   @impl GenServer
+  def handle_call({:get_parameter, parameter}, _from, state) do
+    {:reply, Map.get(state, parameter), state}
+  end
+
+  @impl GenServer
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorController
     # actuator_controller_process_name = state.config.actuator_controller.process_name
@@ -179,11 +187,11 @@ defmodule Gimbal.Controller do
   end
 
   def arm_actuators() do
-    GenServer.cast(__MODULE__, :start_actuator_loop)
+    GenServer.cast(__MODULE__, {:actuator_status, :ready})
   end
 
   def disarm_actuators() do
-    GenServer.cast(__MODULE__, :stop_actuator_loop)
+    GenServer.cast(__MODULE__, {:actuator_status, :not_ready})
   end
 
   def set_pid_gain(channel_name, gain_name, gain_value) do
@@ -193,6 +201,18 @@ defmodule Gimbal.Controller do
   # defp via_tuple(system_id) do
   #   Common.ProcessRegistry.via_tuple({__MODULE__, system_id})
   # end
+
+  def register_subscribers() do
+    GenServer.cast(__MODULE__, :register_subscribers)
+  end
+
+  def start_command_sorters() do
+    GenServer.cast(__MODULE__, :start_command_sorters)
+  end
+
+  def get_parameter(parameter) do
+    GenServer.call(__MODULE__, {:get_parameter, parameter})
+  end
 
   defp update_pid_controller(state) do
     current_time_us = :erlang.monotonic_time(:microsecond)

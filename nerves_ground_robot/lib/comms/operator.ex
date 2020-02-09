@@ -37,8 +37,8 @@ defmodule Comms.Operator do
     state =
       case ip_address_tuple_temp do
         nil ->
-          Logger.debug("#{state.interface} is not connected. Try again in 5 seconds")
-          Process.sleep(5000)
+          Logger.debug("#{state.interface} is not connected. Try again in 1 second")
+          Process.sleep(1000)
           GenServer.cast(self(), :start_node_and_broadcast)
           state
         ip_address_tuple ->

@@ -12,12 +12,14 @@ defmodule TrackVehicle.Controller do
   @impl GenServer
   def init(config) do
     {:ok,  %{
-        turn_and_speed_cmd: %{turn: 0, speed: 0},
+        speed_cmd: 0,
+        turn_cmd: 0,
+        speed_to_turn_ratio: Map.get(config, :speed_to_turn_ratio, 1),
         actuators_ready: false,
         actuator_timer: nil,
         # actuator_output: %{}, #in the form of %{actuator: output},
-        actuator_loop_interval_ms: config.actuator_loop_interval_ms,
-        subscriber_topics: config.subscriber_topics
+        actuator_loop_interval_ms: Map.get(config, :actuator_loop_interval_ms, 0),
+        subscriber_topics: Map.get(config, :subscriber_topics, [])
      }
     }
   end
@@ -62,23 +64,28 @@ defmodule TrackVehicle.Controller do
  @impl GenServer
   def handle_cast({:actuator_status, :ready}, state) do
     Logger.debug("Gimbal: Actuators ready!")
-    arm_actuators()
+    GenServer.cast(__MODULE__, :start_actuator_loop)
     {:noreply, %{state | actuators_ready: true}}
   end
 
   @impl GenServer
   def handle_cast({:actuator_status, :not_ready}, state) do
     Logger.debug("Gimbal: Actuators not ready!")
-    disarm_actuators()
+    GenServer.cast(__MODULE__, :stop_actuator_loop)
     {:noreply, %{state | actuators_ready: false}}
   end
 
   @impl GenServer
-  def handle_cast({:turn_and_speed_cmd, turn_and_speed_cmd}, state) do
-    # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(turn_and_speed_cmd))}")
-    speed_cmd = Map.get(turn_and_speed_cmd, :speed, state.turn_and_speed_cmd.speed)
-    turn_cmd = Map.get(turn_and_speed_cmd, :turn, state.turn_and_speed_cmd.turn)
-    {:noreply, %{state | turn_and_speed_cmd: %{speed: speed_cmd, turn: turn_cmd}}}
+  def handle_cast({:speed_and_turn_cmd, speed_and_turn_cmd}, state) do
+    # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(speed_and_turn_cmd))}")
+    speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
+    turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)
+    {:noreply, %{state | speed_cmd: speed_cmd, turn_cmd: turn_cmd}}
+  end
+
+  @impl GenServer
+  def handle_call({:get_parameter, parameter}, _from, state) do
+    {:reply, Map.get(state, parameter), state}
   end
 
   @impl GenServer
@@ -86,14 +93,8 @@ defmodule TrackVehicle.Controller do
     # Go through every channel and send an update to the ActuatorController
     # actuator_controller_process_name = state.config.actuator_controller.process_name
     if state.actuators_ready do
-      {min_cmd, max_cmd} =
-      if state.turn_and_speed_cmd.speed > 0 do
-        {0.5, 1.0}
-      else
-        {0, 0.5}
-      end
-      left_track_cmd = 0.5 + Common.Utils.Math.constrain(state.turn_and_speed_cmd.speed + state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
-      right_track_cmd = 0.5 + Common.Utils.Math.constrain(state.turn_and_speed_cmd.speed - state.turn_and_speed_cmd.turn, min_cmd, max_cmd)
+      {left_track_cmd, right_track_cmd} =
+        calculate_track_cmd_for_speed_and_turn(state.speed_cmd, state.turn_cmd, state.speed_to_turn_ratio)
       Logger.debug("Move actuator L/R: #{left_track_cmd}, #{right_track_cmd}")
       Actuator.Controller.move_actuator(:left_track, left_track_cmd)
       Actuator.Controller.move_actuator(:right_track, right_track_cmd)
@@ -102,15 +103,35 @@ defmodule TrackVehicle.Controller do
     {:noreply, state}
   end
 
-  def update_turn_and_speed_cmd(turn_and_speed_cmd) do
-    GenServer.cast(__MODULE__, {:turn_and_speed_cmd, turn_and_speed_cmd})
+  def update_speed_and_turn_cmd(speed_and_turn_cmd) do
+    GenServer.cast(__MODULE__, {:speed_and_turn_cmd, speed_and_turn_cmd})
+  end
+
+  def get_parameter(parameter) do
+    GenServer.call(__MODULE__, {:get_parameter, parameter})
+  end
+
+  def calculate_track_cmd_for_speed_and_turn(speed, turn, speed_to_turn_ratio) do
+    {min_cmd, max_cmd} =
+    if speed > 0 do
+      {0.5, 1.0}
+    else
+      {0, 0.5}
+    end
+    left_track_cmd =
+      0.5 + 0.5*(speed + turn/speed_to_turn_ratio)
+      |> Common.Utils.Math.constrain(min_cmd, max_cmd)
+    right_track_cmd =
+      0.5 + 0.5*(speed - turn/speed_to_turn_ratio)
+      |> Common.Utils.Math.constrain(min_cmd, max_cmd)
+    {left_track_cmd, right_track_cmd}
   end
 
   def arm_actuators() do
-    GenServer.cast(__MODULE__, :start_actuator_loop)
+    GenServer.cast(__MODULE__, {:actuator_status, :ready})
   end
 
   def disarm_actuators() do
-    GenServer.cast(__MODULE__, :stop_actuator_loop)
+    GenServer.cast(__MODULE__, {:actuator_status, :not_ready})
   end
 end

@@ -1,4 +1,4 @@
-defmodule Sensors.Uart.Utils do
+defmodule Peripherals.Uart.Utils do
   alias Circuits.UART
   require Logger
 

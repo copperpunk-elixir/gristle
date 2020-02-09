@@ -1,4 +1,4 @@
-defmodule Sensors.I2c.Utils do
+defmodule Peripherals.I2c.Utils do
   alias Circuits.I2C
 
   def get_bus_ref(bus) do

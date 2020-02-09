@@ -3,7 +3,6 @@ defmodule NodeConfig.TrackVehicleJoystick do
     # --- COMMS ---
     comms = %{
       node_name: :track_vehicle_joystick,
-      nodes_to_connect: [],
       groups: [:track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -26,10 +25,11 @@ defmodule NodeConfig.TrackVehicleJoystick do
     }
 
     joystick_controller = %{
+      joystick_driver_config: %{driver: :adsadc},
       send_msg_switch_pin: 25,
-      joystick_cmd_message: %{group: :track_vehicle_commands, topic: :turn_and_speed_cmd},
-      joystick_loop_interval_ms: 10,
-      joystick_config: %{},
+      joystick_cmd_header: %{group: :track_vehicle_commands, topic: :speed_and_turn_cmd},
+      joystick_cmd_classification: %{priority: 1, authority: 1, time_validity_ms: 100},
+      joystick_loop_interval_ms: 50,
       channels: [x_axis, y_axis]
     }
 

@@ -9,7 +9,8 @@ defmodule Actuator.ControllerTest do
     max_pw_ms = 1900
     roll_actuator = %{channel_number: 0, reversed: false, min_pw_ms: min_pw_ms, max_pw_ms: max_pw_ms}
     pitch_actuator = %{channel_number: 1, reversed: true, min_pw_ms: min_pw_ms, max_pw_ms: max_pw_ms}
-    config = %{port: "ttyACM1", actuators: %{roll: roll_actuator, pitch: pitch_actuator}}
+    actuator_driver = :pololu
+    config = %{actuator_driver: actuator_driver, actuators: %{roll: roll_actuator, pitch: pitch_actuator}}
     Actuator.Controller.start_link(config)
     # Move roll actuator to min value
     Actuator.Controller.move_actuator(:roll, 0)

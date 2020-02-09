@@ -15,7 +15,7 @@ defmodule NodeConfig.Master do
     pins
     |> Enum.with_index
     |> Enum.reduce(0, fn ({pin, index}, acc) ->
-      pin_ref = Sensors.Gpio.Utils.get_gpio_ref_input_pullup(pin)
+      pin_ref = Peripherals.Gpio.Utils.get_gpio_ref_input_pullup(pin)
       Process.sleep(1)
       value =  1 - Circuits.GPIO.read(pin_ref)
       Logger.debug("value at pin #{pin}: #{value}")

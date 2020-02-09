@@ -5,7 +5,6 @@ defmodule NodeConfig.TrackVehicle do
       #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
       # except exist
       node_name: :track_vehicle,
-      nodes_to_connect: [],
       groups: [:track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -14,7 +13,8 @@ defmodule NodeConfig.TrackVehicle do
     # --- SYSTEM ---
     track_vehicle_controller = %{
       actuator_loop_interval_ms: 10,
-      subscriber_topics: [:actuator_status, :turn_and_speed_cmd]
+      speed_to_turn_ratio: 3.0,
+      subscriber_topics: [:actuator_status, :speed_and_turn_cmd]
     }
 
     # --- ACTUATOR CONTROLLER ---

@@ -5,7 +5,6 @@ defmodule NodeConfig.Gimbal do
       #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
       # except exist
       node_name: :gimbal,
-      nodes_to_connect: [],
       groups: [:gimbal_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -36,14 +35,14 @@ defmodule NodeConfig.Gimbal do
           ki: 0,
           kd: 0.005,
           rate_or_position: :position,
-          one_or_two_sided: :two_sided,
+          one_or_two_sided: :two_sided
         },
         pitch_to_pitch_axis_motor: %{
           kp: 20.0,
           ki: 0,
           kd: 0.005,
           rate_or_position: :position,
-          one_or_two_sided: :two_sided,
+          one_or_two_sided: :two_sided
         }}
     }
 
@@ -51,6 +50,7 @@ defmodule NodeConfig.Gimbal do
     actuator_controller = %{
       # local_publisher_topics: [:actuator_status],
       pwm_freq: 100,
+      actuator_driver: :pololu,
       actuators: %{
         roll_axis_motor: %{
           channel_number: 0,
