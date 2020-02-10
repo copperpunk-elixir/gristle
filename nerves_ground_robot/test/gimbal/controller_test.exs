@@ -9,17 +9,18 @@ defmodule Gimbal.ControllerTest do
   Common.ProcessRegistry.start_link
   CommandSorter.System.start_link(nil)
 
-  {:ok, pid} = Gimbal.Controller.start_link(config.gimbal_controller)
+  Gimbal.Controller.start_link(config.gimbal_controller)
   assert Gimbal.Controller.get_parameter(:imu_ready) == false
   assert Gimbal.Controller.get_parameter(:actuators_ready) == false
   Logger.warn("Arm actuators")
-  Gimbal.Controller.arm_actuators()
+  GenServer.cast(Gimbal.Controller, {:imu_status, :ready})
+  GenServer.cast(Gimbal.Controller, {:actuator_status, :ready})
+  Process.sleep(100)
   assert Gimbal.Controller.get_parameter(:actuators_ready) == true
-  assert Gimbal.Controller.get_parameter(:actuator_timer) != nil
   assert Gimbal.Controller.get_parameter(:none) == nil
   # Send attitude commads
-  attitude_cmd_sorting = %{priority: 0, authority: 0, time_validity_ms: 200}
-  GenServer.cast(Gimbal.Controller, {:attitude_cmd, attitude_cmd_sorting, %{roll: 1.0, pitch: -1.0}})
+  attitude_cmd_classification = %{priority: 0, authority: 0, time_validity_ms: 200}
+  GenServer.cast(Gimbal.Controller, {:attitude_cmd, attitude_cmd_classification, %{roll: 1.0, pitch: -1.0}})
   Process.sleep(100)
   assert CommandSorter.Sorter.get_command({Gimbal.Controller, :roll}) == 1.0
   assert CommandSorter.Sorter.get_command({Gimbal.Controller, :pitch}) == -1.0

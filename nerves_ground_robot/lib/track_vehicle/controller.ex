@@ -5,16 +5,19 @@ defmodule TrackVehicle.Controller do
   def start_link(config) do
     Logger.debug("Start TrackVehicleController")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    GenServer.cast(__MODULE__, :register_subscribers)
+    register_subscribers()
+    start_command_sorters()
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
     {:ok,  %{
-        speed_cmd: 0,
-        turn_cmd: 0,
+        # speed_cmd: 0,
+        # turn_cmd: 0,
         speed_to_turn_ratio: Map.get(config, :speed_to_turn_ratio, 1),
+        command_priority_max: config.command_priority_max,
+        classification: config.classification,
         actuators_ready: false,
         actuator_timer: nil,
         # actuator_output: %{}, #in the form of %{actuator: output},
@@ -32,6 +35,15 @@ defmodule TrackVehicle.Controller do
     #   Logger.debug("#{registry}/#{topic}")
     #   Registry.register(registry, topic, topic)
     # end)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast(:start_command_sorters, state) do
+    # Command sorters will store the values of all the process variable COMMANDS
+    # i.e. ROLL, or PITCH, or YAW
+    CommandSorter.System.start_sorter({__MODULE__, :speed}, state.command_priority_max)
+    CommandSorter.System.start_sorter({__MODULE__, :turn}, state.command_priority_max)
     {:noreply, state}
   end
 
@@ -76,11 +88,14 @@ defmodule TrackVehicle.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:speed_and_turn_cmd, speed_and_turn_cmd}, state) do
+  def handle_cast({:speed_and_turn_cmd, classification, speed_and_turn_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(speed_and_turn_cmd))}")
-    speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
-    turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)
-    {:noreply, %{state | speed_cmd: speed_cmd, turn_cmd: turn_cmd}}
+    Enum.each(speed_and_turn_cmd, fn {process_variable, value} ->
+      CommandSorter.Sorter.add_command({__MODULE__, process_variable}, classification.priority, classification.authority, classification.time_validity_ms, value)
+    end)
+    # speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
+    # turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)
+    {:noreply, state} #%{state | speed_cmd: speed_cmd, turn_cmd: turn_cmd}}
   end
 
   @impl GenServer
@@ -93,11 +108,18 @@ defmodule TrackVehicle.Controller do
     # Go through every channel and send an update to the ActuatorController
     # actuator_controller_process_name = state.config.actuator_controller.process_name
     if state.actuators_ready do
-      {left_track_cmd, right_track_cmd} =
-        calculate_track_cmd_for_speed_and_turn(state.speed_cmd, state.turn_cmd, state.speed_to_turn_ratio)
-      Logger.debug("Move actuator L/R: #{left_track_cmd}, #{right_track_cmd}")
-      Actuator.Controller.move_actuator(:left_track, left_track_cmd)
-      Actuator.Controller.move_actuator(:right_track, right_track_cmd)
+      speed_cmd = CommandSorter.Sorter.get_command({__MODULE__, :speed})
+      turn_cmd = CommandSorter.Sorter.get_command({__MODULE__, :speed})
+      unless speed_cmd==nil or turn_cmd==nil do
+        {left_track_cmd, right_track_cmd} =
+          calculate_track_cmd_for_speed_and_turn(speed_cmd, turn_cmd, state.speed_to_turn_ratio)
+        Logger.debug("Move actuator L/R: #{left_track_cmd}, #{right_track_cmd}")
+        actuator_cmds = %{
+          left_track: left_track_cmd,
+          right_track: right_track_cmd
+        }
+        Actuator.Controller.add_actuator_cmds(state.classification, actuator_cmds)
+      end
       # Actuator.Controller.move_actuator(actuator_pid.actuator, actuator_pid.output)
     end
     {:noreply, state}
@@ -133,5 +155,13 @@ defmodule TrackVehicle.Controller do
 
   def disarm_actuators() do
     GenServer.cast(__MODULE__, {:actuator_status, :not_ready})
+  end
+
+  def register_subscribers() do
+    GenServer.cast(__MODULE__, :register_subscribers)
+  end
+
+  def start_command_sorters() do
+    GenServer.cast(__MODULE__, :start_command_sorters)
   end
 end

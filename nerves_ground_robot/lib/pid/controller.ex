@@ -15,31 +15,36 @@ defmodule Pid.Controller do
 
   @impl true
   def init(config) do
-    children = Enum.map(config.channels, fn {channel_name, channel} ->
-      channel_config =
-        %{
-          name: channel_name,
-          kp: channel.kp,
-          ki: channel.ki,
-          kd: channel.kd,
-          rate_or_position: channel.rate_or_position,
-          one_or_two_sided: channel.one_or_two_sided
-        }
-      Supervisor.child_spec({Pid.Pid, channel_config}, id: channel_name)
+    children = Enum.reduce(config.pids,[], fn ({process_variable, actuators}, acc) ->
+      child_spec_list =
+        Enum.map(actuators, fn {actuator, pid} ->
+          Logger.debug("create pid (#{process_variable}/#{actuator}): #{inspect(pid)}")
+          pid_config =
+            %{
+              name: {process_variable, actuator},
+              kp: pid.kp,
+              ki: pid.ki,
+              kd: pid.kd,
+              rate_or_position: pid.rate_or_position,
+              one_or_two_sided: pid.one_or_two_sided,
+              offset: pid.offset
+            }
+          Supervisor.child_spec({Pid.Pid, pid_config}, id: pid_config.name)
+        end)
+      acc ++ child_spec_list
     end)
-
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def update_pid(channel_name, cmd_error, euler_rate, dt, caller) do
-    output = Pid.Pid.get_cmd_for_error(channel_name, cmd_error, euler_rate, dt)
+  def update_pid(process_variable, actuator, cmd_error, euler_rate, dt, caller) do
+    output = Pid.Pid.get_cmd_for_error(process_variable, actuator, cmd_error, euler_rate, dt)
     # Return the output to the original caller (Gimbal.System)
-    GenServer.cast(caller, {:pid_updated, channel_name, output})
+    GenServer.cast(caller, {:pid_updated, process_variable, actuator, output})
   end
 
-  def set_pid_gain(channel_name, gain_name, gain_value) do
-    Logger.debug("update pid for #{channel_name}")
-    Pid.Pid.set_pid_gain(channel_name, gain_name, gain_value)
+  def set_pid_gain(process_variable, actuator, gain_name, gain_value) do
+    Logger.debug("update pid for #{process_variable}/#{actuator}")
+    Pid.Pid.set_pid_gain(process_variable, actuator, gain_name, gain_value)
   end
 
   # def enable_integrators() do

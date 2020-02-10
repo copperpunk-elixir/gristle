@@ -1,31 +1,44 @@
 defmodule Actuator.ControllerTest do
+  require Logger
   use ExUnit.Case
   doctest Actuator.Controller
+
+  alias NodeConfig.Utils.PidActuatorInterface
 
   test "ActuatorController - connected" do
     Common.ProcessRegistry.start_link()
     Common.Utils.Comms.start_registry(:topic_registry)
-    min_pw_ms = 1100
-    max_pw_ms = 1900
-    roll_actuator = %{channel_number: 0, reversed: false, min_pw_ms: min_pw_ms, max_pw_ms: max_pw_ms}
-    pitch_actuator = %{channel_number: 1, reversed: true, min_pw_ms: min_pw_ms, max_pw_ms: max_pw_ms}
+    CommandSorter.System.start_link(nil)
+    actuators =
+      PidActuatorInterface.new_actuators_config()
+      |> PidActuatorInterface.add_actuator(:roll_motor, 0, false, 1100, 1900)
+      |> PidActuatorInterface.add_actuator(:pitch_motor, 1, true, 1100, 1900)
     actuator_driver = :pololu
-    config = %{actuator_driver: actuator_driver, actuators: %{roll: roll_actuator, pitch: pitch_actuator}}
+    config = %{actuator_driver: actuator_driver, actuators: actuators, command_priority_max: 3}
+
     Actuator.Controller.start_link(config)
-    # Move roll actuator to min value
-    Actuator.Controller.move_actuator(:roll, 0)
-    assert Actuator.Controller.get_output_for_actuator(:roll) == min_pw_ms
-    # Move pitch actuator to min value, which is achieved with an input of 1, because it is reversed
-    Actuator.Controller.move_actuator(:pitch, 1)
-    assert Actuator.Controller.get_output_for_actuator(:pitch) == min_pw_ms
-    # Try sending an out of bounds value. Actuator should remain where it is
-    current_position = Actuator.Controller.get_output_for_actuator(:roll)
-    Actuator.Controller.move_actuator(:roll, -0.01)
-    assert Actuator.Controller.get_output_for_actuator(:roll) == current_position
-    # Move pitch servo twice
-    Actuator.Controller.move_actuator(:pitch, 0)
+
     Process.sleep(10)
-    Actuator.Controller.move_actuator(:pitch, 0.5)
-    assert Actuator.Controller.get_output_for_actuator(:pitch) == 0.5*(min_pw_ms + max_pw_ms)
+    cmd_classification = %{priority: 0, authority: 0, time_validity_ms: 1000}
+    # Move roll actuator to min value
+    Actuator.Controller.add_actuator_cmds(cmd_classification, %{roll_motor: 0})
+    Process.sleep(100)
+    assert Actuator.Controller.get_output_for_actuator_name(:roll_motor) == 0
+    # Move pitch actuator to min value, which is achieved with an input of 1, because it is reversed
+    Actuator.Controller.add_actuator_cmds(cmd_classification, %{pitch_motor: 1})
+    Process.sleep(1)
+    assert Actuator.Controller.get_output_for_actuator_name(:pitch_motor) == 1
+    # Try sending an out of bounds value. Actuator should remain where it is
+    current_position = Actuator.Controller.get_output_for_actuator_name(:roll_motor)
+    Process.sleep(1)
+    Actuator.Controller.add_actuator_cmds(cmd_classification, %{roll_motor: -0.01, pitch_motor: 0})
+    assert Actuator.Controller.get_output_for_actuator_name(:roll_motor) == current_position
+    # Move pitch servo twice
+    # Actuator.Controller.move_actuator(:pitch, 0)
+    Process.sleep(1)
+    Actuator.Controller.add_actuator_cmds(cmd_classification, %{pitch_motor: 0.2})
+    Actuator.Controller.add_actuator_cmds(cmd_classification, %{pitch_motor: 0.5})
+    Process.sleep(1)
+    assert Actuator.Controller.get_output_for_actuator_name(:pitch_motor) == 0.5
   end
 end

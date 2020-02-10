@@ -3,6 +3,8 @@ defmodule Pid.Pid do
   require Logger
   @correction_rate_max 52.36 #pi/6
   @integrator_max 0.52
+  @output_min 0.0
+  @output_max 1.0
 
   def start_link(config) do
     Logger.debug("Start PID")
@@ -44,7 +46,7 @@ defmodule Pid.Pid do
         :rate -> get_initial_output(state.one_or_two_sided) + rate_output
         :position -> state.output + rate_output
       end
-    output = Common.Utils.Math.constrain(output, 0.0, 1.0)
+    output = Common.Utils.Math.constrain(output, @output_min, @output_max)
     # error_string = :erlang.float_to_binary(Common.Utils.rad2deg(pos_error), [decimals: 2])
     # rate_error_string = :erlang.float_to_binary(Common.Utils.rad2deg(rate_error), [decimals: 2])
     # delta_output_string = :erlang.float_to_binary(delta_output, [decimals: 2])
@@ -72,35 +74,39 @@ defmodule Pid.Pid do
     {:noreply, %{state | integrator_enabled: false}}
   end
 
-  def get_cmd_for_error(channel_name, cmd_error, rate_act, dt) do
-    GenServer.call(via_tuple(channel_name), {:update_cmd, cmd_error, rate_act, dt})
+  def get_cmd_for_error(process_variable, actuator, cmd_error, rate_act, dt) do
+    GenServer.call(via_tuple(process_variable, actuator), {:update_cmd, cmd_error, rate_act, dt})
   end
 
-  def get_last_cmd(channel_name) do
-    GenServer.call(via_tuple(channel_name), :get_last_cmd)
+  def get_last_cmd(process_variable, actuator) do
+    GenServer.call(via_tuple(process_variable, actuator), :get_last_cmd)
   end
 
-  def set_pid_gain(channel_name, gain_name, gain_value) do
-    GenServer.cast(via_tuple(channel_name), {:set_pid_gain, gain_name, gain_value})
+  def set_pid_gain(process_variable, actuator, gain_name, gain_value) do
+    GenServer.cast(via_tuple(process_variable, actuator), {:set_pid_gain, gain_name, gain_value})
   end
 
-  def enable_integrator(channel_name) do
-    GenServer.cast(via_tuple(channel_name), :enable_integrator)
+  def enable_integrator(process_variable, actuator)do
+    GenServer.cast(via_tuple(process_variable, actuator), :enable_integrator)
   end
 
-  def disable_integrator(channel_name) do
-    GenServer.cast(channel_name, :disable_integrator)
-  end
+  # def disable_integrator(channel_name) do
+  #   GenServer.cast(channel_name, :disable_integrator)
+  # end
 
   def get_initial_output(one_or_two_sided) do
     case one_or_two_sided do
-      :one_sided -> 0.0
-      :two_sided -> 0.5
+      :one_sided -> @output_min
+      :two_sided -> 0.5*(@output_min + @output_max)
     end
   end
 
-  defp via_tuple(channel_name) do
-    Common.ProcessRegistry.via_tuple({__MODULE__, channel_name})
+  defp via_tuple(process_name, actuator) do
+    Common.ProcessRegistry.via_tuple({__MODULE__, {process_name, actuator}})
+  end
+
+  defp via_tuple({process_name, actuator}) do
+    Common.ProcessRegistry.via_tuple({__MODULE__, {process_name, actuator}})
   end
 
 end

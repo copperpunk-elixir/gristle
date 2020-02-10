@@ -19,10 +19,14 @@ defmodule CommandSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:add_command, priority, authority, expiration_mono_ms, value}, state) do
+    # Remove any commands that have the same priority/authority (there should be at most 1)
+    unique_cmds = Enum.reject(state.commands, fn cmd ->
+      (cmd.priority==priority) && (cmd.authority==authority)
+    end)
     new_cmd = CommandSorter.CmdStruct.create_cmd(priority, authority, expiration_mono_ms, value)
     # new_cmd = %{priority: priority, authority: authority, expiration_mono_ms: expiration_mono_ms, value: value}
     # Logger.debug("new cmd: #{inspect(new_cmd)}")
-    {:noreply, %{state | commands: [new_cmd | state.commands]}}
+    {:noreply, %{state | commands: [new_cmd | unique_cmds]}}
   end
 
   @impl GenServer
@@ -33,12 +37,13 @@ defmodule CommandSorter.Sorter do
     {:reply, cmd, %{state | commands: remaining_valid_commands}}
   end
 
-  def add_command(name, priority, authority, expiration_mono_ms, value) do
+  def add_command(name, priority, authority, time_validity_ms, value) do
+    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + time_validity_ms
     GenServer.cast(via_tuple(name), {:add_command, priority, authority, expiration_mono_ms, value})
   end
 
   def get_command(name) do
-    GenServer.call(via_tuple(name), :get_command, 60000)
+    GenServer.call(via_tuple(name), :get_command, 50)
   end
 
   def get_most_urgent_and_return_remaining(cmds, max_priority) do
