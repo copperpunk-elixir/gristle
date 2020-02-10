@@ -19,6 +19,7 @@ defmodule Actuator.Controller do
         actuator_driver: config.actuator_driver,
         uart_ref: nil,
         actuator_timer: nil,
+        actuator_loop_interval_ms: config.actuator_loop_interval_ms,
         command_priority_max: config.command_priority_max
      }
     }

@@ -90,9 +90,9 @@ defmodule Joystick.Controller do
           acc
       end
     end)
-    Logger.debug("Joystick: #{inspect(joystick_cmd_output)}")
     # Send commands
     if (is_switch_on(state.send_msg_switch_ref)) do
+      Logger.debug("Joystick: #{inspect(joystick_cmd_output)}")
       Comms.Operator.publish(
         state.joystick_cmd_header.group,
         {

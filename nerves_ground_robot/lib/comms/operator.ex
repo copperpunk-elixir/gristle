@@ -26,7 +26,7 @@ defmodule Comms.Operator do
         interface: config.interface,
         cookie: config.cookie,
         broadcast_timer: nil,
-        broadcast_timer_interval_ms: 5000
+        broadcast_timer_interval_ms: 1000
      }}
   end
 

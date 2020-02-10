@@ -10,19 +10,19 @@ defmodule Common.Application do
     Common.Utils.Comms.start_registry(:topic_registry)
     Logger.debug("Start pg2")
     :pg2.start()
-    # config = NodeConfig.Master.get_config()
-    # Logger.debug("Load #{config.node_type}")
-    # case config.node_type do
-    #   :gimbal ->
-    #     Gimbal.System.start_link(config)
-    #   :gimbal_joystick ->
-    #     Joystick.System.start_link(config)
-    #   :track_vehicle ->
-    #     TrackVehicle.System.start_link(config)
-    #   :track_vehicle_joystick ->
-    #     Joystick.System.start_link(config)
-    #   :track_vehicle_and_gimbal_joystick ->
-    #     Joystick.System.start_link(config)
-    # end
+    config = NodeConfig.Master.get_config()
+    Logger.debug("Load #{config.node_type}")
+    case config.node_type do
+      :gimbal ->
+        Gimbal.System.start_link(config)
+      :gimbal_joystick ->
+        Joystick.System.start_link(config)
+      :track_vehicle ->
+        TrackVehicle.System.start_link(config)
+      :track_vehicle_joystick ->
+        Joystick.System.start_link(config)
+      :track_vehicle_and_gimbal_joystick ->
+        Joystick.System.start_link(config)
+    end
   end
 end

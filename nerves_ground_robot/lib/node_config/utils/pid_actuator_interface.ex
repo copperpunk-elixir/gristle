@@ -2,16 +2,13 @@ defmodule NodeConfig.Utils.PidActuatorInterface do
   require Logger
 
   # Pid-to-Actuator config
-  def new_pid_to_actuator_config() do
-    %{}
+  def new_pid_actuator_config() do
+    []
   end
 
-  def add_pid_actuator(pid_to_actuators, process_variable, actuator_name) do
-    key =
-      Atom.to_string(process_variable) <> "_to_" <> Atom.to_string(actuator_name)
-      |> String.to_atom()
-    value = %{process_variable: process_variable, actuator: actuator_name, output: 0}
-    Map.put(pid_to_actuators, key, value)
+  def add_pid_actuator_link(pid_actuator_links, process_variable, actuator_name, failsafe_cmd) do
+    pid_actuator_link = %{process_variable: process_variable, actuator: actuator_name, failsafe_cmd: failsafe_cmd}
+    [pid_actuator_link | pid_actuator_links]
   end
 
   # PID config

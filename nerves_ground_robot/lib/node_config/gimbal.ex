@@ -12,16 +12,15 @@ defmodule NodeConfig.Gimbal do
     }
 
     # --- SYSTEM ---
+    pid_actuator_links =
+      PidActuatorInterface.new_pid_actuator_config()
+      |> PidActuatorInterface.add_pid_actuator_link(:roll, :roll_axis_motor, 0)
+      |> PidActuatorInterface.add_pid_actuator_link(:pitch, :pitch_axis_motor, 0)
+
     gimbal_controller = %{
-      pid_actuator_links: [
-        %{process_variable: :roll, actuator: :roll_axis_motor, failsalfe_value: 0},
-        %{process_variable: :pitch, actuator: :pitch_axis_motor, failsafe_value: 0}
-      ],
-        # roll_to_roll_axis_motor: %{process_variable: :roll, actuator: :roll_axis_motor, output: 0},
-      #   pitch_to_pitch_axis_motor: %{process_variable: :pitch, actuator: :pitch_axis_motor, output: 0}
-      # },
+      pid_actuator_links: pid_actuator_links,
       subscriber_topics: [:euler_eulerrate_dt, :imu_status, :actuator_status, :attitude_cmd],
-      classification: %{priority: 0, authority: 0, time_validity_ms: 1000},
+      actuator_cmd_classification: %{priority: 0, authority: 0, time_validity_ms: 1000},
       command_priority_max: 3
     }
 
@@ -40,27 +39,6 @@ defmodule NodeConfig.Gimbal do
     pid_controller = %{
       pids: pids
     }
-      # pids: %{
-     #    roll: %{
-    #       roll_axis_motor: %{
-    #         kp: 20.0,
-    #         ki: 0,
-    #         kd: 0.005,
-    #         rate_or_position: :position,
-    #         one_or_two_sided: :two_sided
-    #       }
-    #     },
-    #     pitch: %{
-    #       pitch_axis_motor: %{
-    #         kp: 20.0,
-    #         ki: 0,
-    #         kd: 0.005,
-    #         rate_or_position: :position,
-    #         one_or_two_sided: :two_sided
-    #       }
-    #     }
-    #   }
-    # }
 
     # --- ACTUATOR CONTROLLER ---
     actuators =
@@ -69,25 +47,10 @@ defmodule NodeConfig.Gimbal do
       |> PidActuatorInterface.add_actuator(:pitch_axis_motor, 1, false, 1100, 1900)
 
     actuator_controller = %{
-      # local_publisher_topics: [:actuator_status],
-      pwm_freq: 100,
+      actuator_loop_interval_ms: 10,
       actuator_driver: :pololu,
       actuators: actuators,
       command_priority_max: 3
-      # %{
-      #   roll_axis_motor: %{
-      #     channel_number: 0,
-      #     reversed: false,
-      #     min_pw_ms: 1100,
-      #     max_pw_ms: 1900
-      #   },
-      #   pitch_axis_motor: %{
-      #     channel_number: 1,
-      #     reversed: false,
-      #     min_pw_ms: 1100,
-      #     max_pw_ms: 1900
-      #   }
-      # }
     }
 
     # --- RETURN ---

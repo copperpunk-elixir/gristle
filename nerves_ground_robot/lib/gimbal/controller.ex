@@ -18,7 +18,7 @@ defmodule Gimbal.Controller do
         imu_dt: 0,
         attitude_cmd: %{roll: 0, pitch: 0, yaw: 0},
         command_priority_max: config.command_priority_max,
-        classification: config.classification,
+        actuator_cmd_classification: config.actuator_cmd_classification,
         pid_time_prev_us: nil,
         imu_ready: false,
         actuators_ready: false,
@@ -108,7 +108,7 @@ defmodule Gimbal.Controller do
   @impl GenServer
   def handle_cast({:pid_updated, _process_variable, actuator, output}, state) do
     # Logger.debug("Ch name/Actuator/output: #{channel_name}/#{actuator_pid.actuator}/#{output}")
-    Actuator.Controller.add_actuator_cmds(state.classification, Map.put(%{}, actuator, output))
+    Actuator.Controller.add_actuator_cmds(state.actuator_cmd_classification, Map.put(%{}, actuator, output))
     {:noreply, state}
     # {:noreply, put_in(state,[:pid_outputs, process_variable, actuator], output)}
   end
@@ -193,7 +193,7 @@ defmodule Gimbal.Controller do
       # Logger.debug("#{channel_name}")
       cmd =
         case CommandSorter.Sorter.get_command({__MODULE__, process_variable}) do
-          nil -> pid_actuator_link.failsafe_value
+          nil -> pid_actuator_link.failsafe_cmd
           value -> value
         end
       # cmd = state.attitude_cmd[channel.process_variable]

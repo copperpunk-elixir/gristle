@@ -42,7 +42,7 @@ defmodule Common.Utils.Comms do
   def get_subscribers_for_registry_and_topic(registry, topic) do
     subscribers_and_values = Registry.lookup(registry, topic)
     subscribers =
-      Enum.reduce(subscribers_and_values, [], fn ({sub, value}, acc) ->
+      Enum.reduce(subscribers_and_values, [], fn ({sub, _value}, acc) ->
         [sub | acc]
       end)
     subscribers
