@@ -28,7 +28,7 @@ defmodule NodeConfig.GimbalJoystick do
       joystick_driver_config: %{driver: :adsadc},
       send_msg_switch_pin: 25,
       joystick_cmd_header: %{group: :gimbal_commands, topic: :attitude_cmd},
-      joystick_cmd_classification: %{priority: 1, authority: 1, time_validity_ms: 20},
+      joystick_cmd_classification: %{priority: 1, authority: 1, time_validity_ms: 1000},
       joystick_loop_interval_ms: 10,
       channels: %{roll: x_axis, pitch: y_axis}
     }
