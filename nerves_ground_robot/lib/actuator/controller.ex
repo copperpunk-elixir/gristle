@@ -19,8 +19,7 @@ defmodule Actuator.Controller do
         actuator_driver: config.actuator_driver,
         uart_ref: nil,
         actuator_timer: nil,
-        actuator_loop_interval_ms: config.actuator_loop_interval_ms,
-        command_priority_max: config.command_priority_max
+        actuator_loop_interval_ms: config.actuator_loop_interval_ms
      }
     }
   end
@@ -42,7 +41,7 @@ defmodule Actuator.Controller do
   @impl GenServer
   def handle_cast(:start_command_sorters, state) do
     Enum.each(state.actuators, fn {actuator_name, _actuator} ->
-      CommandSorter.System.start_sorter({__MODULE__, actuator_name}, state.command_priority_max)
+      CommandSorter.System.start_sorter({__MODULE__, actuator_name})
     end)
     {:noreply, state}
   end
@@ -97,7 +96,7 @@ defmodule Actuator.Controller do
   def handle_cast({:actuator_cmd, cmd_type_min_max_exact, classification, actuator_cmds}, state) do
     Enum.each(actuator_cmds, fn {actuator, value} ->
       if output_in_bounds?(value) do
-        CommandSorter.Sorter.add_command({__MODULE__, actuator}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
+        CommandSorter.Sorter.add_command({__MODULE__, actuator}, cmd_type_min_max_exact, classification, value)
       end
     end)
     {:noreply, state}

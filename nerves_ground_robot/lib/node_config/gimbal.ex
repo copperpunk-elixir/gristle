@@ -42,14 +42,13 @@ defmodule NodeConfig.Gimbal do
     # --- ACTUATOR CONTROLLER ---
     actuators =
       PidActuatorInterface.new_actuators_config()
-      |> PidActuatorInterface.add_actuator(:roll_axis_motor, 0, false, 1100, 1900, 1500)
-      |> PidActuatorInterface.add_actuator(:pitch_axis_motor, 1, false, 1100, 1900, 1500)
+      |> PidActuatorInterface.add_actuator(:roll_axis_motor, 0, false, 1100, 1900, 0.5)
+      |> PidActuatorInterface.add_actuator(:pitch_axis_motor, 1, false, 1100, 1900, 0.5)
 
     actuator_controller = %{
       actuator_loop_interval_ms: 10,
       actuator_driver: :pololu,
-      actuators: actuators,
-      command_priority_max: 3
+      actuators: actuators
     }
 
     # --- RETURN ---

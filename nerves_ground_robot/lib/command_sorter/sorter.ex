@@ -10,27 +10,25 @@ defmodule CommandSorter.Sorter do
   end
 
   @impl GenServer
-  def init(config) do
-    Logger.debug("config: #{inspect(config)}")
+  def init(_) do
     {:ok, %{
         commands: %{
           exact: [],
           min: [],
           max: []
-        },
-        max_priority: config.max_priority
+        }
      }
     }
   end
 
   @impl GenServer
-  def handle_cast({:add_command, cmd_type_min_max_exact, priority, authority, expiration_mono_ms, value}, state) do
+  def handle_cast({:add_command, cmd_type_min_max_exact, classification, value}, state) do
     # Remove any commands that have the same priority/authority (there should be at most 1)
     commands_list = get_in(state.commands, [cmd_type_min_max_exact])
     unique_cmds = Enum.reject(commands_list, fn cmd ->
-      (cmd.priority==priority) && (cmd.authority==authority)
+      (cmd.priority==classification.priority) && (cmd.authority==classification.authority)
     end)
-    new_cmd = CommandSorter.CmdStruct.create_cmd(priority, authority, expiration_mono_ms, value)
+    new_cmd = CommandSorter.CmdStruct.create_cmd(classification.priority, classification.authority, classification.expiration_mono_ms, value)
     # new_cmd = %{priority: priority, authority: authority, expiration_mono_ms: expiration_mono_ms, value: value}
     # Logger.debug("new cmd: #{inspect(new_cmd)}")
     {:noreply, put_in(state, [:commands, cmd_type_min_max_exact], [new_cmd | unique_cmds])}
@@ -40,16 +38,14 @@ defmodule CommandSorter.Sorter do
   def handle_call({:get_command, cmd_type_min_max_exact}, _from, state) do
     # Logger.debug("Available commands: #{inspect(state.commands)}")
     commands_list = get_in(state.commands, [cmd_type_min_max_exact])
-    Logger.debug("#{inspect(state)}")
-    Logger.debug("#{inspect(commands_list)}")
-    {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(commands_list, state.max_priority)
+    {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(commands_list)
     # Logger.debug("Most urgent cmd: #{inspect(cmd)}")
     {:reply, cmd, put_in(state, [:commands, cmd_type_min_max_exact], remaining_valid_commands)}
   end
 
-  def add_command(name, cmd_type_min_max_exact, priority, authority, time_validity_ms, value) do
-    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + time_validity_ms
-    GenServer.cast(via_tuple(name), {:add_command, cmd_type_min_max_exact, priority, authority, expiration_mono_ms, value})
+  def add_command(name, cmd_type_min_max_exact, classification, value) do
+    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + classification.time_validity_ms
+    GenServer.cast(via_tuple(name), {:add_command, cmd_type_min_max_exact, Map.put(classification,:expiration_mono_ms, expiration_mono_ms), value})
   end
 
   def get_command(name, failsafe_value) do
@@ -82,14 +78,18 @@ defmodule CommandSorter.Sorter do
     GenServer.call(via_tuple(name), {:get_command, :max}, 50)
   end
 
-  def get_most_urgent_and_return_remaining(cmds, max_priority) do
+  def get_most_urgent_and_return_remaining(cmds) do
     cmds = prune_old_commands(cmds)
     # Logger.debug("commands after pruning: #{inspect(cmds)}")
-    most_urgent_stream = sort_most_urgent_to_stream(cmds, 0, max_priority)
-    if most_urgent_stream == [] do
+    most_urgent_cmds =
+      case length(cmds) do
+        0 -> []
+        _ -> sort_most_urgent_cmds(cmds, 0)
+      end
+    if most_urgent_cmds == [] do
       {nil, []}
     else
-      cmd_struct = Enum.sort_by(most_urgent_stream, &(&1.authority)) |> Enum.at(0)
+      cmd_struct = Enum.sort_by(most_urgent_cmds, &(&1.authority)) |> Enum.at(0)
       {cmd_struct.value, cmds}
     end
   end
@@ -99,12 +99,13 @@ defmodule CommandSorter.Sorter do
     Enum.reject(cmds, &(&1.expiration_mono_ms < current_time_ms))
   end
 
-  defp sort_most_urgent_to_stream(cmds, priority, max_priority) do
-    most_urgent = Stream.reject(cmds, &(&1.priority > priority))
+  @cmd_priority_search_max 1000 # Just to keep this search from looping forever
+  defp sort_most_urgent_cmds(cmds, priority) do
+    most_urgent = Enum.reject(cmds, &(&1.priority > priority))
     valid_value = Enum.at(most_urgent, 0)
     if (valid_value == nil) do
-      if (priority < max_priority) do
-        sort_most_urgent_to_stream(cmds, priority+1, max_priority)
+      if (priority < @cmd_priority_search_max) do
+        sort_most_urgent_cmds(cmds, priority+1)
       else
         []
       end

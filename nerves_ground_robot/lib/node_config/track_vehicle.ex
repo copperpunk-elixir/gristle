@@ -14,8 +14,7 @@ defmodule NodeConfig.TrackVehicle do
       actuator_loop_interval_ms: 10,
       speed_to_turn_ratio: 3.0,
       subscriber_topics: [:actuator_status, :speed_and_turn_cmd],
-      classification: %{priority: 0, authority: 0, time_validity_ms: 1000},
-      command_priority_max: 3
+      classification: %{priority: 0, authority: 0, time_validity_ms: 1000}
     }
 
     # --- ACTUATOR CONTROLLER ---

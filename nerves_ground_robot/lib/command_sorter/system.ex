@@ -19,12 +19,12 @@ defmodule CommandSorter.System do
   #   }
   # end
 
-  def start_sorter(name, max_priority) do
+  def start_sorter(name) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{
         id: name,
-        start: {CommandSorter.Sorter, :start_link, [%{name: name, max_priority: max_priority}]}
+        start: {CommandSorter.Sorter, :start_link, [%{name: name}]}
         }
      )
   end

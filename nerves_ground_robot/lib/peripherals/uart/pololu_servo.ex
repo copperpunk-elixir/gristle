@@ -9,15 +9,17 @@ defmodule Peripherals.Uart.PololuServo do
     Logger.debug("#{inspect(uart_ports)}")
     pololu_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
       device_description = Map.get(port, :description)
-      Logger.warn("desc: #{device_description}")
-      # |> String.downcase()
       if (device_description != nil) && String.contains?(String.downcase(device_description), "pololu") do
         acc ++ [port_name]
       else
         acc
       end
     end)
-    command_port = Enum.min(pololu_ports)
+    command_port =
+      case length(pololu_ports) do
+        0 -> nil
+        _ -> Enum.min(pololu_ports)
+      end
     Logger.debug("Pololu command port: #{command_port}")
     baud = @default_baud
     uart_ref = Peripherals.Uart.Utils.get_uart_ref()

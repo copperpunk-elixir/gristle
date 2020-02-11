@@ -17,7 +17,7 @@ defmodule Gimbal.Controller do
         attitude_rate: %{roll: 0,pitch: 0, yaw: 0},
         imu_dt: 0,
         attitude_cmd: %{roll: 0, pitch: 0, yaw: 0},
-        command_priority_max: config.command_priority_max,
+        incoming_command_priority_max: config.command_priority_max,
         actuator_cmd_classification: config.actuator_cmd_classification,
         pid_time_prev_us: nil,
         imu_ready: false,
