@@ -98,7 +98,7 @@ defmodule Joystick.Controller do
         {
           :topic_registry,
           state.joystick_cmd_header.topic,
-          {state.joystick_cmd_header.topic, state.joystick_cmd_classification, joystick_cmd_output}
+          {state.joystick_cmd_header.topic, :exact, state.joystick_cmd_classification, joystick_cmd_output}
         })
     end
     {:noreply, %{state | joystick_cmd_output: joystick_cmd_output}}

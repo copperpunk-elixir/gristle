@@ -8,10 +8,16 @@ defmodule Comms.NodeConnection do
     get_ip_address(interface)
   end
 
-  def get_node_name_with_domain(node_name, ip_address_tuple) do
+  # def get_node_name_with_domain(node_name, ip_address_tuple) do
+  #   ip_address_string = VintageNet.IP.ip_to_string(ip_address_tuple)
+  #   Logger.debug("#{ip_address_string}")
+  #   Atom.to_string(node_name) <> "@" <> ip_address_string
+  # end
+
+  def get_unique_node_name_with_domain(ip_address_tuple) do
     ip_address_string = VintageNet.IP.ip_to_string(ip_address_tuple)
     Logger.debug("#{ip_address_string}")
-    Atom.to_string(node_name) <> "@" <> ip_address_string
+    UUID.uuid1 <> "@" <> ip_address_string
   end
 
   def start_node(node_name_with_domain, cookie) do

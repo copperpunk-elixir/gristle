@@ -94,10 +94,10 @@ defmodule Actuator.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:actuator_cmd, classification, actuator_cmds}, state) do
+  def handle_cast({:actuator_cmd, cmd_type_min_max_exact, classification, actuator_cmds}, state) do
     Enum.each(actuator_cmds, fn {actuator, value} ->
       if output_in_bounds?(value) do
-        CommandSorter.Sorter.add_command({__MODULE__, actuator}, classification.priority, classification.authority, classification.time_validity_ms, value)
+        CommandSorter.Sorter.add_command({__MODULE__, actuator}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
       end
     end)
     {:noreply, state}
@@ -111,7 +111,7 @@ defmodule Actuator.Controller do
       # Logger.debug("gimbal :move actuator")
       # Logger.debug("move_actuator on #{actuator_name} to #{output}")
       # actuator = get_in(state, [:actuators, actuator_name])
-      output = get_output_for_actuator_name(actuator_name)
+      output = get_output_for_actuator_name(actuator_name, actuator.failsafe_cmd)
       channel_number = actuator.channel_number
       pwm_ms = get_pw_for_actuator_and_output(state.actuator_driver, actuator, output)
       unless pwm_ms == nil do
@@ -141,8 +141,8 @@ defmodule Actuator.Controller do
     GenServer.cast(__MODULE__, :stop_actuator_loop)
   end
 
-  def add_actuator_cmds(classification, actuator_cmds) do
-    GenServer.cast(__MODULE__, {:actuator_cmd, classification, actuator_cmds})
+  def add_actuator_cmds(cmd_type_min_max_exact, classification, actuator_cmds) do
+    GenServer.cast(__MODULE__, {:actuator_cmd, cmd_type_min_max_exact, classification, actuator_cmds})
   end
 
   # def move_actuator(actuator_name, output) do
@@ -150,8 +150,8 @@ defmodule Actuator.Controller do
   #   GenServer.cast(__MODULE__, {:move_actuator, actuator_name, output})
   # end
 
-  def get_output_for_actuator_name(actuator_name) do
-    CommandSorter.Sorter.get_command({__MODULE__, actuator_name})
+  def get_output_for_actuator_name(actuator_name, failsafe_cmd) do
+    CommandSorter.Sorter.get_command({__MODULE__, actuator_name}, failsafe_cmd)
     # GenServer.call(__MODULE__, {:get_output, actuator_name})
   end
 

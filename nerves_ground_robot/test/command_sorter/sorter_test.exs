@@ -47,38 +47,37 @@ defmodule CommandSorter.SorterTest do
   end
 
 
-
   test "CommandSorter Test Single Variable" do
     Common.ProcessRegistry.start_link
     config = %{name: :roll, max_priority: 3}
     CommandSorter.Sorter.start_link(config)
-    cmd_1 = %{priority: 1, authority: 3, expiration_mono_ms: (:erlang.monotonic_time(:millisecond)+200), value: -1.23}
-    cmd_2 = %{priority: 0, authority: 3, expiration_mono_ms: (:erlang.monotonic_time(:millisecond)+400), value: 2.5}
-    cmd_3 = %{priority: 0, authority: 1, expiration_mono_ms: (:erlang.monotonic_time(:millisecond)+100), value: 1.4}
-    cmd_4 = %{priority: 2, authority: 3, expiration_mono_ms: (:erlang.monotonic_time(:millisecond)+800), value: 3.5}
-    cmd_5 = %{priority: 4, authority: 0, expiration_mono_ms: (:erlang.monotonic_time(:millisecond)+1000), value: 0.0}
+    cmd_1 = %{priority: 1, authority: 3, time_validity_ms: 200, value: -1.23}
+    cmd_2 = %{priority: 0, authority: 3, time_validity_ms: 400, value: 2.5}
+    cmd_3 = %{priority: 0, authority: 1, time_validity_ms: 100, value: 1.4}
+    cmd_4 = %{priority: 2, authority: 3, time_validity_ms: 800, value: 3.5}
+    cmd_5 = %{priority: 4, authority: 0, time_validity_ms: 1000, value: 0.0}
     # stack = []
-    CommandSorter.Sorter.add_command(:roll, cmd_1.priority, cmd_1.authority, cmd_1.expiration_mono_ms, cmd_1.value)
+    CommandSorter.Sorter.add_command(:roll, :exact, cmd_1.priority, cmd_1.authority, cmd_1.time_validity_ms, cmd_1.value)
     # stack = [cmd_1]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_1.value
-    CommandSorter.Sorter.add_command(:roll, cmd_2.priority, cmd_2.authority, cmd_2.expiration_mono_ms, cmd_2.value)
-    # stack = [cmd_1, cmd_2]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_2.value
-    CommandSorter.Sorter.add_command(:roll, cmd_3.priority, cmd_3.authority, cmd_3.expiration_mono_ms, cmd_3.value)
-    # stack = [cmd_1, cmd_2, cmd_3]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_3.value
-    Process.sleep(300)
-    # stack = [cmd_2]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_2.value
-    CommandSorter.Sorter.add_command(:roll, cmd_4.priority, cmd_4.authority, cmd_4.expiration_mono_ms, cmd_4.value)
-    # stack = [cmd_2, cmd_4]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_2.value
-    Process.sleep(300)
-    # stack = [cmd_4]
-    assert CommandSorter.Sorter.get_command(:roll) == cmd_4.value
-    Process.sleep(200)
-    CommandSorter.Sorter.add_command(:roll, cmd_5.priority, cmd_5.authority, cmd_5.expiration_mono_ms, cmd_5.value)
-    # stack = [] # cmd_5 is outside the range of priorities
-    assert CommandSorter.Sorter.get_command(:roll) == nil
+    assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_1.value
+    # CommandSorter.Sorter.add_command(:roll, :exact, cmd_2.priority, cmd_2.authority, cmd_2.time_validity_ms, cmd_2.value)
+    # # stack = [cmd_1, cmd_2]
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_2.value
+    # CommandSorter.Sorter.add_command(:roll, :exact, cmd_3.priority, cmd_3.authority, cmd_3.time_validity_ms, cmd_3.value)
+    # # stack = [cmd_1, cmd_2, cmd_3]
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_3.value
+    # Process.sleep(300)
+    # # stack = [cmd_2]
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_2.value
+    # CommandSorter.Sorter.add_command(:roll, :exact, cmd_4.priority, cmd_4.authority, cmd_4.time_validity_ms, cmd_4.value)
+    # # stack = [cmd_2, cmd_4]
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_2.value
+    # Process.sleep(300)
+    # # stack = [cmd_4]
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == cmd_4.value
+    # Process.sleep(205)
+    # CommandSorter.Sorter.add_command(:roll, :exact, cmd_5.priority, cmd_5.authority, cmd_5.time_validity_ms, cmd_5.value)
+    # # stack = [] # cmd_5 is outside the range of priorities
+    # assert CommandSorter.Sorter.get_command(:roll, :exact) == nil
   end
 end

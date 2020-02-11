@@ -2,7 +2,6 @@ defmodule NodeConfig.GimbalJoystick do
   def get_config() do
     # --- COMMS ---
     comms = %{
-      node_name: :gimbal_joystick,
       groups: [:gimbal_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()

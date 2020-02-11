@@ -11,13 +11,18 @@ defmodule NodeConfig.Master do
   def read_hw_gpio() do
     # IMPORTANT!!!!
     # THESE ARE HARDCODED
-    pins = [19, 16, 13, 12]
+    pins = [19, 16, 13, 12, 6, 5]
     pins
     |> Enum.with_index
     |> Enum.reduce(0, fn ({pin, index}, acc) ->
       pin_ref = Peripherals.Gpio.Utils.get_gpio_ref_input_pullup(pin)
-      Process.sleep(1)
-      value =  1 - Circuits.GPIO.read(pin_ref)
+      value =
+        case pin_ref do
+          nil -> 0
+          ref ->
+            Process.sleep(1)
+            1 - Circuits.GPIO.read(ref)
+        end
       Logger.debug("value at pin #{pin}: #{value}")
       acc + Bitwise.<<<(value, index)
     end)
@@ -25,6 +30,7 @@ defmodule NodeConfig.Master do
 
   def get_node_type() do
     hw_config_map = %{
+      0 => :pc,
       1 => :gimbal,
       2 => :gimbal_joystick,
       3 => :track_vehicle,
@@ -52,6 +58,8 @@ defmodule NodeConfig.Master do
 
   def get_sw_config(node_type) do
     case node_type do
+      :pc ->
+        NodeConfig.Pc.get_config()
       :gimbal ->
         NodeConfig.Gimbal.get_config()
       :gimbal_joystick ->

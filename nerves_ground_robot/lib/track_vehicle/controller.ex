@@ -88,10 +88,10 @@ defmodule TrackVehicle.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:speed_and_turn_cmd, classification, speed_and_turn_cmd}, state) do
+  def handle_cast({:speed_and_turn_cmd, cmd_type_min_max_exact, classification, speed_and_turn_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(speed_and_turn_cmd))}")
     Enum.each(speed_and_turn_cmd, fn {process_variable, value} ->
-      CommandSorter.Sorter.add_command({__MODULE__, process_variable}, classification.priority, classification.authority, classification.time_validity_ms, value)
+      CommandSorter.Sorter.add_command({__MODULE__, process_variable}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
     end)
     # speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
     # turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)
@@ -109,7 +109,7 @@ defmodule TrackVehicle.Controller do
     # actuator_controller_process_name = state.config.actuator_controller.process_name
     if state.actuators_ready do
       speed_cmd = CommandSorter.Sorter.get_command({__MODULE__, :speed})
-      turn_cmd = CommandSorter.Sorter.get_command({__MODULE__, :speed})
+      turn_cmd = CommandSorter.Sorter.get_command({__MODULE__, :turn})
       unless speed_cmd==nil or turn_cmd==nil do
         {left_track_cmd, right_track_cmd} =
           calculate_track_cmd_for_speed_and_turn(speed_cmd, turn_cmd, state.speed_to_turn_ratio)
@@ -118,7 +118,7 @@ defmodule TrackVehicle.Controller do
           left_track: left_track_cmd,
           right_track: right_track_cmd
         }
-        Actuator.Controller.add_actuator_cmds(state.classification, actuator_cmds)
+        Actuator.Controller.add_actuator_cmds(:exact, state.classification, actuator_cmds)
       end
       # Actuator.Controller.move_actuator(actuator_pid.actuator, actuator_pid.output)
     end

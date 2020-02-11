@@ -2,7 +2,6 @@ defmodule NodeConfig.TrackVehicleJoystick do
   def get_config() do
     # --- COMMS ---
     comms = %{
-      node_name: :track_vehicle_joystick,
       groups: [:track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()

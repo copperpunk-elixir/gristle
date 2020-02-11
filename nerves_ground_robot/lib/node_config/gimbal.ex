@@ -5,7 +5,6 @@ defmodule NodeConfig.Gimbal do
     comms = %{
       #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
       # except exist
-      node_name: :gimbal,
       groups: [:gimbal_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -43,8 +42,8 @@ defmodule NodeConfig.Gimbal do
     # --- ACTUATOR CONTROLLER ---
     actuators =
       PidActuatorInterface.new_actuators_config()
-      |> PidActuatorInterface.add_actuator(:roll_axis_motor, 0, false, 1100, 1900)
-      |> PidActuatorInterface.add_actuator(:pitch_axis_motor, 1, false, 1100, 1900)
+      |> PidActuatorInterface.add_actuator(:roll_axis_motor, 0, false, 1100, 1900, 1500)
+      |> PidActuatorInterface.add_actuator(:pitch_axis_motor, 1, false, 1100, 1900, 1500)
 
     actuator_controller = %{
       actuator_loop_interval_ms: 10,

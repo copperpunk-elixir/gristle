@@ -13,6 +13,8 @@ defmodule Common.Application do
     config = NodeConfig.Master.get_config()
     Logger.debug("Load #{config.node_type}")
     case config.node_type do
+      :pc ->
+        Pc.System.start_link(config)
       :gimbal ->
         Gimbal.System.start_link(config)
       :gimbal_joystick ->

@@ -97,10 +97,10 @@ defmodule Gimbal.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:attitude_cmd, classification, attitude_cmd}, state) do
+  def handle_cast({:attitude_cmd, cmd_type_min_max_exact, classification, attitude_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(attitude_cmd))}")
     Enum.each(attitude_cmd, fn {cmd_process_variable, value} ->
-      CommandSorter.Sorter.add_command({__MODULE__, cmd_process_variable}, classification.priority, classification.authority, classification.time_validity_ms, value)
+      CommandSorter.Sorter.add_command({__MODULE__, cmd_process_variable}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
     end)
     {:noreply, state}
   end
@@ -108,7 +108,7 @@ defmodule Gimbal.Controller do
   @impl GenServer
   def handle_cast({:pid_updated, _process_variable, actuator, output}, state) do
     # Logger.debug("Ch name/Actuator/output: #{channel_name}/#{actuator_pid.actuator}/#{output}")
-    Actuator.Controller.add_actuator_cmds(state.actuator_cmd_classification, Map.put(%{}, actuator, output))
+    Actuator.Controller.add_actuator_cmds(:exact, state.actuator_cmd_classification, Map.put(%{}, actuator, output))
     {:noreply, state}
     # {:noreply, put_in(state,[:pid_outputs, process_variable, actuator], output)}
   end
@@ -191,11 +191,7 @@ defmodule Gimbal.Controller do
       process_variable = pid_actuator_link.process_variable
       actuator = pid_actuator_link.actuator
       # Logger.debug("#{channel_name}")
-      cmd =
-        case CommandSorter.Sorter.get_command({__MODULE__, process_variable}) do
-          nil -> pid_actuator_link.failsafe_cmd
-          value -> value
-        end
+      cmd = CommandSorter.Sorter.get_command({__MODULE__, process_variable}, pid_actuator_link.failsafe_cmd)
       # cmd = state.attitude_cmd[channel.process_variable]
       act = state.attitude[process_variable]
       act_rate = state.attitude[process_variable]

@@ -4,7 +4,6 @@ defmodule NodeConfig.TrackVehicle do
     comms = %{
       #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
       # except exist
-      node_name: :track_vehicle,
       groups: [:track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -32,13 +31,15 @@ defmodule NodeConfig.TrackVehicle do
       min_pw_ms: 1100,
       max_pw_ms: 1900
     }
+
+    actuators =
+      PidActuatorInterface.new_actuators_config()
+      |> PidActuatorInterface.add_actuator(:left_track_motor, 0, false, 1100, 1900, 1500)
+      |> PidActuatorInterface.add_actuator(:right_track_motor, 1, false, 1100, 1900, 1500)
     actuator_controller = %{
       # local_publisher_topics: [:actuator_status],
       pwm_freq: 100,
-      actuators: %{
-        left_track: left_track_actuator,
-        right_track: right_track_actuator
-      }
+      actuators: actuators
     }
 
     # --- RETURN ---

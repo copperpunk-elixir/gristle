@@ -17,7 +17,6 @@ defmodule Comms.Operator do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        node_name: config.node_name,
         node_name_with_domain: nil,
         ip_address_tuple: nil,
         socket: nil,
@@ -26,7 +25,7 @@ defmodule Comms.Operator do
         interface: config.interface,
         cookie: config.cookie,
         broadcast_timer: nil,
-        broadcast_timer_interval_ms: 1000
+        broadcast_timer_interval_ms: Map.get(config, :broadcast_timer_interval_ms, 1000)
      }}
   end
 
@@ -42,12 +41,15 @@ defmodule Comms.Operator do
           GenServer.cast(self(), :start_node_and_broadcast)
           state
         ip_address_tuple ->
-          node_name_with_domain = Comms.NodeConnection.get_node_name_with_domain(state.node_name, ip_address_tuple)
-          Comms.NodeConnection.start_node(node_name_with_domain, state.cookie)
+          # node_name_with_domain = Comms.NodeConnection.get_node_name_with_domain(state.node_name, ip_address_tuple)
+          unique_node_name_with_domain = Comms.NodeConnection.get_unique_node_name_with_domain(ip_address_tuple)
+          Logger.warn("#{unique_node_name_with_domain}")
+          # Comms.NodeConnection.start_node(node_name_with_domain, state.cookie)
+          Comms.NodeConnection.start_node(unique_node_name_with_domain, state.cookie)
           socket = Comms.NodeConnection.open_socket_active()
           broadcast_timer = start_broadcast_timer(state.broadcast_timer_interval_ms)
           create_and_join_global_groups(state.groups)
-          %{state | ip_address_tuple: ip_address_tuple, node_name_with_domain: node_name_with_domain, socket: socket, broadcast_timer: broadcast_timer}
+          %{state | ip_address_tuple: ip_address_tuple, node_name_with_domain: unique_node_name_with_domain, socket: socket, broadcast_timer: broadcast_timer}
       end
     {:noreply, state}
   end

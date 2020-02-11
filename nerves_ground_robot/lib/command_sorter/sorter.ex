@@ -2,6 +2,8 @@ defmodule CommandSorter.Sorter do
   use GenServer
   require Logger
 
+  @default_call_timeout 50
+
   def start_link(config) do
     Logger.debug("Start CommandSorter: #{inspect(config.name)}")
     GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
@@ -11,39 +13,73 @@ defmodule CommandSorter.Sorter do
   def init(config) do
     Logger.debug("config: #{inspect(config)}")
     {:ok, %{
-        commands: [],
+        commands: %{
+          exact: [],
+          min: [],
+          max: []
+        },
         max_priority: config.max_priority
      }
     }
   end
 
   @impl GenServer
-  def handle_cast({:add_command, priority, authority, expiration_mono_ms, value}, state) do
+  def handle_cast({:add_command, cmd_type_min_max_exact, priority, authority, expiration_mono_ms, value}, state) do
     # Remove any commands that have the same priority/authority (there should be at most 1)
-    unique_cmds = Enum.reject(state.commands, fn cmd ->
+    commands_list = get_in(state.commands, [cmd_type_min_max_exact])
+    unique_cmds = Enum.reject(commands_list, fn cmd ->
       (cmd.priority==priority) && (cmd.authority==authority)
     end)
     new_cmd = CommandSorter.CmdStruct.create_cmd(priority, authority, expiration_mono_ms, value)
     # new_cmd = %{priority: priority, authority: authority, expiration_mono_ms: expiration_mono_ms, value: value}
     # Logger.debug("new cmd: #{inspect(new_cmd)}")
-    {:noreply, %{state | commands: [new_cmd | unique_cmds]}}
+    {:noreply, put_in(state, [:commands, cmd_type_min_max_exact], [new_cmd | unique_cmds])}
   end
 
   @impl GenServer
-  def handle_call(:get_command, _from, state) do
+  def handle_call({:get_command, cmd_type_min_max_exact}, _from, state) do
     # Logger.debug("Available commands: #{inspect(state.commands)}")
-    {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(state.commands, state.max_priority)
+    commands_list = get_in(state.commands, [cmd_type_min_max_exact])
+    Logger.debug("#{inspect(state)}")
+    Logger.debug("#{inspect(commands_list)}")
+    {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(commands_list, state.max_priority)
     # Logger.debug("Most urgent cmd: #{inspect(cmd)}")
-    {:reply, cmd, %{state | commands: remaining_valid_commands}}
+    {:reply, cmd, put_in(state, [:commands, cmd_type_min_max_exact], remaining_valid_commands)}
   end
 
-  def add_command(name, priority, authority, time_validity_ms, value) do
+  def add_command(name, cmd_type_min_max_exact, priority, authority, time_validity_ms, value) do
     expiration_mono_ms = :erlang.monotonic_time(:millisecond) + time_validity_ms
-    GenServer.cast(via_tuple(name), {:add_command, priority, authority, expiration_mono_ms, value})
+    GenServer.cast(via_tuple(name), {:add_command, cmd_type_min_max_exact, priority, authority, expiration_mono_ms, value})
   end
 
-  def get_command(name) do
-    GenServer.call(via_tuple(name), :get_command, 50)
+  def get_command(name, failsafe_value) do
+    desired_value =
+      case GenServer.call(via_tuple(name), {:get_command, :exact}, @default_call_timeout) do
+        nil -> failsafe_value
+        value -> value
+      end
+
+    min_limit =
+      case GenServer.call(via_tuple(name), {:get_command, :min}, @default_call_timeout) do
+        nil -> desired_value
+        min_value -> min_value
+      end
+
+    max_limit =
+      case GenServer.call(via_tuple(name), {:get_command, :max}, @default_call_timeout) do
+        nil -> desired_value
+        max_value -> max_value
+      end
+
+    Common.Utils.Math.constrain(desired_value, min_limit, max_limit)
+  end
+
+  def get_command_minimum(name) do
+    GenServer.call(via_tuple(name), {:get_command, :min}, 50)
+  end
+
+  def get_command_maximum(name) do
+    GenServer.call(via_tuple(name), {:get_command, :max}, 50)
   end
 
   def get_most_urgent_and_return_remaining(cmds, max_priority) do

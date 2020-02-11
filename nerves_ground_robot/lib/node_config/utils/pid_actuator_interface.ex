@@ -36,8 +36,14 @@ defmodule NodeConfig.Utils.PidActuatorInterface do
     %{}
   end
 
-  def add_actuator(actuators, actuator_name, channel_number, reversed, min_pw_ms, max_pw_ms) do
-    actuator = %{channel_number: channel_number, reversed: reversed, min_pw_ms: min_pw_ms, max_pw_ms: max_pw_ms}
+  def add_actuator(actuators, actuator_name, channel_number, reversed, min_pw_ms, max_pw_ms, failsafe_cmd) do
+    actuator = %{
+      channel_number: channel_number,
+      reversed: reversed,
+      min_pw_ms: min_pw_ms,
+      max_pw_ms: max_pw_ms,
+      failsafe_cmd: failsafe_cmd
+    }
     Map.put(actuators, actuator_name, actuator)
   end
 end

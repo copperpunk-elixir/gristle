@@ -14,11 +14,10 @@ defmodule Actuator.ControllerTest do
       |> PidActuatorInterface.add_actuator(:roll_motor, 0, false, 1100, 1900)
       |> PidActuatorInterface.add_actuator(:pitch_motor, 1, true, 1100, 1900)
     actuator_driver = :pololu
-    config = %{actuator_driver: actuator_driver, actuators: actuators, command_priority_max: 3}
+    config = %{actuator_driver: actuator_driver, actuators: actuators, command_priority_max: 3, actuator_loop_interval_ms: 10}
 
     Actuator.Controller.start_link(config)
-
-    Process.sleep(10)
+    Common.Utils.Comms.wait_for_genserver_start(Actuator.Controller)
     cmd_classification = %{priority: 0, authority: 0, time_validity_ms: 1000}
     # Move roll actuator to min value
     Actuator.Controller.add_actuator_cmds(cmd_classification, %{roll_motor: 0})
