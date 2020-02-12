@@ -1,9 +1,8 @@
 defmodule NodeConfig.TrackVehicle do
+  alias NodeConfig.Utils.PidActuatorInterface
   def get_config() do
     # --- COMMS ---
     comms = %{
-      #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
-      # except exist
       groups: [:track_vehicle_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
@@ -33,7 +32,6 @@ defmodule NodeConfig.TrackVehicle do
 
     track_vehicle_controller = %{
       pid_actuator_links: pid_actuator_links,
-      speed_to_turn_ratio: 3.0,
       subscriber_topics: [:actuator_status, :speed_and_turn_cmd],
       actuator_cmd_classification: %{priority: 0, authority: 0, time_validity_ms: 1000}
     }
