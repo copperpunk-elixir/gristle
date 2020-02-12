@@ -20,10 +20,10 @@ defmodule Gimbal.ControllerTest do
   assert Gimbal.Controller.get_parameter(:none) == nil
   # Send attitude commads
   attitude_cmd_classification = %{priority: 0, authority: 0, time_validity_ms: 200}
-  GenServer.cast(Gimbal.Controller, {:attitude_cmd, attitude_cmd_classification, %{roll: 1.0, pitch: -1.0}})
+  GenServer.cast(Gimbal.Controller, {:attitude_cmd, :exact, attitude_cmd_classification, %{roll: 1.0, pitch: -1.0}})
   Process.sleep(100)
-  assert CommandSorter.Sorter.get_command({Gimbal.Controller, :roll}) == 1.0
-  assert CommandSorter.Sorter.get_command({Gimbal.Controller, :pitch}) == -1.0
+  assert CommandSorter.Sorter.get_command({Gimbal.Controller, :roll}, :exact) == 1.0
+  assert CommandSorter.Sorter.get_command({Gimbal.Controller, :pitch}, :exact) == -1.0
   # Send attitude update
   # will trigger PID update
   Pid.Controller.start_link(config.pid_controller)

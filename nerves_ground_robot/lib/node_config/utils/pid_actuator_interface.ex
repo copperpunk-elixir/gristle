@@ -6,8 +6,14 @@ defmodule NodeConfig.Utils.PidActuatorInterface do
     []
   end
 
-  def add_pid_actuator_link(pid_actuator_links, process_variable, actuator_name, failsafe_cmd) do
-    pid_actuator_link = %{process_variable: process_variable, actuator: actuator_name, failsafe_cmd: failsafe_cmd}
+  def add_pid_actuator_link(pid_actuator_links, new_link) do
+    pid_actuator_link = %{
+      process_variable: new_link.process_variable,
+      actuator: new_link.actuator,
+      cmd_limit_min: new_link.cmd_limit_min,
+      cmd_limit_max: new_link.cmd_limit_max,
+      failsafe_cmd: new_link.failsafe_cmd
+    }
     [pid_actuator_link | pid_actuator_links]
   end
 
@@ -16,19 +22,19 @@ defmodule NodeConfig.Utils.PidActuatorInterface do
     %{}
   end
 
-  def add_pid(pids, process_variable, actuator, kp, ki, kd, rate_or_position, one_or_two_sided) do
+  def add_pid(pids, new_pid) do
     pid = %{
-      kp: kp,
-      ki: ki,
-      kd: kd,
-      rate_or_position: rate_or_position,
-      one_or_two_sided: one_or_two_sided,
-      offset: 0
+      kp: new_pid.kp,
+      ki: new_pid.ki,
+      kd: new_pid.kd,
+      rate_or_position: new_pid.rate_or_position,
+      one_or_two_sided: new_pid.one_or_two_sided,
+      offset: Map.get(new_pid, :offset, 0)
     }
     process_variable_actuators =
-      Map.get(pids, process_variable, %{})
-      |> Map.put(actuator, pid)
-    Map.put(pids, process_variable, process_variable_actuators)
+      Map.get(pids, new_pid.process_variable, %{})
+      |> Map.put(new_pid.actuator, pid)
+    Map.put(pids, new_pid.process_variable, process_variable_actuators)
   end
 
   # Actuators config
@@ -36,14 +42,16 @@ defmodule NodeConfig.Utils.PidActuatorInterface do
     %{}
   end
 
-  def add_actuator(actuators, actuator_name, channel_number, reversed, min_pw_ms, max_pw_ms, failsafe_cmd) do
+  def add_actuator(actuators, new_actuator) do
     actuator = %{
-      channel_number: channel_number,
-      reversed: reversed,
-      min_pw_ms: min_pw_ms,
-      max_pw_ms: max_pw_ms,
-      failsafe_cmd: failsafe_cmd
+      channel_number: new_actuator.channel_number,
+      reversed: new_actuator.reversed,
+      min_pw_ms: new_actuator.min_pw_ms,
+      max_pw_ms: new_actuator.max_pw_ms,
+      cmd_limit_min: new_actuator.cmd_limit_min,
+      cmd_limit_max: new_actuator.cmd_limit_max,
+      failsafe_cmd: new_actuator.failsafe_cmd
     }
-    Map.put(actuators, actuator_name, actuator)
+    Map.put(actuators, new_actuator.name, actuator)
   end
 end

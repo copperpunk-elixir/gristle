@@ -10,13 +10,15 @@ defmodule CommandSorter.Sorter do
   end
 
   @impl GenServer
-  def init(_) do
+  def init(config) do
     {:ok, %{
         commands: %{
           exact: [],
           min: [],
           max: []
-        }
+        },
+        command_limit_min: config.command_limit_min,
+        command_limit_max: config.command_limit_max
      }
     }
   end
@@ -24,14 +26,21 @@ defmodule CommandSorter.Sorter do
   @impl GenServer
   def handle_cast({:add_command, cmd_type_min_max_exact, classification, value}, state) do
     # Remove any commands that have the same priority/authority (there should be at most 1)
-    commands_list = get_in(state.commands, [cmd_type_min_max_exact])
-    unique_cmds = Enum.reject(commands_list, fn cmd ->
-      (cmd.priority==classification.priority) && (cmd.authority==classification.authority)
-    end)
-    new_cmd = CommandSorter.CmdStruct.create_cmd(classification.priority, classification.authority, classification.expiration_mono_ms, value)
+    value = verify_command_within_limits(value, state.command_limit_min, state.command_limit_max)
+    state =
+    if value == nil do
+      state
+    else
+      commands_list = get_in(state.commands, [cmd_type_min_max_exact])
+      unique_cmds = Enum.reject(commands_list, fn cmd ->
+        (cmd.priority==classification.priority) && (cmd.authority==classification.authority)
+      end)
+      new_cmd = CommandSorter.CmdStruct.create_cmd(classification, value)
+      put_in(state, [:commands, cmd_type_min_max_exact], [new_cmd | unique_cmds])
+    end
     # new_cmd = %{priority: priority, authority: authority, expiration_mono_ms: expiration_mono_ms, value: value}
     # Logger.debug("new cmd: #{inspect(new_cmd)}")
-    {:noreply, put_in(state, [:commands, cmd_type_min_max_exact], [new_cmd | unique_cmds])}
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -76,6 +85,14 @@ defmodule CommandSorter.Sorter do
 
   def get_command_maximum(name) do
     GenServer.call(via_tuple(name), {:get_command, :max}, 50)
+  end
+
+  def verify_command_within_limits(cmd_value, cmd_limit_min, cmd_limit_max) do
+    if (cmd_value < cmd_limit_min) || (cmd_value > cmd_limit_max) do
+      nil
+    else
+      cmd_value
+    end
   end
 
   def get_most_urgent_and_return_remaining(cmds) do

@@ -17,7 +17,6 @@ defmodule Gimbal.Controller do
         attitude_rate: %{roll: 0,pitch: 0, yaw: 0},
         imu_dt: 0,
         attitude_cmd: %{roll: 0, pitch: 0, yaw: 0},
-        incoming_command_priority_max: config.command_priority_max,
         actuator_cmd_classification: config.actuator_cmd_classification,
         pid_time_prev_us: nil,
         imu_ready: false,
@@ -48,12 +47,8 @@ defmodule Gimbal.Controller do
     # Command sorters will store the values of all the process variable COMMANDS
     # i.e. ROLL, or PITCH, or YAW
     Enum.each(state.pid_actuator_links, fn pid_actuator_link ->
-      CommandSorter.System.start_sorter({__MODULE__, pid_actuator_link.process_variable}, state.command_priority_max)
+      CommandSorter.System.start_sorter({__MODULE__, pid_actuator_link.process_variable}, pid_actuator_link.cmd_limit_min, pid_actuator_link.cmd_limit_max)
     end)
-    # Logger.debug("Start command sorters: #{inspect(cmd_variables)}")
-    # CommandSorter.System.start_sorter({__MODULE__, :roll}, state.command_priority_max)
-    # CommandSorter.System.start_sorter({__MODULE__, :pitch}, state.command_priority_max)
-    # CommandSorter.System.start_sorter({__MODULE__, :yaw}, state.command_priority_max)
     {:noreply, state}
   end
 
@@ -100,7 +95,7 @@ defmodule Gimbal.Controller do
   def handle_cast({:attitude_cmd, cmd_type_min_max_exact, classification, attitude_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(attitude_cmd))}")
     Enum.each(attitude_cmd, fn {cmd_process_variable, value} ->
-      CommandSorter.Sorter.add_command({__MODULE__, cmd_process_variable}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
+      CommandSorter.Sorter.add_command({__MODULE__, cmd_process_variable}, cmd_type_min_max_exact, classification, value)
     end)
     {:noreply, state}
   end

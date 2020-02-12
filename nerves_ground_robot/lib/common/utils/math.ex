@@ -128,9 +128,12 @@ defmodule Common.Utils.Math do
   end
 
   def rad2deg(x) do
-    Float.round(x*180/:math.pi(),3)
+    x*180/:math.pi()
   end
 
+  def rad2deg_print(x) do
+    Float.round(x*180/:math.pi(),3)
+  end
   def deg2rad_with_length(x_tuple, len) do
     x_list = Enum.map(0..len-1, fn index ->
       deg2rad(elem(x_tuple, index))

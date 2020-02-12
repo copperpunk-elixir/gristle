@@ -19,12 +19,21 @@ defmodule CommandSorter.System do
   #   }
   # end
 
-  def start_sorter(name) do
+  def start_sorter(name, command_limit_min, command_limit_max) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{
         id: name,
-        start: {CommandSorter.Sorter, :start_link, [%{name: name}]}
+        start: {
+          CommandSorter.Sorter,
+          :start_link,
+          [
+            %{
+              name: name,
+              command_limit_min: command_limit_min,
+              command_limit_max: command_limit_max
+            }
+          ]}
         }
      )
   end

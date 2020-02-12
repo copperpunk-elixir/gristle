@@ -40,8 +40,8 @@ defmodule Actuator.Controller do
 
   @impl GenServer
   def handle_cast(:start_command_sorters, state) do
-    Enum.each(state.actuators, fn {actuator_name, _actuator} ->
-      CommandSorter.System.start_sorter({__MODULE__, actuator_name})
+    Enum.each(state.actuators, fn {actuator_name, actuator} ->
+      CommandSorter.System.start_sorter({__MODULE__, actuator_name}, actuator.cmd_limit_min, actuator.cmd_limit_max)
     end)
     {:noreply, state}
   end

@@ -6,7 +6,6 @@ defmodule Peripherals.Uart.PololuServo do
 
   def open_port() do
     uart_ports = Circuits.UART.enumerate()
-    Logger.debug("#{inspect(uart_ports)}")
     pololu_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
       device_description = Map.get(port, :description)
       if (device_description != nil) && String.contains?(String.downcase(device_description), "pololu") do

@@ -7,7 +7,8 @@ defmodule CommandSorter.CmdStructTest do
     authority = 3
     expiration_mono_ms = 3000
     value = -1.23
-    cmdstruct = CommandSorter.CmdStruct.create_cmd(priority, authority, expiration_mono_ms, value)
+    classification = %{priority: 1, authority: 3, expiration_mono_ms: expiration_mono_ms}
+    cmdstruct = CommandSorter.CmdStruct.create_cmd(classification, value)
     assert cmdstruct.priority == priority
     assert cmdstruct.authority == authority
     assert cmdstruct.expiration_mono_ms == expiration_mono_ms
