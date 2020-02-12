@@ -17,8 +17,8 @@ defmodule CommandSorter.Sorter do
           min: [],
           max: []
         },
-        command_limit_min: config.command_limit_min,
-        command_limit_max: config.command_limit_max
+        cmd_limit_min: config.cmd_limit_min,
+        cmd_limit_max: config.cmd_limit_max
      }
     }
   end
@@ -26,7 +26,7 @@ defmodule CommandSorter.Sorter do
   @impl GenServer
   def handle_cast({:add_command, cmd_type_min_max_exact, classification, value}, state) do
     # Remove any commands that have the same priority/authority (there should be at most 1)
-    value = verify_command_within_limits(value, state.command_limit_min, state.command_limit_max)
+    value = verify_command_within_limits(value, state.cmd_limit_min, state.cmd_limit_max)
     state =
     if value == nil do
       state
@@ -45,10 +45,8 @@ defmodule CommandSorter.Sorter do
 
   @impl GenServer
   def handle_call({:get_command, cmd_type_min_max_exact}, _from, state) do
-    # Logger.debug("Available commands: #{inspect(state.commands)}")
     commands_list = get_in(state.commands, [cmd_type_min_max_exact])
     {cmd, remaining_valid_commands} = get_most_urgent_and_return_remaining(commands_list)
-    # Logger.debug("Most urgent cmd: #{inspect(cmd)}")
     {:reply, cmd, put_in(state, [:commands, cmd_type_min_max_exact], remaining_valid_commands)}
   end
 
@@ -58,23 +56,27 @@ defmodule CommandSorter.Sorter do
   end
 
   def get_command(name, failsafe_value) do
+    # Logger.debug("Get command: #{inspect(name)}")
     desired_value =
       case GenServer.call(via_tuple(name), {:get_command, :exact}, @default_call_timeout) do
         nil -> failsafe_value
         value -> value
       end
+    # Logger.warn("desired: #{desired_value}")
 
     min_limit =
       case GenServer.call(via_tuple(name), {:get_command, :min}, @default_call_timeout) do
         nil -> desired_value
         min_value -> min_value
       end
+    # Logger.warn("min_limit: #{min_limit}")
 
     max_limit =
       case GenServer.call(via_tuple(name), {:get_command, :max}, @default_call_timeout) do
         nil -> desired_value
         max_value -> max_value
       end
+    # Logger.warn("max_limi: #{max_limit}")
 
     Common.Utils.Math.constrain(desired_value, min_limit, max_limit)
   end

@@ -10,31 +10,60 @@ defmodule NodeConfig.TrackVehicle do
     }
 
     # --- SYSTEM ---
+    speed_pid_actuator_link = %{
+      process_variable: :speed,
+      actuator: nil,
+      cmd_limit_min: -1,
+      cmd_limit_max: 1,
+      failsafe_cmd: 0,
+    }
+
+    turn_pid_actuator_link = %{
+      process_variable: :turn,
+      actuator: nil,
+      cmd_limit_min: -1,
+      cmd_limit_max: 1,
+      failsafe_cmd: 0,
+    }
+
+    pid_actuator_links =
+      PidActuatorInterface.new_pid_actuator_config()
+      |> PidActuatorInterface.add_pid_actuator_link(speed_pid_actuator_link)
+      |> PidActuatorInterface.add_pid_actuator_link(turn_pid_actuator_link)
+
     track_vehicle_controller = %{
-      actuator_loop_interval_ms: 10,
+      pid_actuator_links: pid_actuator_links,
       speed_to_turn_ratio: 3.0,
       subscriber_topics: [:actuator_status, :speed_and_turn_cmd],
-      classification: %{priority: 0, authority: 0, time_validity_ms: 1000}
+      actuator_cmd_classification: %{priority: 0, authority: 0, time_validity_ms: 1000}
     }
 
     # --- ACTUATOR CONTROLLER ---
-    left_track_actuator = %{
+    left_track_motor = %{
+      name: :left_track_motor,
       channel_number: 0,
       reversed: false,
       min_pw_ms: 1100,
-      max_pw_ms: 1900
+      max_pw_ms: 1900,
+      cmd_limit_min: 0,
+      cmd_limit_max: 1,
+      failsafe_cmd: 0.5
     }
-    right_track_actuator = %{
+    right_track_motor = %{
+      name: :right_track_motor,
       channel_number: 1,
       reversed: false,
       min_pw_ms: 1100,
-      max_pw_ms: 1900
+      max_pw_ms: 1900,
+      cmd_limit_min: 0,
+      cmd_limit_max: 1,
+      failsafe_cmd: 0.5
     }
 
     actuators =
       PidActuatorInterface.new_actuators_config()
-      |> PidActuatorInterface.add_actuator(:left_track_motor, 0, false, 1100, 1900, 1500)
-      |> PidActuatorInterface.add_actuator(:right_track_motor, 1, false, 1100, 1900, 1500)
+      |> PidActuatorInterface.add_actuator(left_track_motor)
+      |> PidActuatorInterface.add_actuator(right_track_motor)
     actuator_controller = %{
       # local_publisher_topics: [:actuator_status],
       pwm_freq: 100,

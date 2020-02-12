@@ -71,6 +71,7 @@ defmodule Actuator.Controller do
     state =
       case :timer.send_interval(state.actuator_loop_interval_ms, self(), :actuator_loop) do
         {:ok, actuator_timer} ->
+          Logger.debug("Actuator loop started!")
           %{state | actuator_timer: actuator_timer}
         {_, reason} ->
           Logger.debug("Could not start actuator_controller timer: #{inspect(reason)} ")
@@ -108,9 +109,9 @@ defmodule Actuator.Controller do
     # actuator_controller_process_name = state.config.actuator_controller.process_name
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
       # Logger.debug("gimbal :move actuator")
-      # Logger.debug("move_actuator on #{actuator_name} to #{output}")
       # actuator = get_in(state, [:actuators, actuator_name])
       output = get_output_for_actuator_name(actuator_name, actuator.failsafe_cmd)
+      # Logger.debug("move_actuator on #{actuator_name} to #{output}")
       channel_number = actuator.channel_number
       pwm_ms = get_pw_for_actuator_and_output(state.actuator_driver, actuator, output)
       unless pwm_ms == nil do
@@ -133,6 +134,7 @@ defmodule Actuator.Controller do
   # end
 
   def arm_actuators() do
+    Logger.warn("arm_actuators called!")
     GenServer.cast(__MODULE__, :start_actuator_loop)
   end
 

@@ -110,7 +110,7 @@ defmodule Gimbal.Controller do
 
   @impl GenServer
   def handle_cast({:euler_eulerrate_dt, attitude, attitude_rate, imu_dt}, state) do
-    # Logger.debug("attitude #{inspect(Common.Utils.rad2deg_map(attitude))}")
+    # Logger.debug("attitude #{inspect(Common.Utils.Math.rad2deg_map(attitude))}")
     # Logger.debug("rate: #{inspect(Common.Utils.rad2deg_map(attitude_rate))}")
     state = %{state | attitude: attitude, attitude_rate: attitude_rate, imu_dt: imu_dt}
     state = if (state.actuators_ready) do

@@ -15,8 +15,8 @@ defmodule TrackVehicle.Controller do
     {:ok,  %{
         # speed_cmd: 0,
         # turn_cmd: 0,
+        pid_actuator_links: Map.get(config, :pid_actuator_links),
         speed_to_turn_ratio: Map.get(config, :speed_to_turn_ratio, 1),
-        command_priority_max: config.command_priority_max,
         classification: config.classification,
         actuators_ready: false,
         actuator_timer: nil,
@@ -91,7 +91,7 @@ defmodule TrackVehicle.Controller do
   def handle_cast({:speed_and_turn_cmd, cmd_type_min_max_exact, classification, speed_and_turn_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(speed_and_turn_cmd))}")
     Enum.each(speed_and_turn_cmd, fn {process_variable, value} ->
-      CommandSorter.Sorter.add_command({__MODULE__, process_variable}, cmd_type_min_max_exact, classification.priority, classification.authority, classification.time_validity_ms, value)
+      CommandSorter.Sorter.add_command({__MODULE__, process_variable}, cmd_type_min_max_exact, classification, value)
     end)
     # speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
     # turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)

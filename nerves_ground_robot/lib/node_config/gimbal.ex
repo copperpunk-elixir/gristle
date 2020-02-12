@@ -14,16 +14,16 @@ defmodule NodeConfig.Gimbal do
     roll_pid_actuator_link = %{
       process_variable: :roll,
       actuator: :roll_axis_motor,
-      cmd_limit_min: Common.Utils.Math.deg2rad(30),
-      cmd_limit_max: Common.Utils.Math.deg2rad(-30),
+      cmd_limit_min: Common.Utils.Math.deg2rad(-30),
+      cmd_limit_max: Common.Utils.Math.deg2rad(30),
       failsafe_cmd: 0
     }
 
     pitch_pid_actuator_link = %{
       process_variable: :pitch,
       actuator: :pitch_axis_motor,
-      cmd_limit_min: Common.Utils.Math.deg2rad(30),
-      cmd_limit_max: Common.Utils.Math.deg2rad(-30),
+      cmd_limit_min: Common.Utils.Math.deg2rad(-30),
+      cmd_limit_max: Common.Utils.Math.deg2rad(30),
       failsafe_cmd: 0
     }
     pid_actuator_links =
