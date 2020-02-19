@@ -23,7 +23,7 @@ defmodule NodeConfig.GimbalJoystick do
       multiplier: 0.524
     }
 
-    joystick_controller = %{
+    joystick_interface_input = %{
       joystick_driver_config: %{driver: :adsadc},
       send_msg_switch_pin: 25,
       joystick_cmd_header: %{group: :gimbal_commands, topic: :attitude_cmd},
@@ -35,7 +35,7 @@ defmodule NodeConfig.GimbalJoystick do
     # --- RETURN ---
     %{
       comms: comms,
-      joystick_controller: joystick_controller,
+      joystick_interface_input: joystick_interface_input,
     }
   end
 end

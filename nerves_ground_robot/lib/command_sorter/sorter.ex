@@ -6,7 +6,8 @@ defmodule CommandSorter.Sorter do
 
   def start_link(config) do
     Logger.debug("Start CommandSorter: #{inspect(config.name)}")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, config.name)
+    GenServer.start_link(__MODULE__, config, name: name_in_registry)
   end
 
   @impl GenServer
@@ -52,27 +53,29 @@ defmodule CommandSorter.Sorter do
 
   def add_command(name, cmd_type_min_max_exact, classification, value) do
     expiration_mono_ms = :erlang.monotonic_time(:millisecond) + classification.time_validity_ms
-    GenServer.cast(via_tuple(name), {:add_command, cmd_type_min_max_exact, Map.put(classification,:expiration_mono_ms, expiration_mono_ms), value})
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
+    GenServer.cast(name_in_registry, {:add_command, cmd_type_min_max_exact, Map.put(classification,:expiration_mono_ms, expiration_mono_ms), value})
   end
 
   def get_command(name, failsafe_value) do
     # Logger.debug("Get command: #{inspect(name)}")
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     desired_value =
-      case GenServer.call(via_tuple(name), {:get_command, :exact}, @default_call_timeout) do
+      case GenServer.call(name_in_registry, {:get_command, :exact}, @default_call_timeout) do
         nil -> failsafe_value
         value -> value
       end
     # Logger.warn("desired: #{desired_value}")
 
     min_limit =
-      case GenServer.call(via_tuple(name), {:get_command, :min}, @default_call_timeout) do
+      case GenServer.call(name_in_registry, {:get_command, :min}, @default_call_timeout) do
         nil -> desired_value
         min_value -> min_value
       end
     # Logger.warn("min_limit: #{min_limit}")
 
     max_limit =
-      case GenServer.call(via_tuple(name), {:get_command, :max}, @default_call_timeout) do
+      case GenServer.call(name_in_registry, {:get_command, :max}, @default_call_timeout) do
         nil -> desired_value
         max_value -> max_value
       end
@@ -82,11 +85,11 @@ defmodule CommandSorter.Sorter do
   end
 
   def get_command_minimum(name) do
-    GenServer.call(via_tuple(name), {:get_command, :min}, 50)
+    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, name), {:get_command, :min}, 50)
   end
 
   def get_command_maximum(name) do
-    GenServer.call(via_tuple(name), {:get_command, :max}, 50)
+    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, name), {:get_command, :max}, 50)
   end
 
   def verify_command_within_limits(cmd_value, cmd_limit_min, cmd_limit_max) do
@@ -131,9 +134,5 @@ defmodule CommandSorter.Sorter do
     else
       most_urgent
     end
-  end
-
-  defp via_tuple(name) do
-    Common.ProcessRegistry.via_tuple({__MODULE__, name})
   end
 end

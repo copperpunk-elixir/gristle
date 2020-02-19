@@ -132,7 +132,7 @@ defmodule Peripherals.Uart.Bno080 do
     GenServer.cast(__MODULE__, :begin)
   end
 
-   defp hard_reset(wake_ref, reset_ref) do
+  defp hard_reset(wake_ref, reset_ref) do
     Circuits.GPIO.write(wake_ref, 1)
     Process.sleep(100)
     Circuits.GPIO.write(reset_ref, 0)

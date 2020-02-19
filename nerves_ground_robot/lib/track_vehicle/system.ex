@@ -7,7 +7,7 @@ defmodule TrackVehicle.System do
         Common.ProcessRegistry,
         {Comms.Operator, config.comms},
         {TrackVehicle.Controller, config.track_vehicle_controller},
-        {Actuator.Controller, config.actuator_controller}
+        {Actuator.InterfaceOutput, config.actuator_controller}
       ],
       strategy: :one_for_one
     )

@@ -5,7 +5,7 @@ defmodule Common.Application do
   def start(_type, _args) do
     Logger.debug("Start Application")
     Logger.debug("Start ProcessRegistry")
-    Common.ProcessRegistry.start_link()
+    Comms.ProcessRegistry.start_link()
     Logger.debug("Start local registry")
     Common.Utils.Comms.start_registry(:topic_registry)
     Logger.debug("Start pg2")

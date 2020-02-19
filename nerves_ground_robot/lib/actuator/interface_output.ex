@@ -1,10 +1,10 @@
-defmodule Actuator.Controller do
+defmodule Actuator.InterfaceOutput do
   require Logger
   use GenServer
 
   def start_link(config) do
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    Logger.debug("Start ActuatorController")
+    Logger.debug("Start ActuatorInterfaceOutput")
     actuators_not_ready()
     start_command_sorters()
     begin()
@@ -26,7 +26,7 @@ defmodule Actuator.Controller do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Logger.debug("Begin ActuatorController")
+    Logger.debug("Begin ActuatorInterfaceOutput")
     uart_ref =
       case state.actuator_driver do
         :pololu ->
@@ -74,7 +74,7 @@ defmodule Actuator.Controller do
           Logger.debug("Actuator loop started!")
           %{state | actuator_timer: actuator_timer}
         {_, reason} ->
-          Logger.debug("Could not start actuator_controller timer: #{inspect(reason)} ")
+          Logger.debug("Could not start actuator_interface_output timer: #{inspect(reason)} ")
           state
       end
     {:noreply, state}
@@ -87,7 +87,7 @@ defmodule Actuator.Controller do
         {:ok, _} ->
           %{state | actuator_timer: nil}
         {_, reason} ->
-          Logger.debug("Could not stop actuator_controller timer: #{inspect(reason)} ")
+          Logger.debug("Could not stop actuator_interface_output timer: #{inspect(reason)} ")
           state
       end
     {:noreply, state}
@@ -105,8 +105,8 @@ defmodule Actuator.Controller do
 
   @impl GenServer
   def handle_info(:actuator_loop, state) do
-    # Go through every channel and send an update to the ActuatorController
-    # actuator_controller_process_name = state.config.actuator_controller.process_name
+    # Go through every channel and send an update to the ActuatorInterfaceOutput
+    # actuator_interface_output_process_name = state.config.actuator_interface_output.process_name
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
       # Logger.debug("gimbal :move actuator")
       # actuator = get_in(state, [:actuators, actuator_name])

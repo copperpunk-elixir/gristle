@@ -23,7 +23,7 @@ defmodule NodeConfig.TrackVehicleJoystick do
       multiplier: 1.0
     }
 
-    joystick_controller = %{
+    joystick_interface_input = %{
       joystick_driver_config: %{driver: :adsadc},
       send_msg_switch_pin: 25,
       joystick_cmd_header: %{group: :track_vehicle_commands, topic: :speed_and_turn_cmd},
@@ -35,7 +35,7 @@ defmodule NodeConfig.TrackVehicleJoystick do
     # --- RETURN ---
     %{
       comms: comms,
-      joystick_controller: joystick_controller,
+      joystick_interface_input: joystick_interface_input,
     }
   end
 end

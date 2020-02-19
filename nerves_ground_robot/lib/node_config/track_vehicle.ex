@@ -36,7 +36,7 @@ defmodule NodeConfig.TrackVehicle do
       actuator_cmd_classification: %{priority: 0, authority: 0, time_validity_ms: 1000}
     }
 
-    # --- ACTUATOR CONTROLLER ---
+    # --- ACTUATOR INTERFACE_OUTPUT ---
     left_track_motor = %{
       name: :left_track_motor,
       channel_number: 0,
@@ -62,7 +62,7 @@ defmodule NodeConfig.TrackVehicle do
       PidActuatorInterface.new_actuators_config()
       |> PidActuatorInterface.add_actuator(left_track_motor)
       |> PidActuatorInterface.add_actuator(right_track_motor)
-    actuator_controller = %{
+    actuator_interface_output = %{
       # local_publisher_topics: [:actuator_status],
       pwm_freq: 100,
       actuators: actuators
@@ -72,7 +72,7 @@ defmodule NodeConfig.TrackVehicle do
     %{
       comms: comms,
       track_vehicle_controller: track_vehicle_controller,
-      actuator_controller: actuator_controller,
+      actuator_interface_output: actuator_interface_output,
     }
   end
 end

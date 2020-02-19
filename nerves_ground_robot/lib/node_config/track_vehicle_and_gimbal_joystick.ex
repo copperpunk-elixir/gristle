@@ -23,7 +23,7 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
       multiplier: 0.524
     }
 
-    joystick_controller_gimbal = %{
+    joystick_interface_input_gimbal = %{
       name: :joystick_gimbal,
       joystick_driver_config: %{driver: :adsadc, address: 0x48},
       send_msg_switch_pin: 25,
@@ -48,7 +48,7 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
       multiplier: 1.0
     }
 
-    joystick_controller_track_vehicle = %{
+    joystick_interface_input_track_vehicle = %{
       name: :joystick_track_vehicle,
       joystick_driver_config: %{driver: :adsadc, address: 0x49},
       send_msg_switch_pin: 25,
@@ -60,7 +60,7 @@ defmodule NodeConfig.TrackVehicleAndGimbalJoystick do
     # --- RETURN ---
     %{
       comms: comms,
-      joystick_controller: [joystick_controller_gimbal, joystick_controller_track_vehicle]
+      joystick_interface_input: [joystick_interface_input_gimbal, joystick_interface_input_track_vehicle]
     }
   end
 end

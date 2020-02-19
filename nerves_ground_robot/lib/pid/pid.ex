@@ -8,7 +8,8 @@ defmodule Pid.Pid do
 
   def start_link(config) do
     Logger.debug("Start PID")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, config.name)
+    GenServer.start_link(__MODULE__, config, name: name_in_registry)
   end
 
   def init(config) do
@@ -75,19 +76,23 @@ defmodule Pid.Pid do
   end
 
   def get_cmd_for_error(process_variable, actuator, cmd_error, rate_act, dt) do
-    GenServer.call(via_tuple(process_variable, actuator), {:update_cmd, cmd_error, rate_act, dt})
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, {process_variable, actuator})
+    GenServer.call(name_in_registry, {:update_cmd, cmd_error, rate_act, dt})
   end
 
   def get_last_cmd(process_variable, actuator) do
-    GenServer.call(via_tuple(process_variable, actuator), :get_last_cmd)
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, {process_variable, actuator})
+    GenServer.call(name_in_registry, :get_last_cmd)
   end
 
   def set_pid_gain(process_variable, actuator, gain_name, gain_value) do
-    GenServer.cast(via_tuple(process_variable, actuator), {:set_pid_gain, gain_name, gain_value})
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, {process_variable, actuator})
+    GenServer.cast(name_in_registry, {:set_pid_gain, gain_name, gain_value})
   end
 
   def enable_integrator(process_variable, actuator)do
-    GenServer.cast(via_tuple(process_variable, actuator), :enable_integrator)
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, {process_variable, actuator})
+    GenServer.cast(name_in_registry, :enable_integrator)
   end
 
   # def disable_integrator(channel_name) do
@@ -100,13 +105,4 @@ defmodule Pid.Pid do
       :two_sided -> 0.5*(@output_min + @output_max)
     end
   end
-
-  defp via_tuple(process_name, actuator) do
-    Common.ProcessRegistry.via_tuple({__MODULE__, {process_name, actuator}})
-  end
-
-  defp via_tuple({process_name, actuator}) do
-    Common.ProcessRegistry.via_tuple({__MODULE__, {process_name, actuator}})
-  end
-
 end

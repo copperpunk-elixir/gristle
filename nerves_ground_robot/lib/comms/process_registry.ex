@@ -1,4 +1,4 @@
-defmodule Common.ProcessRegistry do
+defmodule Comms.ProcessRegistry do
   require Logger
 
   def start_link do
@@ -13,8 +13,16 @@ defmodule Common.ProcessRegistry do
     end
  end
 
-  def via_tuple(key) do
+  def via_tuple(process_module, process_name) do
+    key = get_key_for_module_and_name(process_module, process_name)
     {:via, Registry, {__MODULE__, key}}
+  end
+
+  def get_key_for_module_and_name(process_module, process_name) do
+    case process_name do
+      nil -> {process_module, process_module}
+      _valid_name -> {process_module, process_name}
+    end
   end
 
   def child_spec(_) do

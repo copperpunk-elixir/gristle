@@ -72,7 +72,7 @@ defmodule NodeConfig.Gimbal do
       pids: pids
     }
 
-    # --- ACTUATOR CONTROLLER ---
+    # --- ACTUATOR INTERFACE_OUTPUT ---
     roll_axis_motor = %{
       name: :roll_axis_motor,
       channel_number: 0,
@@ -100,7 +100,7 @@ defmodule NodeConfig.Gimbal do
       |> PidActuatorInterface.add_actuator(roll_axis_motor)
       |> PidActuatorInterface.add_actuator(pitch_axis_motor)
 
-    actuator_controller = %{
+    actuator_interface_output = %{
       actuator_loop_interval_ms: 10,
       actuator_driver: :pololu,
       actuators: actuators
@@ -112,7 +112,7 @@ defmodule NodeConfig.Gimbal do
       gimbal_controller: gimbal_controller,
       imu: imu,
       pid_controller: pid_controller,
-      actuator_controller: actuator_controller,
+      actuator_interface_output: actuator_interface_output,
     }
   end
 end

@@ -4,15 +4,20 @@ defmodule Gimbal.Controller do
 
   def start_link(config) do
     Logger.debug("Start GimbalController")
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    register_subscribers()
-    start_command_sorters()
+    gimbal_name = Map.get(config, :name)
+    process_key = Comms.ProcessRegistry.get_key_for_module_and_name(__MODULE__, gimbal_name)
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name)
+    config = %{config | process_key: process_key}
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: name_in_registry)
+    register_subscribers(gimbal_name)
+    start_command_sorters(gimbal_name)
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
     {:ok,  %{
+        process_key: config.process_key,
         attitude: %{roll: 0, pitch: 0, yaw: 0},
         attitude_rate: %{roll: 0,pitch: 0, yaw: 0},
         imu_dt: 0,
@@ -47,7 +52,7 @@ defmodule Gimbal.Controller do
     # Command sorters will store the values of all the process variable COMMANDS
     # i.e. ROLL, or PITCH, or YAW
     Enum.each(state.pid_actuator_links, fn pid_actuator_link ->
-      CommandSorter.System.start_sorter({__MODULE__, pid_actuator_link.process_variable}, pid_actuator_link.cmd_limit_min, pid_actuator_link.cmd_limit_max)
+      CommandSorter.System.start_sorter({state.process_key, pid_actuator_link.process_variable}, pid_actuator_link.cmd_limit_min, pid_actuator_link.cmd_limit_max)
     end)
     {:noreply, state}
   end
@@ -58,7 +63,7 @@ defmodule Gimbal.Controller do
     Logger.debug("Gimbal: IMU ready!")
     if state.actuators_ready do
       Logger.debug("Actuators are ready, arm actuators")
-      Actuator.Controller.arm_actuators()
+      Actuator.InterfaceOutput.arm_actuators()
     else
       Logger.debug("Waiting for actuators ready to arm")
     end
@@ -76,7 +81,7 @@ defmodule Gimbal.Controller do
     Logger.debug("Gimbal: Actuators ready!")
     if state.imu_ready do
       Logger.debug("IMU is ready, arm actuators")
-      Actuator.Controller.arm_actuators()
+      Actuator.InterfaceOutput.arm_actuators()
     else
       Logger.debug("IMU not ready yet, do not arm actuators")
     end
@@ -95,7 +100,7 @@ defmodule Gimbal.Controller do
   def handle_cast({:attitude_cmd, cmd_type_min_max_exact, classification, attitude_cmd}, state) do
     # Logger.debug("new att cmd: #{inspect(Common.Utils.rad2deg_map(attitude_cmd))}")
     Enum.each(attitude_cmd, fn {cmd_process_variable, value} ->
-      CommandSorter.Sorter.add_command({__MODULE__, cmd_process_variable}, cmd_type_min_max_exact, classification, value)
+      CommandSorter.Sorter.add_command({state.process_key, cmd_process_variable}, cmd_type_min_max_exact, classification, value)
     end)
     {:noreply, state}
   end
@@ -103,7 +108,7 @@ defmodule Gimbal.Controller do
   @impl GenServer
   def handle_cast({:pid_updated, _process_variable, actuator, output}, state) do
     # Logger.debug("Ch name/Actuator/output: #{channel_name}/#{actuator_pid.actuator}/#{output}")
-    Actuator.Controller.add_actuator_cmds(:exact, state.actuator_cmd_classification, Map.put(%{}, actuator, output))
+    Actuator.InterfaceOutput.add_actuator_cmds(:exact, state.actuator_cmd_classification, Map.put(%{}, actuator, output))
     {:noreply, state}
     # {:noreply, put_in(state,[:pid_outputs, process_variable, actuator], output)}
   end
@@ -143,37 +148,21 @@ defmodule Gimbal.Controller do
     {:reply, Map.get(state, parameter), state}
   end
 
-  def imu_ready() do
-    GenServer.cast(__MODULE__, :imu_ready)
-  end
-
-  # def arm_actuators() do
-  #   GenServer.cast(__MODULE__, {:actuator_status, :ready})
-  # end
-
-  # def disarm_actuators() do
-  #   GenServer.cast(__MODULE__, {:actuator_status, :not_ready})
-  # end
-
   # TODO: implement this
   def set_pid_gain(process_variable, actuator, gain_name, gain_value) do
     GenServer.cast(__MODULE__, {:set_pid_gain, process_variable, actuator, gain_name, gain_value})
   end
 
-  # defp via_tuple(system_id) do
-  #   Common.ProcessRegistry.via_tuple({__MODULE__, system_id})
-  # end
-
-  def register_subscribers() do
-    GenServer.cast(__MODULE__, :register_subscribers)
+  def register_subscribers(gimbal_name) do
+    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), :register_subscribers)
   end
 
-  def start_command_sorters() do
-    GenServer.cast(__MODULE__, :start_command_sorters)
+  def start_command_sorters(gimbal_name) do
+    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), :start_command_sorters)
   end
 
-  def get_parameter(parameter) do
-    GenServer.call(__MODULE__, {:get_parameter, parameter})
+  def get_parameter(gimbal_name, parameter) do
+    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), {:get_parameter, parameter})
   end
 
   defp update_pid_controller(state) do
@@ -186,7 +175,7 @@ defmodule Gimbal.Controller do
       process_variable = pid_actuator_link.process_variable
       actuator = pid_actuator_link.actuator
       # Logger.debug("#{channel_name}")
-      cmd = CommandSorter.Sorter.get_command({__MODULE__, process_variable}, pid_actuator_link.failsafe_cmd)
+      cmd = CommandSorter.Sorter.get_command({state.process_key, process_variable}, pid_actuator_link.failsafe_cmd)
       # cmd = state.attitude_cmd[channel.process_variable]
       act = state.attitude[process_variable]
       act_rate = state.attitude[process_variable]

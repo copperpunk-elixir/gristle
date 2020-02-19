@@ -1,11 +1,14 @@
-defmodule Joystick.Controller do
+defmodule Joystick.InterfaceInput do
   use GenServer
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start JoystickController")
-    joystick_name = Map.get(config, :name, __MODULE__)
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: via_tuple(joystick_name))
+    Logger.debug("Start JoystickInterfaceInput")
+    joystick_name = Map.get(config, :name)
+    process_key = Comms.ProcessRegistry.get_key_for_module_and_name(__MODULE__, joystick_name)
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, joystick_name)
+    config = %{config | process_key: process_key}
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: name_in_registry)
     begin(joystick_name)
     start_joystick_loop(joystick_name)
     {:ok, pid}
@@ -14,6 +17,7 @@ defmodule Joystick.Controller do
   @impl GenServer
   def init(config) do
     {:ok, %{
+        process_key: config.process_key,
         joystick_driver_config: config.joystick_driver_config,
         joystick: nil,
         channels: Map.get(config, :channels, %{}),
@@ -104,16 +108,16 @@ defmodule Joystick.Controller do
     {:noreply, %{state | joystick_cmd_output: joystick_cmd_output}}
   end
 
-  def start_joystick_loop(joystick_name \\ __MODULE__) do
-    GenServer.cast(via_tuple(joystick_name), :start_joystick_loop)
+  def start_joystick_loop(joystick_name) do
+    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, joystick_name), :start_joystick_loop)
   end
 
-  def stop_joystick_loop(joystick_name \\ __MODULE__) do
-    GenServer.cast(via_tuple(joystick_name), :stop_joystick_loop)
+  def stop_joystick_loop(joystick_name) do
+    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, joystick_name), :stop_joystick_loop)
   end
 
-  def begin(joystick_name \\ __MODULE__) do
-    GenServer.cast(via_tuple(joystick_name), :begin)
+  def begin(joystick_name) do
+    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, joystick_name), :begin)
   end
 
   def set_output_for_channel_and_value(channel, value, joystick_cmd_output \\ %{}) do
@@ -126,7 +130,7 @@ defmodule Joystick.Controller do
   end
 
   def get_output_for_joystick_and_channel(joystick_name, channel) do
-    GenServer.call(via_tuple(joystick_name), {:get_output_for_channel, channel})
+    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, joystick_name), {:get_output_for_channel, channel})
   end
 
   def is_switch_on(switch_ref) do
@@ -135,10 +139,5 @@ defmodule Joystick.Controller do
     else
       Circuits.GPIO.read(switch_ref) == 0
     end
-  end
-
-  
-  defp via_tuple(name) do
-    Common.ProcessRegistry.via_tuple({__MODULE__, name})
   end
 end

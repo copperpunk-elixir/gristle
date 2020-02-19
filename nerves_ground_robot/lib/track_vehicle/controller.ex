@@ -49,7 +49,7 @@ defmodule TrackVehicle.Controller do
   @impl GenServer
   def handle_cast({:actuator_status, :ready}, state) do
     Logger.debug("Gimbal: Actuators ready!")
-    Actuator.Controller.arm_actuators()
+    Actuator.InterfaceOutput.arm_actuators()
     {:noreply, %{state | actuators_ready: true}}
   end
 
@@ -73,7 +73,7 @@ defmodule TrackVehicle.Controller do
     Logger.debug("act cmds: #{inspect(actuator_cmd)}")
     {left_track_cmd, right_track_cmd} = calculate_track_cmd_for_speed_and_turn(actuator_cmd.speed, actuator_cmd.turn)
     actuator_cmds = %{left_track_motor: left_track_cmd, right_track_motor: right_track_cmd}
-    Actuator.Controller.add_actuator_cmds(:exact, state.actuator_cmd_classification, actuator_cmds)
+    Actuator.InterfaceOutput.add_actuator_cmds(:exact, state.actuator_cmd_classification, actuator_cmds)
     # speed_cmd = Map.get(speed_and_turn_cmd, :speed, state.speed_cmd)
     # turn_cmd = Map.get(speed_and_turn_cmd, :turn, state.turn_cmd)
     {:noreply, state} #%{state | speed_cmd: speed_cmd, turn_cmd: turn_cmd}}
@@ -83,28 +83,6 @@ defmodule TrackVehicle.Controller do
   def handle_call({:get_parameter, parameter}, _from, state) do
     {:reply, Map.get(state, parameter), state}
   end
-
-  # @impl GenServer
-  # def handle_info(:actuator_loop, state) do
-  #   # Go through every channel and send an update to the ActuatorController
-  #   # actuator_controller_process_name = state.config.actuator_controller.process_name
-  #   if state.actuators_ready do
-  #     speed_cmd = CommandSorter.Sorter.get_command({__MODULE__, :speed}, )
-  #     turn_cmd = CommandSorter.Sorter.get_command({__MODULE__, :turn})
-  #     unless speed_cmd==nil or turn_cmd==nil do
-  #       {left_track_cmd, right_track_cmd} =
-  #         calculate_track_cmd_for_speed_and_turn(speed_cmd, turn_cmd)
-  #       Logger.debug("Move actuator L/R: #{left_track_cmd}, #{right_track_cmd}")
-  #       actuator_cmds = %{
-  #         left_track: left_track_cmd,
-  #         right_track: right_track_cmd
-  #       }
-  #       Actuator.Controller.add_actuator_cmds(:exact, state.actuator_cmd_classification, actuator_cmds)
-  #     end
-  #     # Actuator.Controller.move_actuator(actuator_pid.actuator, actuator_pid.output)
-  #   end
-  #   {:noreply, state}
-  # end
 
   def update_speed_and_turn_cmd(cmd_type_min_max_exact, classification, speed_and_turn_cmd) do
     GenServer.cast(__MODULE__, {:speed_and_turn_cmd, cmd_type_min_max_exact, classification, speed_and_turn_cmd})
