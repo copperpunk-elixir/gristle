@@ -18,6 +18,17 @@ defmodule Peripherals.I2c.Utils do
     I2C.write(ref, address, <<register,data>>)
   end
 
+  def read_byte_at_register(ref, address, register) do
+    case I2C.write_read(ref, address, <<register>>, 1) do
+      {:ok, data} ->
+        result = :binary.bin_to_list(data)
+        Enum.at(result,0)
+      error ->
+        IO.puts("Write/read error! #{inspect(error)}")
+        []
+    end
+  end
+
   def write_read(ref, address, register, num_bytes) do
     case I2C.write_read(ref, address, <<register>>, num_bytes) do
       {:ok, data} ->

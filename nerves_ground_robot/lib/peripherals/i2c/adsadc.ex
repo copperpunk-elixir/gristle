@@ -1,5 +1,6 @@
 defmodule Peripherals.I2c.Adsadc do
   use Bitwise
+  require Logger
   defstruct [bus_ref: nil, address: nil]
 
   @default_bus "i2c-1"
@@ -17,7 +18,7 @@ defmodule Peripherals.I2c.Adsadc do
   @counts2output 4.0/3300 #output is [-1, 1]
 
   def new_adsadc(config) do
-    IO.puts("Start Ads ADC")
+    Logger.debug("Start Ads ADC")
     bus_ref = Peripherals.I2c.Utils.get_bus_ref(Map.get(config, :i2c_bus, @default_bus))
     address = Map.get(config, :address, @default_address)
     # channels = config.channels
