@@ -30,7 +30,7 @@ defmodule NervesGroundRobot.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      # mod: {Common.Application, []},
+      mod: {Common.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -59,7 +59,8 @@ defmodule NervesGroundRobot.MixProject do
       {:circuits_gpio, "~> 0.1"},
       {:circuits_uart, "~> 1.3"},
       {:vintage_net_wifi, "~> 0.7.0"},
-      {:elixir_uuid, "~> 1.2"}
+      {:elixir_uuid, "~> 1.2"},
+      {:gen_state_machine, "~> 2.0"}
     ]
   end
 

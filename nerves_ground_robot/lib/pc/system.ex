@@ -4,7 +4,7 @@ defmodule Pc.System do
 
     Supervisor.start_link(
       [
-        Common.ProcessRegistry,
+        Comms.ProcessRegistry,
         {Comms.Operator, config.comms},
         {CommandSorter.System, nil},
       ],
