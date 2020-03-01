@@ -7,7 +7,7 @@ defmodule TestLibrary do
   """
 
   @doc """
-  Get the names of the team (in alphabetical order, Sorry Josh)
+  The only good bug is a dead bug.
   """
   def info() do
     "Would you like to know more?"

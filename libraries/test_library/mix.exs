@@ -4,7 +4,7 @@ defmodule TestLibrary.MixProject do
   def project do
     [
       app: :test_library,
-      version: "0.1.0",
+      version: "0.1.1",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       description: description(),
@@ -41,7 +41,7 @@ defmodule TestLibrary.MixProject do
       files: ["lib", "mix.exs", "README*"],
       maintainers: ["Greg Gradwell"],
       licenses: ["All rights reserved"],
-      links: %{"Github" => "https://github.com/some-assembly-required/gristle/test-library"},
+      links: %{"Github" => "https://github.com/some-assembly-required/gristle/tree/master/libraries/test_library"},
       organization: "alh"
     ]
   end
