@@ -1,0 +1,6 @@
+%{
+  "adsadc": {:hex, :adsadc, "0.1.0", "a22041ef2a56c0f7312ec0492a92a175e685ac9c1206ecec299bb8066f9f0f1a", [:mix], [{:circuits_i2c, "~> 0.1", [hex: :circuits_i2c, repo: "hexpm", optional: false]}], "hexpm:alh", "c55f053574ad318ef88c757ed34b9a918631572351194e4ca9afd955c901317a"},
+  "circuits_i2c": {:hex, :circuits_i2c, "0.3.6", "348b8de3cf1ade6c4b92ad7c9de7068df1af0d441df341d7d126d53671924f64", [:make, :mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "da5b2814e429021f22252867a3fa48d77d7fcabeb3ff8a6c40d549227749b6a7"},
+  "elixir_make": {:hex, :elixir_make, "0.6.0", "38349f3e29aff4864352084fc736fa7fa0f2995a819a737554f7ebd28b85aaab", [:mix], [], "hexpm", "d522695b93b7f0b4c0fcb2dfe73a6b905b1c301226a5a55cb42e5b14d509e050"},
+  "test_library": {:hex, :test_library, "0.1.1", "831349d41fb5bf7a02c421c10281bba6938c2e7c5a663d4d080f39356ecb57d9", [:mix], [], "hexpm:alh", "6d59267dea609d63b8f7cf69a9cd40ab84702ef18ecf9cfe617b09af26a01ded"},
+}
