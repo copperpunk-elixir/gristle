@@ -100,5 +100,13 @@ defmodule Adsadc do
     end
   end
 
+  def hello do
+    :world
+  end
 
+  def get_hello_function() do
+    (fn recip ->
+      "Hello to #{recip}"
+    end)
+  end
 end

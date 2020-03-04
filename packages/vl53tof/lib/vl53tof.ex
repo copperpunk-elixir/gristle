@@ -280,4 +280,8 @@ defmodule Vl53tof do
   defp get_packet_for_word(word) do
     [word >>> 8, word &&& 0xFF]
   end
+
+  def hello() do
+    :world
+  end
 end

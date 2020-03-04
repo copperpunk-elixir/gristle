@@ -44,7 +44,8 @@ defmodule Bno080 do
         wake_ref: Bno080.Utils.get_gpio_ref_output(config.interface.wake_pin),
         port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
-        attitude_callback: Map.get(config, :attitude_callback, nil),
+        attitude_callback: Map.get(config, :attitude_callback),
+        imu_status_callback: Map.get(config, :imu_status_callback),
         update_interval_ms: config.interface.update_interval_ms,
         sequence_numbers: {0,0,0},
         shtp_header: {0,0,0,0},
@@ -68,22 +69,18 @@ defmodule Bno080 do
 
   @impl GenServer
   def handle_cast(:imu_ready, state) do
-    Common.Utils.Comms.dispatch_cast(
-      :topic_registry,
-      :imu_status,
-      {:imu_status, :ready}
-    )
+    unless state.imu_status_callback == nil do
+      state.imu_status_callback.(:ready)
+    end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast(:imu_not_ready, state) do
     Logger.debug("Received call: imu_not_ready")
-    Common.Utils.Comms.dispatch_cast(
-      :topic_registry,
-      :imu_status,
-      {:imu_status, :not_ready}
-    )
+    unless state.imu_status_callback == nil do
+      state.imu_status_callback.(:not_ready)
+    end
     {:noreply, state}
   end
 
@@ -91,8 +88,11 @@ defmodule Bno080 do
   def handle_info({:circuits_uart, _port, data}, state) do
     state = parse_input_report(state, :binary.bin_to_list(data))
     #TODO put the following in its own function
-    state = if(state.attitude.available) do
-      GenServer.cast(state.attitude_callback, :euler_eulerrate_dt, {:euler_eulerrate_dt, state.attitude.euler, state.attitude.euler_rate, state.attitude.dt})
+    state =
+    if(state.attitude.available) do
+      unless state.attitude_callback == nil do
+        state.attitude_callback.(state.attitude.euler, state.attitude.euler_rate, state.attitude.dt)
+      end
       %{state | attitude: %{state.attitude | available: false}}
     else
       state
@@ -104,14 +104,22 @@ defmodule Bno080 do
     GenServer.cast(__MODULE__, :begin)
   end
 
+  def interface do
+    Bno080
+  end
+
+  def hello do
+    :world
+  end
+
   defp hard_reset(wake_ref, reset_ref) do
     Bno080.Utils.gpio_write(wake_ref, 1)
     Process.sleep(100)
-    Bno080.Utils.write(reset_ref, 0)
+    Bno080.Utils.gpio_write(reset_ref, 0)
     Process.sleep(1000)
-    Bno080.Utils.write(reset_ref, 1)
+    Bno080.Utils.gpio_write(reset_ref, 1)
     Process.sleep(@default_sleep)
-    Bno080.Utils.write(wake_ref,0)
+    Bno080.Utils.gpio_write(wake_ref,0)
   end
 
   defp open_port(uart_ref, port, baud) do

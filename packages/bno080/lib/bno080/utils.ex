@@ -45,12 +45,29 @@ defmodule Bno080.Utils do
     (abs(quat_mag - 1.0) <= error_bounds)
   end
 
-  def quat2euler(quat, is_android \\ true) do
-    if is_map(quat) do
-      quat2euler_map(quat, is_android)
-    else
-      quat2euler_tuple(quat, is_android)
+  def quat2euler(quat) do
+    # Convert from Android Coordinate Frame to NED
+    {qx, qy, qz, qw} = {quat.y, quat.x, -quat.z, quat.w}
+    #roll
+    sinr_cosp = 2 * (qw * qx + qy * qz)
+    cosr_cosp = 1 - 2 * (qx * qx + qy * qy)
+    roll = :math.atan2(sinr_cosp, cosr_cosp)
+
+    # pitch
+    sinp = 2 * (qw * qy - qz * qx)
+    pitch = cond do
+      sinp >= 1 ->
+        :math.pi()*0.5
+      sinp <= -1 ->
+        -:math.pi()*0.5
+      true ->
+        :math.asin(sinp)
     end
+    # yaw
+    siny_cosp = 2 * (qw * qz + qx * qy)
+    cosy_cosp = 1 - 2 * (qy * qy + qz * qz)
+    yaw = :math.atan2(siny_cosp, cosy_cosp)
+    %{roll: roll, pitch: pitch, yaw: yaw}
   end
 
 
