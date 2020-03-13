@@ -5,12 +5,16 @@ defmodule Gimbal.Controller do
   def start_link(config) do
     Logger.debug("Start GimbalController")
     gimbal_name = Map.get(config, :name)
+    ####
+    # These parameters should come from the config file
     process_key = Comms.ProcessRegistry.get_key_for_module_and_name(__MODULE__, gimbal_name)
     name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name)
+    #
+    #####
     config = %{config | process_key: process_key}
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: name_in_registry)
-    register_subscribers(gimbal_name)
-    start_command_sorters(gimbal_name)
+    register_subscribers(name_in_registry)
+    start_command_sorters(name_in_registry)
     {:ok, pid}
   end
 
@@ -153,16 +157,16 @@ defmodule Gimbal.Controller do
     GenServer.cast(__MODULE__, {:set_pid_gain, process_variable, actuator, gain_name, gain_value})
   end
 
-  def register_subscribers(gimbal_name) do
-    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), :register_subscribers)
+  def register_subscribers(name_in_registry) do
+    GenServer.cast(name_in_registry, :register_subscribers)
   end
 
-  def start_command_sorters(gimbal_name) do
-    GenServer.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), :start_command_sorters)
+  def start_command_sorters(name_in_registry) do
+    GenServer.cast(name_in_registry, :start_command_sorters)
   end
 
-  def get_parameter(gimbal_name, parameter) do
-    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, gimbal_name), {:get_parameter, parameter})
+  def get_parameter(name_in_registry, parameter) do
+    GenServer.call(name_in_registry, {:get_parameter, parameter})
   end
 
   defp update_pid_controller(state) do

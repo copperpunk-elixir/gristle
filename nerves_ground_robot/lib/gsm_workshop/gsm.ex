@@ -22,16 +22,20 @@ defmodule GsmWorkshop.Gsm do
     get_initial_data(data.process_key)
   end
 
-  def add(gsm_name) do
-    GenStateMachine.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gsm_name), :add)
+  def add(name_in_registry) do
+    GenStateMachine.cast(name_in_registry, :add)
   end
 
-  def ready(gsm_name) do
-    GenStateMachine.cast(Comms.ProcessRegistry.via_tuple(__MODULE__, gsm_name), :set_state_ready)
+  def ready(name_in_registry) do
+    GenStateMachine.cast(name_in_registry, :set_state_ready)
   end
 
-  def get_count(gsm_name) do
-    GenStateMachine.call(Comms.ProcessRegistry.via_tuple(__MODULE__, gsm_name), :get_count)
+  def get_count(name_in_registry) do
+    GenStateMachine.call(name_in_registry, :get_count)
+  end
+
+  def send_info_msg(pid, msg) do
+    send(pid, {:test, msg})
   end
 
   def handle_event(:cast, :add, :not_ready, data) do
@@ -59,5 +63,10 @@ defmodule GsmWorkshop.Gsm do
 
   def handle_event({:call, from}, :get_state, state, data) do
     {:keep_state, data, [{:reply, from, state}]}
+  end
+
+  def handle_event(:info, {:test, msg}, state, data) do
+    Logger.debug("received #{msg}")
+    :keep_state_and_data
   end
 end

@@ -24,7 +24,8 @@ defmodule NodeConfig.GimbalJoystick do
     }
 
     joystick_interface_input = %{
-      joystick_driver_config: %{driver: :adsadc},
+      joystick_driver: Adsadc,
+      joystick_driver_config: %{},
       send_msg_switch_pin: 25,
       joystick_cmd_header: %{group: :gimbal_commands, topic: :attitude_cmd},
       joystick_cmd_classification: %{priority: 1, authority: 1, time_validity_ms: 1000},
