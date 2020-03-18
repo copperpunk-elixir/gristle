@@ -1,9 +1,9 @@
-defmodule CommandSorter.System do
+defmodule MessageSorter.System do
   use DynamicSupervisor
   require Logger
 
   def start_link(_) do
-    Logger.debug("Start CommandSorter Supervisor")
+    Logger.debug("Start MessageSorter Supervisor")
     DynamicSupervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
@@ -25,7 +25,7 @@ defmodule CommandSorter.System do
       %{
         id: name,
         start: {
-          CommandSorter.Sorter,
+          MessageSorter.Sorter,
           :start_link,
           [
             %{

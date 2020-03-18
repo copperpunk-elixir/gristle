@@ -5,6 +5,7 @@ defmodule Vl53tof do
   @doc """
   """
   use Bitwise
+  use GenServer
   require Logger
   defstruct [bus_ref: nil, address: nil]
 
@@ -19,15 +20,24 @@ defmodule Vl53tof do
   @intermeasurement_period 0x006C
 
 
-  # ----- BEGIN MANDATORY INTERFACE -----
-  def new_sensor(config) do
+  def start_link(config) do
     Logger.debug("Start VL53ToF")
-    bus_ref = Vl53tof.Utils.get_bus_ref(Map.get(config, :i2c_bus, @default_bus))
-    address = @default_address
-    %Vl53tof{bus_ref: bus_ref, address: address}
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, config.name_in_registry)
+    initialize(config.name_in_registry)
+    {:ok, pid}
   end
 
-  def begin(device) do
+  @impl GenServer
+  def init(config) do
+    {:ok, %{
+    bus_ref: Vl53tof.Utils.get_bus_ref(Map.get(config, :i2c_bus, @default_bus)),
+    address: @default_address
+     }
+    }
+  end
+
+  @impl GenServer
+  def handle_cast(:initialize, state) do
     default_config =
       [0x00,0x01,0x01,0x01,0x02,0x00,0x02,0x08,0x00,0x08,0x10,0x01,0x01,0x00,0x00,0x00,0x00,
        0xff,0x00,0x0F,0x00,0x00,0x00,0x00,0x00,0x20,0x0b,0x00,0x00,0x02,0x0a,0x21,0x00,0x00,
@@ -42,20 +52,36 @@ defmodule Vl53tof do
       Process.sleep(1)
       register+1
     end)
-   confirm_sensor_active(device, 0)
-   write_byte_to_register(device, @vhv_config, 0x09)
-   write_byte_to_register(device, 0x0B, 0)
+    confirm_sensor_active(device, 0)
+    write_byte_to_register(device, @vhv_config, 0x09)
+    write_byte_to_register(device, 0x0B, 0)
+    {:noreply, state}
   end
 
-  def set_distance_mode_short(device) do
-    set_distance_mode(device, 1)
+  @impl GenServer
+  def handle_cast({:set_distance_mode, distance_mode}, state) do
+    register_list_bytes = [0x004B, 0x0060, 0x0063, 0x0069]
+    register_list_words = [0x0078, 0x007A]
+    {byte_list, word_list} =
+      case distance_mode do
+        1 -> {[0x14, 0x07, 0x05, 0x38], [0x0705, 0x0606]}
+        2 -> {[0x0A, 0x0F, 0x0D, 0xB8], [0x0F0D, 0x0E0E]}
+        _ -> {nil, nil}
+      end
+    unless (byte_list == nil) do
+      Enum.each(0..length(register_list_bytes)-1, fn index ->
+        write_byte_to_register(device, Enum.at(register_list_bytes,index), Enum.at(byte_list, index))
+      end)
+      Enum.each(0..length(register_list_words)-1, fn index ->
+        send_packet = get_packet_for_word(Enum.at(word_list, index))
+        write_packet_to_register(device, Enum.at(register_list_words,index), send_packet)
+      end)
+    end
+    {:noreply, state}
   end
 
-  def set_distance_mode_long(device) do
-    set_distance_mode(device, 2)
-  end
-
-  def set_update_interval_ms(device, interval_ms) do
+  @impl GenServer
+  def handle_cast({:set_update_interval_ms, interval_ms}, state) do
     # Always set the timing budget equal to the measurement interval
     actual_timing_interval_ms = set_timing_budget_ms(device, interval_ms)
     Process.sleep(10)
@@ -69,6 +95,26 @@ defmodule Vl53tof do
     (clock_pll_value >>> 8) &&& 0xFF,
     clock_pll_value &&& 0xFF]
     write_packet_to_register(device, @intermeasurement_period, clock_packet)
+    {:noreply, state}
+  end
+
+
+  def initialize(name_in_registry) do
+    GenServer.cast(name_in_registry, :initialize)
+  end
+
+  # ----- BEGIN MANDATORY INTERFACE -----
+
+  def set_distance_mode_short(name_in_registry) do
+    GenServer.cast(name_in_registry, {:set_distance_mode, 1})
+  end
+
+  def set_distance_mode_long(name_in_registry) do
+    GenServer.cast(name_in_registry, {:set_distance_mode, 2})
+  end
+
+  def set_update_interval_ms(name_in_registry, interval_ms) do
+    GenServer.cast(name_in_registry, {:set_update_interval_ms, interval_ms})
   end
 
   def start_measurements(device) do
@@ -229,23 +275,7 @@ defmodule Vl53tof do
   end
 
   defp set_distance_mode(device, distance_mode) do
-    register_list_bytes = [0x004B, 0x0060, 0x0063, 0x0069]
-    register_list_words = [0x0078, 0x007A]
-    {byte_list, word_list} =
-      case distance_mode do
-        1 -> {[0x14, 0x07, 0x05, 0x38], [0x0705, 0x0606]}
-        2 -> {[0x0A, 0x0F, 0x0D, 0xB8], [0x0F0D, 0x0E0E]}
-        _ -> {nil, nil}
-      end
-     unless (byte_list == nil) do
-       Enum.each(0..length(register_list_bytes)-1, fn index ->
-         write_byte_to_register(device, Enum.at(register_list_bytes,index), Enum.at(byte_list, index))
-       end)
-       Enum.each(0..length(register_list_words)-1, fn index ->
-         send_packet = get_packet_for_word(Enum.at(word_list, index))
-         write_packet_to_register(device, Enum.at(register_list_words,index), send_packet)
-       end)
-     end
+    
   end
 
   defp get_distance_mm(device) do

@@ -38,8 +38,8 @@ defmodule Adsadc do
 
   `input_method` - `:linear`, `:exponential` (default `:exponential`)
   """
-  @spec new_adsadc(map) :: %Adsadc{}
-  def new_adsadc(config) do
+  @spec new(list) :: %Adsadc{}
+  def new(config) do
     Logger.debug("Start Ads ADC")
     bus_ref = Adsadc.Utils.get_bus_ref(Map.get(config, :i2c_bus, @default_bus))
     address = Map.get(config, :address, @default_address)
@@ -54,12 +54,12 @@ defmodule Adsadc do
   The output is a `float` in the range `[-1.0, 1.0]`
   """
   @spec read_device_channel(%Adsadc{}, integer) :: float
-  def read_device_channel(device, channel) do
+  def read_device_channel(device, channel_number, inverted) do
     # IO.puts("read channel: #{inspect(channel)}")
-    result = read_channel(device.bus_ref, device.address, device.input_method, channel.pin)
+    result = read_channel(device.bus_ref, device.address, device.input_method, channel_number)
     case result do
       {:ok, value} ->
-        if channel.inverted do
+        if inverted do
           {:ok, -value}
         else
           {:ok, value}
