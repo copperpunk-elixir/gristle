@@ -3,8 +3,6 @@ defmodule NodeConfig.Gimbal do
   def get_config() do
     # --- COMMS ---
     comms = %{
-      #TODO: there should be only one node that is ever called master, and it shouldn't do anything else
-      # except exist
       groups: [:gimbal_commands],
       interface: NodeConfig.Master.get_interface(),
       cookie: NodeConfig.Master.get_cookie()
