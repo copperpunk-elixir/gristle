@@ -11,91 +11,75 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        messages: %{
-          exact: [],
-          min: [],
-          max: []
-        },
-        cmd_limit_min: Keyword.get(config, :cmd_limit_min),
-        cmd_limit_max: Keyword.get(config, :cmd_limit_max),
-        classification: Keyword.get(config, :classification)
-     }
-    }
+  def init(_) do
+    {:ok, []}
   end
 
   @impl GenServer
-  def handle_cast({:add_message, cmd_type_min_max_exact, classification, expiration_mono_ms, value}, state) do
+  def handle_cast({:add_message, classification, expiration_mono_ms, value}, stored_messages) do
     # Check if message has a valid classification
-    state =
-    if is_valid_classification?(state.classification, classification) do
+    stored_messages =
+    if Enum.empty?(stored_messages) || is_valid_classification?(Enum.at(stored_messages,0).classification, classification) do
       # Remove any messages that have the same classification (there should be at most 1)
-      value = verify_message_within_limits(value, state.cmd_limit_min, state.cmd_limit_max)
       if value == nil do
-        state
+        stored_messages
       else
-        messages_list = get_in(state.messages, [cmd_type_min_max_exact])
-        unique_cmds = Enum.reject(messages_list, fn cmd ->
-          cmd.classification == classification
+        unique_msgs = Enum.reject(stored_messages, fn msg ->
+          msg.classification == classification
         end)
-        new_cmd = MessageSorter.CmdStruct.create_cmd(classification, expiration_mono_ms, value)
-        put_in(state, [:messages, cmd_type_min_max_exact], [new_cmd | unique_cmds])
+        new_msg = MessageSorter.MsgStruct.create_msg(classification, expiration_mono_ms, value)
+        [new_msg | unique_msgs]
       end
     else
-      state
+      stored_messages
     end
-    # new_cmd = %{priority: priority, authority: authority, expiration_mono_ms: expiration_mono_ms, value: value}
-    # Logger.debug("new cmd: #{inspect(new_cmd)}")
-    {:noreply, state}
+    {:noreply, stored_messages}
+  end
+
+  def handle_call(:get_all_messages, _from, stored_messages) do
+    {:reply, stored_messages, stored_messages}
   end
 
   @impl GenServer
-  def handle_call({:get_message, cmd_type_min_max_exact}, _from, state) do
-    messages_list = get_in(state.messages, [cmd_type_min_max_exact])
-    {msg, remaining_valid_messages} = get_most_urgent_and_return_remaining(messages_list)
-    {:reply, msg, put_in(state, [:messages, cmd_type_min_max_exact], remaining_valid_messages)}
+  def handle_call(:get_message, _from, stored_messages) do
+    valid_messages = prune_old_messages(stored_messages)
+    msg = get_most_urgent_msg(valid_messages)
+    {:reply, msg, valid_messages}
   end
 
-  def add_message(name, cmd_type_min_max_exact, classification, time_validity_ms, value) do
+  def handle_call(:get_value, _from, stored_messages) do
+    valid_messages = prune_old_messages(stored_messages)
+    msg = get_most_urgent_msg(valid_messages)
+    value = get_message_value(msg)
+    {:reply, value, valid_messages}
+  end
+
+  def add_message(name, classification, time_validity_ms, value) do
     expiration_mono_ms = :erlang.monotonic_time(:millisecond) + time_validity_ms
     name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.cast(name_in_registry, {:add_message, cmd_type_min_max_exact, classification, expiration_mono_ms, value})
+    GenServer.cast(name_in_registry, {:add_message, classification, expiration_mono_ms, value})
   end
 
-  def get_message(name, failsafe_value) do
+  def add_message(name, msg_struct) do
+    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + msg_struct.expiration_mono_ms
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
+    GenServer.cast(name_in_registry, {:add_message, msg_struct.classification, expiration_mono_ms, msg_struct.value})
+  end
+
+  def get_message(name) do
     # Logger.debug("Get message: #{inspect(name)}")
     name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    desired_value =
-      case GenServer.call(name_in_registry, {:get_message, :exact}, @default_call_timeout) do
-        nil -> failsafe_value
-        value -> value
-      end
-    # Logger.warn("desired: #{desired_value}")
-
-    min_limit =
-      case GenServer.call(name_in_registry, {:get_message, :min}, @default_call_timeout) do
-        nil -> desired_value
-        min_value -> min_value
-      end
-    # Logger.warn("min_limit: #{min_limit}")
-
-    max_limit =
-      case GenServer.call(name_in_registry, {:get_message, :max}, @default_call_timeout) do
-        nil -> desired_value
-        max_value -> max_value
-      end
-    # Logger.warn("max_limi: #{max_limit}")
-
-    Common.Utils.Math.constrain(desired_value, min_limit, max_limit)
+    GenServer.call(name_in_registry, :get_message, @default_call_timeout)
   end
 
-  def get_message_minimum(name) do
-    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, name), {:get_message, :min}, 50)
+  def get_all_messages(name) do
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
+    GenServer.call(name_in_registry, :get_all_messages, @default_call_timeout)
   end
 
-  def get_message_maximum(name) do
-    GenServer.call(Comms.ProcessRegistry.via_tuple(__MODULE__, name), {:get_message, :max}, 50)
+  def get_value(name) do
+    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
+    GenServer.call(name_in_registry, :get_value, @default_call_timeout)
   end
 
   def is_valid_classification?(current_classification, new_classification) do
@@ -113,51 +97,26 @@ defmodule MessageSorter.Sorter do
     end
   end
 
-  def verify_message_within_limits(cmd_value, cmd_limit_min, cmd_limit_max) do
-    unless (cmd_limit_min == nil) or (cmd_limit_max == nil) do
-      if (cmd_value < cmd_limit_min) || (cmd_value > cmd_limit_max) do
-        nil
-      else
-        cmd_value
-      end
+  def get_most_urgent_msg(msgs) do
+    # Logger.debug("messages after pruning: #{inspect(valid_msgs)}")
+    sorted_msgs = sort_msgs_by_classification(msgs)
+    Enum.at(sorted_msgs, 0)
+  end
+
+  def get_message_value(msg) do
+    if msg == nil do
+      nil
     else
-      cmd_value
+      msg.value
     end
   end
 
-  def get_most_urgent_and_return_remaining(cmds) do
-    cmds = prune_old_messages(cmds)
-    # Logger.debug("messages after pruning: #{inspect(cmds)}")
-    most_urgent_cmds =
-      case length(cmds) do
-        0 -> []
-        _ -> sort_most_urgent_cmds(cmds, 0)
-      end
-    if most_urgent_cmds == [] do
-      {nil, []}
-    else
-      cmd_struct = Enum.sort_by(most_urgent_cmds, &(&1.authority)) |> Enum.at(0)
-      {cmd_struct.value, cmds}
-    end
-  end
-
-  def prune_old_messages(cmds) do
+  def prune_old_messages(msgs) do
     current_time_ms = :erlang.monotonic_time(:millisecond)
-    Enum.reject(cmds, &(&1.expiration_mono_ms < current_time_ms))
+    Enum.reject(msgs, &(&1.expiration_mono_ms < current_time_ms))
   end
 
-  @cmd_priority_search_max 1000 # Just to keep this search from looping forever
-  defp sort_most_urgent_cmds(cmds, priority) do
-    most_urgent = Enum.reject(cmds, &(&1.priority > priority))
-    valid_value = Enum.at(most_urgent, 0)
-    if (valid_value == nil) do
-      if (priority < @cmd_priority_search_max) do
-        sort_most_urgent_cmds(cmds, priority+1)
-      else
-        []
-      end
-    else
-      most_urgent
-    end
+  defp sort_msgs_by_classification(msgs) do
+    Enum.sort_by(msgs, &(&1.classification))
   end
 end
