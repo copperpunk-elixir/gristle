@@ -19,20 +19,16 @@ defmodule MessageSorter.System do
   #   }
   # end
 
-  def start_sorter(name, cmd_limit_min, cmd_limit_max) do
+  def start_sorter(processa_via_tuple) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{
-        id: name,
+        id: process_via_tuple,
         start: {
           MessageSorter.Sorter,
           :start_link,
           [
-            %{
-              name: name,
-              cmd_limit_min: cmd_limit_min,
-              cmd_limit_max: cmd_limit_max
-            }
+            process_via_tuple
           ]}
         }
      )

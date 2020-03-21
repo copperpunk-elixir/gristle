@@ -5,14 +5,16 @@ defmodule SwarmHeartbeat.Node do
   def start_link(config) do
     Comms.ProcessRegistry.start_link()
     # process_registry_id = config.process_registry_id
-    name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, config.name)
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: name_in_registry)
+    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, config.name)
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     GenServer.cast(pid, :begin)
   end
 
   @impl GenServer
   def init(config) do
     {:ok, %{
+        registry_module: config.registry_module,
+        registry_function: config.registry_function,
         ward: config.ward,
         heartbeat_group: config.heartbeat_group
      }}
@@ -21,9 +23,9 @@ defmodule SwarmHeartbeat.Node do
   def handle_cast(:begin, state) do
     :pg2.create(state.heartbeat_group)
     :pg2.join(self(), state.heartbeat_group)
-    CommandSorter.System.start_sorter({__MODULE__, {:state.name, :ward}}, 0, 2)
-    CommandSorter.System.start_sorter({__MODULE__, {:state.name, :guardian}}, 0, 1)
-    CommandSorter.System.start_sorter({__MODULE__, {:state.name, :all}}, 0, 1)
+    MessageSorter.System.start_sorter({__MODULE__, {:state.name, :ward}}, 0, 2)
+    MessageSorter.System.start_sorter({__MODULE__, {:state.name, :guardian}}, 0, 1)
+    MessageSorter.System.start_sorter({__MODULE__, {:state.name, :all}}, 0, 1)
   end
 
   def handle_cast(:start_heartbeat, state) do
