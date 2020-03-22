@@ -1,19 +1,16 @@
-defmodule SwarmHeartbeat.Hb do
+defmodule Swarm.Heartbeat do
   use GenServer
   require Logger
 
   def get_default_config() do
-    %{
+    [
       registry_module: Comms.ProcessRegistry,
-      registry_function: :via_tuple
-    }
+      registry_function: :via_tuple,
+      heartbeat_loop_interval_ms: 1000
+    ]
   end
 
   def start_link(config) do
-    Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_link()
-    # process_registry_id = config.process_registry_id
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, config.name)
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     GenServer.cast(pid, :begin)
     GenServer.cast(pid, :start_heartbeat)
@@ -23,11 +20,11 @@ defmodule SwarmHeartbeat.Hb do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        registry_module: config.registry_module,
-        registry_function: config.registry_function,
+        registry_module: Keyword.get(config, :registry_module),
+        registry_function: Keyword.get(config, :registry_function),
         node_sorter: nil,
         ward_sorter: nil,
-        heartbeat_loop_interval_ms: 5000,
+        heartbeat_loop_interval_ms: Keyword.get(config, :heartbeat_loop_interval_ms),
         heartbeat_timer: nil,
         node_ward_status_map: %{},
         swarm_status: 0
@@ -49,13 +46,19 @@ defmodule SwarmHeartbeat.Hb do
     {:noreply, state}
   end
 
+  def handle_cast(:remove_all_heartbeats, state) do
+    MessageSorter.Sorter.remove_all_messages(state.node_sorter)
+    MessageSorter.Sorter.remove_all_messages(state.ward_sorter)
+    {:noreply, state}
+  end
+
   def handle_cast(:start_heartbeat, state) do
     state =
       case :timer.send_interval(state.heartbeat_loop_interval_ms, self(), :calc_heartbeat_status) do
         {:ok, heartbeat_timer} ->
           %{state | heartbeat_timer: heartbeat_timer}
         {_, reason} ->
-          IO.puts("Could not start heartbeat timer: #{inspect(reason)}")
+          Logger.debug("Could not start heartbeat timer: #{inspect(reason)}")
           state
       end
     {:noreply, state}
@@ -68,17 +71,19 @@ defmodule SwarmHeartbeat.Hb do
         {:ok, } ->
           %{state | heartbeat_timer: nil}
         {_, reason} ->
-          IO.puts("Could not stop heartbeat timer: #{inspect(reason)}")
+          Logger.debug("Could not stop heartbeat timer: #{inspect(reason)}")
           state
       end
     {:noreply, state}
   end
 
+  @impl GenServer
   def handle_call(:is_swarm_healthy, _from, state) do
     swarm_healthy = state.swarm_status == 1
     {:reply, swarm_healthy , state}
   end
 
+  @impl GenServer
   def handle_call({:is_node_healthy, node}, _from, state) do
     node_healthy = get_node_status(state.node_ward_status_map, node) == 1
     {:reply, node_healthy, state}
@@ -88,14 +93,14 @@ defmodule SwarmHeartbeat.Hb do
   def handle_info(:calc_heartbeat_status, state) do
     # Get Heartbeat status
     node_ward_list = get_node_ward_list(state.node_sorter)
-    IO.puts("Node_ward_list: #{inspect(node_ward_list)}")
+    Logger.debug("Node_ward_list: #{inspect(node_ward_list)}")
     ward_status_list = get_ward_status_list(state.ward_sorter)
-    IO.puts("ward_status_list: #{inspect(ward_status_list)}")
+    Logger.debug("ward_status_list: #{inspect(ward_status_list)}")
 
     node_ward_status_map = get_node_ward_status_map(node_ward_list, ward_status_list)
-    IO.puts("node_ward_status: #{inspect(node_ward_status_map)}")
+    Logger.debug("node_ward_status: #{inspect(node_ward_status_map)}")
     swarm_status = get_swarm_status(node_ward_status_map)
-    IO.puts("swarm status: #{swarm_status}")
+    Logger.debug("swarm status: #{swarm_status}")
     {:noreply, %{state | node_ward_status_map: node_ward_status_map, swarm_status: swarm_status}}
   end
 
@@ -152,11 +157,31 @@ defmodule SwarmHeartbeat.Hb do
     GenServer.cast(process, {:add_heartbeat, node, ward, time_validity_ms})
   end
 
-  def swarm_healty?(process) do
+  def swarm_healthy?(process) do
     GenServer.call(process, :is_swarm_healthy)
   end
 
   def node_healthy?(process, node) do
     GenServer.call(process, {:is_node_healthy, node})
+  end
+
+  # TODO: This should live in TestLand but I don't know how yet
+  def test_setup() do
+    {:ok, comms_pid} = Comms.ProcessRegistry.start_link()
+    Common.Utils.wait_for_genserver_start(comms_pid)
+    {:ok, msg_pid} = MessageSorter.System.start_link()
+    Common.Utils.wait_for_genserver_start(msg_pid)
+    config = get_default_config()
+    config = Keyword.put(config, :heartbeat_loop_interval_ms, 100)
+    {:ok, pid} = start_link(config)
+    Common.Utils.wait_for_genserver_start(pid)
+    Process.sleep(10)
+    remove_all_heartbeats(pid)
+    Process.sleep(100)
+    pid
+  end
+
+  def remove_all_heartbeats(process) do
+    GenServer.cast(process, :remove_all_heartbeats)
   end
 end
