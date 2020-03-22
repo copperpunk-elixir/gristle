@@ -2,7 +2,7 @@ defmodule MessageSorter.System do
   use DynamicSupervisor
   require Logger
 
-  def start_link(_) do
+  def start_link() do
     Logger.debug("Start MessageSorter Supervisor")
     DynamicSupervisor.start_link(__MODULE__, nil, name: __MODULE__)
   end
@@ -19,7 +19,7 @@ defmodule MessageSorter.System do
   #   }
   # end
 
-  def start_sorter(processa_via_tuple) do
+  def start_sorter(process_via_tuple) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{

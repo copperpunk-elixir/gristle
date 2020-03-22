@@ -38,7 +38,7 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_call(:get_all_messages, _from, stored_messages) do
-    {:reply, stored_messages, stored_messages}
+    {:reply, prune_old_messages(stored_messages), stored_messages}
   end
 
   @impl GenServer
@@ -57,15 +57,14 @@ defmodule MessageSorter.Sorter do
   end
 
   def add_message(process_via_tuple, classification, time_validity_ms, value) do
-    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + time_validity_ms
+    expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(process_via_tuple, {:add_message, classification, expiration_mono_ms, value})
   end
 
   def add_message(process_via_tuple, msg_struct) do
-    expiration_mono_ms = :erlang.monotonic_time(:millisecond) + msg_struct.expiration_mono_ms
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.cast(process_via_tuple, {:add_message, msg_struct.classification, expiration_mono_ms, msg_struct.value})
+    GenServer.cast(process_via_tuple, {:add_message, msg_struct.classification, msg_struct.expiration_mono_ms, msg_struct.value})
   end
 
   def get_message(process_via_tuple) do
@@ -120,5 +119,9 @@ defmodule MessageSorter.Sorter do
 
   defp sort_msgs_by_classification(msgs) do
     Enum.sort_by(msgs, &(&1.classification))
+  end
+
+  def get_expiration_mono_ms(time_validity_ms) do
+    :erlang.monotonic_time(:millisecond) + time_validity_ms
   end
 end
