@@ -1,25 +1,29 @@
-defmodule Controller.Pid do
+defmodule Pids.Pid do
   use GenServer
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start PID")
-    process_via_tuple = apply(config[:registry_module], config[:registry_function], [__MODULE__, config[:name]])
+    Logger.debug("Start PID #{config[:name]}")
+    process_via_tuple = via_tuple(config[:registry_module], config[:registry_function], config[:name])
     GenServer.start_link(__MODULE__, config, name: process_via_tuple)
   end
 
   @impl GenServer
   def init(config) do
     {:ok, %{
-         registry_module: Keyword.get(config, :registry_module),
-         registry_function: Keyword.get(config, :registry_function),
-         kp: Keyword.get(config, :kp),
-         output: 0
+         # registry_module: Keyword.get(config, :registry_module),
+         # registry_function: Keyword.get(config, :registry_function),
+        kp: Keyword.get(config, :kp, 0),
+        ki: Keyword.get(config, :ki, 0),
+        kd: Keyword.get(config, :kd, 0),
+        pv_error_prev: 0,
+        output: 0
       }}
   end
 
   @impl GenServer
   def handle_call({:update, process_var_error, dt}, _from, state) do
+    Logger.debug("Update pid #{inspect(self())}")
     cmd_p = state.kp*process_var_error
     output = cmd_p
     {:reply, output, %{state | output: output}}
@@ -36,5 +40,9 @@ defmodule Controller.Pid do
 
   def get_output(process_id) do
     GenServer.call(process_id, :get_output)
+  end
+
+  def via_tuple(registry_module, registry_function, name) do
+    apply(registry_module, registry_function, [__MODULE__, name])
   end
 end

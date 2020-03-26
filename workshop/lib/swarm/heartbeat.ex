@@ -12,7 +12,7 @@ defmodule Swarm.Heartbeat do
 
   def start_link(config) do
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    GenServer.cast(pid, :begin)
+    GenServer.cast(pid, {:begin, config[:registry_module], config[:registry_function]})
     GenServer.cast(pid, :start_heartbeat)
     {:ok, pid}
   end
@@ -31,10 +31,10 @@ defmodule Swarm.Heartbeat do
      }}
   end
 
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, registry_module, registry_function}, state) do
     Process.sleep(100)
-    node_sorter = apply(state.registry_module, state.registry_function, [MessageSorter, {:hb,:node}])
-    ward_sorter = apply(state.registry_module, state.registry_function, [MessageSorter, {:hb,:ward}])
+    node_sorter = apply(registry_module, registry_function, [MessageSorter, {:hb,:node}])
+    ward_sorter = apply(registry_module, registry_function, [MessageSorter, {:hb,:ward}])
     MessageSorter.System.start_sorter(node_sorter)
     MessageSorter.System.start_sorter(ward_sorter)
     {:noreply, %{state | node_sorter: node_sorter, ward_sorter: ward_sorter}}
