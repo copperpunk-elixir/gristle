@@ -1,6 +1,6 @@
-defmodule Actuator.Interface do
-  use GenServer
-  require Logger
+# defmodule Actuator.Interface do
+#   use GenServer
+#   require Logger
 
  
-end
+# end

@@ -1,34 +1,34 @@
 defmodule Controller.Pid.StartPidTest do
-  alias Controller.Pid, as: Pid
   use ExUnit.Case
 
   setup do
-    registry_module = Comms.ProcessRegistry
-    registry_function = :via_tuple
-    {:ok, registry_pid} = apply(registry_module, :start_link, [])
+    {:ok, registry_pid} = Comms.ProcessRegistry.start_link()
     Common.Utils.wait_for_genserver_start(registry_pid)
 
     pids = %{
-      roll: %{aileron: %{kp: 1.0, weight: 0.9},
-              rudder: %{kp: 0.1}, weight: 0.1},
-      yaw: %{aileron: %{kp: 0.2, weight: 0.2},
-             rudder: %{kp: 0.5, weight: 0.8}
+      roll: %{aileron: [kp: 1.0, weight: 0.9],
+              rudder: [kp: 0.1, weight: 0.1]
+             },
+      yaw: %{aileron: [kp: 0.2, weight: 0.2],
+             rudder: [kp: 0.5, weight: 0.8]
       }
     }
 
     {:ok, [
         config: [
-        registry_module: registry_module,
-        registry_function: registry_function,
         pids: pids
         ]
       ]}
   end
 
   test "start PID server", context do
-    {:ok, process_id} = Pids.start_link(config)
+    config = [name: nil]
+    config = Keyword.merge(context[:config], config)
+    IO.inspect(config)
+    {:ok, process_id} = Pids.System.start_link(config)
     Common.Utils.wait_for_genserver_start(process_id)
-    assert pid == GenServer.whereis(apply(config[:registry_module], config[:registry_function], [Controller.Pid, Keyword.get(config, :name)]))
+    Process.sleep(500)
+    assert process_id == GenServer.whereis(Comms.ProcessRegistry.via_tuple(Pids.System,config[:name]))
   end
 
   # test "update PID and check output", context do

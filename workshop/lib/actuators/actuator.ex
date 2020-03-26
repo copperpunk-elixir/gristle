@@ -10,13 +10,6 @@ defmodule Actuator.Actuator do
     GenServer.cast(process_id, :start_pids)
   end
 
-  # For a single actuator (aileron, rudder, etc)
-  # pids = %{
-  #   roll: [kp: 1.0, ki: 2.0, weight: 0.9],
-  #   yaw: [kp: 0.2, ki: 0, weight: 0.1]
-  # }
-  # Can be accessed by  process_variable -> actuator -> pid(process_variable)
-
   @impl GenServer
   def init(config) do
     {:ok, %{
@@ -27,13 +20,4 @@ defmodule Actuator.Actuator do
         weight: Keyword.get(config, :weight)
      }}
   end
-
-  
-
-  # @impl GenServer
-  # def handle_cast({:update_pid, process_variable, process_var_error, dt}, state) do
-    # process_via_tuple = apply(state.registry_module, config.registry_function, [Controller.Pid, {process_variable, state.name}])
-  #   GenServer.cast(process_via_tuple, {:update, process_var_error, dt})
-  #   {:noreply, state}
-  # end
 end

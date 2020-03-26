@@ -4,8 +4,9 @@ defmodule Pids.System do
 
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
-    process_via_tuple = apply(config[:registry_module], config[:registry_function], [__MODULE__, Keyword.get(config[:name])])
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: process_via_tuple)
+    name = Keyword.get(config, :name)
+    IO.inspect(config)
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: Comms.ProcessRegistry.via_tuple(__MODULE__, name))
     GenServer.cast(pid, :start_pids)
     {:ok, pid}
   end
@@ -13,25 +14,20 @@ defmodule Pids.System do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        registry_module: Keyword.fetch!(config, :registry_module),
-        registry_function: Keyword.fetch!(config, :registry_function),
         pids: Keyword.fetch!(config, :pids)
      }}
   end
 
   @impl GenServer
   def handle_cast(:start_pids, state) do
-    state = Enum.reduce(state.pids, state, fn ({process_variable, actuator}, acc) ->
-      process_variable_actuators =
-        Enum.reduce(process_variable, process_variable, fn ({actuator, pid}, acc) ->
-          Controller.Pid.start_link(pid)
-          pid_via_tuple = Pids.Pid.via_tuple(state.registry_module, state.registry_function, {process_variable, actuator})
-          pid = Map.put(pid, :via_tuple, pid_via_tuple)
-          %{acc | Map.put(acc, actuator, pid)}
+    IO.inspect(state)
+    Enum.each(state.pids, fn {process_variable, actuators} ->
+      Enum.each(actuators, fn {actuator, pid_config} ->
+        Logger.debug("pid: #{inspect(pid_config)}")
+        pid_config = Keyword.put(pid_config, :name, {process_variable, actuator})
+          Pids.Pid.start_link(pid_config)
         end)
-      %{acc | Map.put(acc, process_variable, process_variable_actuators)}
     end)
-    Logger.debug("Pids state: #{inspect(state)}")
     {:noreply, state}
   end
 
