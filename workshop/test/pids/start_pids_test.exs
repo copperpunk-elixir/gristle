@@ -7,9 +7,9 @@ defmodule Controller.Pid.StartPidTest do
 
     pids = %{
       roll: %{aileron: %{kp: 1.0, weight: 0.9},
-              rudder: %{kp: 0.1, weight: 0.1}
+              rudder: %{kp: 0.1, weight: 0.2}
              },
-      yaw: %{aileron: %{kp: 0.2, weight: 0.2},
+      yaw: %{aileron: %{kp: 0.2, weight: 0.1},
              rudder: %{kp: 0.5, weight: 0.8}
       }
     }
