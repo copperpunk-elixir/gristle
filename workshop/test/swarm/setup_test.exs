@@ -6,6 +6,6 @@ defmodule Swarm.SetupTest do
   test "create Hb server" do
     Logger.debug("Create Hb server")
     pid = Hb.test_setup()
-    assert Hb.swarm_healthy?(pid) == false
+    assert Hb.swarm_healthy?() == false
   end
 end

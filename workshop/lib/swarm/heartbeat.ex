@@ -3,16 +3,14 @@ defmodule Swarm.Heartbeat do
   require Logger
 
   def get_default_config() do
-    [
-      registry_module: Comms.ProcessRegistry,
-      registry_function: :via_tuple,
+    %{
       heartbeat_loop_interval_ms: 1000
-    ]
+    }
   end
 
   def start_link(config) do
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    GenServer.cast(pid, {:begin, config[:registry_module], config[:registry_function]})
+    GenServer.cast(__MODULE__, :begin)
     GenServer.cast(pid, :start_heartbeat)
     {:ok, pid}
   end
@@ -20,21 +18,19 @@ defmodule Swarm.Heartbeat do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        registry_module: Keyword.get(config, :registry_module),
-        registry_function: Keyword.get(config, :registry_function),
         node_sorter: nil,
         ward_sorter: nil,
-        heartbeat_loop_interval_ms: Keyword.get(config, :heartbeat_loop_interval_ms),
+        heartbeat_loop_interval_ms: Map.get(config, :heartbeat_loop_interval_ms),
         heartbeat_timer: nil,
         node_ward_status_map: %{},
         swarm_status: 0
      }}
   end
 
-  def handle_cast({:begin, registry_module, registry_function}, state) do
+  def handle_cast(:begin , state) do
     Process.sleep(100)
-    node_sorter = apply(registry_module, registry_function, [MessageSorter, {:hb,:node}])
-    ward_sorter = apply(registry_module, registry_function, [MessageSorter, {:hb,:ward}])
+    node_sorter = {:hb,:node}
+    ward_sorter = {:hb,:ward}
     MessageSorter.System.start_sorter(node_sorter)
     MessageSorter.System.start_sorter(ward_sorter)
     {:noreply, %{state | node_sorter: node_sorter, ward_sorter: ward_sorter}}
@@ -153,16 +149,16 @@ defmodule Swarm.Heartbeat do
     Map.get(node_ward_status_map, node)
   end
 
-  def add_heartbeat(process, node, ward, time_validity_ms) do
-    GenServer.cast(process, {:add_heartbeat, node, ward, time_validity_ms})
+  def add_heartbeat(node, ward, time_validity_ms) do
+    GenServer.cast(__MODULE__, {:add_heartbeat, node, ward, time_validity_ms})
   end
 
-  def swarm_healthy?(process) do
-    GenServer.call(process, :is_swarm_healthy)
+  def swarm_healthy?() do
+    GenServer.call(__MODULE__, :is_swarm_healthy)
   end
 
-  def node_healthy?(process, node) do
-    GenServer.call(process, {:is_node_healthy, node})
+  def node_healthy?(node) do
+    GenServer.call(__MODULE__, {:is_node_healthy, node})
   end
 
   # TODO: This should live in TestLand but I don't know how yet
@@ -172,11 +168,11 @@ defmodule Swarm.Heartbeat do
     {:ok, msg_pid} = MessageSorter.System.start_link()
     Common.Utils.wait_for_genserver_start(msg_pid)
     config = get_default_config()
-    config = Keyword.put(config, :heartbeat_loop_interval_ms, 100)
+    config = Map.put(config, :heartbeat_loop_interval_ms, 100)
     {:ok, pid} = start_link(config)
     Common.Utils.wait_for_genserver_start(pid)
     Process.sleep(10)
-    remove_all_heartbeats(pid)
+    # remove_all_heartbeats(pid)
     Process.sleep(100)
     pid
   end
@@ -184,4 +180,5 @@ defmodule Swarm.Heartbeat do
   def remove_all_heartbeats(process) do
     GenServer.cast(process, :remove_all_heartbeats)
   end
+
 end

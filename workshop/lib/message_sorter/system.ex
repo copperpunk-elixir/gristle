@@ -26,16 +26,16 @@ defmodule MessageSorter.System do
   #   }
   # end
 
-  def start_sorter(process_via_tuple) do
+  def start_sorter(name) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{
-        id: process_via_tuple,
+        id: name,
         start: {
           MessageSorter.Sorter,
           :start_link,
           [
-            process_via_tuple
+            name
           ]}
         }
      )

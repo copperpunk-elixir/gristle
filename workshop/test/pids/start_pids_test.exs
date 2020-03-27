@@ -6,45 +6,42 @@ defmodule Controller.Pid.StartPidTest do
     Common.Utils.wait_for_genserver_start(registry_pid)
 
     pids = %{
-      roll: %{aileron: [kp: 1.0, weight: 0.9],
-              rudder: [kp: 0.1, weight: 0.1]
+      roll: %{aileron: %{kp: 1.0, weight: 0.9},
+              rudder: %{kp: 0.1, weight: 0.1}
              },
-      yaw: %{aileron: [kp: 0.2, weight: 0.2],
-             rudder: [kp: 0.5, weight: 0.8]
+      yaw: %{aileron: %{kp: 0.2, weight: 0.2},
+             rudder: %{kp: 0.5, weight: 0.8}
       }
     }
 
     {:ok, [
-        config: [
+        config: %{
         pids: pids
-        ]
+        }
       ]}
   end
 
   test "start PID server", context do
-    config = [name: nil]
-    config = Keyword.merge(context[:config], config)
-    IO.inspect(config)
+    config = %{}
+    config = Map.merge(context[:config], config)
     {:ok, process_id} = Pids.System.start_link(config)
     Common.Utils.wait_for_genserver_start(process_id)
-    Process.sleep(500)
-    assert process_id == GenServer.whereis(Comms.ProcessRegistry.via_tuple(Pids.System,config[:name]))
+    assert process_id == GenServer.whereis(Pids.System)
   end
 
-  # test "update PID and check output", context do
-  #   config = [
-  #     name: :a,
-  #     kp: 1.0
-  #   ]
-  #   config = Keyword.merge(context[:config], config)
+  test "update PID and check output", context do
+    config = %{}
+    config = Map.merge(context[:config], config)
+    {:ok, process_id} = Pids.System.start_link(config)
+    Common.Utils.wait_for_genserver_start(process_id)
 
-  #   {:ok, pid} = Pid.start_link(config)
-  #   Common.Utils.wait_for_genserver_start(pid)
-
-  #   pv_error = 1.0
-  #   pid_output = Pid.update_pid(pid, pv_error, 0.05)
-  #   assert pid_output != 0
-  #   assert pid_output == Pid.get_output(pid)
-  # end
+    pv_error = 1.0
+    Pids.System.update_pids(:roll, pv_error, 0.05)
+    Process.sleep(100)
+    roll_aileron_output = Pids.Pid.get_output(:roll, :aileron)
+    roll_rudder_output = Pids.Pid.get_output(:roll, :rudder)
+    assert roll_aileron_output == get_in(config, [:pids, :roll, :aileron, :kp])*pv_error
+    assert roll_rudder_output == get_in(config, [:pids, :roll, :rudder, :kp])*pv_error
+  end
 
 end

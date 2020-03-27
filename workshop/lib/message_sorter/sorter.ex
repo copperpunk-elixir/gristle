@@ -4,10 +4,9 @@ defmodule MessageSorter.Sorter do
 
   @default_call_timeout 50
 
-  def start_link(process_via_tuple) do
-    Logger.debug("Start MessageSorter: #{inspect(process_via_tuple)}")
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.start_link(__MODULE__, nil, name: process_via_tuple)
+  def start_link(name) do
+    Logger.debug("Start MessageSorter: #{inspect(name)}")
+    GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
   end
 
   @impl GenServer
@@ -61,35 +60,35 @@ defmodule MessageSorter.Sorter do
     {:reply, value, valid_messages}
   end
 
-  def add_message(process, classification, time_validity_ms, value) do
+  def add_message(name, classification, time_validity_ms, value) do
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.cast(process, {:add_message, classification, expiration_mono_ms, value})
+    GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})
   end
 
-  def add_message(process, msg_struct) do
+  def add_message(name, msg_struct) do
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.cast(process, {:add_message, msg_struct.classification, msg_struct.expiration_mono_ms, msg_struct.value})
+    GenServer.cast(via_tuple(name), {:add_message, msg_struct.classification, msg_struct.expiration_mono_ms, msg_struct.value})
   end
 
-  def get_message(process) do
+  def get_message(name) do
     # Logger.debug("Get message: #{inspect(process)}")
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.call(process, :get_message, @default_call_timeout)
+    GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end
 
-  def get_all_messages(process) do
+  def get_all_messages(name) do
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.call(process, :get_all_messages, @default_call_timeout)
+    GenServer.call(via_tuple(name), :get_all_messages, @default_call_timeout)
   end
 
-  def get_value(process) do
+  def get_value(name) do
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
-    GenServer.call(process, :get_value, @default_call_timeout)
+    GenServer.call(via_tuple(name), :get_value, @default_call_timeout)
   end
 
-  def remove_all_messages(process) do
-    GenServer.cast(process, :remove_all_messages)
+  def remove_all_messages(name) do
+    GenServer.cast(via_tuple(name), :remove_all_messages)
   end
 
   def is_valid_classification?(current_classification, new_classification) do
@@ -132,5 +131,9 @@ defmodule MessageSorter.Sorter do
 
   def get_expiration_mono_ms(time_validity_ms) do
     :erlang.monotonic_time(:millisecond) + time_validity_ms
+  end
+
+  def via_tuple(name) do
+    Comms.ProcessRegistry.via_tuple(__MODULE__, name)
   end
 end

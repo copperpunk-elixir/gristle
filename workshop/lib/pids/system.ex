@@ -4,27 +4,27 @@ defmodule Pids.System do
 
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
-    name = Keyword.get(config, :name)
-    IO.inspect(config)
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: Comms.ProcessRegistry.via_tuple(__MODULE__, name))
+    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     GenServer.cast(pid, :start_pids)
+    GenServer.cast(pid, :reduce_config)
     {:ok, pid}
   end
 
+  # The PID will be simplified to a map of process_variables, each
+  # containing a list of actuators. The PID parameters will be dropped, as
+  # they are unnessary after startup.
   @impl GenServer
   def init(config) do
     {:ok, %{
-        pids: Keyword.fetch!(config, :pids)
+        pids: Map.fetch!(config, :pids)
      }}
   end
 
   @impl GenServer
   def handle_cast(:start_pids, state) do
-    IO.inspect(state)
     Enum.each(state.pids, fn {process_variable, actuators} ->
       Enum.each(actuators, fn {actuator, pid_config} ->
-        Logger.debug("pid: #{inspect(pid_config)}")
-        pid_config = Keyword.put(pid_config, :name, {process_variable, actuator})
+        pid_config = Map.put(pid_config, :name, {process_variable, actuator})
           Pids.Pid.start_link(pid_config)
         end)
     end)
@@ -32,14 +32,30 @@ defmodule Pids.System do
   end
 
   @impl GenServer
-  def handle_cast({:update_pid, process_variable, process_variable_error, dt}, state) do
-    Enum.each(state.pids, fn {pid_process_variable, pid} ->
+  def handle_cast(:reduce_config, state) do
+    pids = Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_reduced) ->
+      actuators_reduced = Enum.reduce(actuators, [], fn ({actuator, _pid_config}, acts_red) ->
+        [actuator | acts_red]
+      end)
+      Map.put(config_reduced, process_variable, actuators_reduced)
+    end)
+    {:noreply, %{state | pids: pids}}
+  end
+
+  @impl GenServer
+  def handle_cast({:update_pids, process_variable, process_variable_error, dt}, state) do
+    Enum.each(state.pids, fn {pid_process_variable, actuators} ->
       if pid_process_variable == process_variable do
-        pid_via_tuple = get_in(state, [:pids, process_variable, :via_tuple])
-        GenServer.cast(pid_via_tuple, {:update, process_variable_error, dt})
+        Enum.each(actuators, fn actuator ->
+          Pids.Pid.update_pid(process_variable, actuator, process_variable_error, dt)
+        end)
       end
     end)
     {:noreply, state}
+  end
+
+  def update_pids(process_variable, process_variable_error, dt) do
+    GenServer.cast(__MODULE__, {:update_pids, process_variable, process_variable_error, dt})
   end
 
 end
