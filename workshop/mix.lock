@@ -1,0 +1,4 @@
+%{
+  "circuits_uart": {:hex, :circuits_uart, "1.4.1", "f8151bfb5ac29fe2e791eec00bc6ec298fdb8fa81ddd80bdb0f9f2828f20d7b8", [:mix], [{:elixir_make, "~> 0.6", [hex: :elixir_make, repo: "hexpm", optional: false]}], "hexpm", "8cc3065de6d9b859f76d10fa438e243103eea1ba53b9749e4c63005c6d89780b"},
+  "elixir_make": {:hex, :elixir_make, "0.6.0", "38349f3e29aff4864352084fc736fa7fa0f2995a819a737554f7ebd28b85aaab", [:mix], [], "hexpm", "d522695b93b7f0b4c0fcb2dfe73a6b905b1c301226a5a55cb42e5b14d509e050"},
+}

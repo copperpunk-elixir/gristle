@@ -87,6 +87,10 @@ defmodule MessageSorter.Sorter do
     GenServer.call(via_tuple(name), :get_value, @default_call_timeout)
   end
 
+  def remove_messages_for_classification(name, classification) do
+    Logger.debug("Not implemented yet")
+  end
+
   def remove_all_messages(name) do
     GenServer.cast(via_tuple(name), :remove_all_messages)
   end

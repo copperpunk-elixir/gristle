@@ -16,9 +16,11 @@ defmodule Pids.System do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        pids: Map.fetch!(config, :pids),
-        pids_pv_act: %{},
-        pids_act_pv: %{}
+        pids: config.pids,
+        pv_act_pids: %{},
+        act_pv_pids: %{},
+        act_msg_class: config.actuator_output_msg_classification,
+        act_msg_time_ms: config.actuator_output_msg_time_validity_ms
      }}
   end
 
@@ -35,14 +37,14 @@ defmodule Pids.System do
 
   @impl GenServer
   def handle_cast(:reduce_config, state) do
-    pids_pv_act = Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_reduced) ->
+    pv_act_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_reduced) ->
       actuators_reduced = Enum.reduce(actuators, %{}, fn ({actuator, pid_config}, acts_red) ->
         Map.put(acts_red, actuator, pid_config.weight)
       end)
       Map.put(config_reduced, process_variable, actuators_reduced)
     end)
-    IO.puts("pids: pv/act: #{inspect(pids_pv_act)}")
-    pids_act_pv =
+    IO.puts("pv/act pids: #{inspect(pv_act_pids)}")
+    act_pv_pids =
       Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_by_actuator) ->
         # IO.puts("cba: #{inspect(config_by_actuator)}")
           Enum.reduce(actuators, config_by_actuator, fn ({actuator, pid_config}, pv_red) ->
@@ -51,13 +53,13 @@ defmodule Pids.System do
             Map.put(pv_red, actuator, new_map)
           end)
       end)
-    IO.puts("pids act/pv: #{inspect(pids_act_pv)}")
-    {:noreply, %{state | pids_pv_act: pids_pv_act, pids_act_pv: pids_act_pv}}
+    IO.puts("act/pv pids: #{inspect(act_pv_pids)}")
+    {:noreply, %{state | pv_act_pids: pv_act_pids, act_pv_pids: act_pv_pids}}
   end
 
   @impl GenServer
   def handle_cast({:update_pids, process_variable, process_variable_error, dt}, state) do
-    pv_actuators = Map.get(state.pids, process_variable)
+    pv_actuators = Map.get(state.pv_act_pids, process_variable)
     Enum.each(pv_actuators, fn {actuator, _weight} ->
       Pids.Pid.update_pid(process_variable, actuator, process_variable_error, dt)
     end)
@@ -65,21 +67,44 @@ defmodule Pids.System do
   end
 
   @impl GenServer
-  def handle_cast({:update_actuator, actuator_to_update}, state) do
-    actuator = Map.get(state.pids_act_pv, actuator_to_update)
-    output = Enum.reduce(actuator, 0, fn ({pv, weight}, acc) ->
-        pid_output = Pids.Pid.get_output(pv, actuator)
-        acc + weight*pid_output
+  def handle_cast({:update_all_actuators_connected_to_pv, process_variable}, state) do
+    Enum.each(state.act_pv_pids, fn {actuator_name, pv_pids} ->
+      Logger.debug("update acts with pv: #{process_variable}")
+      if Map.has_key?(pv_pids, process_variable) do
+        output = calculate_actuator_output(actuator_name, pv_pids)
+        Logger.debug("#{actuator_name} output: #{output}")
+        MessageSorter.Sorter.add_message(actuator_name, state.act_msg_class, state.act_msg_time_ms, output)
+      end
     end)
-    IO.puts("#{actuator_to_update}:  #{output}")
-    output
+    {:noreply, state}
+  end
+
+  # TODO: Does this function have a purpose besides testing?
+  @impl GenServer
+  def handle_call({:get_actuator_output, actuator}, _from, state) do
+    pv_pids = Map.get(state.pids_act_pv, actuator)
+    {:reply, calculate_actuator_output(actuator, pv_pids), state}
   end
 
   def update_pids(process_variable, process_variable_error, dt) do
     GenServer.cast(__MODULE__, {:update_pids, process_variable, process_variable_error, dt})
+    update_all_actuators_connected_to_process_variable(process_variable)
   end
 
-  def update_actuator(actuator) do
-    GenServer.cast(__MODULE__, {:update_actuator, actuator})
+  def get_actuator_output(actuator) do
+    GenServer.call(__MODULE__, {:get_actuator_output, actuator})
+  end
+
+  def calculate_actuator_output(actuator_name, pv_pids) do
+    output = Enum.reduce(pv_pids, 0, fn ({pv, weight}, acc) ->
+      pid_output = Pids.Pid.get_output(pv, actuator_name)
+      acc + weight*pid_output
+    end)
+    IO.puts("#{actuator_name}:  #{output}")
+    output
+  end
+
+  def update_all_actuators_connected_to_process_variable(process_variable) do
+    GenServer.cast(__MODULE__, {:update_all_actuators_connected_to_pv, process_variable})
   end
 end
