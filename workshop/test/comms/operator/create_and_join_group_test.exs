@@ -1,6 +1,5 @@
 defmodule Comms.Operator.CreateAndJoinGroupTest do
   use ExUnit.Case
-  require Logger
 
   test "create and join group" do
     {:ok, pid} = Comms.Operator.start_link()

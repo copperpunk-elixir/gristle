@@ -88,7 +88,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def remove_messages_for_classification(name, classification) do
-    Logger.debug("Not implemented yet")
+    Logger.debug("remove messages for #{name}/#{inspect(classification)} not implemented yet")
   end
 
   def remove_all_messages(name) do

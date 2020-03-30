@@ -1,5 +1,5 @@
 defmodule Actuation.Actuator do
-  alias Actuation.Actuator, as: Actuator
+  # alias Actuation.Actuator, as: Actuator
   use GenServer
   require Logger
 

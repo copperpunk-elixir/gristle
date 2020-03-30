@@ -13,59 +13,72 @@ defmodule Actuation.HwInterface do
   def init(config) do
     # Start the low-level actuator driver
     {:ok, %{
-        actuator_driver: config.actuator_driver,
-        interface_ref: nil,
+        interface_module: get_interface_module(config.interface_driver_name),
+        interface: nil,
      }
     }
   end
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Logger.debug("Begin ActuatorInterfaceOutput")
-    interface_ref =
-      case state.actuator_driver do
-        :pololu ->
-          Peripherals.Uart.PololuServo.open_port()
+    interface = apply(state.interface_module, :new_device, [%{}])
+    interface =
+      case apply(state.interface_module, :open_port, [interface]) do
+        nil -> raise "#{state.interface_module} is unavailable"
+        iface -> iface
       end
+
     # unless uart_ref == nil do
     #   actuators_ready()
     # end
-    {:noreply, %{state | interface_ref: interface_ref}}
+    {:noreply, %{state | interface: interface}}
   end
 
   @impl GenServer
   def handle_cast({:set_actuator_output, actuator, output}, state) do
-    pulse_width_ms = get_pw_for_actuator_and_output(state.actuator_driver, actuator, output)
-    case state.interface_ref do
+    pulse_width_ms = get_pw_for_actuator_and_output(state.interface_module, actuator, output)
+    case state.interface do
       nil -> Logger.debug("No actuator interface for pw: #{pulse_width_ms}")
-      interface_ref -> 
-        send_pw_to_actuator(state.actuator_driver, interface_ref, actuator.channel_number, pulse_width_ms)
+      interface ->
+        send_pw_to_actuator(state.interface_module, interface, actuator.channel_number, pulse_width_ms)
     end
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call({:get_actuator_output, actuator}, _from, state) do
+    output = apply(state.interface_module, :get_output_for_channel_number, [state.interface, actuator.channel_number])
+    {:reply, output, state}
   end
 
   def set_actuator_output(actuator, output) do
     GenServer.cast(__MODULE__, {:set_actuator_output, actuator, output})
   end
 
-  def get_pw_for_actuator_and_output(actuator_driver, actuator, output) do
-    case actuator_driver do
-      :pololu ->
-        Peripherals.Uart.PololuServo.output_to_ms(output, actuator.reversed, actuator.min_pw_ms, actuator.max_pw_ms)
-        # Logger.debug("channel/number/output/ms: #{channel}/#{channel_number}/#{output}/#{inspect(pwm_ms)}")
-    end
+  def get_actuator_output(actuator) do
+    GenServer.call(__MODULE__, {:get_actuator_output, actuator})
   end
 
-  def send_pw_to_actuator(actuator_driver, interface_ref, channel_number, pulse_width_ms) do
-    case actuator_driver do
-      :pololu ->
-        Peripherals.Uart.PololuServo.write_microseconds(interface_ref, channel_number, pulse_width_ms)
-    end
+  def get_pw_for_actuator_and_output(interface_module, actuator, output) do
+    apply(interface_module, :output_to_ms, [output, actuator.reversed, actuator.min_pw_ms, actuator.max_pw_ms])
+        # Logger.debug("channel/number/output/ms: #{channel}/#{channel_number}/#{output}/#{inspect(pwm_ms)}")
+  end
+
+  def send_pw_to_actuator(interface_module, interface, channel_number, pulse_width_ms) do
+    apply(interface_module, :write_microseconds,[interface, channel_number, pulse_width_ms])
   end
 
   defp begin() do
     GenServer.cast(__MODULE__, :begin)
   end
 
-
+  defp get_interface_module(driver_name) do
+    case driver_name do
+      :pololu -> Peripherals.Uart.PololuServo
+      other ->
+        Logger.error("Actuator Interface #{other} not supported")
+        nil
+    end
+  end
 
 end
