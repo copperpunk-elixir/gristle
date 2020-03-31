@@ -2,6 +2,8 @@ defmodule Pids.System do
   use GenServer
   require Logger
 
+  @neutral_output 0.5
+
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
@@ -43,7 +45,7 @@ defmodule Pids.System do
       end)
       Map.put(config_reduced, process_variable, actuators_reduced)
     end)
-    IO.puts("pv/act pids: #{inspect(pv_act_pids)}")
+    # IO.puts("pv/act pids: #{inspect(pv_act_pids)}")
     act_pv_pids =
       Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_by_actuator) ->
         # IO.puts("cba: #{inspect(config_by_actuator)}")
@@ -53,7 +55,7 @@ defmodule Pids.System do
             Map.put(pv_red, actuator, new_map)
           end)
       end)
-    IO.puts("act/pv pids: #{inspect(act_pv_pids)}")
+    # IO.puts("act/pv pids: #{inspect(act_pv_pids)}")
     {:noreply, %{state | pv_act_pids: pv_act_pids, act_pv_pids: act_pv_pids}}
   end
 
@@ -96,15 +98,29 @@ defmodule Pids.System do
   end
 
   def calculate_actuator_output(actuator_name, pv_pids) do
-    output = Enum.reduce(pv_pids, 0, fn ({pv, weight}, acc) ->
+    {output_sum, weight_sum} = Enum.reduce(pv_pids, {0,0}, fn ({pv, weight}, acc) ->
       pid_output = Pids.Pid.get_output(pv, actuator_name)
-      acc + weight*pid_output
+      output_sum_new = elem(acc, 0) + weight*pid_output
+      weight_sum_new = elem(acc, 1) + weight
+      {output_sum_new, weight_sum_new}
     end)
-    IO.puts("#{actuator_name}:  #{output}")
-    output
+    # Actuator Output is centered at @neutral_output!!
+    if (weight_sum> 0) do
+      constrain_output(output_sum / weight_sum) + @neutral_output
+    else
+      @neutral_output
+    end
   end
 
   def update_all_actuators_connected_to_process_variable(process_variable) do
     GenServer.cast(__MODULE__, {:update_all_actuators_connected_to_pv, process_variable})
+  end
+
+  def constrain_output(output) do
+    cond do
+      output > 1 -> 1
+      output < 0 -> 0
+      true -> output
+    end
   end
 end

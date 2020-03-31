@@ -1,10 +1,10 @@
 defmodule TestConfigs.Pids do
   def get_pid_config_roll_yaw() do
     pids = %{
-      roll: %{aileron: %{kp: 1.0, weight: 0.9},
+      roll: %{aileron: %{kp: 1.0, weight: 0.3},
               rudder: %{kp: 0.1, weight: 0.2}
              },
-      yaw: %{aileron: %{kp: 0.2, weight: 0.1},
+      yaw: %{aileron: %{kp: 0.2, weight: 0.6},
              rudder: %{kp: 0.5, weight: 0.8}
       }
     }
