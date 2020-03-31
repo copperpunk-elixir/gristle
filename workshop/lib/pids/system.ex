@@ -73,7 +73,7 @@ defmodule Pids.System do
       if Map.has_key?(pv_pids, process_variable) do
         output = calculate_actuator_output(actuator_name, pv_pids)
         Logger.debug("#{actuator_name} output: #{output}")
-        MessageSorter.Sorter.add_message(actuator_name, state.act_msg_class, state.act_msg_time_ms, output)
+        MessageSorter.Sorter.add_message({:actuator, actuator_name}, state.act_msg_class, state.act_msg_time_ms, output)
       end
     end)
     {:noreply, state}

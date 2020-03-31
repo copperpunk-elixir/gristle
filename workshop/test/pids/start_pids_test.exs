@@ -5,19 +5,10 @@ defmodule Controller.Pid.StartPidTest do
     {:ok, registry_pid} = Comms.ProcessRegistry.start_link()
     Common.Utils.wait_for_genserver_start(registry_pid)
 
-    pids = %{
-      roll: %{aileron: %{kp: 1.0, weight: 0.9},
-              rudder: %{kp: 0.1, weight: 0.2}
-             },
-      yaw: %{aileron: %{kp: 0.2, weight: 0.1},
-             rudder: %{kp: 0.5, weight: 0.8}
-      }
-    }
+    pid_config = TestConfigs.Pids.get_pid_config_roll_yaw()
 
     {:ok, [
-        config: %{
-        pids: pids
-        }
+        config: pid_config
       ]}
   end
 
@@ -43,5 +34,4 @@ defmodule Controller.Pid.StartPidTest do
     assert roll_aileron_output == get_in(config, [:pids, :roll, :aileron, :kp])*pv_error
     assert roll_rudder_output == get_in(config, [:pids, :roll, :rudder, :kp])*pv_error
   end
-
 end

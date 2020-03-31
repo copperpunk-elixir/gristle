@@ -14,6 +14,7 @@ defmodule Actuation.HwInterfacePololuTest do
             max_pw_ms: 1900,
             cmd_limit_min: 0,
             cmd_limit_max: 1,
+            failsafe_cmd: 0.5
           }
         }
       ]}

@@ -28,9 +28,6 @@ defmodule Actuation.HwInterface do
         iface -> iface
       end
 
-    # unless uart_ref == nil do
-    #   actuators_ready()
-    # end
     {:noreply, %{state | interface: interface}}
   end
 
@@ -51,6 +48,11 @@ defmodule Actuation.HwInterface do
     {:reply, output, state}
   end
 
+  @impl GenServer
+  def handle_call(:get_interface, _from, state) do
+    {:reply, state.interface, state}
+  end
+
   def set_actuator_output(actuator, output) do
     GenServer.cast(__MODULE__, {:set_actuator_output, actuator, output})
   end
@@ -61,7 +63,6 @@ defmodule Actuation.HwInterface do
 
   def get_pw_for_actuator_and_output(interface_module, actuator, output) do
     apply(interface_module, :output_to_ms, [output, actuator.reversed, actuator.min_pw_ms, actuator.max_pw_ms])
-        # Logger.debug("channel/number/output/ms: #{channel}/#{channel_number}/#{output}/#{inspect(pwm_ms)}")
   end
 
   def send_pw_to_actuator(interface_module, interface, channel_number, pulse_width_ms) do
@@ -79,6 +80,10 @@ defmodule Actuation.HwInterface do
         Logger.error("Actuator Interface #{other} not supported")
         nil
     end
+  end
+
+  def get_interface() do
+    GenServer.call(__MODULE__, :get_interface)
   end
 
 end
