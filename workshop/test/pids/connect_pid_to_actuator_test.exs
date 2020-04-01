@@ -43,21 +43,29 @@ defmodule Controller.Pid.ConnectPidToActuatorTest do
     yaw_pid = config.pid_config.pids.yaw
     yaw_weight = get_in(yaw_pid, [config.actuator_name, :weight])
     total_weight = roll_weight + yaw_weight
-    neutral_output = 0.5
+    rate_or_position = config.pid_config.rate_or_position
+    one_or_two_sided = config.pid_config.one_or_two_sided
+
     # A non-zero pv_error was sent to the pid, therefore the actuator output should
     # not be the neutral value
-    roll_error = 1
+    roll_error = 0.2
     Pids.System.update_pids(:roll, roll_error, 0.05)
     Process.sleep(60)
-    expected_roll_aileron_output = roll_error*get_in(roll_pid, [config.actuator_name, :kp])*roll_weight/total_weight
+    expected_roll_aileron_output =
+      roll_error*get_in(roll_pid, [config.actuator_name, :kp])*roll_weight/total_weight
+    expected_total_output =
+      expected_roll_aileron_output + Pids.Pid.get_initial_output(one_or_two_sided.aileron)
+      |> Pids.System.constrain_output()
     expected_pw = Actuation.HwInterface.get_pw_for_actuator_and_output(Peripherals.Uart.PololuServo,
-      actuator, Pids.System.constrain_output(expected_roll_aileron_output + neutral_output))
+      actuator, expected_total_output)
     assert_in_delta(Actuation.HwInterface.get_actuator_output(actuator), expected_pw, 0.25)
     # Add yaw to the mix
     yaw_error = 0.2
     Pids.System.update_pids(:yaw, yaw_error, 0.05)
     expected_yaw_aileron_output = yaw_error*get_in(yaw_pid, [config.actuator_name, :kp])*yaw_weight/total_weight
-    expected_total_output = Pids.System.constrain_output(expected_roll_aileron_output + expected_yaw_aileron_output + neutral_output)
+    expected_total_output =
+      expected_roll_aileron_output + expected_yaw_aileron_output + Pids.Pid.get_initial_output(one_or_two_sided.aileron)
+    |> Pids.System.constrain_output()
     expected_pw = Actuation.HwInterface.get_pw_for_actuator_and_output(Peripherals.Uart.PololuServo,
       actuator, expected_total_output)
     Process.sleep(60)

@@ -26,12 +26,18 @@ defmodule Controller.Pid.StartPidTest do
     {:ok, process_id} = Pids.System.start_link(config)
     Common.Utils.wait_for_genserver_start(process_id)
 
-    pv_error = 1.0
+    pv_error = 0.5
     Pids.System.update_pids(:roll, pv_error, 0.05)
     Process.sleep(100)
     roll_aileron_output = Pids.Pid.get_output(:roll, :aileron)
     roll_rudder_output = Pids.Pid.get_output(:roll, :rudder)
-    assert roll_aileron_output == get_in(config, [:pids, :roll, :aileron, :kp])*pv_error
-    assert roll_rudder_output == get_in(config, [:pids, :roll, :rudder, :kp])*pv_error
+    expected_roll_aileron_output =
+      get_in(config, [:pids, :roll, :aileron, :kp])*pv_error + Pids.Pid.get_initial_output(:two_sided)
+      |> Common.Utils.Math.constrain(0, 1)
+    expected_roll_rudder_output =
+      get_in(config, [:pids, :roll, :rudder, :kp])*pv_error + Pids.Pid.get_initial_output(:two_sided)
+      |> Common.Utils.Math.constrain(0,1)
+    assert roll_aileron_output == expected_roll_aileron_output
+    assert roll_rudder_output == expected_roll_rudder_output
   end
 end

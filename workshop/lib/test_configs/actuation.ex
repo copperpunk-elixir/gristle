@@ -13,7 +13,8 @@ defmodule TestConfigs.Actuation do
       max_pw_ms: 1900,
       cmd_limit_min: 0,
       cmd_limit_max: 1,
-      failsafe_cmd: 0.5
+      failsafe_cmd: 0.5,
+      one_or_two_sided: :two_sided
     }
     actuators = Map.put(%{}, actuator_name, actuator)
     config = %{

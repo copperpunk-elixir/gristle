@@ -19,6 +19,8 @@ defmodule Pids.System do
   def init(config) do
     {:ok, %{
         pids: config.pids,
+        rate_or_position: config.rate_or_position,
+        one_or_two_sided: config.one_or_two_sided,
         pv_act_pids: %{},
         act_pv_pids: %{},
         act_msg_class: config.actuator_output_msg_classification,
@@ -30,9 +32,13 @@ defmodule Pids.System do
   def handle_cast(:start_pids, state) do
     Enum.each(state.pids, fn {process_variable, actuators} ->
       Enum.each(actuators, fn {actuator, pid_config} ->
+        rate_or_position = Map.fetch!(state.rate_or_position, actuator)
+        one_or_two_sided = Map.fetch!(state.one_or_two_sided, actuator)
         pid_config = Map.put(pid_config, :name, {process_variable, actuator})
-          Pids.Pid.start_link(pid_config)
-        end)
+        |> Map.put(:rate_or_position, rate_or_position)
+        |> Map.put(:one_or_two_sided, one_or_two_sided)
+        Pids.Pid.start_link(pid_config)
+      end)
     end)
     {:noreply, state}
   end
@@ -83,9 +89,9 @@ defmodule Pids.System do
 
   # TODO: Does this function have a purpose besides testing?
   @impl GenServer
-  def handle_call({:get_actuator_output, actuator}, _from, state) do
-    pv_pids = Map.get(state.pids_act_pv, actuator)
-    {:reply, calculate_actuator_output(actuator, pv_pids), state}
+  def handle_call({:get_actuator_output, actuator_name}, _from, state) do
+    pv_pids = Map.get(state.pids_act_pv, actuator_name)
+    {:reply, calculate_actuator_output(actuator_name, pv_pids), state}
   end
 
   def update_pids(process_variable, process_variable_error, dt) do
@@ -104,11 +110,10 @@ defmodule Pids.System do
       weight_sum_new = elem(acc, 1) + weight
       {output_sum_new, weight_sum_new}
     end)
-    # Actuator Output is centered at @neutral_output!!
     if (weight_sum> 0) do
-      constrain_output(output_sum / weight_sum) + @neutral_output
+      constrain_output(output_sum / weight_sum)
     else
-      @neutral_output
+      raise "Weights for #{actuator_name} are not valid"
     end
   end
 
