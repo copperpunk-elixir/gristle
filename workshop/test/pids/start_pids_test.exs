@@ -31,13 +31,13 @@ defmodule Controller.Pid.StartPidTest do
     Process.sleep(100)
     roll_aileron_output = Pids.Pid.get_output(:roll, :aileron)
     roll_rudder_output = Pids.Pid.get_output(:roll, :rudder)
-    expected_roll_aileron_output =
+    exp_roll_aileron_output =
       get_in(config, [:pids, :roll, :aileron, :kp])*pv_error + Pids.Pid.get_initial_output(:two_sided)
       |> Common.Utils.Math.constrain(0, 1)
-    expected_roll_rudder_output =
+    exp_roll_rudder_output =
       get_in(config, [:pids, :roll, :rudder, :kp])*pv_error + Pids.Pid.get_initial_output(:two_sided)
       |> Common.Utils.Math.constrain(0,1)
-    assert roll_aileron_output == expected_roll_aileron_output
-    assert roll_rudder_output == expected_roll_rudder_output
+    assert roll_aileron_output == exp_roll_aileron_output
+    assert roll_rudder_output == exp_roll_rudder_output
   end
 end

@@ -77,10 +77,10 @@ defmodule Pids.System do
   @impl GenServer
   def handle_cast({:update_all_actuators_connected_to_pv, process_variable}, state) do
     Enum.each(state.act_pv_pids, fn {actuator_name, pv_pids} ->
-      Logger.debug("update acts with pv: #{process_variable}")
+      # Logger.debug("update acts with pv: #{process_variable}")
       if Map.has_key?(pv_pids, process_variable) do
         output = calculate_actuator_output(actuator_name, pv_pids)
-        Logger.debug("#{actuator_name} output: #{output}")
+        # Logger.debug("#{actuator_name} output: #{output}")
         MessageSorter.Sorter.add_message({:actuator, actuator_name}, state.act_msg_class, state.act_msg_time_ms, output)
       end
     end)

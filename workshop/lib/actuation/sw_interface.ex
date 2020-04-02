@@ -66,8 +66,8 @@ defmodule Actuation.SwInterface do
           nil -> actuator.failsafe_cmd
           value -> value
         end
-      Logger.debug("move_actuator #{actuator_name} to #{output}")
-      Actuation.HwInterface.set_actuator_output(actuator, output)
+      # Logger.debug("move_actuator #{actuator_name} to #{output}")
+      Actuation.HwInterface.set_output_for_actuator(actuator, output)
     end)
     {:noreply, state}
   end

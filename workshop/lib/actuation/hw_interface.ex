@@ -53,11 +53,11 @@ defmodule Actuation.HwInterface do
     {:reply, state.interface, state}
   end
 
-  def set_actuator_output(actuator, output) do
+  def set_output_for_actuator(actuator, output) do
     GenServer.cast(__MODULE__, {:set_actuator_output, actuator, output})
   end
 
-  def get_actuator_output(actuator) do
+  def get_output_for_actuator(actuator) do
     GenServer.call(__MODULE__, {:get_actuator_output, actuator})
   end
 
@@ -67,6 +67,10 @@ defmodule Actuation.HwInterface do
 
   def send_pw_to_actuator(interface_module, interface, channel_number, pulse_width_ms) do
     apply(interface_module, :write_microseconds,[interface, channel_number, pulse_width_ms])
+  end
+
+  def get_failsafe_pw_for_actuator(actuator) do
+    actuator.failsafe_cmd*(actuator.max_pw_ms - actuator.min_pw_ms) + actuator.min_pw_ms
   end
 
   defp begin() do

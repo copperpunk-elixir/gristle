@@ -13,7 +13,6 @@ defmodule Pids.Pid do
   @impl GenServer
   def init(config) do
     {process_variable, actuator} = Map.get(config, :name)
-    IO.inspect(config)
     {:ok, %{
         process_variable: process_variable,
         actuator: actuator,
@@ -29,7 +28,7 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def handle_cast({:update, process_var_error, _dt}, state) do
-    Logger.debug("Update pid #{state.process_variable}/#{state.actuator}")
+    # Logger.debug("Update pid #{state.process_variable}/#{state.actuator}")
     cmd_p = state.kp*process_var_error
     delta_output = cmd_p
     output =
