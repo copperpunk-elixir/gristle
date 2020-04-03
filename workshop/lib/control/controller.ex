@@ -14,7 +14,7 @@ defmodule Control.Controller do
   def init(config) do
     {:ok, %{
         pv_cmds: %{},
-        pv_values: %{}
+        pv_values: %{},
         control_loop_timer: nil,
         control_loop_interval_ms: Map.get(config, :control_loop_interval_ms, 0)
      }}
@@ -27,12 +27,26 @@ defmodule Control.Controller do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_cast(:start_control_loop, state) do
+    control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
+    state = %{state | control_loop_timer: control_loop_timer}
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast(:stop_control_loop, state) do
+    control_loop_timer = Common.Utils.stop_loop(state.control_loop_timer)
+    state = %{state | control_loop_timer: control_loop_timer}
+    {:noreply, state}
+  end
 
   def start_message_sorter_system() do
     GenServer.cast(__MODULE__, :start_message_sorter_system)
   end
 
   def start_message_sorter(pv) do
-    MessageSorter.Sorter.start_sorter({:controller_cmds, pv})
+    MessageSorter.System.start_sorter({:controller_cmds, pv})
   end
+
 end

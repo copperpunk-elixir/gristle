@@ -7,7 +7,6 @@ defmodule Controller.Pid.ConnectPidToActuatorTest do
     channels_list = [0,1,2]
     failsafes_list = [0.5, 0.5, 0.0]
     actuator_config = TestConfigs.Actuation.get_sw_config_actuators(actuator_list, channels_list, failsafes_list)
-    IO.inspect(actuator_config)
     pid_config = TestConfigs.Pids.get_pid_config_roll_yaw()
 
     {:ok, registry_pid} = Comms.ProcessRegistry.start_link()
@@ -52,7 +51,7 @@ defmodule Controller.Pid.ConnectPidToActuatorTest do
     vx_pid = pids.vx
     vx_throttle_weight = vx_pid.throttle.weight
     total_throttle_weight = vx_throttle_weight
-    rate_or_position_all = config.pid_config.rate_or_position
+    # rate_or_position_all = config.pid_config.rate_or_position
     one_or_two_sided_all = config.pid_config.one_or_two_sided
 
     # ----- BEGIN AILERON TEST -----
@@ -109,7 +108,7 @@ defmodule Controller.Pid.ConnectPidToActuatorTest do
       throttle_actuator, exp_total_output)
     assert_in_delta(Actuation.HwInterface.get_output_for_actuator(throttle_actuator), exp_pw, 0.25)
     # Allow valid Actuator cmds to expire
-    Process.sleep(60)
+    Process.sleep(160)
     assert_in_delta(Actuation.HwInterface.get_output_for_actuator(aileron_actuator), Actuation.HwInterface.get_failsafe_pw_for_actuator(aileron_actuator), 0.25)
     Process.sleep(200)
     assert_in_delta(Actuation.HwInterface.get_output_for_actuator(throttle_actuator), Actuation.HwInterface.get_failsafe_pw_for_actuator(throttle_actuator), 0.25)

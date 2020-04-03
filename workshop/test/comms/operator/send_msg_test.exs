@@ -3,24 +3,21 @@ defmodule Comms.Operator.SendMsgTest do
   require Logger
 
   test "send group message" do
-    {:ok, pid} = Comms.Operator.start_link()
+    {:ok, pid} = Comms.ProcessRegistry.start_link()
     Common.Utils.wait_for_genserver_start(pid)
-
     test_group = :abc
-    Comms.Operator.join_group(test_group, self())
-    Comms.Operator.join_group(test_group, pid)
-    Process.sleep(150)
+    config = TestConfigs.Operator.get_config_with_groups(test_group)
+    {:ok, pid} = Comms.Operator.start_link(config)
+    Common.Utils.wait_for_genserver_start(pid)
+    Process.sleep(100)
     # Send a message to the group from pid
-    msg_sent = "hello from #{inspect(pid)}"
-    Logger.debug("Sending msg #{msg_sent}")
-    Comms.Operator.send_msg_to_group(msg_sent, test_group, pid)
-    Process.sleep(10)
-    msg_received =
-      receive do
-      {_, msg} -> msg
-    after
-      1_000 -> "no msg received"
-    end
-    assert msg_received == msg_sent
+    msg_value = "hello from #{inspect(pid)}"
+    msg_sent = {:global_msg, test_group, [0], 1000, msg_value}
+    Logger.debug("Sending msg #{inspect(msg_sent)}")
+    Comms.Operator.send_msg_to_group(msg_sent, test_group, nil)
+    Process.sleep(100)
+    assert Comms.Operator.get_message_count() == 1
+    rx_msg = MessageSorter.Sorter.get_value(test_group)
+    assert rx_msg == msg_value
   end
 end

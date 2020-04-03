@@ -16,6 +16,7 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:add_message, classification, expiration_mono_ms, value}, stored_messages) do
+    Logger.debug("add_message: #{inspect(self())}")
     # Check if message has a valid classification
     stored_messages =
     if Enum.empty?(stored_messages) || is_valid_classification?(Enum.at(stored_messages,0).classification, classification) do
@@ -61,6 +62,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def add_message(name, classification, time_validity_ms, value) do
+    Logger.debug("MSG sorter: #{name}. add message: #{inspect(value)}}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})
@@ -72,7 +74,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def get_message(name) do
-    # Logger.debug("Get message: #{inspect(process)}")
+    Logger.debug("Get message: from #{inspect(name)}")
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end

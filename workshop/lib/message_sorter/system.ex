@@ -4,14 +4,15 @@ defmodule MessageSorter.System do
 
   def start_link() do
     Logger.debug("Start MessageSorter Supervisor")
-    case DynamicSupervisor.start_link(__MODULE__, nil, name: __MODULE__) do
-      {:ok, pid} ->
-        Logger.debug("MessageSorter successfully started")
-        {:ok, pid}
-      {:error, {:already_started, pid}} ->
-        Logger.debug("MessageSorter already started at #{inspect(pid)}. This is fine.")
-        {:ok, pid}
-    end
+    Common.Utils.start_link_redudant(DynamicSupervisor, __MODULE__, nil, __MODULE__)
+    # case DynamicSupervisor.start_link(__MODULE__, nil, name: __MODULE__) do
+    #   {:ok, pid} ->
+    #     Logger.debug("MessageSorter successfully started")
+    #     {:ok, pid}
+    #   {:error, {:already_started, pid}} ->
+    #     Logger.debug("MessageSorter already started at #{inspect(pid)}. This is fine.")
+    #     {:ok, pid}
+    # end
   end
 
   @impl true

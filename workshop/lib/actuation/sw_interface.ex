@@ -5,8 +5,8 @@ defmodule Actuation.SwInterface do
   def start_link(config) do
     Logger.debug("Start Actuation SwInterface")
     {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    GenServer.cast(__MODULE__, :start_message_sorters)
-    GenServer.cast(__MODULE__, :start_actuator_loop)
+    start_message_sorters()
+    start_actuator_loop()
     {:ok, process_id}
   end
 
@@ -23,7 +23,7 @@ defmodule Actuation.SwInterface do
   def handle_cast(:start_message_sorters, state) do
     {:ok, pid} = MessageSorter.System.start_link()
     Common.Utils.wait_for_genserver_start(pid)
-    Enum.each(state.actuators, fn {actuator_name, actuator} ->
+    Enum.each(state.actuators, fn {actuator_name, _actuator} ->
       MessageSorter.System.start_sorter({:actuator, actuator_name})
     end)
     {:noreply, state}
@@ -31,28 +31,15 @@ defmodule Actuation.SwInterface do
 
     @impl GenServer
   def handle_cast(:start_actuator_loop, state) do
-    state =
-      case :timer.send_interval(state.actuator_loop_interval_ms, self(), :actuator_loop) do
-        {:ok, actuator_timer} ->
-          Logger.debug("Actuator loop started!")
-          %{state | actuator_timer: actuator_timer}
-        {_, reason} ->
-          Logger.debug("Could not start actuator_interface_output timer: #{inspect(reason)} ")
-          state
-      end
-    {:noreply, state}
+      actuator_timer = Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
+      state = %{state | actuator_timer: actuator_timer}
+      {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast(:stop_actuator_loop, state) do
-    state =
-      case :timer.cancel(state.actuator_timer) do
-        {:ok, _} ->
-          %{state | actuator_timer: nil}
-        {_, reason} ->
-          Logger.debug("Could not stop actuator_interface_output timer: #{inspect(reason)} ")
-          state
-      end
+    actuator_timer = Common.Utils.stop_loop(state.actuator_timer)
+    state = %{state | actuator_timer: actuator_timer}
     {:noreply, state}
   end
 
@@ -74,5 +61,17 @@ defmodule Actuation.SwInterface do
 
   def get_output_for_actuator_name(actuator_name) do
     MessageSorter.Sorter.get_value({:actuator, actuator_name})
+  end
+
+  defp start_message_sorters() do
+    GenServer.cast(__MODULE__, :start_message_sorters)
+  end
+
+  defp start_actuator_loop() do
+    GenServer.cast(__MODULE__, :start_actuator_loop)
+  end
+
+  defp stop_actuator_loop() do
+    GenServer.cast(__MODULE__, :stop_actuator_loop)
   end
 end

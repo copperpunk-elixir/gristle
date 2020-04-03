@@ -49,28 +49,14 @@ defmodule Swarm.Heartbeat do
   end
 
   def handle_cast(:start_heartbeat, state) do
-    state =
-      case :timer.send_interval(state.heartbeat_loop_interval_ms, self(), :calc_heartbeat_status) do
-        {:ok, heartbeat_timer} ->
-          %{state | heartbeat_timer: heartbeat_timer}
-        {_, reason} ->
-          Logger.debug("Could not start heartbeat timer: #{inspect(reason)}")
-          state
-      end
-    {:noreply, state}
+    heartbeat_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :calc_heartbeat_status)
+    {:noreply, %{state | heartbeat_timer: heartbeat_timer}}
   end
 
   @impl GenServer
   def handle_cast(:stop_heartbeat, state) do
-    state =
-      case :timer.cancel(state.heartbeat_timer) do
-        {:ok, } ->
-          %{state | heartbeat_timer: nil}
-        {_, reason} ->
-          Logger.debug("Could not stop heartbeat timer: #{inspect(reason)}")
-          state
-      end
-    {:noreply, state}
+    heartbeat_timer = Common.Utils.stop_loop(state.heartbeat_timer)
+    {:noreply, %{state | heartbeat_timer: heartbeat_timer}}
   end
 
   @impl GenServer

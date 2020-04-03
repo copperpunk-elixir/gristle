@@ -2,10 +2,11 @@ defmodule Comms.Operator.CreateAndJoinGroupTest do
   use ExUnit.Case
 
   test "create and join group" do
-    {:ok, pid} = Comms.Operator.start_link()
+    test_group = :abc
+    config = TestConfigs.Operator.get_config_with_groups(test_group)
+    {:ok, pid} = Comms.Operator.start_link(config)
     Common.Utils.wait_for_genserver_start(pid)
 
-    test_group = :abc
     Comms.Operator.join_group(test_group, self())
     Process.sleep(10)
     assert Comms.Operator.is_in_group?(test_group, self()) == true
