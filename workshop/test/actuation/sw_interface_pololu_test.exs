@@ -2,8 +2,8 @@ defmodule Actuation.SwInterfacePololuTest do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
-    Common.Utils.wait_for_genserver_start(registry_pid)
+    {:ok, pid} = Comms.ProcessRegistry.start_link()
+    Common.Utils.wait_for_genserver_start(pid)
     {:ok, []}
   end
 

@@ -1,4 +1,4 @@
-defmodule Controller.Pid.ConnectPidToActuatorTest do
+defmodule Pids.ConnectPidToActuatorTest do
   use ExUnit.Case
 
   setup do

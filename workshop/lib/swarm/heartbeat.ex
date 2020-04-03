@@ -2,11 +2,7 @@ defmodule Swarm.Heartbeat do
   use GenServer
   require Logger
 
-  def get_default_config() do
-    %{
-      heartbeat_loop_interval_ms: 1000
-    }
-  end
+  @default_heartbeat_loop_interval_ms 1000
 
   def start_link(config) do
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
@@ -20,7 +16,7 @@ defmodule Swarm.Heartbeat do
     {:ok, %{
         node_sorter: nil,
         ward_sorter: nil,
-        heartbeat_loop_interval_ms: Map.get(config, :heartbeat_loop_interval_ms),
+        heartbeat_loop_interval_ms: Map.get(config, :heartbeat_loop_interval_ms, @default_heartbeat_loop_interval_ms),
         heartbeat_timer: nil,
         node_ward_status_map: %{},
         swarm_status: 0
@@ -153,8 +149,9 @@ defmodule Swarm.Heartbeat do
     Common.Utils.wait_for_genserver_start(comms_pid)
     {:ok, msg_pid} = MessageSorter.System.start_link()
     Common.Utils.wait_for_genserver_start(msg_pid)
-    config = get_default_config()
-    config = Map.put(config, :heartbeat_loop_interval_ms, 100)
+    config = %{
+      heartbeat_loop_interval_ms: 100
+    }
     {:ok, pid} = start_link(config)
     Common.Utils.wait_for_genserver_start(pid)
     Process.sleep(10)

@@ -9,10 +9,10 @@ defmodule Common.Utils do
       end
     case result do
       {:ok, pid} ->
-        Logger.debug("#{module}:#{name} successfully started")
+        Logger.debug("#{module}:#{inspect(name)} successfully started")
         {:ok, pid}
       {:error, {:already_started, pid}} ->
-        Logger.debug("#{module}:#{name} already started at #{inspect(pid)}. This is fine.")
+        Logger.debug("#{module}:#{inspect(name)} already started at #{inspect(pid)}. This is fine.")
         {:ok, pid}
     end
   end
@@ -36,6 +36,9 @@ defmodule Common.Utils do
       [value_or_list]
     end
   end
+
+  # def validate_config_with_default(config,, default_config) do
+  # end
 
   def start_loop(process_id, loop_interval_ms, loop_callback) do
       case :timer.send_interval(loop_interval_ms, process_id, loop_callback) do

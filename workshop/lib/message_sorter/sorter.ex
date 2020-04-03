@@ -6,7 +6,8 @@ defmodule MessageSorter.Sorter do
 
   def start_link(name) do
     Logger.debug("Start MessageSorter: #{inspect(name)}")
-    GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
+    Common.Utils.start_link_redudant(GenServer, __MODULE__, nil, via_tuple(name))
+    # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
   end
 
   @impl GenServer
@@ -62,7 +63,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def add_message(name, classification, time_validity_ms, value) do
-    Logger.debug("MSG sorter: #{name}. add message: #{inspect(value)}}")
+    Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})

@@ -1,4 +1,4 @@
-defmodule Controller.Pid.StartPidTest do
+defmodule Pids.StartPidTest do
   use ExUnit.Case
 
   setup do
