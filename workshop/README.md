@@ -1,4 +1,21 @@
 # Workshop
 
-This is a self-contained project, purely for testing new ideas and syntax. For bigger tests, please consider creating a new branch, so that master remains in a healthy state.
+**TODO: Add description**
+
+## Installation
+
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+by adding `workshop` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:workshop, "~> 0.1.0"}
+  ]
+end
+```
+
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
+be found at [https://hexdocs.pm/workshop](https://hexdocs.pm/workshop).
 
