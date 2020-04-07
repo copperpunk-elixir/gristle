@@ -7,6 +7,9 @@ Although this is a Nerves project, it can be run on any computer with Elixir ins
 To run unit tests:
     `mix test test/` from root project folder
 
+The diagram of the architecture is below.  
+It can be viewed as an [.html](https://github.com/some-assembly-required/gristle/blob/master/resources/diagrams/images/VCS_v0.2.html) file, although you cannot preview it in Github. 
+![diagram](https://github.com/some-assembly-required/gristle/blob/master/resources/diagrams/images/VCS_v0.2.png)
 
 ## Targets
 
