@@ -31,6 +31,7 @@ defmodule Vcs.MixProject do
   def application do
     [
       # mod: {Vcs.Application, []},
+      applications: [:gen_state_machine],
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -53,7 +54,9 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi3, "~> 1.10", runtime: false, targets: :rpi3},
       {:nerves_system_rpi3a, "~> 1.10", runtime: false, targets: :rpi3a},
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
-      {:circuits_uart, "~> 1.3"}
+      # Package dependencies
+      {:circuits_uart, "~> 1.3"},
+      {:gen_state_machine, "~> 2.0"}
     ]
   end
 

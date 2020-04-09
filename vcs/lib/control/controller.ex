@@ -6,7 +6,7 @@ defmodule Control.Controller do
     Logger.debug("Start Control.Controller")
     {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     join_process_variable_groups()
-    start_control_loop()
+    start_pv_cmd_loop()
     {:ok, process_id}
   end
 
@@ -16,8 +16,8 @@ defmodule Control.Controller do
         process_variables: config.process_variables,
         pv_cmds: %{},
         pv_values: %{},
-        control_loop_timer: nil,
-        control_loop_interval_ms: config.control_loop_interval_ms
+        pv_cmd_loop_timer: nil,
+        pv_cmd_interval_ms: config.process_variable_cmd_loop_interval_ms
      }}
   end
 
@@ -37,34 +37,50 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast(:start_control_loop, state) do
-    control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
-    state = %{state | control_loop_timer: control_loop_timer}
+  def handle_cast(:start_pv_cmd_loop, state) do
+    pv_cmd_loop_timer = Common.Utils.start_loop(self(), state.pv_cmd_loop_interval_ms, :pv_cmd_loop)
+    state = %{state | pv_cmd_loop_timer: pv_cmd_loop_timer}
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast(:stop_control_loop, state) do
-    control_loop_timer = Common.Utils.stop_loop(state.control_loop_timer)
-    state = %{state | control_loop_timer: control_loop_timer}
+  def handle_cast(:stop_pv_cmd_loop, state) do
+    pv_cmd_loop_timer = Common.Utils.stop_loop(state.pv_cmd_loop_timer)
+    state = %{state | pv_cmd_loop_timer: pv_cmd_loop_timer}
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info(:control_loop, state) do
-    Logger.debug("Control loop")
-    {:noreply, state}
+  def handle_info(:pv_cmd_loop, state) do
+    Logger.debug("PV cmd loop")
+    # For every PV, get the corresponding command
+    pv_cmds = get_all_pv_cmds_for_pvs(state.pv_values)
+    {:noreply, %{state | pv_cmds: pv_cmds}}
   end
 
   def join_process_variable_groups() do
     GenServer.cast(__MODULE__, :join_process_variable_groups)
   end
 
-  def start_control_loop() do
-    GenServer.cast(__MODULE__, :start_control_loop)
+  def start_pv_cmd_loop() do
+    GenServer.cast(__MODULE__, :start_pv_cmd_loop)
   end
 
-  def stop_control_loop() do
-    GenServer.cast(__MODULE__, :stop_control_loop)
+  def stop_pv_cmd_loop() do
+    GenServer.cast(__MODULE__, :stop_pv_cmd_loop)
+  end
+
+  def get_pv_cmd(pv_name) do
+    MessageSorter.Sorter.get_value({:process_variable, pv_name})
+  end
+
+  def get_all_pv_cmds_for_pvs(process_variables) do
+    Enum.reduce(process_variables, %{}, fn ({pv_name, _value}, acc) ->
+      Map.put(acc, pv_name, get_pv_cmd(pv_name))
+    end)
+  end
+
+  def update_process_variables(process_variable_names_value) do
+    GenServer.cast(__MODULE__, {:update_pv, process_variable_names_value})
   end
 end

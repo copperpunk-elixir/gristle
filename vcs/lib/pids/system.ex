@@ -2,8 +2,6 @@ defmodule Pids.System do
   use GenServer
   require Logger
 
-  @neutral_output 0.5
-
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)

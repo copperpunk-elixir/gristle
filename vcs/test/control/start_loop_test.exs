@@ -19,7 +19,7 @@ defmodule Control.StartLoopTest do
     assert roll_msg_value == nil
     # Send Message to :roll
     tx_roll_value = 0.5
-    MessageSorter.Sorter.add_message({:process_variable, :roll}, [0,1], 200, tx_roll_value)
+    MessageSorter.Sorter.add_message({:process_variable_cmd, :roll}, [0,1], 200, tx_roll_value)
     Process.sleep(100)
     roll_msg_value = MessageSorter.Sorter.get_value({:process_variable, :roll})
     assert roll_msg_value == tx_roll_value

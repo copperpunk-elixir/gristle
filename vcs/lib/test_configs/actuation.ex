@@ -23,7 +23,7 @@ defmodule TestConfigs.Actuation do
     })
     end)
 
-    config = %{
+    %{
       actuator_loop_interval_ms: 50,
       actuators: actuators
     }
