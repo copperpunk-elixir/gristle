@@ -49,7 +49,7 @@ defmodule Comms.Operator do
     :pg2.create(group)
     if !is_in_group?(group, self()) do
       :pg2.join(group, self())
-      MessageSorter.System.start_sorter(group)
+      MessageSorter.System.start_sorter(%{name: group})
     end
     {:noreply, state}
   end

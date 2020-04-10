@@ -5,7 +5,7 @@ defmodule Control.Controller do
   def start_link(config) do
     Logger.debug("Start Control.Controller")
     {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
-    join_process_variable_groups()
+    join_process_variable_cmd_groups()
     start_pv_cmd_loop()
     {:ok, process_id}
   end
@@ -17,7 +17,7 @@ defmodule Control.Controller do
         pv_cmds: %{},
         pv_values: %{},
         pv_cmd_loop_timer: nil,
-        pv_cmd_interval_ms: config.process_variable_cmd_loop_interval_ms
+        pv_cmd_loop_interval_ms: config.process_variable_cmd_loop_interval_ms
      }}
   end
 
@@ -29,9 +29,9 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast(:join_process_variable_groups, state) do
+  def handle_cast(:join_process_variable_cmd_groups, state) do
     Enum.each(state.process_variables, fn process_variable ->
-      Comms.Operator.join_group({:process_variable, process_variable})
+      Comms.Operator.join_group({:process_variable_cmd, process_variable})
     end)
     {:noreply, state}
   end
@@ -58,10 +58,6 @@ defmodule Control.Controller do
     {:noreply, %{state | pv_cmds: pv_cmds}}
   end
 
-  def join_process_variable_groups() do
-    GenServer.cast(__MODULE__, :join_process_variable_groups)
-  end
-
   def start_pv_cmd_loop() do
     GenServer.cast(__MODULE__, :start_pv_cmd_loop)
   end
@@ -71,7 +67,7 @@ defmodule Control.Controller do
   end
 
   def get_pv_cmd(pv_name) do
-    MessageSorter.Sorter.get_value({:process_variable, pv_name})
+    MessageSorter.Sorter.get_value({:process_variable_cmd, pv_name})
   end
 
   def get_all_pv_cmds_for_pvs(process_variables) do
@@ -82,5 +78,9 @@ defmodule Control.Controller do
 
   def update_process_variables(process_variable_names_value) do
     GenServer.cast(__MODULE__, {:update_pv, process_variable_names_value})
+  end
+
+  defp join_process_variable_cmd_groups() do
+    GenServer.cast(__MODULE__, :join_process_variable_cmd_groups)
   end
 end

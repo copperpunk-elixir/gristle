@@ -1,7 +1,6 @@
 defmodule Workshop.MessageQueueTest  do
   alias MessageSorter.Sorter
   use ExUnit.Case
-  require Logger
 
   test "Multiple MessageSorters" do
     MessageSorter.System.start_link()
@@ -23,7 +22,7 @@ defmodule Workshop.MessageQueueTest  do
     {:ok, pid} = Comms.ProcessRegistry.start_link()
     Common.Utils.wait_for_genserver_start(pid)
     Enum.each(config.messages, fn msg_config ->
-      Logger.debug("Message name: #{msg_config.name}")
+      IO.puts("Message name: #{msg_config.name}")
       MessageSorter.System.start_sorter(msg_config)
     end)
 

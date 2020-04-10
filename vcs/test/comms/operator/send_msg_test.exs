@@ -1,6 +1,5 @@
 defmodule Comms.Operator.SendMsgTest do
   use ExUnit.Case
-  require Logger
 
   test "send group message" do
     {:ok, pid} = Comms.ProcessRegistry.start_link()
@@ -14,7 +13,7 @@ defmodule Comms.Operator.SendMsgTest do
     # Send a message to the group from pid
     msg_value = "hello from #{inspect(pid)}"
     tx_msg = {:global_msg, test_group, [0], 200, msg_value}
-    Logger.debug("Sending msg #{inspect(tx_msg)}")
+    IO.puts("Sending msg #{inspect(tx_msg)}")
     Comms.Operator.send_msg_to_group(tx_msg, test_group, nil)
     Process.sleep(100)
     assert Comms.Operator.get_message_count() == 1

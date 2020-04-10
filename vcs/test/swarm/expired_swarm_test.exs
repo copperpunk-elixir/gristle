@@ -1,10 +1,9 @@
 defmodule Swarm.ExpiredSwarmTest do
   alias Swarm.Heartbeat, as: Hb
   use ExUnit.Case
-  require Logger
 
   test "Healthy swarm expires to unhealthy swarm" do
-    Logger.info("Create temporarily healthy swarm")
+    IO.puts("Create temporarily healthy swarm")
     Hb.test_setup()
     Process.sleep(100)
     Hb.add_heartbeat(0, 1, 500)

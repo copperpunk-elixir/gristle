@@ -12,11 +12,11 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def init(config) do
-    default_message_behavior = config.default_message_behavior
-    default_value =
-      case default_message_behavior do
-        :last -> nil
-        :default_value -> config.default_value
+    {default_message_behavior, default_value} =
+      case Map.get(config, :default_message_behavior) do
+        nil -> {:default_value, nil}
+        :last -> {:last, nil}
+        :default_value -> {:default_value, config.default_value}
       end
     {:ok, %{
         messages: [],

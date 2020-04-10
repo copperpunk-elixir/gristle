@@ -9,10 +9,10 @@ defmodule Common.Utils do
       end
     case result do
       {:ok, pid} ->
-        Logger.debug("#{module}:#{inspect(name)} successfully started")
+        Logger.debug("#{module}: #{inspect(name)} successfully started")
         {:ok, pid}
       {:error, {:already_started, pid}} ->
-        Logger.debug("#{module}:#{inspect(name)} already started at #{inspect(pid)}. This is fine.")
+        Logger.debug("#{module}: #{inspect(name)} already started at #{inspect(pid)}. This is fine.")
         {:ok, pid}
     end
   end

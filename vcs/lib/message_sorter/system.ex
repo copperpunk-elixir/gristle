@@ -27,16 +27,16 @@ defmodule MessageSorter.System do
   #   }
   # end
 
-  def start_sorter(name) do
+  def start_sorter(config) do
     DynamicSupervisor.start_child(
       __MODULE__,
       %{
-        id: name,
+        id: config.name,
         start: {
           MessageSorter.Sorter,
           :start_link,
           [
-            name
+            config
           ]}
         }
      )

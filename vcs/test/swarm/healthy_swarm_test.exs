@@ -1,10 +1,9 @@
 defmodule Swarm.HealthySwarmTest do
   alias Swarm.Heartbeat, as: Hb
   use ExUnit.Case
-  require Logger
 
   test "Create healthy swarm" do
-    Logger.info("Create healthy swarm")
+    IO.puts("Create healthy swarm")
     Hb.test_setup()
     Hb.add_heartbeat(0, 1, 1000)
     Process.sleep(150)

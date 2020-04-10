@@ -24,7 +24,7 @@ defmodule Actuation.SwInterface do
     {:ok, pid} = MessageSorter.System.start_link()
     Common.Utils.wait_for_genserver_start(pid)
     Enum.each(state.actuators, fn {actuator_name, _actuator} ->
-      MessageSorter.System.start_sorter({:actuator, actuator_name})
+      MessageSorter.System.start_sorter(%{name: {:actuator, actuator_name}})
     end)
     {:noreply, state}
   end
