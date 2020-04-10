@@ -20,7 +20,8 @@ defmodule Swarm.Heartbeat do
         heartbeat_loop_interval_ms: Map.get(config, :heartbeat_loop_interval_ms, @default_heartbeat_loop_interval_ms),
         heartbeat_timer: nil,
         node_ward_status_map: %{},
-        swarm_status: 0
+        swarm_status: 0,
+        all_heartbeats: %{}
      }}
   end
 
@@ -31,13 +32,15 @@ defmodule Swarm.Heartbeat do
     sorter_config = %{
       name: node_sorter,
     }
-    MessageSorter.System.start_sorter(sorter_config)
-    # MessageSorter.System.start_sorter(ward_sorter)
+    {:ok, pid} = Comms.Operator.start_link()
+    Common.Utils.wait_for_genserver_start(pid)
+    Comms.Operator.join_group(node_sorter, self())
     {:noreply, %{state | node_sorter: node_sorter}}#, ward_sorter: ward_sorter}}
   end
 
-  def handle_cast({:add_heartbeat, node, ward, time_validity_ms}, state) do
-    MessageSorter.Sorter.add_message(state.node_sorter, [node], time_validity_ms, {node, ward})
+
+  def handle_cast({:add_heartbeat, heartbeat_map, time_validity_ms}, state) do
+    MessageSorter.Sorter.add_message(state.node_sorter, [heartbeat_map.node], time_validity_ms, heartbeat_map)
     # MessageSorter.Sorter.add_message(state.ward_sorter, [node], time_validity_ms, node)
     {:noreply, state}
   end
@@ -59,6 +62,11 @@ defmodule Swarm.Heartbeat do
     {:noreply, %{state | heartbeat_timer: heartbeat_timer}}
   end
 
+  def handle_cast(msg, state) do
+    Logger.warn("msg: #{inspect(msg)}")
+    {:noreply, state}
+  end
+
   @impl GenServer
   def handle_call(:is_swarm_healthy, _from, state) do
     swarm_healthy = state.swarm_status == 1
@@ -74,39 +82,25 @@ defmodule Swarm.Heartbeat do
   @impl GenServer
   def handle_info(:calc_heartbeat_status, state) do
     # Get Heartbeat status
-    {node_ward_list, node_list} = get_node_wards_and_nodes_lists(state.node_sorter)
-    Logger.debug("Node_ward_list: #{inspect(node_ward_list)}")
-    # ward_status_list = get_ward_status_list(state.ward_sorter)
-    Logger.debug("node_list: #{inspect(node_list)}")
+    all_heartbeats = unpack_heartbeats(state.node_sorter)
+    Logger.debug("Node_ward_list: #{inspect(all_heartbeats.node_ward_list)}")
+    Logger.debug("node_list: #{inspect(all_heartbeats.node_list)}")
 
-    node_ward_status_map = get_node_ward_status_map(node_ward_list, node_list)
+    node_ward_status_map = get_node_ward_status_map(all_heartbeats.node_ward_list, all_heartbeats.node_list)
     Logger.debug("node_ward_status: #{inspect(node_ward_status_map)}")
     swarm_status = get_swarm_status(node_ward_status_map)
     Logger.debug("swarm status: #{swarm_status}")
-    {:noreply, %{state | node_ward_status_map: node_ward_status_map, swarm_status: swarm_status}}
+    {:noreply, %{state | node_ward_status_map: node_ward_status_map, swarm_status: swarm_status, all_heartbeats: all_heartbeats}}
   end
 
-  def get_node_wards_and_nodes_lists(node_sorter) do
+  def unpack_heartbeats(node_sorter) do
     node_messages = MessageSorter.Sorter.get_all_messages(node_sorter)
-    Enum.reduce(node_messages, {[], []}, fn (node_msg, acc) ->
-      {node, ward} = node_msg.value
-      node_ward_list = [{node, ward} | elem(acc, 0)]
-      node_list = [node | elem(acc, 1)]
-      {node_ward_list, node_list}
-    end)
-  end
-
-  def get_node_ward_list(node_sorter) do
-    node_messages = MessageSorter.Sorter.get_all_messages(node_sorter)
-    Enum.reduce(node_messages, [], fn node_msg, acc ->
-      [node_msg.value | acc]
-    end)
-  end
-
-  def get_ward_status_list(ward_sorter) do
-    ward_messages = MessageSorter.Sorter.get_all_messages(ward_sorter)
-    Enum.reduce(ward_messages, [], fn ward_msg, acc ->
-      [ward_msg.value | acc]
+    hb_map = %{node_ward_list: [], node_list: []}
+    Enum.reduce(node_messages, hb_map, fn (node_msg, acc) ->
+      hb = node_msg.value
+      node_ward_list = [{hb.node, hb.ward} | acc.node_ward_list]
+      node_list = [hb.node | acc.node_list]
+      %{acc | node_ward_list: node_ward_list, node_list: node_list}
     end)
   end
 
@@ -145,8 +139,9 @@ defmodule Swarm.Heartbeat do
     Map.get(node_ward_status_map, node)
   end
 
-  def add_heartbeat(node, ward, time_validity_ms) do
-    GenServer.cast(__MODULE__, {:add_heartbeat, node, ward, time_validity_ms})
+  def add_heartbeat(heartbeat_map, time_validity_ms) do
+    # GenServer.cast(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms})
+    Comms.Operator.send_msg_to_group({:add_heartbeat, heartbeat_map, time_validity_ms}, {:hb, :node}, nil)
   end
 
   def swarm_healthy?() do

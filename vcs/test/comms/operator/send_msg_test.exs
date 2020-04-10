@@ -5,9 +5,10 @@ defmodule Comms.Operator.SendMsgTest do
     {:ok, pid} = Comms.ProcessRegistry.start_link()
     Common.Utils.wait_for_genserver_start(pid)
     test_group = :abc
-    config = TestConfigs.Operator.get_config_with_groups(test_group)
+    config = TestConfigs.Operator.get_config()
     {:ok, pid} = Comms.Operator.start_link(config)
     Common.Utils.wait_for_genserver_start(pid)
+    Comms.Operator.join_group(test_group, pid)
     # Must allow time for joining group
     Process.sleep(200)
     # Send a message to the group from pid
@@ -20,7 +21,7 @@ defmodule Comms.Operator.SendMsgTest do
     rx_msg = MessageSorter.Sorter.get_value(test_group)
     assert rx_msg == msg_value
     # Leave group, send message
-    Comms.Operator.leave_group(test_group)
+    Comms.Operator.leave_group(test_group, pid)
     # Msg should still be available in the MessageSorter queue
     assert rx_msg == msg_value
     # Allow for test_group to be purged from the group list

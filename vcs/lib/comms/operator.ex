@@ -4,11 +4,11 @@ defmodule Comms.Operator do
 
   @default_refresh_groups_loop_interval_ms 100
 
-  def start_link(config) do
+  def start_link(config \\ %{}) do
     Logger.debug("Start CommsOperator")
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
     start_message_sorter_system()
-    join_initial_groups()
+    # join_initial_groups()
     start_refresh_loop()
     {:ok, pid}
   end
@@ -18,18 +18,18 @@ defmodule Comms.Operator do
     {:ok, %{
         refresh_groups_loop_interval_ms: Map.get(config, :refresh_groups_loop_interval_ms, @default_refresh_groups_loop_interval_ms),
         refresh_groups_timer: nil,
-        groups: Map.get(config, :groups, %{}),
+        groups: %{},#Map.get(config, :groups, %{}),
         message_count: 0 # this is purely for diagnostics
      }}
   end
 
-  @impl GenServer
-  def handle_cast(:join_initial_groups, state) do
-    Enum.each(state.groups, fn group ->
-      join_group(group)
-    end)
-    {:noreply, state}
-  end
+  # @impl GenServer
+  # def handle_cast(:join_initial_groups, state) do
+  #   Enum.each(state.groups, fn group ->
+  #     join_group(group)
+  #   end)
+  #   {:noreply, state}
+  # end
 
   def handle_cast(:start_refresh_loop, state) do
     refresh_groups_timer = Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
@@ -43,23 +43,24 @@ defmodule Comms.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:join_group, group}, state) do
+  def handle_cast({:join_group, group, process_id}, state) do
     # We will be added to our own record of the group during the
     # :refresh_groups cycle
+    Logger.debug("Join group: #{inspect(group)}")
     :pg2.create(group)
-    if !is_in_group?(group, self()) do
-      :pg2.join(group, self())
+    if !is_in_group?(group, process_id) do
+      :pg2.join(group, process_id)
       MessageSorter.System.start_sorter(%{name: group})
     end
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast({:leave_group, group}, state) do
+  def handle_cast({:leave_group, group, process_id}, state) do
     # We will be remove from our own record of the group during the
     # :refresh_groups cycle
-    if is_in_group?(group, self()) do
-      :pg2.leave(group, self())
+    if is_in_group?(group, process_id) do
+      :pg2.leave(group, process_id)
     end
     {:noreply, state}
   end
@@ -67,6 +68,7 @@ defmodule Comms.Operator do
   @impl GenServer
   def handle_cast({:send_msg_to_group, message, group, sender}, state) do
     members = Map.get(state.groups, group, [])
+    Logger.debug("Group memebers: #{inspect(members)}")
     Enum.each(members, fn dest ->
       if dest != sender do
         Logger.debug("Send #{inspect(message)} to #{inspect(dest)}")
@@ -125,12 +127,12 @@ defmodule Comms.Operator do
     GenServer.cast(__MODULE__, :stop_refresh_loop)
   end
 
-  def join_group(group) do
-    GenServer.cast(__MODULE__, {:join_group, group})
+  def join_group(group, process_id) do
+    GenServer.cast(__MODULE__, {:join_group, group, process_id})
   end
 
-  def leave_group(group) do
-    GenServer.cast(__MODULE__, {:leave_group, group})
+  def leave_group(group, process_id) do
+    GenServer.cast(__MODULE__, {:leave_group, group, process_id})
   end
 
   def send_msg_to_group(message, group, sender) do

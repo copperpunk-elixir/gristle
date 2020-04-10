@@ -31,7 +31,7 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast(:join_process_variable_cmd_groups, state) do
     Enum.each(state.process_variables, fn process_variable ->
-      Comms.Operator.join_group({:process_variable_cmd, process_variable})
+      Comms.Operator.join_group({:process_variable_cmd, process_variable}, self())
     end)
     {:noreply, state}
   end
