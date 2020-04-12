@@ -2,10 +2,8 @@ defmodule Control.StartLoopTest do
   use ExUnit.Case
 
   setup do
-    {:ok, pid} = Comms.ProcessRegistry.start_link()
-    Common.Utils.wait_for_genserver_start(pid)
-    {:ok, pid} = Comms.Operator.start_link(%{})
-    Common.Utils.wait_for_genserver_start(pid)
+    Comms.ProcessRegistry.start_link()
+    Comms.Operator.start_link()
     {:ok, []}
   end
 

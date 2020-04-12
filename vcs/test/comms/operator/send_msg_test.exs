@@ -9,6 +9,7 @@ defmodule Comms.Operator.SendMsgTest do
     {:ok, pid} = Comms.Operator.start_link(config)
     Common.Utils.wait_for_genserver_start(pid)
     Comms.Operator.join_group(test_group, pid)
+    MessageSorter.System.start_sorter(%{name: test_group})
     # Must allow time for joining group
     Process.sleep(200)
     # Send a message to the group from pid

@@ -2,12 +2,12 @@ defmodule Comms.Operator.CreateAndJoinGroupTest do
   use ExUnit.Case
 
   setup do
-    {:ok, pid} = Comms.ProcessRegistry.start_link()
-    Common.Utils.wait_for_genserver_start(pid)
+    Comms.ProcessRegistry.start_link()
     {:ok, []}
   end
 
   test "create and join group" do
+    IO.puts("Create and Join Group")
     test_group = :abc
     config = TestConfigs.Operator.get_config()
     {:ok, pid} = Comms.Operator.start_link(config)

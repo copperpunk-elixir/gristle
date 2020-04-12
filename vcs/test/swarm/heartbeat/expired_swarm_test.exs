@@ -2,13 +2,22 @@ defmodule Swarm.ExpiredSwarmTest do
   alias Swarm.Heartbeat, as: Hb
   use ExUnit.Case
 
+  setup do
+    Comms.ProcessRegistry.start_link()
+    MessageSorter.System.start_link()
+    config = %{
+      heartbeat_loop_interval_ms: 100
+    }
+    Hb.start_link(config)
+    {:ok, []}
+  end
+
   test "Healthy swarm expires to unhealthy swarm" do
     IO.puts("Create temporarily healthy swarm")
-    Hb.test_setup()
-    Process.sleep(200)
-    Hb.add_heartbeat(%{node: 0, ward: 1}, 500)
-    Hb.add_heartbeat(%{node: 1, ward: 2}, 500)
-    Hb.add_heartbeat(%{node: 2, ward: 0}, 200)
+    Process.sleep(400)
+    Hb.add_heartbeat(%{node: 0, ward: 1, state: :ready}, 500)
+    Hb.add_heartbeat(%{node: 1, ward: 2, state: :ready}, 500)
+    Hb.add_heartbeat(%{node: 2, ward: 0, state: :ready}, 200)
     Process.sleep(150)
     assert Hb.swarm_healthy?() == true
     Process.sleep(150)

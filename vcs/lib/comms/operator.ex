@@ -6,9 +6,9 @@ defmodule Comms.Operator do
 
   def start_link(config \\ %{}) do
     Logger.debug("Start CommsOperator")
+    Process.sleep(100)
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
     start_message_sorter_system()
-    # join_initial_groups()
     start_refresh_loop()
     {:ok, pid}
   end
@@ -22,14 +22,6 @@ defmodule Comms.Operator do
         message_count: 0 # this is purely for diagnostics
      }}
   end
-
-  # @impl GenServer
-  # def handle_cast(:join_initial_groups, state) do
-  #   Enum.each(state.groups, fn group ->
-  #     join_group(group)
-  #   end)
-  #   {:noreply, state}
-  # end
 
   def handle_cast(:start_refresh_loop, state) do
     refresh_groups_timer = Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
@@ -50,7 +42,6 @@ defmodule Comms.Operator do
     :pg2.create(group)
     if !is_in_group?(group, process_id) do
       :pg2.join(group, process_id)
-      MessageSorter.System.start_sorter(%{name: group})
     end
     {:noreply, state}
   end

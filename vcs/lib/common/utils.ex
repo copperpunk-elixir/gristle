@@ -1,15 +1,23 @@
 defmodule Common.Utils do
   require Logger
 
-  def start_link_redudant(parent_module, module, config, name) do
+  def start_link_redudant(parent_module, module, config, name \\ nil) do
+    name =
+      case name do
+        nil -> module
+        atom -> atom
+      end
     result =
       case parent_module do
         GenServer -> GenServer.start_link(module, config, name: name)
+        GenStateMachine -> GenStateMachine.start_link(module, config, name: name)
         DynamicSupervisor -> DynamicSupervisor.start_link(module, config, name: name)
+        Registry -> apply(Registry, :start_link, [config])
       end
     case result do
       {:ok, pid} ->
         Logger.debug("#{module}: #{inspect(name)} successfully started")
+        wait_for_genserver_start(pid)
         {:ok, pid}
       {:error, {:already_started, pid}} ->
         Logger.debug("#{module}: #{inspect(name)} already started at #{inspect(pid)}. This is fine.")
@@ -37,6 +45,24 @@ defmodule Common.Utils do
     end
   end
 
+  def list_to_enum(input_list) do
+    input_list
+    |> Enum.with_index()
+    |> Map.new()
+  end
+
+  def assert_valid_config(config, config_type) do
+    {verify_fn, default_value} =
+      case config_type do
+        Map -> {:is_map, %{}}
+        List -> {:is_list, []}
+      end
+    if apply(Kernel, verify_fn, [config]) do
+      config
+    else
+      default_value
+    end
+  end
   # def validate_config_with_default(config,, default_config) do
   # end
 
