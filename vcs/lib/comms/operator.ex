@@ -8,7 +8,6 @@ defmodule Comms.Operator do
     Logger.debug("Start CommsOperator")
     Process.sleep(100)
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
-    start_message_sorter_system()
     start_refresh_loop()
     {:ok, pid}
   end
@@ -70,13 +69,6 @@ defmodule Comms.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:global_msg, msg_group, classification, time_validity_ms, value}, state) do
-    MessageSorter.Sorter.add_message(msg_group, classification, time_validity_ms, value)
-    message_count = state.message_count + 1
-    {:noreply, %{state | message_count: message_count}}
-  end
-
-  @impl GenServer
   def handle_call({:get_members, group}, _from, state) do
     {:reply, Map.get(state.groups, group, []), state}
   end
@@ -100,10 +92,6 @@ defmodule Comms.Operator do
       end)
     Logger.warn("groups after refresh: #{inspect(groups)}")
     {:noreply, %{state | groups: groups}}
-  end
-
-  def start_message_sorter_system() do
-    MessageSorter.System.start_link()
   end
 
   defp join_initial_groups() do

@@ -35,7 +35,7 @@ defmodule Pids.ConnectPidToActuatorTest do
     config = %{}
     config = Map.merge(context[:config], config)
     aileron_actuator = config.actuator_config.actuators.aileron
-    rudder_actuator = config.actuator_config.actuators.rudder
+    # rudder_actuator = config.actuator_config.actuators.rudder
     throttle_actuator = config.actuator_config.actuators.throttle
     Process.sleep(100)
     # There has been no pid update, so the actuator should be at its failsafe value

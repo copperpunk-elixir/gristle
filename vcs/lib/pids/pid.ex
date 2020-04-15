@@ -7,7 +7,7 @@ defmodule Pids.Pid do
 
   def start_link(config) do
     Logger.debug("Start PID #{inspect(config[:name])}")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(config[:name]))
+    GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
   end
 
   @impl GenServer
@@ -16,13 +16,13 @@ defmodule Pids.Pid do
     {:ok, %{
         process_variable: process_variable,
         actuator: actuator,
-        rate_or_position: Map.fetch!(config, :rate_or_position),
-        one_or_two_sided: Map.fetch!(config, :one_or_two_sided),
+        rate_or_position: config.rate_or_position,
+        one_or_two_sided: config.one_or_two_sided,
         kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
         pv_error_prev: 0,
-        output: get_initial_output(Map.fetch!(config, :one_or_two_sided))
+        output: get_initial_output(config.one_or_two_sided)
       }}
   end
 

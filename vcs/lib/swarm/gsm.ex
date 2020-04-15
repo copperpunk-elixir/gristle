@@ -82,11 +82,11 @@ defmodule Swarm.Gsm do
   def get_state_map() do
     [
       :disarmed,
-      :ready,
-      :rate,
-      :attitude,
-      :velocity_alt,
-      :position
+      :manual,
+      :semi_auto,
+      :auto,
+      :contigency_one,
+      :contigency_two
     ]
     |> Common.Utils.list_to_enum()
   end

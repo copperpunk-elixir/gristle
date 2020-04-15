@@ -16,10 +16,10 @@ defmodule Control.GetControlStateTest do
   test "Control Get Control State" do
     process_variables = [:roll, :pitch]
     controller_config = TestConfigs.Control.get_config_with_pvs(process_variables)
-    {:ok, pid} = Control.Controller.start_link(controller_config)
+    Control.Controller.start_link(controller_config)
     Process.sleep(200)
     assert Control.Controller.get_control_state() == nil
-    new_state = Swarm.Gsm.get_state_enum(:attitude)
+    new_state = Swarm.Gsm.get_state_enum(:manual)
     Swarm.Gsm.add_desired_control_state(new_state, [0], 200)
     Process.sleep(100)
     assert Control.Controller.get_control_state() == new_state

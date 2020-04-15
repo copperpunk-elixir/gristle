@@ -3,16 +3,17 @@ defmodule Swarm.Gsm.StartGsmTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
+    MessageSorter.System.start_link() 
     {:ok, []}
   end
 
-  test "Check state enums" do
-    IO.puts("SwarmGsm: Check State Enums")
+  test "Start GSM" do
+    IO.puts("SwarmGsm: Start Gsm")
     state_map = Swarm.Gsm.get_state_map()
     assert state_map.disarmed == 0
-    assert state_map.attitude == 3
+    assert state_map.auto == 3
     initial_state= :disarmed
-    {:ok, pid} = Swarm.Gsm.start_link(%{initial_state: initial_state})
+    Swarm.Gsm.start_link(%{initial_state: initial_state})
     assert Swarm.Gsm.get_state() == Swarm.Gsm.get_state_enum(initial_state)
   end
 

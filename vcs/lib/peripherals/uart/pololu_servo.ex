@@ -3,12 +3,14 @@ defmodule Peripherals.Uart.PololuServo do
   require Logger
 
   @default_baud 115_200
+  @default_write_timeout 10
+  @default_read_timeout 10
 
   defstruct [interface_ref: nil, baud: nil]
 
   def new_device(config) do
     baud = Map.get(config, :baud, @default_baud)
-    interface_ref = Peripherals.Uart.Utils.get_uart_ref()
+    {:ok, interface_ref} = Circuits.UART.start_link()
     %Peripherals.Uart.PololuServo{interface_ref: interface_ref, baud: baud}
   end
 
@@ -30,7 +32,7 @@ defmodule Peripherals.Uart.PololuServo do
       end
     Logger.debug("Pololu command port: #{command_port}")
     # Logger.debug("interface_ref: #{inspect(device.interface_ref)}")
-    case Peripherals.Uart.Utils.open_passive(device.interface_ref,command_port,device.baud) do
+    case Circuits.UART.open(device.interface_ref,command_port,[speed: device.baud, active: false]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
         nil
@@ -57,7 +59,7 @@ defmodule Peripherals.Uart.PololuServo do
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
     message = get_message_for_channel_and_output_ms(channel, output_ms)
-    Peripherals.Uart.Utils.write(device.interface_ref, :binary.list_to_bin(message), 10)
+    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), @default_write_timeout)
   end
 
   def get_message_for_channel_and_output_ms(channel, output_ms) do
@@ -71,8 +73,8 @@ defmodule Peripherals.Uart.PololuServo do
   def get_output_for_channel_number(device, channel) do
     packet = [0x90, channel]
     message = packet ++ [get_checksum_for_packet(packet)]
-    Peripherals.Uart.Utils.write(device.interface_ref, :binary.list_to_bin(message), 10)
-    response = Peripherals.Uart.Utils.read(device.interface_ref, 100)
+    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), @default_write_timeout)
+    response = read_to_list(device.interface_ref, @default_read_timeout)
     if length(response) == 2 do
       (Bitwise.<<<(Enum.at(response, 1),8) |> Bitwise.bor(Enum.at(response, 0))) / 4
     else
@@ -99,6 +101,17 @@ defmodule Peripherals.Uart.PololuServo do
     end)
     # flip the bits
     Bitwise.band(crc, 0x7F)
+  end
+
+  def read_to_list(interface_ref, timeout) do
+    case Circuits.UART.read(interface_ref, timeout) do
+      {:ok, binary} ->
+        # Logger.debug("Good read: #{binary}")
+        :binary.bin_to_list(binary)
+      {msg, _} ->
+        Logger.debug("No read: #{msg}")
+        []
+    end
   end
 
 end

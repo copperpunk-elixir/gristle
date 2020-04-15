@@ -11,7 +11,7 @@ defmodule Control.StartLoopTest do
     IO.puts("Start Control Loop")
     process_variables = [:roll, :pitch]
     controller_config = TestConfigs.Control.get_config_with_pvs(process_variables)
-    {:ok, pid} = Control.Controller.start_link(controller_config)
+    Control.Controller.start_link(controller_config)
     Process.sleep(200)
     # All process variable groups should have been joined, so we can query them
     roll_msg_value = Control.Controller.get_pv_cmd(:roll)
