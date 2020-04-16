@@ -73,6 +73,30 @@ defmodule Pids.System do
   end
 
   @impl GenServer
+  def handle_cast({:update_pids_for_pv_map, pv_pv_error_map, dt}, state) do
+    actuators_affected =
+      Enum.reduce(pv_pv_error_map, [], fn ({process_variable, process_variable_error}, actuator_list) ->
+        pv_actuators = Map.get(state.pv_act_pids, process_variable)
+        actuators_for_pv =[]
+          Enum.reduce(pv_actuators, actuator_list, fn ({actuator, _weight}, acc) ->
+            Pids.Pid.update_pid(process_variable, actuator, process_variable_error, dt)
+            if (Enum.member?(acc, actuator)) do
+              acc
+            else
+              [actuator | acc]
+            end
+        end)
+      end)
+    # Update all actuators affected
+    Enum.each(actuators_affected, fn actuator_name ->
+      pv_pids = Map.get(state.act_pv_pids, actuator_name)
+      output = calculate_actuator_output(actuator_name, pv_pids)
+      MessageSorter.Sorter.add_message({:actuator, actuator_name}, state.act_msg_class, state.act_msg_time_ms, output)
+    end)
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast({:update_all_actuators_connected_to_pv, process_variable}, state) do
     Enum.each(state.act_pv_pids, fn {actuator_name, pv_pids} ->
       # Logger.debug("update acts with pv: #{process_variable}")
@@ -94,7 +118,12 @@ defmodule Pids.System do
 
   def update_pids(process_variable, process_variable_error, dt) do
     GenServer.cast(__MODULE__, {:update_pids, process_variable, process_variable_error, dt})
-    update_all_actuators_connected_to_process_variable(process_variable)
+    GenServer.cast(__MODULE__, {:update_all_actuators_connected_to_pv, process_variable})
+    # update_all_actuators_connected_to_process_variable(process_variable)
+  end
+
+  def update_pids_for_pvs_and_errors(pv_pv_error_map, dt) do
+    GenServer.cast(__MODULE__, {:update_pids_for_pv_map, pv_pv_error_map, dt})
   end
 
   def get_actuator_output(actuator) do
