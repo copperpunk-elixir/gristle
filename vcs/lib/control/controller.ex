@@ -27,6 +27,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast(:begin, state) do
+    Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
     join_process_variable_cmd_groups(state.process_variables)
     control_state_config = %{
@@ -62,9 +63,9 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:update_pvs, pv_group, process_variable_names_values}, state) do
-    control_state = state.control_state
-    control_state_enum = get_control_state_enum(control_state)
+  def handle_cast({:update_pvs, _pv_group, _process_variable_names_values}, state) do
+    # control_state = state.control_state
+    # control_state_enum = get_control_state_enum(control_state)
     # case pv_group do
     #   :attitude ->
     #     cond do
@@ -142,7 +143,7 @@ defmodule Control.Controller do
   end
 
   def add_control_state(control_state) do
-    # This is the only process adding to the control_state_sorter, s
+    # This is the only process adding to the control_state_sorter, so
     # the classification and time_validity_ms aren't really important
     MessageSorter.Sorter.add_message(@control_state_sorter, [0], 100, control_state)
   end
@@ -157,7 +158,7 @@ defmodule Control.Controller do
 
   defp join_process_variable_cmd_groups(process_variables) do
     Enum.each(process_variables, fn process_variable ->
-      Comms.Operator.join_group({:process_variable_cmd, process_variable}, self())
+      Comms.Operator.join_group(__MODULE__, {:process_variable_cmd, process_variable}, self())
       MessageSorter.System.start_sorter(%{name: {:process_variable_cmd, process_variable}})
     end)
   end

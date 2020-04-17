@@ -25,6 +25,31 @@ defmodule Common.Utils do
     end
   end
 
+  def start_link_singular(parent_module, module, config, name \\ nil) do
+    name =
+      case name do
+        nil -> module
+        atom -> atom
+      end
+    result =
+      case parent_module do
+        GenServer -> GenServer.start_link(module, config, name: name)
+        GenStateMachine -> GenStateMachine.start_link(module, config, name: name)
+        DynamicSupervisor -> DynamicSupervisor.start_link(module, config, name: name)
+        Registry -> apply(Registry, :start_link, [config])
+      end
+    case result do
+      {:ok, pid} ->
+        Logger.debug("#{module}: #{inspect(name)} successfully started")
+        wait_for_genserver_start(pid)
+        {:ok, pid}
+      {:error, {:already_started, pid}} ->
+        raise "#{module}: #{inspect(name)} already started at #{inspect(pid)}. This is not okay."
+        {:error, pid}
+    end
+
+  end
+
   def wait_for_genserver_start(process_name, current_time \\ 0, timeout \\ 60000) do
     Logger.debug("Wait for GenServer process: #{inspect(process_name)}")
     if GenServer.whereis(process_name) == nil do

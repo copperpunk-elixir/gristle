@@ -28,8 +28,8 @@ defmodule Swarm.Heartbeat do
     sorter_config = %{
       name: @node_sorter,
     }
-    {:ok, pid} = Comms.Operator.start_link()
-    Comms.Operator.join_group(@node_sorter, self())
+    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.join_group(__MODULE__, @node_sorter, self())
     MessageSorter.System.start_sorter(sorter_config)
     {:noreply, state}
   end
@@ -132,7 +132,7 @@ defmodule Swarm.Heartbeat do
 
   def add_heartbeat(heartbeat_map, time_validity_ms) do
     # GenServer.cast(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms})
-    Comms.Operator.send_msg_to_group({:add_heartbeat, heartbeat_map, time_validity_ms}, {:hb, :node}, nil)
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms}, {:hb, :node}, nil)
   end
 
   def swarm_healthy?() do
