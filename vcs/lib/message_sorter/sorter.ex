@@ -17,6 +17,7 @@ defmodule MessageSorter.Sorter do
         nil -> {:default_value, nil}
         :last -> {:last, nil}
         :default_value -> {:default_value, config.default_value}
+        :decay -> {:decay, config.decay_value}
       end
     {:ok, %{
         messages: [],

@@ -3,9 +3,12 @@ defmodule Control.Controller do
   require Logger
 
   @control_state_sorter {:control_state, :state}
+  @pv_corr_level_I_group {:pv_correction, :I}
+  @pv_corr_level_II_group {:pv_correction, :II}
+  @pv_corr_level_III_group {:pv_correction, :III}
 
   def start_link(config) do
-    Logger.debug("Start Control.Controller")
+    Logger.debug("Start Control.ControllerCar")
     {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     begin()
     start_control_loop()
@@ -14,11 +17,13 @@ defmodule Control.Controller do
 
   @impl GenServer
   def init(config) do
+    vehicle_type = config.vehicle_type
+    vehicle_module = get_module_for_vehicle_type(vehicle_type)
+    Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
-        process_variables: config.process_variables,
-        pv_cmds_sorted: %{},
-        pv_cmds_control: %{},
-        pv_values: %{},
+        vehicle_type: vehicle_type,
+        vehicle_module: vehicle_module,
+        pv_cmds: %{},
         control_loop_timer: nil,
         control_loop_interval_ms: config.process_variable_cmd_loop_interval_ms,
         control_state: nil
@@ -29,23 +34,31 @@ defmodule Control.Controller do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
-    join_process_variable_cmd_groups(state.process_variables)
+    # Start PV Cmds sorter
+    GenServer.cast(self(), :start_pv_cmd_sorters)
+    # Start control state sorter
     control_state_config = %{
       name: @control_state_sorter,
       default_message_behavior: :last
     }
     MessageSorter.System.start_sorter(control_state_config)
+    join_process_variable_cmd_groups()
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast(:start_message_sorter_system, state) do
+  def handle_cast(:start_pv_cmd_sorters, state) do
+    apply(state.vehicle_module, :start_message_sorters, [])
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast(:join_process_variable_cmd_groups, state) do
-        {:noreply, state}
+  def handle_cast(:create_pv_cmd_map, state) do
+    pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn({pv_name, config}, acc) ->
+      Map.put(acc, pv_name, config.default_value)
+    end)
+    Logger.debug("initial PV cmds: #{inspect(pv_cmds)}")
+    {:noreply, %{state | pv_cmds: pv_cmds}}
   end
 
   @impl GenServer
@@ -63,58 +76,47 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:update_pvs, _pv_group, _process_variable_names_values}, state) do
-    # control_state = state.control_state
-    # control_state_enum = get_control_state_enum(control_state)
-    # case pv_group do
-    #   :attitude ->
-    #     cond do
-    #       control_state_enum == :attitude_rate ->
-    #         pv_cmds = get_pv_cmds(:attitude_rate)
-    #         Logger.debug("Rate: #{inspect(pv_cmds)}")
-    #       control_state_enum == :attitude ->
-    #         pv_cmds = get_pv_cmd(:attitude_rate)
-    #         Logger.debug("Attitude: #{inspect(pv_cmds)}")
-    #       true -> nil
-    #     end
-    #   :pos_vel ->
-    #     cond do
-    #       control_state_enum == :velocity ->
-    #         pv_cmds = get_pv_cmd(:velocit)
-    #     end
+  def handle_cast({:pv_attitude_attitude_rate, pv_map}, state) do
+    pv_values = %{state.pv_values | attitude: pv_map.attitude, attitude_rate: pv_map.attitude_rate}
+    # If control_state :semi-auto, computer Level II corrections
+    # Yaw-Yawrate
 
-    # end
-    # pv_values = Enum.reduce(process_variable_names_values, state.pv_values, fn ({pv_name, pv_value}, acc) ->
-    #   Map.put(acc, pv_name, pv_value)
-    # end)
-    # min_control_state = min(Swarm.Gsm.get_state_enum(pv_group), state.control_state)
-    # pv_cmds_control = Enum.reduce(state.control_state, min_control_state,
-    state
+    # Compute Level I corrections
+    # Thrust-throttle
+    # Yawrate-Steering
+    {:noreply, %{state | pv_values: pv_values}}
   end
+
+  @impl GenServer
+  def handle_cast({:pv_velocity_position, pv_map, dt}, state) do
+    # If control_state :auto, compute Level III correction
+    if (state.control_state == :auto) do
+      pv_corrections = apply(state.vehicle_module, :update_auto_pv_correction, [pv_map, state.pv_cmds])
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, pv_corrections, dt},@pv_corr_level_III_group, self())
+    end
+    {:noreply, state}
+  end
+
 
   @impl GenServer
   def handle_info(:control_loop, state) do
     Logger.debug("Control loop")
     # For every PV, get the corresponding command
-    pv_cmds_sorted = get_all_pv_cmds_sorted_for_pvs(state.pv_values)
+    pv_cmds = update_all_pv_cmds(state.pv_cmds)
     control_state = get_control_state()
-    {:noreply, %{state | pv_cmds_sorted: pv_cmds_sorted, control_state: control_state}}
+    {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
-  def get_pv_cmd_for_control_state(control_state, pv_cmd_name) do
-    # case pv_cmd_name do
-    #   :roll -> case control_state do
+  # def get_pv_correction_(pv_cmd_map, pv_map) do
+  #   Enum.reduce(pv_cmd_map, %{}, fn({pv, pv_cmd}, acc) ->
+  #     pv_correction = pv_cmd - Map.fetch!(pv_map, pv)
+  #     Map.put(pv, pv_correction)
+  #   end)
+  # end
 
-    #            end
-    # end
-    # case control_state do
-    #   :rate -> 
-    # end
-  end
-
-  def get_control_state_enum(control_state) do
-    Swarm.Gsm.get_state_enum(control_state)
-  end
+  # def get_control_state_enum(control_state) do
+  #   Swarm.Gsm.get_state_enum(control_state)
+  # end
 
   def start_control_loop() do
     GenServer.cast(__MODULE__, :start_control_loop)
@@ -125,22 +127,22 @@ defmodule Control.Controller do
   end
 
   def get_pv_cmd(pv_name) do
-    MessageSorter.Sorter.get_value({:process_variable_cmd, pv_name})
+    MessageSorter.Sorter.get_value({:pv_cmds, pv_name})
   end
 
-  def get_all_pv_cmds_sorted_for_pvs(process_variables) do
-    Enum.reduce(process_variables, %{}, fn ({pv_name, _value}, acc) ->
+  def update_all_pv_cmds(pv_cmds) do
+    Enum.reduce(pv_cmds, %{}, fn ({pv_name, _value}, acc) ->
       Map.put(acc, pv_name, get_pv_cmd(pv_name))
     end)
   end
 
-  def update_attitude_pvs(process_variable_names_values) do
-    GenServer.cast(__MODULE__, {:update_pvs, :attitude, process_variable_names_values})
-  end
+  # def update_attitude_pvs(process_variable_names_values) do
+  #   GenServer.cast(__MODULE__, {:update_pvs, :attitude, process_variable_names_values})
+  # end
 
-  def update_pos_vel_pvs(process_variable_names_values) do
-    GenServer.cast(__MODULE__, {:update_pvs, :pos_vel, process_variable_names_values})
-  end
+  # def update_pos_vel_pvs(process_variable_names_values) do
+  #   GenServer.cast(__MODULE__, {:update_pvs, :pos_vel, process_variable_names_values})
+  # end
 
   def add_control_state(control_state) do
     # This is the only process adding to the control_state_sorter, so
@@ -156,10 +158,22 @@ defmodule Control.Controller do
     GenServer.cast(__MODULE__, :begin)
   end
 
-  defp join_process_variable_cmd_groups(process_variables) do
-    Enum.each(process_variables, fn process_variable ->
-      Comms.Operator.join_group(__MODULE__, {:process_variable_cmd, process_variable}, self())
-      MessageSorter.System.start_sorter(%{name: {:process_variable_cmd, process_variable}})
-    end)
+  defp join_process_variable_cmd_groups() do
+    Comms.Operator.join_group(__MODULE__, :attitude_attitude_rate, self())
+    Comms.Operator.join_group(__MODULE__, :velocity_position, self())
+  end
+
+  # defp get_initial_pv_values() do
+  #   %{
+  #     attitude_rate: %{roll: 0, pitch: 0, yaw: 0},
+  #     attitude: %{roll: 0, pitch: 0, yaw: 0},
+  #     velocity: %{x: 0, y: 0, z: 0},
+  #     position: %{x: 0, y: 0, z: 0}
+  #   }
+  # end
+
+  def get_module_for_vehicle_type(vehicle_type) do
+    Atom.to_string(__MODULE__) <> "." <> Atom.to_string(vehicle_type)
+    |> String.to_atom()
   end
 end

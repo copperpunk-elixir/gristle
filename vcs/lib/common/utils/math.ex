@@ -8,4 +8,7 @@ defmodule Common.Utils.Math do
     end
   end
 
+  def hypot(x, y) do
+    :math.sqrt(x*x + y*y)
+  end
 end

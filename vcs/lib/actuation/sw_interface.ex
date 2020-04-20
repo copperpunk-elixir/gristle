@@ -4,7 +4,7 @@ defmodule Actuation.SwInterface do
 
   def start_link(config) do
     Logger.debug("Start Actuation SwInterface")
-    {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     start_message_sorters()
     start_actuator_loop()
     {:ok, process_id}
@@ -21,10 +21,9 @@ defmodule Actuation.SwInterface do
 
   @impl GenServer
   def handle_cast(:start_message_sorters, state) do
-    {:ok, pid} = MessageSorter.System.start_link()
-    Common.Utils.wait_for_genserver_start(pid)
+    MessageSorter.System.start_link()
     Enum.each(state.actuators, fn {actuator_name, _actuator} ->
-      MessageSorter.System.start_sorter(%{name: {:actuator, actuator_name}})
+      MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}})
     end)
     {:noreply, state}
   end
@@ -60,7 +59,7 @@ defmodule Actuation.SwInterface do
   end
 
   def get_output_for_actuator_name(actuator_name) do
-    MessageSorter.Sorter.get_value({:actuator, actuator_name})
+    MessageSorter.Sorter.get_value({:actuator_cmds, actuator_name})
   end
 
   defp start_message_sorters() do

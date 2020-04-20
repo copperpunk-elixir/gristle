@@ -27,10 +27,10 @@ defmodule Actuation.SwInterfacePololuTest do
    failsafe_output = 0.5*(actuator.min_pw_ms + actuator.max_pw_ms)
    assert Actuation.HwInterface.get_output_for_actuator(actuator) == failsafe_output
    # Send min_cmd to Actuator
-   MessageSorter.Sorter.add_message({:actuator, :aileron}, [0], 400, actuator.cmd_limit_min)
+   MessageSorter.Sorter.add_message({:actuator_cmds, :aileron}, [0], 400, actuator.cmd_limit_min)
    Process.sleep(200)
    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.min_pw_ms
-   MessageSorter.Sorter.add_message({:actuator, :aileron}, [0], 1000, actuator.cmd_limit_max)
+   MessageSorter.Sorter.add_message({:actuator_cmds, :aileron}, [0], 1000, actuator.cmd_limit_max)
    Process.sleep(300)
    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.max_pw_ms
   end

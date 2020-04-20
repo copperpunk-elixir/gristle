@@ -2,16 +2,20 @@ defmodule Pids.System do
   use GenServer
   require Logger
 
+  @pv_correction_group :pv_correction
+
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
+
     GenServer.cast(pid, :start_pids)
     GenServer.cast(pid, :reduce_config)
+    GenServer.cast(pid, :join_pv_groups)
     {:ok, pid}
   end
 
   # The PID will be simplified to a map of process_variables, each
-  # containing a list of actuators. The PID parameters will be dropped, as
+  # containing a list of control_variables. The PID parameters will be dropped, as
   # they are unnessary after startup.
   @impl GenServer
   def init(config) do
@@ -19,8 +23,8 @@ defmodule Pids.System do
         pids: config.pids,
         rate_or_position: config.rate_or_position,
         one_or_two_sided: config.one_or_two_sided,
-        pv_act_pids: %{},
-        act_pv_pids: %{},
+        pv_cv_pids: %{},
+        cv_pv_pids: %{},
         act_msg_class: config.actuator_output_msg_classification,
         act_msg_time_ms: config.actuator_output_msg_time_validity_ms
      }}
@@ -28,11 +32,11 @@ defmodule Pids.System do
 
   @impl GenServer
   def handle_cast(:start_pids, state) do
-    Enum.each(state.pids, fn {process_variable, actuators} ->
-      Enum.each(actuators, fn {actuator, pid_config} ->
-        rate_or_position = Map.fetch!(state.rate_or_position, actuator)
-        one_or_two_sided = Map.fetch!(state.one_or_two_sided, actuator)
-        pid_config = Map.put(pid_config, :name, {process_variable, actuator})
+    Enum.each(state.pids, fn {process_variable, control_variables} ->
+      Enum.each(control_variables, fn {control_variable, pid_config} ->
+        rate_or_position = Map.fetch!(state.rate_or_position, control_variable)
+        one_or_two_sided = Map.fetch!(state.one_or_two_sided, control_variable)
+        pid_config = Map.put(pid_config, :name, {process_variable, control_variable})
         |> Map.put(:rate_or_position, rate_or_position)
         |> Map.put(:one_or_two_sided, one_or_two_sided)
         Pids.Pid.start_link(pid_config)
@@ -42,117 +46,133 @@ defmodule Pids.System do
   end
 
   @impl GenServer
+  def handle_cast(:join_pv_groups, state) do
+    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :I}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :II}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :III}, self())
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast(:reduce_config, state) do
-    pv_act_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_reduced) ->
-      actuators_reduced = Enum.reduce(actuators, %{}, fn ({actuator, pid_config}, acts_red) ->
-        Map.put(acts_red, actuator, pid_config.weight)
+    pv_cv_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_reduced) ->
+      control_variables_reduced = Enum.reduce(control_variables, %{}, fn ({control_variable, pid_config}, acts_red) ->
+        Map.put(acts_red, control_variable, pid_config.weight)
       end)
-      Map.put(config_reduced, process_variable, actuators_reduced)
+      Map.put(config_reduced, process_variable, control_variables_reduced)
     end)
-    # IO.puts("pv/act pids: #{inspect(pv_act_pids)}")
-    act_pv_pids =
-      Enum.reduce(state.pids, %{}, fn ({process_variable, actuators}, config_by_actuator) ->
-        # IO.puts("cba: #{inspect(config_by_actuator)}")
-          Enum.reduce(actuators, config_by_actuator, fn ({actuator, pid_config}, pv_red) ->
-            new_map = Map.get(pv_red, actuator, %{})
+    # IO.puts("pv/act pids: #{inspect(pv_cv_pids)}")
+    cv_pv_pids =
+      Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_by_control_variable) ->
+        # IO.puts("cba: #{inspect(config_by_control_variable)}")
+          Enum.reduce(control_variables, config_by_control_variable, fn ({control_variable, pid_config}, pv_red) ->
+            new_map = Map.get(pv_red, control_variable, %{})
             new_map = Map.put(new_map, process_variable, pid_config.weight)
-            Map.put(pv_red, actuator, new_map)
+            Map.put(pv_red, control_variable, new_map)
           end)
       end)
-    # IO.puts("act/pv pids: #{inspect(act_pv_pids)}")
-    {:noreply, %{state | pv_act_pids: pv_act_pids, act_pv_pids: act_pv_pids}}
+    # IO.puts("cv/pv pids: #{inspect(cv_pv_pids)}")
+    {:noreply, %{state | pv_cv_pids: pv_cv_pids, cv_pv_pids: cv_pv_pids}}
   end
 
   @impl GenServer
-  def handle_cast({:update_pids, process_variable, process_variable_error, dt}, state) do
-    pv_actuators = Map.get(state.pv_act_pids, process_variable)
-    Enum.each(pv_actuators, fn {actuator, _weight} ->
-      Pids.Pid.update_pid(process_variable, actuator, process_variable_error, dt)
-    end)
+  def handle_cast({{@pv_correction_group, pv_level}, pv_pv_correction_map, dt}, state) do
+    Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_pv_correction_map)}")
+    case pv_level do
+      :I -> update_cvs(pv_pv_correction_map, dt, state.pv_cv_pids)
+      :II -> update_cvs(pv_pv_correction_map, dt, state.pv_cv_pids)
+      :III ->
+        actuators_affected = update_actuator_outputs(pv_pv_correction_map, dt, state.cv_pv_pids)
+        # Update all control_variables affected
+        update_actuators(actuators_affected, state.pv_cv_pids, state.act_msg_class, state.act_msg_time_ms)
+    end
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_cast({:update_pids_for_pv_map, pv_pv_error_map, dt}, state) do
-    actuators_affected =
-      Enum.reduce(pv_pv_error_map, [], fn ({process_variable, process_variable_error}, actuator_list) ->
-        pv_actuators = Map.get(state.pv_act_pids, process_variable)
-        actuators_for_pv =[]
-          Enum.reduce(pv_actuators, actuator_list, fn ({actuator, _weight}, acc) ->
-            Pids.Pid.update_pid(process_variable, actuator, process_variable_error, dt)
-            if (Enum.member?(acc, actuator)) do
-              acc
-            else
-              [actuator | acc]
-            end
-        end)
+  defp update_cvs(pv_pv_correction_map, dt, pv_cv_pids) do
+    Enum.each(pv_pv_correction_map, fn {process_variable, process_variable_correction} ->
+      pv_cvs = Map.get(pv_cv_pids, process_variable)
+      Enum.each(pv_cvs, fn {control_variable, _weight} ->
+        Logger.debug("pv/cv: #{process_variable}/#{control_variable}")
+        Pids.Pid.update_pid(process_variable, control_variable, process_variable_correction, dt)
       end)
-    # Update all actuators affected
+    end)
+  end
+
+  defp update_actuator_outputs(pv_pv_correction_map, dt, pv_cv_pids) do
+    Enum.reduce(pv_pv_correction_map, [], fn ({process_variable, process_variable_correction}, control_variable_list) ->
+      pv_cvs = Map.get(pv_cv_pids, process_variable)
+      Enum.reduce(pv_cvs, control_variable_list, fn ({control_variable, _weight}, acc) ->
+        # Logger.debug("pv/act: #{process_variable}/#{control_variable}")
+        Pids.Pid.update_pid(process_variable, control_variable, process_variable_correction, dt)
+        if (Enum.member?(acc, control_variable)) do
+          acc
+        else
+          [control_variable | acc]
+        end
+      end)
+    end)
+  end
+
+  defp update_actuators(actuators_affected, act_pv_pids, act_msg_class, act_msg_time_ms) do
     Enum.each(actuators_affected, fn actuator_name ->
-      pv_pids = Map.get(state.act_pv_pids, actuator_name)
-      output = calculate_actuator_output(actuator_name, pv_pids)
-      MessageSorter.Sorter.add_message({:actuator, actuator_name}, state.act_msg_class, state.act_msg_time_ms, output)
+      pv_pids = Map.get(act_pv_pids, actuator_name)
+      output = calculate_control_variable_output(actuator_name, pv_pids)
+      MessageSorter.Sorter.add_message({:actuator_cmds, actuator_name}, act_msg_class, act_msg_time_ms, output)
     end)
-    {:noreply, state}
+
   end
 
-  @impl GenServer
-  def handle_cast({:update_all_actuators_connected_to_pv, process_variable}, state) do
-    Enum.each(state.act_pv_pids, fn {actuator_name, pv_pids} ->
-      # Logger.debug("update acts with pv: #{process_variable}")
-      if Map.has_key?(pv_pids, process_variable) do
-        output = calculate_actuator_output(actuator_name, pv_pids)
-        # Logger.debug("#{actuator_name} output: #{output}")
-        MessageSorter.Sorter.add_message({:actuator, actuator_name}, state.act_msg_class, state.act_msg_time_ms, output)
-      end
-    end)
-    {:noreply, state}
-  end
+  # @impl GenServer
+  # def handle_cast({{@pv_correction_group, :III}, pv_pv_correction_map, dt}, state) do
+  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
+  #   update_cvs(pv_pv_correction_map, dt, state.cv_pv_pids)
+  #   {:noreply, state}
+  # end
 
-  # TODO: Does this function have a purpose besides testing?
-  @impl GenServer
-  def handle_call({:get_actuator_output, actuator_name}, _from, state) do
-    pv_pids = Map.get(state.pids_act_pv, actuator_name)
-    {:reply, calculate_actuator_output(actuator_name, pv_pids), state}
-  end
+  # @impl GenServer
+  # def handle_cast({{@pv_correction_group, :II}, pv_pv_correction_map, dt}, state) do
+  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
+  #   update_cvs(pv_pv_correction_map, dt, state.cv_pv_pids)
+  #   {:noreply, state}
+  # end
 
-  def update_pids(process_variable, process_variable_error, dt) do
-    GenServer.cast(__MODULE__, {:update_pids, process_variable, process_variable_error, dt})
-    GenServer.cast(__MODULE__, {:update_all_actuators_connected_to_pv, process_variable})
-    # update_all_actuators_connected_to_process_variable(process_variable)
-  end
 
-  def update_pids_for_pvs_and_errors(pv_pv_error_map, dt) do
-    GenServer.cast(__MODULE__, {:update_pids_for_pv_map, pv_pv_error_map, dt})
-  end
+  # @impl GenServer
+  # def handle_cast({{@pv_correction_group, :I}, pv_pv_correction_map, dt}, state) do
+  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
+  #   actuators_affected = update_actuator_outputs(pv_pv_correction_map, dt, state.cv_pv_pids)
+  #   # Update all control_variables affected
+  #   update_actuators(actuators_affected, state.act_pv_pids, state.act_msg_class, state.act_msg_time_ms)
+  #   {:noreply, state}
+  # end
 
-  def get_actuator_output(actuator) do
-    GenServer.call(__MODULE__, {:get_actuator_output, actuator})
-  end
-
-  def calculate_actuator_output(actuator_name, pv_pids) do
+  defp calculate_control_variable_output(control_variable_name, pv_pids) do
     {output_sum, weight_sum} = Enum.reduce(pv_pids, {0,0}, fn ({pv, weight}, acc) ->
-      pid_output = Pids.Pid.get_output(pv, actuator_name)
+      pid_output = Pids.Pid.get_output(pv, control_variable_name)
       output_sum_new = elem(acc, 0) + weight*pid_output
       weight_sum_new = elem(acc, 1) + weight
       {output_sum_new, weight_sum_new}
     end)
     if (weight_sum> 0) do
-      constrain_output(output_sum / weight_sum)
+      # TODO the min-max should be variable
+      Common.Utils.Math.constrain(output_sum / weight_sum, 0, 1)
     else
-      raise "Weights for #{actuator_name} are not valid"
+      raise "Weights for #{control_variable_name} are not valid"
     end
   end
 
-  def update_all_actuators_connected_to_process_variable(process_variable) do
-    GenServer.cast(__MODULE__, {:update_all_actuators_connected_to_pv, process_variable})
-  end
+  # ----- BEGIN TEST-ONLY FUNCTIONS -----
+  # @impl GenServer
+  # def handle_call({:get_actuator_output, actuator_name}, _from, state) do
+  #   pv_pids = Map.get(state.pids_act_pv, actuator_name)
+  #   {:reply, calculate_actuator_output(actuator_name, pv_pids), state}
+  # end
 
-  def constrain_output(output) do
-    cond do
-      output > 1 -> 1
-      output < 0 -> 0
-      true -> output
-    end
-  end
+  # def get_actuator_output(actuator) do
+  #   GenServer.call(__MODULE__, {:get_actuator_output, actuator})
+  # end
+  # ----- END TEST-ONLY FUNCTIONS -----
+
 end

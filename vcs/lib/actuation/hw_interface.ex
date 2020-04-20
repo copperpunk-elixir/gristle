@@ -3,7 +3,7 @@ defmodule Actuation.HwInterface do
   require Logger
 
   def start_link(config) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     Logger.debug("Start Actuation HwInterface")
     begin()
     {:ok, pid}

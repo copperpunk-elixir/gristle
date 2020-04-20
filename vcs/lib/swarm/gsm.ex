@@ -15,11 +15,11 @@ defmodule Swarm.Gsm do
   end
 
   def init(config) do
-    state = get_state_enum(config.initial_state)
+    state = config.initial_state
     modules_to_montor = Map.get(config, :modules_to_monitor, [])
     module_health =
       Enum.reduce(modules_to_montor, %{}, fn (module, acc) ->
-        Map.put(acc, module, get_module_health_enum(:initializing))
+        Map.put(acc, module, :initializing)
       end)
     data = %{
       state_loop_interval_ms: Map.get(config, :state_loop_interval_ms, @default_state_loop_interval_ms),
@@ -84,34 +84,34 @@ defmodule Swarm.Gsm do
     GenStateMachine.call(__MODULE__, :get_data)
   end
 
-  def get_state_map() do
-    [
-      :disarmed,
-      :manual,
-      :semi_auto,
-      :auto,
-      :contigency_one,
-      :contigency_two
-    ]
-    |> Common.Utils.list_to_enum()
-  end
+  # def get_state_map() do
+  #   [
+  #     :disarmed,
+  #     :manual,
+  #     :semi_auto,
+  #     :auto,
+  #     :contigency_one,
+  #     :contigency_two
+  #   ]
+  #   |> Common.Utils.list_to_enum()
+  # end
 
-  def get_module_health_map() do
-    [
-      :initializing,
-      :ready,
-      :dead
-    ]
-    |> Common.Utils.list_to_enum()
-  end
+  # def get_module_health_map() do
+  #   [
+  #     :initializing,
+  #     :ready,
+  #     :dead
+  #   ]
+  #   |> Common.Utils.list_to_enum()
+  # end
 
-  def get_state_enum(state_name) do
-    Map.fetch!(get_state_map(), state_name)
-  end
+  # def get_state_enum(state_name) do
+  #   Map.fetch!(get_state_map(), state_name)
+  # end
 
-  def get_module_health_enum(module_name) do
-    Map.fetch!(get_module_health_map(), module_name)
-  end
+  # def get_module_health_enum(module_name) do
+  #   Map.fetch!(get_module_health_map(), module_name)
+  # end
 
   # Used only for testing
   def add_desired_control_state(control_state, classification, time_validity_ms) do
