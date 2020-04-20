@@ -79,11 +79,8 @@ defmodule Control.Controller do
   def handle_cast({:pv_attitude_attitude_rate, pv_map}, state) do
     pv_values = %{state.pv_values | attitude: pv_map.attitude, attitude_rate: pv_map.attitude_rate}
     # If control_state :semi-auto, computer Level II corrections
-    # Yaw-Yawrate
 
     # Compute Level I corrections
-    # Thrust-throttle
-    # Yawrate-Steering
     {:noreply, %{state | pv_values: pv_values}}
   end
 
@@ -107,17 +104,6 @@ defmodule Control.Controller do
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
-  # def get_pv_correction_(pv_cmd_map, pv_map) do
-  #   Enum.reduce(pv_cmd_map, %{}, fn({pv, pv_cmd}, acc) ->
-  #     pv_correction = pv_cmd - Map.fetch!(pv_map, pv)
-  #     Map.put(pv, pv_correction)
-  #   end)
-  # end
-
-  # def get_control_state_enum(control_state) do
-  #   Swarm.Gsm.get_state_enum(control_state)
-  # end
-
   def start_control_loop() do
     GenServer.cast(__MODULE__, :start_control_loop)
   end
@@ -135,14 +121,6 @@ defmodule Control.Controller do
       Map.put(acc, pv_name, get_pv_cmd(pv_name))
     end)
   end
-
-  # def update_attitude_pvs(process_variable_names_values) do
-  #   GenServer.cast(__MODULE__, {:update_pvs, :attitude, process_variable_names_values})
-  # end
-
-  # def update_pos_vel_pvs(process_variable_names_values) do
-  #   GenServer.cast(__MODULE__, {:update_pvs, :pos_vel, process_variable_names_values})
-  # end
 
   def add_control_state(control_state) do
     # This is the only process adding to the control_state_sorter, so
@@ -171,6 +149,7 @@ defmodule Control.Controller do
   #     position: %{x: 0, y: 0, z: 0}
   #   }
   # end
+
 
   def get_module_for_vehicle_type(vehicle_type) do
     Atom.to_string(__MODULE__) <> "." <> Atom.to_string(vehicle_type)

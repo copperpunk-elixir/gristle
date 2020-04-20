@@ -84,35 +84,6 @@ defmodule Swarm.Gsm do
     GenStateMachine.call(__MODULE__, :get_data)
   end
 
-  # def get_state_map() do
-  #   [
-  #     :disarmed,
-  #     :manual,
-  #     :semi_auto,
-  #     :auto,
-  #     :contigency_one,
-  #     :contigency_two
-  #   ]
-  #   |> Common.Utils.list_to_enum()
-  # end
-
-  # def get_module_health_map() do
-  #   [
-  #     :initializing,
-  #     :ready,
-  #     :dead
-  #   ]
-  #   |> Common.Utils.list_to_enum()
-  # end
-
-  # def get_state_enum(state_name) do
-  #   Map.fetch!(get_state_map(), state_name)
-  # end
-
-  # def get_module_health_enum(module_name) do
-  #   Map.fetch!(get_module_health_map(), module_name)
-  # end
-
   # Used only for testing
   def add_desired_control_state(control_state, classification, time_validity_ms) do
     IO.puts("Add desired cs: #{inspect(control_state)}")

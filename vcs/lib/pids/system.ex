@@ -124,30 +124,6 @@ defmodule Pids.System do
 
   end
 
-  # @impl GenServer
-  # def handle_cast({{@pv_correction_group, :III}, pv_pv_correction_map, dt}, state) do
-  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
-  #   update_cvs(pv_pv_correction_map, dt, state.cv_pv_pids)
-  #   {:noreply, state}
-  # end
-
-  # @impl GenServer
-  # def handle_cast({{@pv_correction_group, :II}, pv_pv_correction_map, dt}, state) do
-  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
-  #   update_cvs(pv_pv_correction_map, dt, state.cv_pv_pids)
-  #   {:noreply, state}
-  # end
-
-
-  # @impl GenServer
-  # def handle_cast({{@pv_correction_group, :I}, pv_pv_correction_map, dt}, state) do
-  #   # Logger.debug("msg rx: #{inspect(pv_pv_correction_map)}")
-  #   actuators_affected = update_actuator_outputs(pv_pv_correction_map, dt, state.cv_pv_pids)
-  #   # Update all control_variables affected
-  #   update_actuators(actuators_affected, state.act_pv_pids, state.act_msg_class, state.act_msg_time_ms)
-  #   {:noreply, state}
-  # end
-
   defp calculate_control_variable_output(control_variable_name, pv_pids) do
     {output_sum, weight_sum} = Enum.reduce(pv_pids, {0,0}, fn ({pv, weight}, acc) ->
       pid_output = Pids.Pid.get_output(pv, control_variable_name)
@@ -162,17 +138,4 @@ defmodule Pids.System do
       raise "Weights for #{control_variable_name} are not valid"
     end
   end
-
-  # ----- BEGIN TEST-ONLY FUNCTIONS -----
-  # @impl GenServer
-  # def handle_call({:get_actuator_output, actuator_name}, _from, state) do
-  #   pv_pids = Map.get(state.pids_act_pv, actuator_name)
-  #   {:reply, calculate_actuator_output(actuator_name, pv_pids), state}
-  # end
-
-  # def get_actuator_output(actuator) do
-  #   GenServer.call(__MODULE__, {:get_actuator_output, actuator})
-  # end
-  # ----- END TEST-ONLY FUNCTIONS -----
-
 end
