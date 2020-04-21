@@ -9,14 +9,14 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def init(config) do
-    {process_variable, actuator} = Map.get(config, :name)
+    {process_variable, control_variable} = Map.get(config, :name)
     output_min = Map.get(config, :output_min, 0)
     output_max = Map.get(config, :output_max, 1)
     output_neutral = Map.get(config, :output_neutral, 0.5)
 
     {:ok, %{
         process_variable: process_variable,
-        actuator: actuator,
+        control_variable: control_variable,
         rate_or_position: config.rate_or_position,
         one_or_two_sided: config.one_or_two_sided,
         kp: Map.get(config, :kp, 0),
@@ -31,39 +31,39 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
-  def handle_cast({:update, process_var_correction, _dt}, state) do
-    # Logger.debug("update #{state.process_variable}/#{state.actuator} with #{process_var_correction}")
+  def handle_cast({:update, process_var_correction, process_var_feed_forward, _dt}, state) do
+    Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_correction}/#{process_var_feed_forward}")
     cmd_p = state.kp*process_var_correction
-    delta_output = cmd_p
+    delta_output = process_var_feed_forward + cmd_p
     output =
       case state.rate_or_position do
         :rate -> get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral) + delta_output
         :position -> state.output + delta_output
       end
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-
     {:noreply, %{state | output: output}}
   end
 
   @impl GenServer
-  def handle_call(:get_output, _from, state) do
-    {:reply, state.output, state}
+  def handle_call({:get_output, weight}, _from, state) do
+    {:reply, state.output*weight, state}
   end
 
-  def update_pid(process_variable, actuator, process_var_correction, dt) do
-    GenServer.cast(via_tuple(process_variable, actuator), {:update, process_var_correction, dt})
+
+  def update_pid(process_variable, control_variable, process_var_correction, process_var_feed_forward, dt) do
+    GenServer.cast(via_tuple(process_variable, control_variable), {:update, process_var_correction, process_var_feed_forward, dt})
   end
 
-  def get_output(process_variable, actuator) do
-    GenServer.call(via_tuple(process_variable, actuator), :get_output)
+  def get_output(process_variable, control_variable, weight\\1) do
+    GenServer.call(via_tuple(process_variable, control_variable), {:get_output, weight})
   end
 
-  def via_tuple(process_variable, actuator) do
-    Comms.ProcessRegistry.via_tuple(__MODULE__,{process_variable, actuator})
+  def via_tuple(process_variable, control_variable) do
+    Comms.ProcessRegistry.via_tuple(__MODULE__,{process_variable, control_variable})
   end
 
-  def via_tuple({process_variable, actuator}) do
-    via_tuple(process_variable, actuator)
+  def via_tuple({process_variable, control_variable}) do
+    via_tuple(process_variable, control_variable)
   end
 
   def get_initial_output(one_or_two_sided, output_min, output_neutral) do
@@ -72,4 +72,5 @@ defmodule Pids.Pid do
       :two_sided -> output_neutral
     end
   end
+
 end

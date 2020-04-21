@@ -88,8 +88,8 @@ defmodule Control.Controller do
   def handle_cast({:pv_velocity_position, pv_map, dt}, state) do
     # If control_state :auto, compute Level III correction
     if (state.control_state == :auto) do
-      pv_corrections = apply(state.vehicle_module, :update_auto_pv_correction, [pv_map, state.pv_cmds])
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, pv_corrections, dt},@pv_corr_level_III_group, self())
+      {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_auto_pv_correction, [pv_map, state.pv_cmds])
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_III_group, self())
     end
     {:noreply, state}
   end

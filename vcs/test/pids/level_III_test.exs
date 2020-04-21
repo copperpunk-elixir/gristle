@@ -13,6 +13,9 @@ defmodule Pids.LevelIIITest do
     {:ok, _} = Pids.System.start_link(pid_config)
     {:ok, _} = Actuation.HwInterface.start_link(hw_interface_config)
     {:ok, _} = Actuation.SwInterface.start_link(actuator_config)
+    Process.sleep(200)
+    MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})
+    MessageSorter.System.start_sorter(%{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0})
 
     {:ok, [
         config: %{
@@ -23,80 +26,58 @@ defmodule Pids.LevelIIITest do
       ]}
   end
 
-  test "LevelIIITest", context do
+  test "LevelIITest", context do
     IO.puts("LevelIIITest")
-    assert true
-    # op_name = :batch_test
-    # {:ok, _} = Comms.Operator.start_link(%{name: op_name})
-    # dt = 0.05 # Not really used for now
-    # config = %{}
-    # config = Map.merge(context[:config], config)
-    # aileron_actuator = config.actuator_config.actuators.aileron
-    # rudder_actuator = config.actuator_config.actuators.rudder
-    # throttle_actuator = config.actuator_config.actuators.throttle
-    # Process.sleep(200)
-    # # There has been no pid update, so the actuator should be at its failsafe value
-    # failsafe_output = aileron_actuator.min_pw_ms + (aileron_actuator.max_pw_ms - aileron_actuator.min_pw_ms)*aileron_actuator.failsafe_cmd
-    # assert Actuation.HwInterface.get_output_for_actuator(aileron_actuator) == failsafe_output
-    # # Setup parameters
-    # pids = config.pid_config.pids
-    # roll_pid = pids.roll
-    # roll_aileron_weight = roll_pid.aileron.weight
-    # roll_rudder_weight = roll_pid.rudder.weight
-    # yaw_pid = pids.yaw
-    # yaw_aileron_weight = yaw_pid.aileron.weight
-    # yaw_rudder_weight = yaw_pid.rudder.weight
-    # total_aileron_weight = roll_aileron_weight + yaw_aileron_weight
-    # total_rudder_weight = roll_rudder_weight + yaw_rudder_weight
-    # vx_pid = pids.vx
-    # vx_throttle_weight = vx_pid.throttle.weight
-    # total_throttle_weight = vx_throttle_weight
-    # # rate_or_position_all = config.pid_config.rate_or_position
-    # one_or_two_sided_all = config.pid_config.one_or_two_sided
+    max_rate_delta = 0.001
+    max_pw_delta = 0.25
+    op_name = :batch_test
+    {:ok, _} = Comms.Operator.start_link(%{name: op_name})
+    dt = 0.05 # Not really used for now
+    config = %{}
+    config = Map.merge(context[:config], config)
+    aileron_actuator = config.actuator_config.actuators.aileron
+    rudder_actuator = config.actuator_config.actuators.rudder
+    Process.sleep(200)
+    # There has been no pid update, so the actuator should be at its failsafe value
+    # Setup parameters
+    pids = config.pid_config.pids
+    heading_pid = pids.heading
+    roll_pid = pids.roll
+    # pitch_pid = pids.pitch
+    yaw_pid = pids.yaw
+    rollrate_pid = pids.rollrate
+    yawrate_pid = pids.yawrate
+    # rate_or_position_all = config.pid_config.rate_or_position
+    one_or_two_sided_all = config.pid_config.one_or_two_sided
 
-    # # ----- BEGIN AILERON AND RUDDER TEST -----
-    # # Update roll and yaw at the same time, which both affect aileron and rudder
-    # # The aileron output will not be calculated until after the roll AND yaw
-    # # PIDs have been updated.
-    # roll_correction = 0.12
-    # yaw_correction = -0.2
-    # pv_correction = %{roll: roll_correction, yaw: yaw_correction}
-    # Comms.Operator.send_local_msg_to_group(op_name, {:pv_correction, pv_correction, dt}, :pv_correction, self())
-    # Process.sleep(60)
-    # exp_roll_aileron_output =
-    #   roll_correction*roll_pid.aileron.kp*roll_aileron_weight/total_aileron_weight
-    # exp_yaw_aileron_output = yaw_correction*yaw_pid.aileron.kp*yaw_aileron_weight/total_aileron_weight
-    # exp_roll_rudder_output = roll_correction*roll_pid.rudder.kp*roll_rudder_weight/total_rudder_weight
-    # exp_yaw_rudder_output = yaw_correction*yaw_pid.rudder.kp*yaw_rudder_weight/total_rudder_weight
-    # # Aileron
-    # exp_aileron_total_output =
-    #   exp_roll_aileron_output + exp_yaw_aileron_output + Pids.Pid.get_initial_output(one_or_two_sided_all.aileron)
-    #   |> Pids.System.constrain_output()
-    # exp_aileron_pw = Actuation.HwInterface.get_pw_for_actuator_and_output(Peripherals.Uart.PololuServo,
-    #   aileron_actuator, exp_aileron_total_output)
-    # assert_in_delta(Actuation.HwInterface.get_output_for_actuator(aileron_actuator), exp_aileron_pw, 0.25)
-    # # Rudder
-    # exp_rudder_total_output =
-    #   exp_roll_rudder_output + exp_yaw_rudder_output + Pids.Pid.get_initial_output(one_or_two_sided_all.rudder)
-    #   |> Pids.System.constrain_output()
-    # exp_rudder_pw = Actuation.HwInterface.get_pw_for_actuator_and_output(Peripherals.Uart.PololuServo,
-    #   rudder_actuator, exp_rudder_total_output)
-    # assert_in_delta(Actuation.HwInterface.get_output_for_actuator(rudder_actuator), exp_rudder_pw, 0.25)
-    # # ----- END AILERON TEST -----
-    # # ----- BEGIN THROTTLE TEST -----
-    # vx_correction = 0.1
-    # pv_correction = %{vx: vx_correction}
-    # Comms.Operator.send_local_msg_to_group(op_name, {:pv_correction, pv_correction, dt}, :pv_correction, self())
-    # Process.sleep(60)
-    # exp_vx_throttle_output =
-    #   vx_correction*vx_pid.throttle.kp*vx_throttle_weight/total_throttle_weight
-    # exp_total_output =
-    #   exp_vx_throttle_output + Pids.Pid.get_initial_output(one_or_two_sided_all.throttle)
-    #   |> Pids.System.constrain_output()
-    # exp_pw = Actuation.HwInterface.get_pw_for_actuator_and_output(Peripherals.Uart.PololuServo,
-    #   throttle_actuator, exp_total_output)
-    # assert_in_delta(Actuation.HwInterface.get_output_for_actuator(throttle_actuator), exp_pw, 0.25)
-    # # Throttle is :position style PID, so if we apply another vx_correction, the output should add
+    # ----- BEGIN AILERON AND RUDDER TEST -----
+    # Update roll and yaw at the same time, which both affect aileron and rudder
+    # The aileron output will not be calculated until after the roll AND yaw
+    # PIDs have been updated.
+    heading_correction = -0.2
+    pv_correction = %{heading: heading_correction}#, altitude: 10}
+    pv_feed_forward = %{heading: %{roll: 0, yaw: 0}}
+    # Level II correction
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :III}, pv_correction, pv_feed_forward, dt}, {:pv_correction, :III}, self())
+    Process.sleep(50)
+    exp_heading_roll_output = (heading_correction*heading_pid.roll.kp + pv_feed_forward.heading.roll)*heading_pid.roll.weight
+    exp_heading_yaw_output = (heading_correction*heading_pid.yaw.kp + pv_feed_forward.heading.yaw)*heading_pid.yaw.weight
+    exp_roll_output =
+      exp_heading_roll_output + Pids.Pid.get_initial_output(one_or_two_sided_all.roll, heading_pid.roll.output_min, heading_pid.roll.output_neutral)
+      |> Common.Utils.Math.constrain(heading_pid.roll.output_min, heading_pid.roll.output_max)
+    exp_yaw_output = exp_heading_yaw_output + Pids.Pid.get_initial_output(one_or_two_sided_all.yaw, heading_pid.yaw.output_min, heading_pid.yaw.output_neutral)
+    |> Common.Utils.Math.constrain(heading_pid.yaw.output_min, heading_pid.yaw.output_max)
+    Process.sleep(50)
+    roll_output = Pids.Pid.get_output(:heading, :roll, heading_pid.roll.weight)
+    yaw_output = Pids.Pid.get_output(:heading, :yaw, heading_pid.yaw.weight)
+    roll_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :roll})
+    yaw_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :yaw})
+
+    assert_in_delta(roll_output, exp_heading_roll_output, max_rate_delta)
+    assert_in_delta(roll_cmd, exp_heading_roll_output, max_rate_delta)
+    assert_in_delta(yaw_output, exp_heading_yaw_output, max_rate_delta)
+    assert_in_delta(yaw_cmd, exp_heading_yaw_output, max_rate_delta)
   end
 
 end
+

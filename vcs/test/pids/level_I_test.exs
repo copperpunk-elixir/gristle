@@ -28,7 +28,7 @@ defmodule Pids.LevelITest do
     Process.sleep(300)
     pv = :rollrate
     pv_error = 0.0556
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error},0.05},{:pv_correction, :I}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
@@ -37,14 +37,14 @@ defmodule Pids.LevelITest do
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the right
     pv_error = 2.0
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error},0.05},{:pv_correction, :I}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
     exp_rollrate_aileron_output = 1.0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the left
     pv_error = -2.0
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error},0.05},{:pv_correction, :I}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
     exp_rollrate_aileron_output = 0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
