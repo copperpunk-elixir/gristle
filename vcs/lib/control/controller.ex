@@ -35,6 +35,7 @@ defmodule Control.Controller do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
     # Start PV Cmds sorter
+    GenServer.cast(self(), :create_pv_cmd_map)
     GenServer.cast(self(), :start_pv_cmd_sorters)
     # Start control state sorter
     control_state_config = %{
@@ -54,10 +55,12 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast(:create_pv_cmd_map, state) do
-    pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn({pv_name, config}, acc) ->
-      Map.put(acc, pv_name, config.default_value)
+    Logger.warn("create pv cmd map")
+    pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn(pv_config, acc) ->
+      {:pv_cmds, name} = pv_config.name
+      Map.put(acc, name, pv_config.default_value)
     end)
-    Logger.debug("initial PV cmds: #{inspect(pv_cmds)}")
+    Logger.warn("initial PV cmds: #{inspect(pv_cmds)}")
     {:noreply, %{state | pv_cmds: pv_cmds}}
   end
 
@@ -86,6 +89,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({:pv_velocity_position, pv_map, dt}, state) do
+    Logger.debug("Control rx vel/pos: #{inspect(pv_map)}")
     # If control_state :auto, compute Level III correction
     if (state.control_state == :auto) do
       {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_auto_pv_correction, [pv_map, state.pv_cmds])
@@ -137,8 +141,8 @@ defmodule Control.Controller do
   end
 
   defp join_process_variable_cmd_groups() do
-    Comms.Operator.join_group(__MODULE__, :attitude_attitude_rate, self())
-    Comms.Operator.join_group(__MODULE__, :velocity_position, self())
+    Comms.Operator.join_group(__MODULE__, :pv_attitude_attitude_rate, self())
+    Comms.Operator.join_group(__MODULE__, :pv_velocity_position, self())
   end
 
   # defp get_initial_pv_values() do

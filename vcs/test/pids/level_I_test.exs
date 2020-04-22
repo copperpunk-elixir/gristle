@@ -4,7 +4,7 @@ defmodule Pids.LevelITest do
 
   setup do
     Comms.ProcessRegistry.start_link()
-    pid_config = TestConfigs.Pids.get_pid_config_a()
+    pid_config = TestConfigs.Pids.get_pid_config_plane()
 
     {:ok, [
         config: pid_config

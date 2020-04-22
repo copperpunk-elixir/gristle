@@ -88,7 +88,7 @@ defmodule Comms.Operator do
         local_group_members = :pg2.get_local_members(group)
         Map.put(acc, group, %{global: all_group_members, local: local_group_members})
       end)
-    Logger.warn("groups after refresh: #{inspect(groups)}")
+    # Logger.warn("groups after refresh: #{inspect(groups)}")
     {:noreply, %{state | groups: groups}}
   end
 

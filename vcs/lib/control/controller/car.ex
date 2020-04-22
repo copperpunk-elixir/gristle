@@ -2,8 +2,7 @@ defmodule Control.Controller.Car do
   require Logger
   def update_auto_pv_correction(pv_map, pv_cmds) do
     speed_corr = pv_cmds.speed - Common.Utils.Math.hypot(pv_map.velocity.x, pv_map.velocity.y)
-    height_corr = pv_cmds.height - pv_map.position.z
-    %{speed: speed_corr, height: height_corr}
+    %{speed: speed_corr}
   end
 
   def start_message_sorters() do

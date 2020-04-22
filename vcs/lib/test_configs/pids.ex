@@ -1,13 +1,13 @@
 defmodule TestConfigs.Pids do
-  def get_pid_config_a() do
+  def get_pid_config_plane() do
 
     constraints = %{
       rollrate: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
       pitchrate: %{output_min: -0.4, output_max: 0.4, output_neutral: 0},
       yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
-      roll: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
+      roll: %{output_min: -0.2, output_max: 0.2, output_neutral: -0.02},
       pitch: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
-      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
+      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.01},
       thrust: %{output_min: -1, output_max: 1, output_neutral: 0}
     }
 

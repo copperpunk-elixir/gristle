@@ -32,15 +32,19 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def handle_cast({:update, process_var_correction, process_var_feed_forward, _dt}, state) do
-    Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_correction}/#{process_var_feed_forward}")
+    # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_correction}/#{process_var_feed_forward}")
     cmd_p = state.kp*process_var_correction
     delta_output = process_var_feed_forward + cmd_p
+    # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output =
       case state.rate_or_position do
         :rate -> get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral) + delta_output
         :position -> state.output + delta_output
       end
+    # Logger.debug("initial: #{state.process_variable}/#{state.control_variable}: #{get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral)}")
+    # Logger.debug("pre: #{state.process_variable}/#{state.control_variable}: #{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
+    # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
     {:noreply, %{state | output: output}}
   end
 
