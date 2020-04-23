@@ -80,13 +80,13 @@ defmodule Pids.System do
 
   @impl GenServer
   def handle_cast({{@pv_correction_group, pv_level}, pv_pv_correction_map, pv_feed_forward_map, dt}, state) do
-    Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_pv_correction_map)}")
+    Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_pv_correction_map)}/#{inspect(pv_feed_forward_map)}")
     case pv_level do
       :III ->
         update_levelIII(pv_pv_correction_map, pv_feed_forward_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.pv_msg_class, state.pv_msg_time_ms)
       :II ->
         update_levelII(pv_pv_correction_map, dt, state.pv_cv_pids)
-        update_levelI(pv_pv_correction_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.act_msg_class, state.act_msg_time_ms)
+        # update_levelI(pv_pv_correction_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.act_msg_class, state.act_msg_time_ms)
       :I ->
         update_levelI(pv_pv_correction_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.act_msg_class, state.act_msg_time_ms)
     end
@@ -95,12 +95,12 @@ defmodule Pids.System do
 
   def update_levelIII(pv_pv_correction_map, pv_feed_forward_map, dt, pv_cv_pids, cv_pv_pids, msg_class, msg_time_ms) do
     control_variables_affected = update_cvs_multiple_outputs(pv_pv_correction_map, pv_feed_forward_map, dt, pv_cv_pids)
-    # Logger.debug("cvs affected: #{inspect(control_variables_affected)}")
+    Logger.debug("cvs affected: #{inspect(control_variables_affected)}")
     send_cmds(control_variables_affected, cv_pv_pids, msg_class, msg_time_ms, :pv_cmds)
   end
 
-  def update_levelII(pv_feed_forward_map, dt, pv_cv_pids) do
-    update_cvs_single_output(pv_feed_forward_map, dt, pv_cv_pids)
+  def update_levelII(pv_correction_map, dt, pv_cv_pids) do
+    update_cvs_single_output(pv_correction_map, dt, pv_cv_pids)
   end
 
   def update_levelI(pv_pv_correction_map, dt, pv_cv_pids, cv_pv_pids, msg_class, msg_time_ms) do
@@ -125,7 +125,7 @@ defmodule Pids.System do
       pv_feed_forward = Map.get(pv_feed_forward_map, process_variable, %{})
       Enum.reduce(pv_cvs, control_variable_list, fn ({control_variable, _weight}, acc) ->
         feed_forward = Map.get(pv_feed_forward, control_variable, 0)
-        # Logger.debug("pv/cv/corr/ff: #{process_variable}/#{control_variable}/#{process_variable_correction}/#{feed_forward}")
+        Logger.debug("pv/cv/corr/ff: #{process_variable}/#{control_variable}/#{process_variable_correction}/#{feed_forward}")
         Pids.Pid.update_pid(process_variable, control_variable, process_variable_correction, feed_forward, dt)
         if (Enum.member?(acc, control_variable)) do
           acc

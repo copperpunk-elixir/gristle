@@ -29,18 +29,39 @@ defmodule Control.SendLevelIIICorrectionTest do
     Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)
     assert Control.Controller.get_control_state() == new_state
+    # Verify that none of the PVs in PVII have a command
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :roll}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :pitch}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :yaw}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :thrust}), 0, max_cmd_delta)
     # Send PVIII command
-    pv_cmd = %{heading: 0.1}
+    pv_cmd = %{heading: :math.pi()/180*10, speed: 10, altitude: 5}
     msg_class = [2,5]
     msg_time_ms = 200
     MessageSorter.Sorter.add_message({:pv_cmds, :heading}, msg_class, msg_time_ms, pv_cmd.heading)
+    MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
     Process.sleep(50)
     heading_corr = Control.Controller.get_pv_cmd(:heading)
     assert_in_delta(heading_corr, pv_cmd.heading, max_cmd_delta)
     # Send PV value
-    pv_velocity_pos = %{velocity: %{x: 1, y: 0, z: 0}, position: %{x: 5, y: 10, z: -10}}
+    heading = :math.pi()/180*20
+    speed = 5
+    vx = speed*:math.cos(heading)
+    vy = speed*:math.sin(heading)
+    pv_velocity_pos = %{velocity: %{x: vx, y: vy, z: 0}, position: %{x: 5, y: 10, z: 10}}
     dt = 0.05
     Comms.Operator.send_local_msg_to_group(op_name, {:pv_velocity_position, pv_velocity_pos, dt}, :pv_velocity_position, self())
-    Process.sleep(200)
+    Process.sleep(100)
+    # Now check PVII commands. Assert that they are all the correct signs
+    # Depending on the conditions and commands given
+    assert MessageSorter.Sorter.get_value({:pv_cmds, :roll}) < 0
+    assert MessageSorter.Sorter.get_value({:pv_cmds, :yaw}) < 0
+    assert MessageSorter.Sorter.get_value({:pv_cmds, :pitch}) < 0
+    assert MessageSorter.Sorter.get_value({:pv_cmds, :thrust}) > 0
+    Process.sleep(msg_time_ms)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :roll}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :pitch}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :yaw}), 0, max_cmd_delta)
+    assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :thrust}), 0, max_cmd_delta)
   end
 end

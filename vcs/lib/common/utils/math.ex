@@ -11,4 +11,12 @@ defmodule Common.Utils.Math do
   def hypot(x, y) do
     :math.sqrt(x*x + y*y)
   end
+
+  def rad2deg(x) do
+    x*180/:math.pi()
+  end
+
+  def deg2rad(x) do
+    x*:math.pi()/180
+  end
 end

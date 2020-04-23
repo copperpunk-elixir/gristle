@@ -66,7 +66,7 @@ defmodule Swarm.Gsm do
     desired_control_state = MessageSorter.Sorter.get_value(@desired_state_sorter)
     # Fake logic
     control_state =
-    if desired_control_state != nil do
+    if desired_control_state != nil && desired_control_state != state do
       control_state = desired_control_state
       Control.Controller.add_control_state(control_state)
       control_state

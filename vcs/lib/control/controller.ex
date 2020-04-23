@@ -79,11 +79,17 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:pv_attitude_attitude_rate, pv_map}, state) do
+  def handle_cast({:pv_attitude_attitude_rate, pv_map, dt}, state) do
     pv_values = %{state.pv_values | attitude: pv_map.attitude, attitude_rate: pv_map.attitude_rate}
     # If control_state :semi-auto, computer Level II corrections
-
+    {pv_corr_semi_auto, pv_ff_semi_auto} =
+    if (state.control_state == :semi_auto) do
+      {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_semi_auto_pv_corrections, [pv_map, state.pv_cmds])
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_II_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_II_group, self())
+    end
     # Compute Level I corrections
+    {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_manual_pv_corrections, [pv_map, state.pv_cmds])
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_I_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_I_group, self())
     {:noreply, %{state | pv_values: pv_values}}
   end
 
@@ -101,7 +107,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_info(:control_loop, state) do
-    Logger.debug("Control loop")
+    Logger.debug("Control loop. CS: #{state.control_state}")
     # For every PV, get the corresponding command
     pv_cmds = update_all_pv_cmds(state.pv_cmds)
     control_state = get_control_state()
