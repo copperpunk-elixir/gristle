@@ -13,12 +13,21 @@ defmodule Control.Controller.Car do
     end)
   end
 
+  def get_pv_cmds_list(control_state) do
+    case control_state do
+      :auto -> [:speed]
+      :semi_auto -> [:yaw]
+      :manual -> [:thrust, :yawrate]
+      other -> []
+    end
+  end
+
   def get_process_variable_list() do
     [
       %{name: {:pv_cmds, :thrust}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :yaw_rate}, default_message_behavior: :default_value, default_value: 0},
+      %{name: {:pv_cmds, :yawrate}, default_message_behavior: :default_value, default_value: 0},
+      %{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0},
       %{name: {:pv_cmds, :speed}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :steering}, default_message_behavior: :default_value, default_value: 0},
     ]
   end
 end

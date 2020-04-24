@@ -16,12 +16,21 @@ defmodule Control.Controller.Plane do
     end)
   end
 
+  def get_pv_cmds_list(control_state) do
+    case control_state do
+      :auto -> [:heading, :speed, :altitude]
+      :semi_auto -> [:roll, :pitch, :yaw]
+      :manual -> [:thrust, :rollrate, :pitchrate, :yawrate]
+      other -> []
+    end
+  end
+
   def get_process_variable_list() do
     [
       %{name: {:pv_cmds, :thrust}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :roll_rate}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :pitch_rate}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :yaw_rate}, default_message_behavior: :default_value, default_value: 0},
+      %{name: {:pv_cmds, :rollrate}, default_message_behavior: :default_value, default_value: 0},
+      %{name: {:pv_cmds, :pitchrate}, default_message_behavior: :default_value, default_value: 0},
+      %{name: {:pv_cmds, :yawrate}, default_message_behavior: :default_value, default_value: 0},
       %{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0},
       %{name: {:pv_cmds, :pitch}, default_message_behavior: :default_value, default_value: 0},
       %{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0},

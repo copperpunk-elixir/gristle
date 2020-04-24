@@ -83,6 +83,7 @@ defmodule Control.Controller do
     Logger.debug("Control rx att/attrate: #{inspect(pv_value_map)}")
     pv_corr_group =
       case state.control_state do
+        :auto -> @pv_corr_level_II_group
         :semi_auto -> @pv_corr_level_II_group
         :manual -> @pv_corr_level_I_group
       end
@@ -106,8 +107,9 @@ defmodule Control.Controller do
   def handle_info(:control_loop, state) do
     Logger.debug("Control loop. CS: #{state.control_state}")
     # For every PV, get the corresponding command
-    pv_cmds = update_all_pv_cmds(state.pv_cmds)
     control_state = get_control_state()
+    pv_cmds_list = apply(state.vehicle_module, :get_pv_cmds_list, [state.control_state])
+    pv_cmds = update_all_pv_cmds(pv_cmds_list)
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
@@ -123,8 +125,8 @@ defmodule Control.Controller do
     MessageSorter.Sorter.get_value({:pv_cmds, pv_name})
   end
 
-  def update_all_pv_cmds(pv_cmds) do
-    Enum.reduce(pv_cmds, %{}, fn ({pv_name, _value}, acc) ->
+  def update_all_pv_cmds(pv_cmds_list) do
+    Enum.reduce(pv_cmds_list, %{}, fn (pv_name, acc) ->
       Map.put(acc, pv_name, get_pv_cmd(pv_name))
     end)
   end

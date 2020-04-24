@@ -11,8 +11,6 @@ defmodule Pids.LevelIITest do
 
     {:ok, _} = Comms.ProcessRegistry.start_link()
     {:ok, _} = Pids.System.start_link(pid_config)
-    {:ok, _} = Actuation.HwInterface.start_link(hw_interface_config)
-    {:ok, _} = Actuation.SwInterface.start_link(actuator_config)
 
     {:ok, [
         config: %{
@@ -31,24 +29,19 @@ defmodule Pids.LevelIITest do
     dt = 0.05 # Not really used for now
     config = %{}
     config = Map.merge(context[:config], config)
-    aileron_actuator = config.actuator_config.actuators.aileron
-    Process.sleep(200)
-    # There has been no pid update, so the actuator should be at its failsafe value
-    failsafe_output = aileron_actuator.min_pw_ms + (aileron_actuator.max_pw_ms - aileron_actuator.min_pw_ms)*aileron_actuator.failsafe_cmd
-    assert Actuation.HwInterface.get_output_for_actuator(aileron_actuator) == failsafe_output
     # Setup parameters
     pids = config.pid_config.pids
     roll_pid = pids.roll
     rollrate_pid = pids.rollrate
     one_or_two_sided_all = config.pid_config.one_or_two_sided
-
+    Process.sleep(200)
     # ----- BEGIN AILERON TEST -----
     # Update roll and yaw at the same time, which both affect aileron and rudder
     # The aileron output will not be calculated until after the roll AND yaw
     # PIDs have been updated.
-    pv_cmd_map = %{roll: 0.2, pitch: 3.0, yaw: -1.0}
-    pv_value_map = %{roll: 0.08, pitch: 1.0, yaw: -0.8, rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}
-    roll_corr= pv_cmd_map.roll - pv_value_map.roll
+    pv_cmd_map = %{roll: 0.2, pitch: 3.0, yaw: -1.0, rollrate: 0.1}
+    pv_value_map = %{attitude: %{roll: 0.08, pitch: 1.0, yaw: -0.8}, attitude_rate: %{rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}}
+    roll_corr= pv_cmd_map.roll - pv_value_map.attitude.roll
     # Level II correction
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :II}, pv_cmd_map, pv_value_map, dt}, {:pv_correction, :II}, self())
     Process.sleep(20)
@@ -58,18 +51,17 @@ defmodule Pids.LevelIITest do
       exp_roll_rollrate_output + Pids.Pid.get_initial_output(one_or_two_sided_all.rollrate, roll_pid.rollrate.output_min, roll_pid.rollrate.output_neutral)
       |> Common.Utils.Math.constrain(roll_pid.rollrate.output_min, roll_pid.rollrate.output_max)
     pv_cmd_map = Map.put(pv_cmd_map, :rollrate, Pids.Pid.get_output(:roll, :rollrate))
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.rollrate
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
     IO.puts("rollrate output: #{pv_cmd_map.rollrate}")
     assert_in_delta(pv_cmd_map.rollrate, exp_rollrate_output, max_rate_delta)
     # Level I correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, pv_cmd_map, pv_value_map, dt}, {:pv_correction, :I}, self())
-    Process.sleep(20)
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.rollrate
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
     exp_rollrate_aileron_output = (rollrate_corr*rollrate_pid.aileron.kp)*Map.get(rollrate_pid.aileron, :weight,1)
     exp_aileron_output =
       exp_rollrate_aileron_output + Pids.Pid.get_initial_output(one_or_two_sided_all.aileron, 0, 0.5)
       |> Common.Utils.Math.constrain(0, 1)
     aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
+    IO.puts("Aileron output: #{aileron_output}")
     assert_in_delta(aileron_output, exp_aileron_output, max_rate_delta)
   end
 
