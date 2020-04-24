@@ -35,7 +35,7 @@ defmodule Control.Controller do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
     # Start PV Cmds sorter
-    GenServer.cast(self(), :create_pv_cmd_map)
+    # GenServer.cast(self(), :create_pv_cmd_map)
     GenServer.cast(self(), :start_pv_cmd_sorters)
     # Start control state sorter
     control_state_config = %{
@@ -53,16 +53,16 @@ defmodule Control.Controller do
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_cast(:create_pv_cmd_map, state) do
-    Logger.warn("create pv cmd map")
-    pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn(pv_config, acc) ->
-      {:pv_cmds, name} = pv_config.name
-      Map.put(acc, name, pv_config.default_value)
-    end)
-    Logger.warn("initial PV cmds: #{inspect(pv_cmds)}")
-    {:noreply, %{state | pv_cmds: pv_cmds}}
-  end
+  # @impl GenServer
+  # def handle_cast(:create_pv_cmd_map, state) do
+  #   Logger.warn("create pv cmd map")
+  #   pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn(pv_config, acc) ->
+  #     {:pv_cmds, name} = pv_config.name
+  #     Map.put(acc, name, pv_config.default_value)
+  #   end)
+  #   Logger.warn("initial PV cmds: #{inspect(pv_cmds)}")
+  #   {:noreply, %{state | pv_cmds: pv_cmds}}
+  # end
 
   @impl GenServer
   def handle_cast(:start_control_loop, state) do
@@ -79,27 +79,24 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:pv_attitude_attitude_rate, pv_map, dt}, state) do
-    pv_values = %{state.pv_values | attitude: pv_map.attitude, attitude_rate: pv_map.attitude_rate}
-    # If control_state :semi-auto, computer Level II corrections
-    {pv_corr_semi_auto, pv_ff_semi_auto} =
-    if (state.control_state == :semi_auto) do
-      {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_semi_auto_pv_corrections, [pv_map, state.pv_cmds])
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_II_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_II_group, self())
-    end
-    # Compute Level I corrections
-    {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_manual_pv_corrections, [pv_map, state.pv_cmds])
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_I_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_I_group, self())
-    {:noreply, %{state | pv_values: pv_values}}
+  def handle_cast({:pv_attitude_attitude_rate, pv_value_map, dt}, state) do
+    Logger.debug("Control rx att/attrate: #{inspect(pv_value_map)}")
+    pv_corr_group =
+      case state.control_state do
+        :semi_auto -> @pv_corr_level_II_group
+        :manual -> @pv_corr_level_I_group
+      end
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {pv_corr_group, state.pv_cmds, pv_value_map,dt},pv_corr_group, self())
+    {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast({:pv_velocity_position, pv_map, dt}, state) do
-    Logger.debug("Control rx vel/pos: #{inspect(pv_map)}")
+  def handle_cast({:pv_velocity_position, pv_value_map, dt}, state) do
+    Logger.debug("Control rx vel/pos: #{inspect(pv_value_map)}")
     # If control_state :auto, compute Level III correction
     if (state.control_state == :auto) do
-      {pv_corrections, pv_feed_forward} = apply(state.vehicle_module, :update_auto_pv_correction, [pv_map, state.pv_cmds])
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, pv_corrections,pv_feed_forward, dt},@pv_corr_level_III_group, self())
+      pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, state.pv_cmds, pv_value_map,dt},@pv_corr_level_III_group, self())
     end
     {:noreply, state}
   end

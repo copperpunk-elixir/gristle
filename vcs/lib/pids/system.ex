@@ -59,9 +59,11 @@ defmodule Pids.System do
   @impl GenServer
   def handle_cast(:reduce_config, state) do
     pv_cv_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_reduced) ->
-      control_variables_reduced = Enum.reduce(control_variables, %{}, fn ({control_variable, pid_config}, acts_red) ->
-        Map.put(acts_red, control_variable, pid_config.weight)
-      end)
+      control_variables_reduced =
+        Enum.reduce(control_variables, %{}, fn ({control_variable, pid_config}, acts_red) ->
+          weight = Map.get(pid_config, :weight, 1.0)
+          Map.put(acts_red, control_variable, weight)
+        end)
       Map.put(config_reduced, process_variable, control_variables_reduced)
     end)
     # IO.puts("pv/cv pids: #{inspect(pv_cv_pids)}")
@@ -69,8 +71,9 @@ defmodule Pids.System do
       Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_by_control_variable) ->
         # IO.puts("cba: #{inspect(config_by_control_variable)}")
           Enum.reduce(control_variables, config_by_control_variable, fn ({control_variable, pid_config}, pv_red) ->
+            weight = Map.get(pid_config, :weight, 1)
             new_map = Map.get(pv_red, control_variable, %{})
-            new_map = Map.put(new_map, process_variable, pid_config.weight)
+            new_map = Map.put(new_map, process_variable, weight)
             Map.put(pv_red, control_variable, new_map)
           end)
       end)
@@ -79,78 +82,51 @@ defmodule Pids.System do
   end
 
   @impl GenServer
-  def handle_cast({{@pv_correction_group, pv_level}, pv_pv_correction_map, pv_feed_forward_map, dt}, state) do
-    Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_pv_correction_map)}/#{inspect(pv_feed_forward_map)}")
+  def handle_cast({{@pv_correction_group, pv_level}, pv_cmd_map, pv_value_map, dt}, state) do
+    Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+    output_map = update_cvs(pv_cmd_map, pv_value_map, dt, state.pv_cv_pids)
     case pv_level do
       :III ->
-        update_levelIII(pv_pv_correction_map, pv_feed_forward_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.pv_msg_class, state.pv_msg_time_ms)
+        Logger.warn("Auto")
+        send_cmds(output_map, state.pv_msg_class, state.pv_msg_time_ms, :pv_cmds)
       :II ->
-        update_levelII(pv_pv_correction_map, dt, state.pv_cv_pids)
-        # update_levelI(pv_pv_correction_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.act_msg_class, state.act_msg_time_ms)
+        IO.puts("Semi-auto")
+        Logger.warn("Semi-auto")
+        # output_map turns into input_map for Level I calcs
+        pv_cmd_map = output_map
+        output_map = update_cvs(pv_cmd_map, pv_value_map, dt, state.pv_cv_pids)
+        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :act_cmds)
       :I ->
-        update_levelI(pv_pv_correction_map, dt, state.pv_cv_pids, state.cv_pv_pids, state.act_msg_class, state.act_msg_time_ms)
+        Logger.warn("Manual")
+        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :act_cmds)
     end
     {:noreply, state}
   end
 
-  def update_levelIII(pv_pv_correction_map, pv_feed_forward_map, dt, pv_cv_pids, cv_pv_pids, msg_class, msg_time_ms) do
-    control_variables_affected = update_cvs_multiple_outputs(pv_pv_correction_map, pv_feed_forward_map, dt, pv_cv_pids)
-    Logger.debug("cvs affected: #{inspect(control_variables_affected)}")
-    send_cmds(control_variables_affected, cv_pv_pids, msg_class, msg_time_ms, :pv_cmds)
-  end
-
-  def update_levelII(pv_correction_map, dt, pv_cv_pids) do
-    update_cvs_single_output(pv_correction_map, dt, pv_cv_pids)
-  end
-
-  def update_levelI(pv_pv_correction_map, dt, pv_cv_pids, cv_pv_pids, msg_class, msg_time_ms) do
-    actuators_affected = update_cvs_multiple_outputs(pv_pv_correction_map, %{}, dt, pv_cv_pids)
-    # Update all control_variables affected
-    send_cmds(actuators_affected, cv_pv_pids, msg_class, msg_time_ms, :actuator_cmds)
-  end
-
-  defp update_cvs_single_output(pv_pv_correction_map, dt, pv_cv_pids) do
-    Enum.each(pv_pv_correction_map, fn {process_variable, process_variable_correction} ->
-      pv_cvs = Map.get(pv_cv_pids, process_variable)
-      Enum.each(pv_cvs, fn {control_variable, _weight} ->
-        # Logger.debug("pv/cv/corr: #{process_variable}/#{control_variable}/#{process_variable_correction}")
-        Pids.Pid.update_pid(process_variable, control_variable, process_variable_correction, 0, dt)
+  defp update_cvs(pv_cmd_map, pv_value_map, dt, pv_cv_pids) do
+    Enum.reduce(pv_value_map, %{}, fn ({process_var_name, process_var_value}, control_var_list) ->
+      # If a command does not yet exist, then do not actuate on it.
+      # Rather pass the pv_value as the cmd
+      Logger.debug("update cvs: cmds/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+      process_var_cmd = Map.get(pv_cmd_map, process_var_name, process_var_value)
+      Logger.warn("pv_cmd: #{process_var_name}/#{process_var_cmd}")
+      pv_cvs = Map.get(pv_cv_pids, process_var_name)
+      Enum.reduce(pv_cvs, control_var_list, fn ({control_var_name, weight}, acc) ->
+        Logger.debug("pv/cv/cmd/value: #{process_var_name}/#{control_var_name}/#{process_var_cmd}/#{process_var_value}")
+        output = Pids.Pid.update_pid(process_var_name, control_var_name, process_var_cmd, process_var_value, dt)
+        total_output = output*weight + Map.get(acc, control_var_name, 0)
+        Map.put(acc, control_var_name, total_output)
       end)
     end)
   end
 
-  defp update_cvs_multiple_outputs(pv_pv_correction_map, pv_feed_forward_map, dt, pv_cv_pids) do
-    Enum.reduce(pv_pv_correction_map, [], fn ({process_variable, process_variable_correction}, control_variable_list) ->
-      pv_cvs = Map.get(pv_cv_pids, process_variable)
-      pv_feed_forward = Map.get(pv_feed_forward_map, process_variable, %{})
-      Enum.reduce(pv_cvs, control_variable_list, fn ({control_variable, _weight}, acc) ->
-        feed_forward = Map.get(pv_feed_forward, control_variable, 0)
-        Logger.debug("pv/cv/corr/ff: #{process_variable}/#{control_variable}/#{process_variable_correction}/#{feed_forward}")
-        Pids.Pid.update_pid(process_variable, control_variable, process_variable_correction, feed_forward, dt)
-        if (Enum.member?(acc, control_variable)) do
-          acc
-        else
-          [control_variable | acc]
-        end
-      end)
-    end)
-  end
-
-  defp send_cmds(cvs_affected, act_pv_pids, act_msg_class, act_msg_time_ms, cmd_type) do
-    Enum.each(cvs_affected, fn control_variable_name ->
-      pv_pids = Map.get(act_pv_pids, control_variable_name)
+  defp send_cmds(output_map, act_msg_class, act_msg_time_ms, cmd_type) do
+    Enum.each(output_map, fn {control_variable_name, output} ->
+      # pv_pids = Map.get(act_pv_pids, control_variable_name)
       # Logger.debug("Update acts: #{inspect(control_variable_name)}")
-      output = calculate_combined_output(control_variable_name, pv_pids)
+      # output = calculate_combined_output(control_variable_name, pv_pids)
       # cmd_type is either :pv_cmds or :actuator_cmds
       MessageSorter.Sorter.add_message({cmd_type, control_variable_name}, act_msg_class, act_msg_time_ms, output)
-    end)
-  end
-
-  defp calculate_combined_output(control_variable_name, pv_pids) do
-    Enum.reduce(pv_pids, 0, fn ({pv, weight}, acc) ->
-      pid_output = Pids.Pid.get_output(pv, control_variable_name, weight)
-      # Logger.debug("CAO pv/act/output: #{pv}/#{control_variable_name}/#{pid_output}")
-      acc + pid_output
     end)
   end
 end

@@ -26,25 +26,28 @@ defmodule Pids.LevelITest do
     config = Map.merge(context[:config], config)
     Pids.System.start_link(config)
     Process.sleep(300)
-    pv = :rollrate
-    pv_error = 0.0556
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
+    pv_cmd_map = %{rollrate: 0.0556}
+    pv_value_map = %{rollrate: 0}
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.rollrate
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_correction, :I}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
-      get_in(config, [:pids, :rollrate, :aileron, :kp])*pv_error + Pids.Pid.get_initial_output(:two_sided,0,0.5)
+      get_in(config, [:pids, :rollrate, :aileron, :kp])*rollrate_corr + Pids.Pid.get_initial_output(:two_sided,0,0.5)
       |> Common.Utils.Math.constrain(0, 1)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the right
-    pv_error = 2.0
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
+    pv_cmd_map = %{rollrate: 2.0}
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.rollrate
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_correction, :I}, self())
     exp_rollrate_aileron_output = 1.0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the left
-    pv_error = -2.0
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, %{pv => pv_error}, %{},0.05},{:pv_correction, :I}, self())
+    pv_cmd_map = %{rollrate: -2.0}
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.rollrate
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_correction, :I}, self())
     exp_rollrate_aileron_output = 0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)

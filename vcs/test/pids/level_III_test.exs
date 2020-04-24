@@ -37,22 +37,22 @@ defmodule Pids.LevelIIITest do
 
     # ----- BEGIN HEADING-to-ROLL/YAW RUDDER TEST -----
     # Update heading, which affects both roll and yaw 
-    heading_correction = -0.2
-    pv_correction = %{heading: heading_correction}#, altitude: 10}
-    pv_feed_forward = %{heading: %{roll: 0, yaw: 0}}
+    pv_cmd_map = %{heading: 0.3}
+    pv_value_map = %{heading: -0.2}
+    heading_corr= pv_cmd_map.heading - pv_value_map.heading
     # Level III correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :III}, pv_correction, pv_feed_forward, dt}, {:pv_correction, :III}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :III}, pv_cmd_map, pv_value_map, dt}, {:pv_correction, :III}, self())
     Process.sleep(50)
-    exp_heading_roll_output = heading_correction*heading_pid.roll.kp + pv_feed_forward.heading.roll
-    exp_heading_yaw_output = heading_correction*heading_pid.yaw.kp + pv_feed_forward.heading.yaw
+    exp_heading_roll_output = heading_corr*heading_pid.roll.kp
+    exp_heading_yaw_output = heading_corr*heading_pid.yaw.kp
     exp_roll_output =
-    (exp_heading_roll_output + Pids.Pid.get_initial_output(one_or_two_sided_all.roll, heading_pid.roll.output_min, heading_pid.roll.output_neutral))*heading_pid.roll.weight
+    (exp_heading_roll_output + Pids.Pid.get_initial_output(one_or_two_sided_all.roll, heading_pid.roll.output_min, heading_pid.roll.output_neutral))*Map.get(heading_pid.roll, :weight, 1)
       |> Common.Utils.Math.constrain(heading_pid.roll.output_min, heading_pid.roll.output_max)
-    exp_yaw_output = (exp_heading_yaw_output + Pids.Pid.get_initial_output(one_or_two_sided_all.yaw, heading_pid.yaw.output_min, heading_pid.yaw.output_neutral))*heading_pid.yaw.weight
+    exp_yaw_output = (exp_heading_yaw_output + Pids.Pid.get_initial_output(one_or_two_sided_all.yaw, heading_pid.yaw.output_min, heading_pid.yaw.output_neutral))*Map.get(heading_pid.yaw, :weight, 1)
     |> Common.Utils.Math.constrain(heading_pid.yaw.output_min, heading_pid.yaw.output_max)
     Process.sleep(50)
-    roll_output = Pids.Pid.get_output(:heading, :roll, heading_pid.roll.weight)
-    yaw_output = Pids.Pid.get_output(:heading, :yaw, heading_pid.yaw.weight)
+    roll_output = Pids.Pid.get_output(:heading, :roll, Map.get(heading_pid.roll,:weight,1))
+    yaw_output = Pids.Pid.get_output(:heading, :yaw, Map.get(heading_pid.yaw,:weight,1))
     roll_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :roll})
     yaw_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :yaw})
 

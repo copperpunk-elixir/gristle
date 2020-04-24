@@ -1,25 +1,11 @@
 defmodule Control.Controller.Plane do
   require Logger
   alias Common.Utils.Math, as: Math
-  def update_auto_pv_correction(pv_map, pv_cmds) do
-    heading = :math.atan2(pv_map.velocity.y, pv_map.velocity.x)
-    heading_corr = (pv_cmds.heading - heading)
-    Logger.debug("heading_cmd/act/corr: #{Math.rad2deg(pv_cmds.heading)}/#{Math.rad2deg(heading)}/#{Math.rad2deg(heading_corr)}")
-    speed_corr = pv_cmds.speed - Math.hypot(pv_map.velocity.x, pv_map.velocity.y)
-    altitude_corr = pv_cmds.altitude - pv_map.position.z
-    pv_corrections = %{speed: speed_corr, heading: heading_corr, altitude: altitude_corr}
-    # pv_feed_forward = %{speed: %{thrust: 0.1}, altitude: %{thrust: 0.05, pitch: 0.01}}
-    pv_feed_forward = %{}
-    {pv_corrections, pv_feed_forward}
-  end
-
-  def update_semi_auto_pv_correction(pv_map, pv_cmds) do
-    roll_corr = pv_cmds.roll - pv_map.roll
-    pitch_corr = pv_cmds.pitch - pv_map.pitch
-    yaw_corr = pv_cmds.yaw - pv_map.yaw
-    pv_corrections = %{roll: roll_corr, pitch: pitch_corr, yaw: yaw_corr}
-    pv_feed_forward = %{}
-    {pv_corrections, pv_feed_forward}
+  def get_auto_pv_value_map(pv_value_map) do
+    heading = :math.atan2(pv_value_map.velocity.y, pv_value_map.velocity.x)
+    speed = Math.hypot(pv_value_map.velocity.x, pv_value_map.velocity.y)
+    altitude = pv_value_map.position.z
+    %{heading: heading, speed: speed, altitude: altitude}
   end
 
   def start_message_sorters() do

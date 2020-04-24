@@ -22,6 +22,7 @@ defmodule Pids.Pid do
         kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
+        kf: Map.get(config, :kf, 0),
         output_min: output_min,
         output_max: output_max,
         output_neutral: Map.get(config, :output_neutral, 0.5),
@@ -32,33 +33,37 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
-  def handle_cast({:update, process_var_correction, process_var_feed_forward, _dt}, state) do
+  def handle_call({:update, process_var_cmd, process_var_value, _dt}, _from, state) do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_correction}/#{process_var_feed_forward}")
-    cmd_p = state.kp*process_var_correction
+    correction = process_var_cmd - process_var_value
+    cmd_p = state.kp*correction
     delta_output = cmd_p
+    feed_forward = state.kf*process_var_cmd
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output =
       case state.rate_or_position do
-        :rate -> get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral) + process_var_feed_forward + delta_output
+        :rate -> get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral) + feed_forward + delta_output
         :position ->
           # Don't want FF to accumulate
-          state.output + (process_var_feed_forward - state.feed_forward_prev) + delta_output
+          state.output + (feed_forward - state.feed_forward_prev) + delta_output
       end
     # Logger.debug("initial: #{state.process_variable}/#{state.control_variable}: #{get_initial_output(state.one_or_two_sided, state.output_min, state.output_neutral)}")
     # Logger.debug("pre: #{state.process_variable}/#{state.control_variable}: #{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
+    Logger.debug("pid #{state.process_variable}/#{state.control_variable}: #{output}")
     # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
-    {:noreply, %{state | output: output, feed_forward_prev: process_var_feed_forward}}
+    {:reply,output, %{state | output: output, feed_forward_prev: feed_forward}}
   end
 
   @impl GenServer
   def handle_call({:get_output, weight}, _from, state) do
+    Logger.debug("get output #{state.process_variable}/#{state.control_variable}: #{state.output}")
     {:reply, state.output*weight, state}
   end
 
 
-  def update_pid(process_variable, control_variable, process_var_correction, process_var_feed_forward, dt) do
-    GenServer.cast(via_tuple(process_variable, control_variable), {:update, process_var_correction, process_var_feed_forward, dt})
+  def update_pid(process_var_name, control_var_name, process_var_cmd, process_var_value, dt) do
+    GenServer.call(via_tuple(process_var_name, control_var_name), {:update, process_var_cmd, process_var_value, dt})
   end
 
   def get_output(process_variable, control_variable, weight\\1) do
