@@ -19,7 +19,7 @@ defmodule Comms.Operator do
         refresh_groups_loop_interval_ms: Map.get(config, :refresh_groups_loop_interval_ms, @default_refresh_groups_loop_interval_ms),
         refresh_groups_timer: nil,
         groups: %{},#Map.get(config, :groups, %{}),
-        message_count: 0 # this is purely for diagnostics
+        name: config.name #purely for dianostics
      }}
   end
 
@@ -38,7 +38,7 @@ defmodule Comms.Operator do
   def handle_cast({:join_group, group, process_id}, state) do
     # We will be added to our own record of the group during the
     # :refresh_groups cycle
-    Logger.debug("Join group: #{inspect(group)}")
+    Logger.debug("#{inspect(state.name)} is joining group: #{inspect(group)}")
     :pg2.create(group)
     if !is_in_group?(group, process_id) do
       :pg2.join(group, process_id)

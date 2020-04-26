@@ -13,8 +13,8 @@ defmodule Control.GetControlStateTest do
   end
 
   test "Control Get Control State" do
-    controller_config = TestConfigs.Control.get_config_car()
-    Control.Controller.start_link(controller_config)
+    config = %{controller: TestConfigs.Control.get_config_car()}
+    Control.System.start_link(config)
     Process.sleep(300)
     assert Control.Controller.get_control_state() == nil
     new_state = :manual

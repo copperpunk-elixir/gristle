@@ -20,8 +20,8 @@ defmodule Control.SendLevelIIICorrectionTest do
     Comms.Operator.start_link(%{name: op_name})
     max_cmd_delta = 0.001
     IO.puts("Start Control Loop")
-    controller_config = TestConfigs.Control.get_config_plane()
-    Control.Controller.start_link(controller_config)
+    config = %{controller: TestConfigs.Control.get_config_plane()}
+    Control.System.start_link(config)
     Process.sleep(200)
     # Put into control state :auto
     assert Control.Controller.get_control_state() == nil
@@ -50,7 +50,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     vy = speed*:math.sin(heading)
     pv_velocity_pos = %{velocity: %{x: vx, y: vy, z: 0}, position: %{x: 5, y: 10, z: 10}}
     dt = 0.05
-    Comms.Operator.send_local_msg_to_group(op_name, {:pv_velocity_position, pv_velocity_pos, dt}, :pv_velocity_position, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_velocity}, pv_velocity_pos, dt}, {:pv_values, :position_velocity}, self())
     Process.sleep(100)
     # Now check PVII commands. Assert that they are all the correct signs
     # Depending on the conditions and commands given

@@ -1,0 +1,14 @@
+defmodule Control.System do
+  require Logger
+
+  def start_link(config) do
+    Logger.debug("Control Supervisor start_link()")
+    Comms.ProcessRegistry.start_link()
+    Supervisor.start_link(
+      [
+        {Control.Controller, config.controller}
+      ],
+      strategy: :one_for_one
+    )
+  end
+end

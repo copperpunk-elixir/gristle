@@ -43,7 +43,7 @@ defmodule Pids.LevelIITest do
     pv_value_map = %{attitude: %{roll: 0.08, pitch: 1.0, yaw: -0.8}, attitude_rate: %{rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}}
     roll_corr= pv_cmd_map.roll - pv_value_map.attitude.roll
     # Level II correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :II}, pv_cmd_map, pv_value_map, dt}, {:pv_correction, :II}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :II}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, :II}, self())
     Process.sleep(20)
     exp_roll_rollrate_output = (roll_corr*roll_pid.rollrate.kp)*Map.get(roll_pid.rollrate, :weight,1)
     # Rollrate

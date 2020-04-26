@@ -9,13 +9,13 @@ defmodule Swarm.Gsm.ChangeStatesTest do
 
   test "Change states" do
     IO.puts("SwarmGsm: Change states")
-    initial_data = %{
-      modules_to_monitor: [:estimator],
-      state_loop_interval_ms: 200
+    config = %{
+      gsm: %{
+        modules_to_monitor: [:estimator],
+        state_loop_interval_ms: 200
+      }
     }
-    initial_state= :disarmed
-    config = Map.put(initial_data, :initial_state, initial_state)
-    Swarm.Gsm.start_link(config)
+    Swarm.System.start_link(config)
     Process.sleep(300)
     new_state = :semi_auto
     Swarm.Gsm.add_desired_control_state(new_state, [0], 300)

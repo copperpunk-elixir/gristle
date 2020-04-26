@@ -4,9 +4,10 @@ defmodule Swarm.Gsm do
 
   @default_state_loop_interval_ms 100
   # TODO: desired_state_sorter should be defined in the config file instead of here
-  @desired_state_sorter :desired_control_state 
+  @desired_state_sorter :desired_control_state
 
   def start_link(config \\ %{}) do
+    Logger.debug("Start GSM")
     {:ok, pid} = Common.Utils.start_link_redudant(GenStateMachine, __MODULE__, config)
     # {:ok, pid} = GenStateMachine.start_link(__MODULE__, config, name: __MODULE__)
     begin()
@@ -15,7 +16,7 @@ defmodule Swarm.Gsm do
   end
 
   def init(config) do
-    state = config.initial_state
+    state = :disarmed
     modules_to_montor = Map.get(config, :modules_to_monitor, [])
     module_health =
       Enum.reduce(modules_to_montor, %{}, fn (module, acc) ->

@@ -3,13 +3,13 @@ defmodule Control.Controller do
   require Logger
 
   @control_state_sorter {:control_state, :state}
-  @pv_corr_level_I_group {:pv_correction, :I}
-  @pv_corr_level_II_group {:pv_correction, :II}
-  @pv_corr_level_III_group {:pv_correction, :III}
+  @pv_cmds_values_I_group {:pv_cmds_values, :I}
+  @pv_cmds_values_II_group {:pv_cmds_values, :II}
+  @pv_cmds_values_III_group {:pv_cmds_values, :III}
 
   def start_link(config) do
     Logger.debug("Start Control.ControllerCar")
-    {:ok, process_id} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     begin()
     start_control_loop()
     {:ok, process_id}
@@ -18,7 +18,7 @@ defmodule Control.Controller do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = get_module_for_vehicle_type(vehicle_type)
+    vehicle_module = Module.concat([__MODULE__, vehicle_type])
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
@@ -34,8 +34,6 @@ defmodule Control.Controller do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
-    # Start PV Cmds sorter
-    # GenServer.cast(self(), :create_pv_cmd_map)
     GenServer.cast(self(), :start_pv_cmd_sorters)
     # Start control state sorter
     control_state_config = %{
@@ -43,7 +41,7 @@ defmodule Control.Controller do
       default_message_behavior: :last
     }
     MessageSorter.System.start_sorter(control_state_config)
-    join_process_variable_cmd_groups()
+    join_process_variable_groups()
     {:noreply, state}
   end
 
@@ -52,17 +50,6 @@ defmodule Control.Controller do
     apply(state.vehicle_module, :start_message_sorters, [])
     {:noreply, state}
   end
-
-  # @impl GenServer
-  # def handle_cast(:create_pv_cmd_map, state) do
-  #   Logger.warn("create pv cmd map")
-  #   pv_cmds = Enum.reduce(apply(state.vehicle_module, :get_process_variable_list, []), %{}, fn(pv_config, acc) ->
-  #     {:pv_cmds, name} = pv_config.name
-  #     Map.put(acc, name, pv_config.default_value)
-  #   end)
-  #   Logger.warn("initial PV cmds: #{inspect(pv_cmds)}")
-  #   {:noreply, %{state | pv_cmds: pv_cmds}}
-  # end
 
   @impl GenServer
   def handle_cast(:start_control_loop, state) do
@@ -79,25 +66,24 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:pv_attitude_attitude_rate, pv_value_map, dt}, state) do
+  def handle_cast({{:pv_values, :attitude_attitude_rate}, pv_value_map, dt}, state) do
     Logger.debug("Control rx att/attrate: #{inspect(pv_value_map)}")
-    pv_corr_group =
+    pv_cmds_values_group =
       case state.control_state do
-        :auto -> @pv_corr_level_II_group
-        :semi_auto -> @pv_corr_level_II_group
-        :manual -> @pv_corr_level_I_group
+        :auto -> @pv_cmds_values_II_group
+        :semi_auto -> @pv_cmds_values_II_group
+        :manual -> @pv_cmds_values_I_group
       end
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {pv_corr_group, state.pv_cmds, pv_value_map,dt},pv_corr_group, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {pv_cmds_values_group, state.pv_cmds, pv_value_map,dt},pv_cmds_values_group, self())
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast({:pv_velocity_position, pv_value_map, dt}, state) do
+  def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
     Logger.debug("Control rx vel/pos: #{inspect(pv_value_map)}")
-    # If control_state :auto, compute Level III correction
     if (state.control_state == :auto) do
       pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_corr_level_III_group, state.pv_cmds, pv_value_map,dt},@pv_corr_level_III_group, self())
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
     end
     {:noreply, state}
   end
@@ -145,23 +131,8 @@ defmodule Control.Controller do
     GenServer.cast(__MODULE__, :begin)
   end
 
-  defp join_process_variable_cmd_groups() do
-    Comms.Operator.join_group(__MODULE__, :pv_attitude_attitude_rate, self())
-    Comms.Operator.join_group(__MODULE__, :pv_velocity_position, self())
-  end
-
-  # defp get_initial_pv_values() do
-  #   %{
-  #     attitude_rate: %{roll: 0, pitch: 0, yaw: 0},
-  #     attitude: %{roll: 0, pitch: 0, yaw: 0},
-  #     velocity: %{x: 0, y: 0, z: 0},
-  #     position: %{x: 0, y: 0, z: 0}
-  #   }
-  # end
-
-
-  def get_module_for_vehicle_type(vehicle_type) do
-    Atom.to_string(__MODULE__) <> "." <> Atom.to_string(vehicle_type)
-    |> String.to_atom()
+  defp join_process_variable_groups() do
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_attitude_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
   end
 end

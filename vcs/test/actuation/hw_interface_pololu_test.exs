@@ -4,7 +4,7 @@ defmodule Actuation.HwInterfacePololuTest do
   setup do
     {:ok, [
         config: %{
-          hw_interface_config: %{
+          hw_interface: %{
             interface_driver_name: :pololu
           },
           aileron_actuator: %{
@@ -23,7 +23,7 @@ defmodule Actuation.HwInterfacePololuTest do
   test "Start HWInterface. Connect to Pololu Maestro. Change actuator values", context do
     IO.puts("Connect servo to channel 0 if real actuation is desired")
     config = context[:config]
-    {:ok, process_id} = Actuation.HwInterface.start_link(config.hw_interface_config)
+    {:ok, process_id} = Actuation.HwInterface.start_link(config.hw_interface)
     Common.Utils.wait_for_genserver_start(process_id)
     Process.sleep(100)
     aileron = config.aileron_actuator

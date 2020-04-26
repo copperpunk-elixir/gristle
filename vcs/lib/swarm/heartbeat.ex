@@ -6,7 +6,7 @@ defmodule Swarm.Heartbeat do
   @node_sorter {:hb, :node}
 
   def start_link(config \\ %{}) do
-    Logger.debug("Start HB process")
+    Logger.debug("Start HB")
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config)
     begin()
     start_heartbeat_loop()

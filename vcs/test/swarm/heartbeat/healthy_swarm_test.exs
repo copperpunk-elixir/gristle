@@ -6,9 +6,11 @@ defmodule Swarm.HealthySwarmTest do
     Comms.ProcessRegistry.start_link()
     MessageSorter.System.start_link()
     config = %{
-      heartbeat_loop_interval_ms: 100
+      heartbeat: %{
+        heartbeat_loop_interval_ms: 100
+      }
     }
-    Hb.start_link(config)
+    Swarm.System.start_link(config)
     {:ok, []}
   end
 

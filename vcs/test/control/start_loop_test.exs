@@ -3,14 +3,14 @@ defmodule Control.StartLoopTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
-    Comms.Operator.start_link()
+    Comms.Operator.start_link(%{name: :start_loop_test})
     {:ok, []}
   end
 
   test "start control loop" do
     IO.puts("Start Control Loop")
-    controller_config = TestConfigs.Control.get_config_car()
-    Control.Controller.start_link(controller_config)
+    config = %{controller: TestConfigs.Control.get_config_car()}
+    Control.System.start_link(config)
     Process.sleep(200)
     # All process variable groups should have been joined, so we can query them
     thrust_value = Control.Controller.get_pv_cmd(:thrust)

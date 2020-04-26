@@ -1,6 +1,6 @@
 defmodule Control.Controller.Car do
   require Logger
-  def update_auto_pv_correction(pv_map, pv_cmds) do
+  def get_auto_pv_value_map(pv_map, pv_cmds) do
     speed_corr = pv_cmds.speed - Common.Utils.Math.hypot(pv_map.velocity.x, pv_map.velocity.y)
     %{speed: speed_corr}
   end

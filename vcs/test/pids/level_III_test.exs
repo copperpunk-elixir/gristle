@@ -41,7 +41,7 @@ defmodule Pids.LevelIIITest do
     pv_value_map = %{heading: -0.2}
     heading_corr= pv_cmd_map.heading - pv_value_map.heading
     # Level III correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_correction, :III}, pv_cmd_map, pv_value_map, dt}, {:pv_correction, :III}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :III}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, :III}, self())
     Process.sleep(50)
     exp_heading_roll_output = heading_corr*heading_pid.roll.kp
     exp_heading_yaw_output = heading_corr*heading_pid.yaw.kp

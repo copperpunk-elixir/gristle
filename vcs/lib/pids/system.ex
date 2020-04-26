@@ -2,7 +2,7 @@ defmodule Pids.System do
   use GenServer
   require Logger
 
-  @pv_correction_group :pv_correction
+  @pv_cmds_values_group :pv_cmds_values
 
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
@@ -50,9 +50,9 @@ defmodule Pids.System do
   @impl GenServer
   def handle_cast(:join_pv_groups, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :I}, self())
-    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :II}, self())
-    Comms.Operator.join_group(__MODULE__, {@pv_correction_group, :III}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :I}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :II}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :III}, self())
     {:noreply, state}
   end
 
@@ -82,7 +82,7 @@ defmodule Pids.System do
   end
 
   @impl GenServer
-  def handle_cast({{@pv_correction_group, pv_level}, pv_cmd_map, pv_value_map, dt}, state) do
+  def handle_cast({{@pv_cmds_values_group, pv_level}, pv_cmd_map, pv_value_map, dt}, state) do
     Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case pv_level do
       :III ->
