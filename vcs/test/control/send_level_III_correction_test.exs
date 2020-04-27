@@ -24,7 +24,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     Control.System.start_link(config)
     Process.sleep(200)
     # Put into control state :auto
-    assert Control.Controller.get_control_state() == nil
+    assert Control.Controller.get_control_state() == :initializing
     new_state = :auto
     Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)

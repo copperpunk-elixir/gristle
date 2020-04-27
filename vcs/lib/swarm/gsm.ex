@@ -3,8 +3,10 @@ defmodule Swarm.Gsm do
   require Logger
 
   @default_state_loop_interval_ms 100
-  # TODO: desired_state_sorter should be defined in the config file instead of here
-  @desired_state_sorter :desired_control_state
+  # TODO: desired_control_state_sorter should be defined in the config file instead of here
+  @desired_control_state_sorter :desired_control_state
+  @control_state_sorter :control_state
+  @control_state_classification [0]
 
   def start_link(config \\ %{}) do
     Logger.debug("Start GSM")
@@ -16,7 +18,7 @@ defmodule Swarm.Gsm do
   end
 
   def init(config) do
-    state = :disarmed
+    state = :initializing
     modules_to_montor = Map.get(config, :modules_to_monitor, [])
     module_health =
       Enum.reduce(modules_to_montor, %{}, fn (module, acc) ->
@@ -32,10 +34,10 @@ defmodule Swarm.Gsm do
 
   def handle_event(:cast, :begin, _state, _data) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    Comms.Operator.join_group(__MODULE__, @desired_state_sorter, self())
+    Comms.Operator.join_group(__MODULE__, @desired_control_state_sorter, self())
     MessageSorter.System.start_link()
     desired_sorter_config = %{
-      name: @desired_state_sorter,
+      name: @desired_control_state_sorter,
       default_message_behavior: :last
     }
     MessageSorter.System.start_sorter(desired_sorter_config)
@@ -49,7 +51,7 @@ defmodule Swarm.Gsm do
 
   def handle_event(:cast, {:add_desired_control_state, control_state, classification, time_validity_ms}, _state, _data) do
     Logger.debug("cast adcs: #{control_state}")
-    MessageSorter.Sorter.add_message(@desired_state_sorter, classification, time_validity_ms, control_state)
+    MessageSorter.Sorter.add_message(@desired_control_state_sorter, classification, time_validity_ms, control_state)
     :keep_state_and_data
   end
 
@@ -64,16 +66,16 @@ defmodule Swarm.Gsm do
   def handle_event(:info, :state_loop, state, data) do
     # TODO: Add logic to determine if new state is feasible
     Logger.debug("state loop")
-    desired_control_state = MessageSorter.Sorter.get_value(@desired_state_sorter)
+    desired_control_state = MessageSorter.Sorter.get_value(@desired_control_state_sorter)
     # Fake logic
     control_state =
     if desired_control_state != nil && desired_control_state != state do
-      control_state = desired_control_state
-      Control.Controller.add_control_state(control_state)
-      control_state
+      desired_control_state
     else
       state
     end
+    MessageSorter.Sorter.add_message(@control_state_sorter, @control_state_classification, 2*@default_state_loop_interval_ms, control_state)
+    Logger.debug("GSM control state: #{control_state}")
     {:next_state, control_state, data}
   end
 
@@ -88,7 +90,7 @@ defmodule Swarm.Gsm do
   # Used only for testing
   def add_desired_control_state(control_state, classification, time_validity_ms) do
     IO.puts("Add desired cs: #{inspect(control_state)}")
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_desired_control_state, control_state, classification, time_validity_ms}, @desired_state_sorter, nil)
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_desired_control_state, control_state, classification, time_validity_ms}, @desired_control_state_sorter, nil)
   end
 
   defp begin() do

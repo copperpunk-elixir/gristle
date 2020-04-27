@@ -14,7 +14,7 @@ defmodule Control.SendLevelIICorrectionTest do
     {:ok, [config: pid_config]}
   end
 
-  test "SendLevelIIICorrectionTest", context do
+  test "SendLevelIICorrectionTest", context do
     # Start Actuator message sorters
     pid_config = context[:config]
     aileron_neutral = pid_config.pids.rollrate.aileron.output_neutral
@@ -34,7 +34,7 @@ defmodule Control.SendLevelIICorrectionTest do
     Control.System.start_link(config)
     Process.sleep(200)
     # Put into control state :auto
-    assert Control.Controller.get_control_state() == nil
+    assert Control.Controller.get_control_state() == :initializing
     new_state = :semi_auto
     Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)

@@ -33,7 +33,7 @@ defmodule Pids.LevelITest do
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
-      get_in(config, [:pids, :rollrate, :aileron, :kp])*rollrate_corr + Pids.Pid.get_initial_output(:two_sided,0,0.5)
+      get_in(config, [:pids, :rollrate, :aileron, :kp])*rollrate_corr + 0.5
       |> Common.Utils.Math.constrain(0, 1)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the right

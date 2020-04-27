@@ -84,7 +84,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def add_message(name, classification, time_validity_ms, value) do
-    Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}}")
+    Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})

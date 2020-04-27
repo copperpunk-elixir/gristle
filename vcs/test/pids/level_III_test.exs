@@ -33,7 +33,6 @@ defmodule Pids.LevelIIITest do
     yaw_pid = pids.yaw
     rollrate_pid = pids.rollrate
     yawrate_pid = pids.yawrate
-    one_or_two_sided_all = config.pid_config.one_or_two_sided
 
     # ----- BEGIN HEADING-to-ROLL/YAW RUDDER TEST -----
     # Update heading, which affects both roll and yaw 
@@ -46,9 +45,9 @@ defmodule Pids.LevelIIITest do
     exp_heading_roll_output = heading_corr*heading_pid.roll.kp
     exp_heading_yaw_output = heading_corr*heading_pid.yaw.kp
     exp_roll_output =
-    (exp_heading_roll_output + Pids.Pid.get_initial_output(one_or_two_sided_all.roll, heading_pid.roll.output_min, heading_pid.roll.output_neutral))*Map.get(heading_pid.roll, :weight, 1)
+    (exp_heading_roll_output + heading_pid.roll.output_neutral)*Map.get(heading_pid.roll, :weight, 1)
       |> Common.Utils.Math.constrain(heading_pid.roll.output_min, heading_pid.roll.output_max)
-    exp_yaw_output = (exp_heading_yaw_output + Pids.Pid.get_initial_output(one_or_two_sided_all.yaw, heading_pid.yaw.output_min, heading_pid.yaw.output_neutral))*Map.get(heading_pid.yaw, :weight, 1)
+    exp_yaw_output = (exp_heading_yaw_output + heading_pid.yaw.output_neutral)*Map.get(heading_pid.yaw, :weight, 1)
     |> Common.Utils.Math.constrain(heading_pid.yaw.output_min, heading_pid.yaw.output_max)
     Process.sleep(50)
     roll_output = Pids.Pid.get_output(:heading, :roll, Map.get(heading_pid.roll,:weight,1))

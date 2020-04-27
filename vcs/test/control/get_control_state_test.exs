@@ -16,7 +16,7 @@ defmodule Control.GetControlStateTest do
     config = %{controller: TestConfigs.Control.get_config_car()}
     Control.System.start_link(config)
     Process.sleep(300)
-    assert Control.Controller.get_control_state() == nil
+    assert Control.Controller.get_control_state() == :initializing
     new_state = :manual
     Swarm.Gsm.add_desired_control_state(new_state, [0], 200)
     Process.sleep(100)

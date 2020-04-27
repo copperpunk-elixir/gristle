@@ -2,7 +2,7 @@ defmodule Control.Controller do
   use GenServer
   require Logger
 
-  @control_state_sorter {:control_state, :state}
+  @control_state_sorter :control_state
   @pv_cmds_values_I_group {:pv_cmds_values, :I}
   @pv_cmds_values_II_group {:pv_cmds_values, :II}
   @pv_cmds_values_III_group {:pv_cmds_values, :III}
@@ -122,6 +122,7 @@ defmodule Control.Controller do
     end)
   end
 
+  # TODO: This is only for testing without GSM in loop
   def add_control_state(control_state) do
     # This is the only process adding to the control_state_sorter, so
     # the classification and time_validity_ms aren't really important

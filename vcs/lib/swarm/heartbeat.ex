@@ -2,22 +2,29 @@ defmodule Swarm.Heartbeat do
   use GenServer
   require Logger
 
-  @default_heartbeat_loop_interval_ms 1000
+  @default_heartbeat_status_loop_interval_ms 100
+  @default_send_heartbeat_loop_interval_ms 200
   @node_sorter {:hb, :node}
 
   def start_link(config \\ %{}) do
     Logger.debug("Start HB")
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config)
     begin()
-    start_heartbeat_loop()
+    start_heartbeat_loops()
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
+    node = Map.get(config, :node, 0)
+    ward = Map.get(config, :ward, 0)
     {:ok, %{
-        heartbeat_loop_interval_ms: Map.get(config, :heartbeat_loop_interval_ms, @default_heartbeat_loop_interval_ms),
-        heartbeat_loop_timer: nil,
+        node: node,
+        hb_map: %{node: node, ward: ward},
+        heartbeat_status_loop_interval_ms: Map.get(config, :heartbeat_status_loop_interval_ms, @default_heartbeat_status_loop_interval_ms),
+        heartbeat_status_loop_timer: nil,
+        send_heartbeat_loop_interval_ms: Map.get(config, :send_heartbeat_loop_interval_ms, @default_send_heartbeat_loop_interval_ms),
+        send_heartbeat_loop_timer: nil,
         swarm_status: 0,
         all_nodes: %{}
      }}
@@ -45,15 +52,17 @@ defmodule Swarm.Heartbeat do
     {:noreply, state}
   end
 
-  def handle_cast(:start_heartbeat_loop, state) do
-    heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :calc_heartbeat_status)
-    {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
+  def handle_cast(:start_heartbeat_loops, state) do
+    heartbeat_status_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_status_loop_interval_ms, :calc_heartbeat_status)
+    send_heartbeat_loop_timer = Common.Utils.start_loop(self(), state.send_heartbeat_loop_interval_ms, :send_heartbeat)
+    {:noreply, %{state | heartbeat_status_loop_timer: heartbeat_status_loop_timer, send_heartbeat_loop_timer: send_heartbeat_loop_timer}}
   end
 
   @impl GenServer
-  def handle_cast(:stop_heartbeat_loop, state) do
-    heartbeat_loop_timer = Common.Utils.stop_loop(state.heartbeat_loop_timer)
-    {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
+  def handle_cast(:stop_heartbeat_loops, state) do
+    heartbeat_status_loop_timer = Common.Utils.stop_loop(state.heartbeat_status_loop_timer)
+    send_heartbeat_loop_timer = Common.Utils.stop_loop(state.send_heartbeat_loop_timer)
+    {:noreply, %{state | heartbeat_status_loop_timer: heartbeat_status_loop_timer, send_heartbeat_loop_timer: send_heartbeat_loop_timer}}
   end
 
   def handle_cast(msg, state) do
@@ -84,11 +93,17 @@ defmodule Swarm.Heartbeat do
     {:noreply, %{state | all_nodes: all_nodes, swarm_status: swarm_status}}
   end
 
+  @impl GenServer
+  def handle_info(:send_heartbeat, state) do
+    MessageSorter.Sorter.add_message(@node_sorter, [state.node], @default_send_heartbeat_loop_interval_ms, state.hb_map)
+    {:noreply, state}
+  end
+
   def unpack_heartbeats() do
     node_messages = MessageSorter.Sorter.get_all_messages(@node_sorter)
     Enum.reduce(node_messages, %{}, fn (node_msg, acc) ->
       hb = node_msg.value
-      node = %{ward: hb.ward, state: hb.state}
+      node = %{ward: hb.ward}
       Map.put(acc, hb.node, node)
     end)
   end
@@ -151,7 +166,7 @@ defmodule Swarm.Heartbeat do
     GenServer.cast(__MODULE__, :begin)
   end
 
-  defp start_heartbeat_loop() do
-    GenServer.cast(__MODULE__, :start_heartbeat_loop)
+  defp start_heartbeat_loops() do
+    GenServer.cast(__MODULE__, :start_heartbeat_loops)
   end
 end

@@ -16,6 +16,7 @@ defmodule Swarm.SetupTest do
 
   test "create Hb server" do
     IO.puts("Create Hb server")
+    Process.sleep(400)
     assert Hb.swarm_healthy?() == false
   end
 end

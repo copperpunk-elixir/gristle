@@ -22,7 +22,6 @@ defmodule Pids.System do
     {:ok, %{
         pids: config.pids,
         rate_or_position: config.rate_or_position,
-        one_or_two_sided: config.one_or_two_sided,
         pv_cv_pids: %{},
         cv_pv_pids: %{},
         act_msg_class: config.actuator_cmds_msg_classification,
@@ -37,10 +36,8 @@ defmodule Pids.System do
     Enum.each(state.pids, fn {process_variable, control_variables} ->
       Enum.each(control_variables, fn {control_variable, pid_config} ->
         rate_or_position = Map.fetch!(state.rate_or_position, control_variable)
-        one_or_two_sided = Map.fetch!(state.one_or_two_sided, control_variable)
         pid_config = Map.put(pid_config, :name, {process_variable, control_variable})
         |> Map.put(:rate_or_position, rate_or_position)
-        |> Map.put(:one_or_two_sided, one_or_two_sided)
         Pids.Pid.start_link(pid_config)
       end)
     end)

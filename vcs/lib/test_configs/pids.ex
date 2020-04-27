@@ -5,7 +5,7 @@ defmodule TestConfigs.Pids do
       aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       rollrate: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
       pitchrate: %{output_min: -0.4, output_max: 0.4, output_neutral: 0},
       yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
@@ -45,26 +45,11 @@ defmodule TestConfigs.Pids do
         speed: :rate
     }
 
-    one_or_two_sided = %{
-      aileron: :two_sided,
-      elevator: :two_sided,
-      rudder: :two_sided,
-      throttle: :one_sided,
-      rollrate: :two_sided,
-      pitchrate: :two_sided,
-      yawrate: :two_sided,
-      thrust: :one_sided,
-      roll: :two_sided,
-      pitch: :two_sided,
-      yaw: :two_sided,
-      speed: :two_sided
-    }
     classification = [1,2]
     time_validity_ms = 200
     %{
       pids: pids,
       rate_or_position: rate_or_position,
-      one_or_two_sided: one_or_two_sided,
       actuator_cmds_msg_classification: classification,
       actuator_cmds_msg_time_validity_ms: time_validity_ms,
       pv_cmds_msg_classification: classification,

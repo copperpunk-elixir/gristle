@@ -33,7 +33,6 @@ defmodule Pids.LevelIITest do
     pids = config.pid_config.pids
     roll_pid = pids.roll
     rollrate_pid = pids.rollrate
-    one_or_two_sided_all = config.pid_config.one_or_two_sided
     Process.sleep(200)
     # ----- BEGIN AILERON TEST -----
     # Update roll and yaw at the same time, which both affect aileron and rudder
@@ -48,7 +47,7 @@ defmodule Pids.LevelIITest do
     exp_roll_rollrate_output = (roll_corr*roll_pid.rollrate.kp)*Map.get(roll_pid.rollrate, :weight,1)
     # Rollrate
     exp_rollrate_output =
-      exp_roll_rollrate_output + Pids.Pid.get_initial_output(one_or_two_sided_all.rollrate, roll_pid.rollrate.output_min, roll_pid.rollrate.output_neutral)
+      exp_roll_rollrate_output + roll_pid.rollrate.output_neutral
       |> Common.Utils.Math.constrain(roll_pid.rollrate.output_min, roll_pid.rollrate.output_max)
     pv_cmd_map = Map.put(pv_cmd_map, :rollrate, Pids.Pid.get_output(:roll, :rollrate))
     rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
@@ -58,7 +57,7 @@ defmodule Pids.LevelIITest do
     rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
     exp_rollrate_aileron_output = (rollrate_corr*rollrate_pid.aileron.kp)*Map.get(rollrate_pid.aileron, :weight,1)
     exp_aileron_output =
-      exp_rollrate_aileron_output + Pids.Pid.get_initial_output(one_or_two_sided_all.aileron, 0, 0.5)
+      exp_rollrate_aileron_output + 0.5
       |> Common.Utils.Math.constrain(0, 1)
     aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     IO.puts("Aileron output: #{aileron_output}")
