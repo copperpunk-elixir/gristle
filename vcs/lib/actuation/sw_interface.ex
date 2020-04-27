@@ -22,8 +22,8 @@ defmodule Actuation.SwInterface do
   @impl GenServer
   def handle_cast(:start_message_sorters, state) do
     MessageSorter.System.start_link()
-    Enum.each(state.actuators, fn {actuator_name, _actuator} ->
-      MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}})
+    Enum.each(state.actuators, fn {actuator_name, actuator} ->
+      MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
     end)
     {:noreply, state}
   end
@@ -47,11 +47,7 @@ defmodule Actuation.SwInterface do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
     # actuator_interface_output_process_name = state.config.actuator_interface_output.process_name
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
-      output =
-        case get_output_for_actuator_name(actuator_name) do
-          nil -> actuator.failsafe_cmd
-          value -> value
-        end
+      output = get_output_for_actuator_name(actuator_name)
       # Logger.debug("move_actuator #{actuator_name} to #{output}")
       Actuation.HwInterface.set_output_for_actuator(actuator, output)
     end)

@@ -10,9 +10,9 @@ defmodule Pids.Pid do
   @impl GenServer
   def init(config) do
     {process_variable, control_variable} = Map.get(config, :name)
-    output_min = Map.get(config, :output_min, 0)
-    output_max = Map.get(config, :output_max, 1)
-    output_neutral = Map.get(config, :output_neutral, 0.5)
+    # output_min = Map.get(config, :output_min, 0)
+    # output_max = Map.get(config, :output_max, 1)
+    # output_neutral = Map.get(config, :output_neutral, 0.5)
 
     {:ok, %{
         process_variable: process_variable,
@@ -23,11 +23,11 @@ defmodule Pids.Pid do
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
         kf: Map.get(config, :kf, 0),
-        output_min: output_min,
-        output_max: output_max,
-        output_neutral: Map.get(config, :output_neutral, 0.5),
+        output_min: config.output_min,
+        output_max: config.output_max,
+        output_neutral: config.output_neutral,
         pv_correction_prev: 0,
-        output: get_initial_output(config.one_or_two_sided, output_min, output_neutral),
+        output: get_initial_output(config.one_or_two_sided, config.output_min, config.output_neutral),
         feed_forward_prev: 0
      }}
   end

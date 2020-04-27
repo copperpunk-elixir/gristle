@@ -2,6 +2,10 @@ defmodule TestConfigs.Pids do
   def get_pid_config_plane() do
 
     constraints = %{
+      aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       rollrate: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
       pitchrate: %{output_min: -0.4, output_max: 0.4, output_neutral: 0},
       yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
@@ -12,10 +16,10 @@ defmodule TestConfigs.Pids do
     }
 
     pids = %{
-      rollrate: %{aileron: %{kp: 0.8}},
-      pitchrate: %{elevator: %{kp: 0.9}},
-      yawrate: %{rudder: %{kp: 0.5}},
-      thrust: %{throttle: %{kp: 0.1}},
+      rollrate: %{aileron: Map.merge(%{kp: 0.8}, constraints.aileron)},
+      pitchrate: %{elevator: Map.merge(%{kp: 0.9}, constraints.elevator)},
+      yawrate: %{rudder: Map.merge(%{kp: 0.5}, constraints.rudder)},
+      thrust: %{throttle: Map.merge(%{kp: 0.1}, constraints.throttle)},
       roll: %{rollrate: Map.merge(%{kp: 0.075}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 0.2}, constraints.pitchrate)},
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
@@ -43,7 +47,7 @@ defmodule TestConfigs.Pids do
 
     one_or_two_sided = %{
       aileron: :two_sided,
-      elevator: :one_sided,
+      elevator: :two_sided,
       rudder: :two_sided,
       throttle: :one_sided,
       rollrate: :two_sided,

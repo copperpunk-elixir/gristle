@@ -6,6 +6,7 @@ defmodule Control.Controller do
   @pv_cmds_values_I_group {:pv_cmds_values, :I}
   @pv_cmds_values_II_group {:pv_cmds_values, :II}
   @pv_cmds_values_III_group {:pv_cmds_values, :III}
+  @pv_cmds_values_disarmed_group {:pv_cmds_values, :disarmed}
 
   def start_link(config) do
     Logger.debug("Start Control.ControllerCar")
@@ -67,20 +68,24 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_attitude_rate}, pv_value_map, dt}, state) do
-    Logger.debug("Control rx att/attrate: #{inspect(pv_value_map)}")
-    pv_cmds_values_group =
-      case state.control_state do
-        :auto -> @pv_cmds_values_II_group
-        :semi_auto -> @pv_cmds_values_II_group
-        :manual -> @pv_cmds_values_I_group
-      end
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {pv_cmds_values_group, state.pv_cmds, pv_value_map,dt},pv_cmds_values_group, self())
+    Logger.warn("Control rx att/attrate: #{inspect(pv_value_map)}")
+    case state.control_state do
+      :auto ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
+      :semi_auto ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_II_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_II_group, self())
+      :manual ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_I_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_I_group, self())
+      :disarmed ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_disarmed_group, %{}, %{},0},@pv_cmds_values_disarmed_group, self())
+      _other -> nil
+    end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
-    Logger.debug("Control rx vel/pos: #{inspect(pv_value_map)}")
+    Logger.warn("Control rx vel/pos: #{inspect(pv_value_map)}")
     if (state.control_state == :auto) do
       pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
       Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())

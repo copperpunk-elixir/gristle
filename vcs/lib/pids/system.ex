@@ -53,6 +53,7 @@ defmodule Pids.System do
     Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :I}, self())
     Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :II}, self())
     Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :III}, self())
+    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :disarmed}, self())
     {:noreply, state}
   end
 
@@ -95,13 +96,16 @@ defmodule Pids.System do
         # output_map turns into input_map for Level I calcs
         pv_cmd_map = output_map
         Logger.warn("new pv_cmd_map: #{inspect(pv_cmd_map)}")
+        Logger.warn("pv_value_map: #{inspect(pv_value_map.attitude_rate)}")
         output_map = update_cvs(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
-        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :act_cmds)
+        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       :I ->
         Logger.warn("Manual")
         pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
         output_map = update_cvs(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
-        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :act_cmds)
+        send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+      :disarmed ->
+        Logger.warn("Disarmed")
     end
     {:noreply, state}
   end

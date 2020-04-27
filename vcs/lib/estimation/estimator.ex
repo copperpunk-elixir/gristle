@@ -89,7 +89,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :attitude_attitude_rate}, pv_value_map}, state) do
-    Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
+    Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
 
     attitude = Map.get(pv_value_map, :attitude)
     attitude_rate = Map.get(pv_value_map, :attitude_rate)
@@ -107,7 +107,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :position_velocity}, pv_value_map}, state) do
-    Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
+    Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
 
     position = Map.get(pv_value_map, :position)
     velocity = Map.get(pv_value_map, :velocity)

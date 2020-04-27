@@ -41,8 +41,8 @@ defmodule Control.SendLevelIIICorrectionTest do
     MessageSorter.Sorter.add_message({:pv_cmds, :heading}, msg_class, msg_time_ms, pv_cmd.heading)
     MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
     Process.sleep(50)
-    heading_corr = Control.Controller.get_pv_cmd(:heading)
-    assert_in_delta(heading_corr, pv_cmd.heading, max_cmd_delta)
+    heading_cmd = Control.Controller.get_pv_cmd(:heading)
+    assert_in_delta(heading_cmd, pv_cmd.heading, max_cmd_delta)
     # Send PV value
     heading = :math.pi()/180*20
     speed = 5
