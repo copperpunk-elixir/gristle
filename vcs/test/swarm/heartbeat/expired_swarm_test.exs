@@ -20,11 +20,12 @@ defmodule Swarm.ExpiredSwarmTest do
   test "Healthy swarm expires to unhealthy swarm" do
     Logger.info("Create temporarily healthy swarm")
     Process.sleep(400)
-    Hb.add_heartbeat(%{node: 1, ward: 2}, 500)
-    Hb.add_heartbeat(%{node: 2, ward: 0}, 200)
-    Process.sleep(150)
+    Hb.add_heartbeat(%{node: 1, ward: 2})
+    Hb.add_heartbeat(%{node: 2, ward: 0})
+    Process.sleep(250)
     assert Hb.swarm_healthy?() == true
-    Process.sleep(150)
+    Hb.add_heartbeat(%{node: 1, ward: 2})
+    Process.sleep(400)
     assert Hb.node_healthy?(0) == true
     assert Hb.node_healthy?(1) == false
     assert Hb.node_healthy?(2) == false

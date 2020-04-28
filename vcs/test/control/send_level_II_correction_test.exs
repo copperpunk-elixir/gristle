@@ -1,5 +1,6 @@
 defmodule Control.SendLevelIICorrectionTest do
   use ExUnit.Case
+  require Logger
 
   setup do
     pid_config = TestConfigs.Pids.get_pid_config_plane()
@@ -8,7 +9,6 @@ defmodule Control.SendLevelIICorrectionTest do
     swarm_gsm_config =%{
       modules_to_monitor: [:estimator],
       state_loop_interval_ms: 50,
-      initial_state: :disarmed
     }
     Swarm.Gsm.start_link(swarm_gsm_config)
     {:ok, [config: pid_config]}
@@ -22,24 +22,30 @@ defmodule Control.SendLevelIICorrectionTest do
     rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
 
     MessageSorter.System.start_link()
-    MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :aileron}, default_message_behavior: :default_value, default_value: aileron_neutral})
-    MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :elevator}, default_message_behavior: :default_value, default_value: elevator_neutral})
-    MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :rudder}, default_message_behavior: :default_value, default_value: rudder_neutral})
-    IO.puts("SendLevelIIICorrectionTest")
+    actuator_sorter_config = %{
+      name: :actuator_cmds,
+      default_message_behavior: :default_value,
+      default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral}
+    }
+    MessageSorter.System.start_sorter(actuator_sorter_config)
+    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :aileron}, default_message_behavior: :default_value, default_value: aileron_neutral})
+    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :elevator}, default_message_behavior: :default_value, default_value: elevator_neutral})
+    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :rudder}, default_message_behavior: :default_value, default_value: rudder_neutral})
+    Logger.info("SendLevelIIICorrectionTest")
     op_name = :levelIII
     Comms.Operator.start_link(%{name: op_name})
     max_cmd_delta = 0.001
-    IO.puts("Start Control Loop")
+    Logger.info("Start Control Loop")
     config = %{controller: TestConfigs.Control.get_config_plane()}
     Control.System.start_link(config)
     Process.sleep(200)
     # Put into control state :auto
-    assert Control.Controller.get_control_state() == :initializing
-    new_state = :semi_auto
+    assert Control.Controller.get_control_state() == -1
+    new_state = 2#:semi_auto
     Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)
     assert Control.Controller.get_control_state() == new_state
-    IO.inspect(pid_config.pids)
+    Logger.info(inspect(pid_config.pids))
     # Verify that none of the PVs in PVII have a command
     assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral
     assert Pids.Pid.get_output(:pitchrate, :elevator) == pid_config.pids.pitchrate.elevator.output_neutral
@@ -48,11 +54,12 @@ defmodule Control.SendLevelIICorrectionTest do
     pv_cmd = %{roll: 0.12, pitch: -0.1, yaw: 0.025}
     msg_class = [2,5]
     msg_time_ms = 200
-    MessageSorter.Sorter.add_message({:pv_cmds, :roll}, msg_class, msg_time_ms, pv_cmd.roll)
-    MessageSorter.Sorter.add_message({:pv_cmds, :pitch}, msg_class, msg_time_ms, pv_cmd.pitch)
-    MessageSorter.Sorter.add_message({:pv_cmds, :yaw}, msg_class, msg_time_ms, pv_cmd.yaw)
+    MessageSorter.Sorter.add_message({:pv_cmds, 2}, msg_class, msg_time_ms, pv_cmd)
+    # MessageSorter.Sorter.add_message({:pv_cmds, :roll}, msg_class, msg_time_ms, pv_cmd.roll)
+    # MessageSorter.Sorter.add_message({:pv_cmds, :pitch}, msg_class, msg_time_ms, pv_cmd.pitch)
+    # MessageSorter.Sorter.add_message({:pv_cmds, :yaw}, msg_class, msg_time_ms, pv_cmd.yaw)
     Process.sleep(50)
-    roll_cmd = Control.Controller.get_pv_cmd(:roll)
+    roll_cmd = Control.Controller.get_pv_cmd(2, :roll)
     assert_in_delta(roll_cmd, pv_cmd.roll, max_cmd_delta)
     # Send PV value
     pv_att_att_rate = %{attitude: %{roll: 0.01, pitch: 0.02, yaw: 0.03}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
@@ -65,12 +72,20 @@ defmodule Control.SendLevelIICorrectionTest do
     assert Pids.Pid.get_output(:rollrate, :aileron) > aileron_neutral
     assert Pids.Pid.get_output(:pitchrate, :elevator) < elevator_neutral
     assert Pids.Pid.get_output(:yawrate, :rudder) < rudder_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) > aileron_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) < elevator_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) < rudder_neutral
+    actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
+    assert actuator_cmds.aileron > aileron_neutral
+    assert actuator_cmds.elevator < elevator_neutral
+    assert actuator_cmds.rudder < rudder_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) > aileron_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) < elevator_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) < rudder_neutral
     Process.sleep(msg_time_ms)
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) == aileron_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) == elevator_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) == rudder_neutral
+    actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
+    assert actuator_cmds.aileron == aileron_neutral
+    assert actuator_cmds.elevator == elevator_neutral
+    assert actuator_cmds.rudder == rudder_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) == aileron_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) == elevator_neutral
+    # assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) == rudder_neutral
   end
 end

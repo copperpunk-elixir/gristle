@@ -75,7 +75,8 @@ defmodule System.TotalSystemTest do
     elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
     rudder_neutral = config.pid_config.pids.yawrate.rudder.output_neutral
     throttle_neutral = config.pid_config.pids.thrust.throttle.output_neutral
-    assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) == aileron_neutral
+    actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
+    assert actuator_cmds.aileron == aileron_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) == elevator_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) == rudder_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :throttle}) == throttle_neutral
@@ -126,6 +127,17 @@ defmodule System.TotalSystemTest do
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) == elevator_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) == rudder_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :throttle}) == throttle_neutral
+    # Add pv_cmd again
+    MessageSorter.Sorter.add_message({:pv_cmds, :rollrate}, msg_class, msg_time_ms, pv_cmd.rollrate)
+    MessageSorter.Sorter.add_message({:pv_cmds, :pitchrate}, msg_class, msg_time_ms, pv_cmd.pitchrate)
+    MessageSorter.Sorter.add_message({:pv_cmds, :yawrate}, msg_class, msg_time_ms, pv_cmd.yawrate)
+    Process.sleep(100)
+    assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) > aileron_neutral
+    assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) < elevator_neutral
+    assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) > rudder_neutral
+    assert MessageSorter.Sorter.get_value({:actuator_cmds, :throttle}) == throttle_neutral
+    # Switch to :semi_auto
+    pv_cmd = %{roll: -0.3, pitch: 0.01, yawrate: 0, heading: 0.2, speed: 4, altitude: 1}
 
   end
 

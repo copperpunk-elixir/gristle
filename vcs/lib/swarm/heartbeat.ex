@@ -3,7 +3,8 @@ defmodule Swarm.Heartbeat do
   require Logger
 
   @default_heartbeat_status_loop_interval_ms 100
-  @default_send_heartbeat_loop_interval_ms 200
+  @default_send_heartbeat_loop_interval_ms 100
+  @default_heartbeat_duration_ms 500
   @node_sorter {:hb, :node}
 
   def start_link(config \\ %{}) do
@@ -95,7 +96,7 @@ defmodule Swarm.Heartbeat do
 
   @impl GenServer
   def handle_info(:send_heartbeat, state) do
-    MessageSorter.Sorter.add_message(@node_sorter, [state.node], @default_send_heartbeat_loop_interval_ms, state.hb_map)
+    MessageSorter.Sorter.add_message(@node_sorter, [state.node], @default_heartbeat_duration_ms, state.hb_map)
     {:noreply, state}
   end
 
@@ -145,9 +146,9 @@ defmodule Swarm.Heartbeat do
     get_in(all_nodes, [node_name, :status])
   end
 
-  def add_heartbeat(heartbeat_map, time_validity_ms) do
+  def add_heartbeat(heartbeat_map) do
     # GenServer.cast(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms})
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms}, {:hb, :node}, nil)
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat, heartbeat_map, @default_heartbeat_duration_ms}, {:hb, :node}, nil)
   end
 
   def swarm_healthy?() do

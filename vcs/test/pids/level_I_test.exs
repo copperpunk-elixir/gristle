@@ -29,7 +29,7 @@ defmodule Pids.LevelITest do
     pv_cmd_map = %{rollrate: 0.0556}
     pv_value_map = %{attitude_rate: %{rollrate: 0}}
     rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, :I}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
@@ -38,16 +38,16 @@ defmodule Pids.LevelITest do
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the right
     pv_value_map = %{attitude_rate: %{rollrate: 2.0}}
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, :I}, self())
+    # rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, 1}, self())
     exp_rollrate_aileron_output = 0.0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     # Check out of bounds, to the left
     pv_value_map = %{attitude_rate: %{rollrate: -2.0}}
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :I}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, :I}, self())
+    # rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, 1}, self())
     exp_rollrate_aileron_output = 1.0
     Process.sleep(20)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)

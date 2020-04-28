@@ -7,8 +7,14 @@ defmodule Pids.LevelIIITest do
     {:ok, _} = Pids.System.start_link(pid_config)
     MessageSorter.System.start_link()
     Process.sleep(200)
-    MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})
-    MessageSorter.System.start_sorter(%{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0})
+    level_I_config = %{
+      name: {:pv_cmds, 2},
+      default_message_behavior: :default_value,
+      default_value: %{roll: 0, yaw: 0}
+    }
+    MessageSorter.System.start_sorter(level_I_config)
+    # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})
+    # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0})
 
     {:ok, [
         config: %{
@@ -40,7 +46,7 @@ defmodule Pids.LevelIIITest do
     pv_value_map = %{heading: -0.2}
     heading_corr= pv_cmd_map.heading - pv_value_map.heading
     # Level III correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :III}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, :III}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 3}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, 3}, self())
     Process.sleep(50)
     exp_heading_roll_output = heading_corr*heading_pid.roll.kp
     exp_heading_yaw_output = heading_corr*heading_pid.yaw.kp
@@ -52,8 +58,9 @@ defmodule Pids.LevelIIITest do
     Process.sleep(50)
     roll_output = Pids.Pid.get_output(:heading, :roll, Map.get(heading_pid.roll,:weight,1))
     yaw_output = Pids.Pid.get_output(:heading, :yaw, Map.get(heading_pid.yaw,:weight,1))
-    roll_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :roll})
-    yaw_cmd = MessageSorter.Sorter.get_value({:pv_cmds, :yaw})
+    attitude_cmd = MessageSorter.Sorter.get_value({:pv_cmds, 2})
+    roll_cmd = attitude_cmd.roll# MessageSorter.Sorter.get_value({:pv_cmds, :roll})
+    yaw_cmd = attitude_cmd.yaw # MessageSorter.Sorter.get_value({:pv_cmds, :yaw})
 
     assert_in_delta(roll_output, exp_roll_output, max_rate_delta)
     assert_in_delta(roll_cmd, exp_roll_output, max_rate_delta)

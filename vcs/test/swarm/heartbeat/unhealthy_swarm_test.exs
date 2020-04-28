@@ -22,9 +22,9 @@ defmodule Swarm.UnhealthySwarmTest do
     Process.sleep(400)
     assert Hb.swarm_healthy?() == false
     assert Hb.node_healthy?(0) == false
-    Hb.add_heartbeat(%{node: 1, ward: 2}, 1000)
-    Hb.add_heartbeat(%{node: 2, ward: 3}, 1000)
-    Hb.add_heartbeat(%{node: 4, ward: 0}, 1000)
+    Hb.add_heartbeat(%{node: 1, ward: 2})
+    Hb.add_heartbeat(%{node: 2, ward: 3})
+    Hb.add_heartbeat(%{node: 4, ward: 0})
     Process.sleep(150)
     assert Hb.node_healthy?(0) == true
     assert Hb.node_healthy?(1) == true

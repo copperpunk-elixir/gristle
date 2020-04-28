@@ -3,10 +3,10 @@ defmodule Control.Controller do
   require Logger
 
   @control_state_sorter :control_state
-  @pv_cmds_values_I_group {:pv_cmds_values, :I}
-  @pv_cmds_values_II_group {:pv_cmds_values, :II}
-  @pv_cmds_values_III_group {:pv_cmds_values, :III}
-  @pv_cmds_values_disarmed_group {:pv_cmds_values, :disarmed}
+  # @pv_cmds_values_I_group {:pv_cmds_values, :I}
+  # @pv_cmds_values_II_group {:pv_cmds_values, :II}
+  # @pv_cmds_values_III_group {:pv_cmds_values, :III}
+  # @pv_cmds_values_disarmed_group {:pv_cmds_values, :disarmed}
 
   def start_link(config) do
     Logger.debug("Start Control.ControllerCar")
@@ -27,7 +27,7 @@ defmodule Control.Controller do
         pv_cmds: %{},
         control_loop_timer: nil,
         control_loop_interval_ms: config.process_variable_cmd_loop_interval_ms,
-        control_state: nil
+        control_state: -1
      }}
   end
 
@@ -39,7 +39,8 @@ defmodule Control.Controller do
     # Start control state sorter
     control_state_config = %{
       name: @control_state_sorter,
-      default_message_behavior: :last
+      default_message_behavior: :last,
+      initial_value: -1
     }
     MessageSorter.System.start_sorter(control_state_config)
     join_process_variable_groups()
@@ -69,26 +70,37 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_attitude_rate}, pv_value_map, dt}, state) do
     Logger.warn("Control rx att/attrate: #{inspect(pv_value_map)}")
-    case state.control_state do
-      :auto ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
-      :semi_auto ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_II_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_II_group, self())
-      :manual ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_I_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_I_group, self())
-      :disarmed ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_disarmed_group, %{}, %{},0},@pv_cmds_values_disarmed_group, self())
-      _other -> nil
+    Logger.warn("cs: #{state.control_state}")
+    cond do
+      state.control_state > 1 ->
+        Logger.warn("send to 2")
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 2}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 2}, self())
+      state.control_state > 0 ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 1}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 1}, self())
+      state.control_state > -1 ->
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 1}, %{}, pv_value_map,dt},{:pv_cmds_values, 1}, self())
+      true ->
     end
+    # case state.control_state do
+    #   :auto ->
+    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
+    #   :semi_auto ->
+    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_II_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_II_group, self())
+    #   :manual ->
+    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_I_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_I_group, self())
+    #   :disarmed ->
+    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_disarmed_group, %{}, %{},0},@pv_cmds_values_disarmed_group, self())
+    #   _other -> nil
+    # end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
     Logger.warn("Control rx vel/pos: #{inspect(pv_value_map)}")
-    if (state.control_state == :auto) do
+    if (state.control_state == 3) do
       pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 3}, self())
     end
     {:noreply, state}
   end
@@ -99,8 +111,9 @@ defmodule Control.Controller do
     Logger.debug("Control loop. CS: #{state.control_state}")
     # For every PV, get the corresponding command
     control_state = get_control_state()
-    pv_cmds_list = apply(state.vehicle_module, :get_pv_cmds_list, [state.control_state])
-    pv_cmds = update_all_pv_cmds(pv_cmds_list)
+    # pv_cmds_list = apply(state.vehicle_module, :get_pv_cmds_list, [state.control_state])
+    pv_cmds = update_all_pv_cmds()
+    Logger.warn("pv_cmds: #{inspect(pv_cmds)}")
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
@@ -112,14 +125,25 @@ defmodule Control.Controller do
     GenServer.cast(__MODULE__, :stop_control_loop)
   end
 
-  def get_pv_cmd(pv_name) do
-    MessageSorter.Sorter.get_value({:pv_cmds, pv_name})
+  def get_pv_cmd(level, pv_name) do
+    cmds = MessageSorter.Sorter.get_value({:pv_cmds, level})
+    Logger.warn("cmds #{level}: #{inspect(cmds)}")
+    Map.get(cmds, pv_name, nil)
   end
 
-  def update_all_pv_cmds(pv_cmds_list) do
-    Enum.reduce(pv_cmds_list, %{}, fn (pv_name, acc) ->
-      Map.put(acc, pv_name, get_pv_cmd(pv_name))
+  def update_all_pv_cmds() do
+    Enum.reduce(1..3,%{}, fn (level, acc) ->
+      Map.merge(acc, MessageSorter.Sorter.get_value({:pv_cmds, level}))
     end)
+    # case control_state do
+    #   :manual -> MessageSorter.Sorter.get_value({:pv_cmds, :level_I})
+    #   :semi_auto -> MessageSorter.Sorter.get_value({:pv_cmds, :level_II})
+    #   :auto -> MessageSorter.Sorter.get_value({:pv_cmds, :level_III})
+    #   _other ->
+    # end
+    # Enum.reduce(pv_cmds_list, %{}, fn (pv_name, acc) ->
+    #   Map.put(acc, pv_name, get_pv_cmd(pv_name))
+    # end)
   end
 
   # TODO: This is only for testing without GSM in loop

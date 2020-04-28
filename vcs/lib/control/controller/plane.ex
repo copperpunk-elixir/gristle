@@ -9,7 +9,7 @@ defmodule Control.Controller.Plane do
   end
 
   def start_message_sorters() do
-    Logger.debug("Start Car message sorters")
+    Logger.debug("Start Plane message sorters")
     MessageSorter.System.start_link()
     Enum.each(get_process_variable_list(), fn msg_sorter_config ->
       MessageSorter.System.start_sorter(msg_sorter_config)
@@ -18,25 +18,30 @@ defmodule Control.Controller.Plane do
 
   def get_pv_cmds_list(control_state) do
     case control_state do
-      :auto -> [:heading, :speed, :altitude]
-      :semi_auto -> [:roll, :pitch, :yaw]
-      :manual -> [:thrust, :rollrate, :pitchrate, :yawrate]
-      other -> []
+      3 -> [:heading, :speed, :altitude]
+      2 -> [:roll, :pitch, :yaw]
+      1 -> [:thrust, :rollrate, :pitchrate, :yawrate]
+      _other -> []
     end
   end
 
   def get_process_variable_list() do
     [
-      %{name: {:pv_cmds, :thrust}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :rollrate}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :pitchrate}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :yawrate}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :pitch}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :heading}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :speed}, default_message_behavior: :default_value, default_value: 0},
-      %{name: {:pv_cmds, :altitude}, default_message_behavior: :default_value, default_value: 0},
+      %{
+        name: {:pv_cmds, 1},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0}
+      },
+      %{
+        name: {:pv_cmds, 2},
+        default_message_behavior: :default_value,
+        default_value: %{roll: 0, pitch: 0, yaw: 0}
+      },
+      %{
+        name: {:pv_cmds, 3},
+        default_message_behavior: :default_value,
+        default_value: %{heading: 0, speed: 0, altitude: 0}
+      }
     ]
   end
 end

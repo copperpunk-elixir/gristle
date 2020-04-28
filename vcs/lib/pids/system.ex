@@ -47,10 +47,13 @@ defmodule Pids.System do
   @impl GenServer
   def handle_cast(:join_pv_groups, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :I}, self())
-    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :II}, self())
-    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :III}, self())
-    Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :disarmed}, self())
+    Enum.each(0..3, fn level ->
+      Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, level}, self())
+    end)
+    # Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :I}, self())
+    # Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :II}, self())
+    # Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :III}, self())
+    # Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, :disarmed}, self())
     {:noreply, state}
   end
 
@@ -83,25 +86,29 @@ defmodule Pids.System do
   def handle_cast({{@pv_cmds_values_group, pv_level}, pv_cmd_map, pv_value_map, dt}, state) do
     Logger.debug("PID pv_corr level #{pv_level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case pv_level do
-      :III ->
+      3 ->
         output_map = update_cvs(pv_cmd_map, pv_value_map, dt, state.pv_cv_pids)
         Logger.warn("Auto")
-        send_cmds(output_map, state.pv_msg_class, state.pv_msg_time_ms, :pv_cmds)
-      :II ->
+        send_cmds(output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
+      2 ->
         Logger.warn("Semi-auto")
         output_map = update_cvs(pv_cmd_map, pv_value_map.attitude, dt, state.pv_cv_pids)
         # output_map turns into input_map for Level I calcs
-        pv_cmd_map = output_map
-        Logger.warn("new pv_cmd_map: #{inspect(pv_cmd_map)}")
+        pv_2_cmd_map = output_map
+        Logger.warn("new pv_cmd_map: #{inspect(pv_2_cmd_map)}")
+        # FOR THE SAKE OF DEBUGGING
         Logger.warn("pv_value_map: #{inspect(pv_value_map.attitude_rate)}")
-        output_map = update_cvs(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
+        pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
+        pv_1_cmd_map = Map.put(pv_2_cmd_map, :thrust, Map.get(pv_cmd_map, :thrust, 0))
+        send_cmds(pv_1_cmd_map, state.act_msg_class, state.act_msg_time_ms, {:pv_cmds, 1})
+        output_map = update_cvs(pv_1_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
         send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
-      :I ->
+      1 ->
         Logger.warn("Manual")
         pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
         output_map = update_cvs(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
         send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
-      :disarmed ->
+      0 ->
         Logger.warn("Disarmed")
     end
     {:noreply, state}
@@ -125,12 +132,10 @@ defmodule Pids.System do
   end
 
   defp send_cmds(output_map, act_msg_class, act_msg_time_ms, cmd_type) do
-    Enum.each(output_map, fn {control_variable_name, output} ->
-      # pv_pids = Map.get(act_pv_pids, control_variable_name)
-      # Logger.debug("Update acts: #{inspect(control_variable_name)}")
-      # output = calculate_combined_output(control_variable_name, pv_pids)
-      # cmd_type is either :pv_cmds or :actuator_cmds
-      MessageSorter.Sorter.add_message({cmd_type, control_variable_name}, act_msg_class, act_msg_time_ms, output)
-    end)
+    MessageSorter.Sorter.add_message(cmd_type, act_msg_class, act_msg_time_ms, output_map)
+    # Enum.each(output_map, fn {control_variable_name, output} ->
+    #   # cmd_type is either :pv_cmds or :actuator_cmds
+    #   MessageSorter.Sorter.add_message({cmd_type, control_variable_name}, act_msg_class, act_msg_time_ms, output)
+    # end)
   end
 end

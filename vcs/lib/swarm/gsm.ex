@@ -18,11 +18,11 @@ defmodule Swarm.Gsm do
   end
 
   def init(config) do
-    state = :initializing
+    state = -1#:initializing
     modules_to_montor = Map.get(config, :modules_to_monitor, [])
     module_health =
       Enum.reduce(modules_to_montor, %{}, fn (module, acc) ->
-        Map.put(acc, module, :initializing)
+        Map.put(acc, module, -1) #:initializing
       end)
     data = %{
       state_loop_interval_ms: Map.get(config, :state_loop_interval_ms, @default_state_loop_interval_ms),

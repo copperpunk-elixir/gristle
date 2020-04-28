@@ -42,7 +42,7 @@ defmodule Pids.LevelIITest do
     pv_value_map = %{attitude: %{roll: 0.08, pitch: 1.0, yaw: -0.8}, attitude_rate: %{rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}}
     roll_corr= pv_cmd_map.roll - pv_value_map.attitude.roll
     # Level II correction
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, :II}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, :II}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 2}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, 2}, self())
     Process.sleep(20)
     exp_roll_rollrate_output = (roll_corr*roll_pid.rollrate.kp)*Map.get(roll_pid.rollrate, :weight,1)
     # Rollrate
@@ -50,7 +50,6 @@ defmodule Pids.LevelIITest do
       exp_roll_rollrate_output + roll_pid.rollrate.output_neutral
       |> Common.Utils.Math.constrain(roll_pid.rollrate.output_min, roll_pid.rollrate.output_max)
     pv_cmd_map = Map.put(pv_cmd_map, :rollrate, Pids.Pid.get_output(:roll, :rollrate))
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
     IO.puts("rollrate output: #{pv_cmd_map.rollrate}")
     assert_in_delta(pv_cmd_map.rollrate, exp_rollrate_output, max_rate_delta)
     # Level I correction

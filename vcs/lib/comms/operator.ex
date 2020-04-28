@@ -120,7 +120,7 @@ defmodule Comms.Operator do
   defp send_msg_to_group_members(message, group_members, sender) do
     Enum.each(group_members, fn dest ->
       if dest != sender do
-        Logger.debug("Send #{inspect(message)} to #{inspect(dest)}")
+        # Logger.debug("Send #{inspect(message)} to #{inspect(dest)}")
         GenServer.cast(dest, message)
       end
     end)

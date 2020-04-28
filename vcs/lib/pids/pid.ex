@@ -34,12 +34,12 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def handle_call({:update, process_var_cmd, process_var_value, _dt}, _from, state) do
-    Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_cmd}/#{process_var_value}")
+    # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_cmd}/#{process_var_value}")
     correction = process_var_cmd - process_var_value
     cmd_p = state.kp*correction
     delta_output = cmd_p
     feed_forward = state.kf*process_var_cmd
-    Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
+    # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output =
       case state.rate_or_position do
         :rate -> state.output_neutral + feed_forward + delta_output
@@ -47,11 +47,11 @@ defmodule Pids.Pid do
           # Don't want FF to accumulate
           state.output + (feed_forward - state.feed_forward_prev) + delta_output
       end
-    Logger.debug("initial: #{state.process_variable}/#{state.control_variable}: #{state.output_neutral}")
-    Logger.debug("pre: #{state.process_variable}/#{state.control_variable}: #{output}")
+    # Logger.debug("initial: #{state.process_variable}/#{state.control_variable}: #{state.output_neutral}")
+    # Logger.debug("pre: #{state.process_variable}/#{state.control_variable}: #{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-    Logger.debug("pid #{state.process_variable}/#{state.control_variable}: #{output}")
-    Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
+    # Logger.debug("pid #{state.process_variable}/#{state.control_variable}: #{output}")
+    # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
     {:reply,output, %{state | output: output, feed_forward_prev: feed_forward}}
   end
 

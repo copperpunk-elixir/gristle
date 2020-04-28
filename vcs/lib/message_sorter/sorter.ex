@@ -21,7 +21,7 @@ defmodule MessageSorter.Sorter do
       end
     {:ok, %{
         messages: [],
-        last_value: nil,
+        last_value: Map.get(config, :initial_value, nil),
         default_message_behavior: default_message_behavior,
         default_value: default_value
      }}
@@ -29,7 +29,7 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:add_message, classification, expiration_mono_ms, value}, state) do
-    Logger.debug("add_message: #{inspect(self())}")
+    # Logger.debug("add_message: #{inspect(self())}")
     # Check if message has a valid classification
     messages =
     if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
