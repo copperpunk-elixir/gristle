@@ -75,8 +75,8 @@ defmodule System.TotalSystemTest do
     elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
     rudder_neutral = config.pid_config.pids.yawrate.rudder.output_neutral
     throttle_neutral = config.pid_config.pids.thrust.throttle.output_neutral
-    actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
-    assert actuator_cmds.aileron == aileron_neutral
+    actuator_cmds
+    assert MessageSorter.Sorter.get_value({:actuator_cmds, :aileron}) == aileron_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :elevator}) == elevator_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :rudder}) == rudder_neutral
     assert MessageSorter.Sorter.get_value({:actuator_cmds, :throttle}) == throttle_neutral
