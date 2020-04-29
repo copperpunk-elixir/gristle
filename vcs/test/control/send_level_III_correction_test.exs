@@ -64,11 +64,9 @@ defmodule Control.SendLevelIIICorrectionTest do
 
     # Now check PVII commands. Assert that they are all the correct signs
     # Depending on the conditions and commands given
-    pv_1_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 1})
     pv_2_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 2})
-    IO.puts("pv_1_cmds: #{inspect(pv_1_cmds)}")
     IO.puts("pv_2_cmds: #{inspect(pv_2_cmds)}")
-    assert pv_1_cmds.thrust > 0
+    assert pv_2_cmds.thrust > 0
     assert pv_2_cmds.roll < 0
     assert pv_2_cmds.pitch < 0
     assert pv_2_cmds.yaw < 0
@@ -78,9 +76,8 @@ defmodule Control.SendLevelIIICorrectionTest do
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :pitch}) < 0
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :thrust}) > 0
     Process.sleep(msg_time_ms)
-    pv_1_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 1})
     pv_2_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 2})
-    assert pv_1_cmds.thrust == 0
+    assert pv_2_cmds.thrust == 0
     assert pv_2_cmds.roll == 0
     assert pv_2_cmds.pitch == 0
     assert pv_2_cmds.yaw == 0

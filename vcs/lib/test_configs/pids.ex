@@ -19,7 +19,7 @@ defmodule TestConfigs.Pids do
       rollrate: %{aileron: Map.merge(%{kp: 0.8}, constraints.aileron)},
       pitchrate: %{elevator: Map.merge(%{kp: 0.9}, constraints.elevator)},
       yawrate: %{rudder: Map.merge(%{kp: 0.5}, constraints.rudder)},
-      thrust: %{throttle: Map.merge(%{kp: 0.1}, constraints.throttle)},
+      thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
       roll: %{rollrate: Map.merge(%{kp: 0.075}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 0.2}, constraints.pitchrate)},
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
@@ -30,26 +30,26 @@ defmodule TestConfigs.Pids do
       altitude: %{thrust: Map.merge(%{kp: 0.05, weight: 0.1}, constraints.thrust),
                   pitch: Map.merge(%{kp: 1.0, weight: 0.9}, constraints.pitch)},
     }
-    rate_or_position = %{
-        aileron: :rate,
-        elevator: :rate,
-        rudder: :rate,
-        throttle: :position,
-        rollrate: :rate,
-        pitchrate: :rate,
-        yawrate: :rate,
-        thrust: :position,
-        roll: :rate,
-        pitch: :rate,
-        yaw: :rate,
-        speed: :rate
-    }
+    # rate_or_position = %{
+    #     aileron: :rate,
+    #     elevator: :rate,
+    #     rudder: :rate,
+    #     throttle: :position,
+    #     rollrate: :rate,
+    #     pitchrate: :rate,
+    #     yawrate: :rate,
+    #     thrust: :position,
+    #     roll: :rate,
+    #     pitch: :rate,
+    #     yaw: :rate,
+    #     speed: :rate
+    # }
 
     classification = [1,2]
     time_validity_ms = 200
     %{
       pids: pids,
-      rate_or_position: rate_or_position,
+      # rate_or_position: rate_or_position,
       actuator_cmds_msg_classification: classification,
       actuator_cmds_msg_time_validity_ms: time_validity_ms,
       pv_cmds_msg_classification: classification,

@@ -113,7 +113,7 @@ defmodule Control.Controller do
     # For every PV, get the corresponding command
     control_state = get_control_state()
     # pv_cmds_list = apply(state.vehicle_module, :get_pv_cmds_list, [state.control_state])
-    pv_cmds = update_all_pv_cmds()
+    pv_cmds = update_all_pv_cmds(control_state)
     Logger.warn("pv_cmds: #{inspect(pv_cmds)}")
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
@@ -132,8 +132,8 @@ defmodule Control.Controller do
     Map.get(cmds, pv_name, nil)
   end
 
-  def update_all_pv_cmds() do
-    Enum.reduce(1..3,%{}, fn (level, acc) ->
+  def update_all_pv_cmds(control_state) do
+    Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
       Map.merge(acc, MessageSorter.Sorter.get_value({:pv_cmds, level}))
     end)
     # case control_state do

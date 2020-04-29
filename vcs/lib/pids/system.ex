@@ -21,7 +21,7 @@ defmodule Pids.System do
   def init(config) do
     {:ok, %{
         pids: config.pids,
-        rate_or_position: config.rate_or_position,
+        # rate_or_position: config.rate_or_position,
         pv_cv_pids: %{},
         cv_pv_pids: %{},
         act_msg_class: config.actuator_cmds_msg_classification,
@@ -35,9 +35,9 @@ defmodule Pids.System do
   def handle_cast(:start_pids, state) do
     Enum.each(state.pids, fn {process_variable, control_variables} ->
       Enum.each(control_variables, fn {control_variable, pid_config} ->
-        rate_or_position = Map.fetch!(state.rate_or_position, control_variable)
+        # rate_or_position = Map.fetch!(state.rate_or_position, control_variable)
         pid_config = Map.put(pid_config, :name, {process_variable, control_variable})
-        |> Map.put(:rate_or_position, rate_or_position)
+        # |> Map.put(:rate_or_position, rate_or_position)
         Pids.Pid.start_link(pid_config)
       end)
     end)
@@ -100,13 +100,14 @@ defmodule Pids.System do
         Logger.warn("pv_value_map: #{inspect(pv_value_map.attitude_rate)}")
         pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
         pv_1_cmd_map = Map.put(pv_2_cmd_map, :thrust, Map.get(pv_cmd_map, :thrust, 0))
-        send_cmds(pv_1_cmd_map, state.act_msg_class, state.act_msg_time_ms, {:pv_cmds, 1})
+        # send_cmds(pv_1_cmd_map, state.act_msg_class, state.act_msg_time_ms, {:pv_cmds, 1})
         output_map = update_cvs(pv_1_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
         send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       1 ->
         Logger.warn("Manual")
         pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
         output_map = update_cvs(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_cv_pids)
+        Logger.debug("output_map: #{inspect(output_map)}")
         send_cmds(output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       0 ->
         Logger.warn("Disarmed")
@@ -120,12 +121,13 @@ defmodule Pids.System do
       # Rather pass the pv_value as the cmd
       Logger.debug("update cvs: cmds/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
       process_var_cmd = Map.get(pv_cmd_map, process_var_name, process_var_value)
-      Logger.warn("pv_cmd: #{process_var_name}/#{process_var_cmd}")
+      # Logger.warn("pv_cmd: #{process_var_name}/#{process_var_cmd}")
       pv_cvs = Map.get(pv_cv_pids, process_var_name)
       Enum.reduce(pv_cvs, control_var_list, fn ({control_var_name, weight}, acc) ->
-        Logger.debug("pv/cv/cmd/value: #{process_var_name}/#{control_var_name}/#{process_var_cmd}/#{process_var_value}")
+        # Logger.debug("pv/cv/cmd/value: #{process_var_name}/#{control_var_name}/#{process_var_cmd}/#{process_var_value}")
         output = Pids.Pid.update_pid(process_var_name, control_var_name, process_var_cmd, process_var_value, dt)
         total_output = output*weight + Map.get(acc, control_var_name, 0)
+        # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
         Map.put(acc, control_var_name, total_output)
       end)
     end)

@@ -17,7 +17,7 @@ defmodule Pids.Pid do
     {:ok, %{
         process_variable: process_variable,
         control_variable: control_variable,
-        rate_or_position: config.rate_or_position,
+        # rate_or_position: config.rate_or_position,
         # one_or_two_sided: config.one_or_two_sided,
         kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
@@ -26,6 +26,7 @@ defmodule Pids.Pid do
         output_min: config.output_min,
         output_max: config.output_max,
         output_neutral: config.output_neutral,
+        pv_integrator: 0,
         pv_correction_prev: 0,
         output: config.output_neutral,#get_initial_output(config.one_or_two_sided, config.output_min, config.output_neutral),
         feed_forward_prev: 0
@@ -33,26 +34,30 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
-  def handle_call({:update, process_var_cmd, process_var_value, _dt}, _from, state) do
+  def handle_call({:update, process_var_cmd, process_var_value, dt}, _from, state) do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{process_var_cmd}/#{process_var_value}")
     correction = process_var_cmd - process_var_value
+    pv_integrator = state.pv_integrator + correction*dt
     cmd_p = state.kp*correction
-    delta_output = cmd_p
+    cmd_i = state.ki*pv_integrator
+    delta_output = cmd_p + cmd_i
     feed_forward = state.kf*process_var_cmd
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
-    output =
-      case state.rate_or_position do
-        :rate -> state.output_neutral + feed_forward + delta_output
-        :position ->
+    output = state.output_neutral + feed_forward + delta_output
+    # Logger.debug("corr/dt/p/i/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{output}")
+      # case state.rate_or_position do
+        # :rate -> state.output_neutral + feed_forward + delta_output
+        # :position ->
           # Don't want FF to accumulate
-          state.output + (feed_forward - state.feed_forward_prev) + delta_output
-      end
+          # state.output + (feed_forward - state.feed_forward_prev) + delta_output
+      # end
     # Logger.debug("initial: #{state.process_variable}/#{state.control_variable}: #{state.output_neutral}")
     # Logger.debug("pre: #{state.process_variable}/#{state.control_variable}: #{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
+    pv_correction_prev = correction
     # Logger.debug("pid #{state.process_variable}/#{state.control_variable}: #{output}")
     # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
-    {:reply,output, %{state | output: output, feed_forward_prev: feed_forward}}
+    {:reply,output, %{state | output: output, feed_forward_prev: feed_forward, pv_correction_prev: pv_correction_prev, pv_integrator: pv_integrator}}
   end
 
   @impl GenServer

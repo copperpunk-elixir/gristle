@@ -126,7 +126,7 @@ defmodule Estimation.Estimator do
   def handle_info(:imu_loop, state) do
     Comms.Operator.send_local_msg_to_group(
       __MODULE__,
-      {{:pv_values, :attitude_attitude_rate}, %{attitude: state.attitude, attitude_rate: state.attitude_rate}, state.imu_loop_interval_ms},
+      {{:pv_values, :attitude_attitude_rate}, %{attitude: state.attitude, attitude_rate: state.attitude_rate}, state.imu_loop_interval_ms/1000},
        {:pv_values, :attitude_attitude_rate},
        self())
     {:noreply, state}
@@ -136,7 +136,7 @@ defmodule Estimation.Estimator do
   def handle_info(:ins_loop, state) do
     Comms.Operator.send_local_msg_to_group(
       __MODULE__,
-      {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms},
+      {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms/1000},
       {:pv_values, :position_velocity},
       self())
 

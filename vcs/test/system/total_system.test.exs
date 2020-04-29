@@ -91,12 +91,10 @@ defmodule System.TotalSystemTest do
     assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
     assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
     # Send pv_cmds while the controller is still in initializing
-    pv_cmd = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025}
+    pv_cmd = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025, thrust: 0.6}
     msg_class = [2,5]
     msg_time_ms = 200
-    MessageSorter.Sorter.add_message({:pv_cmds, :rollrate}, msg_class, msg_time_ms, pv_cmd.rollrate)
-    MessageSorter.Sorter.add_message({:pv_cmds, :pitchrate}, msg_class, msg_time_ms, pv_cmd.pitchrate)
-    MessageSorter.Sorter.add_message({:pv_cmds, :yawrate}, msg_class, msg_time_ms, pv_cmd.yawrate)
+    MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd)
     Process.sleep(200)
     assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
     assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
@@ -107,37 +105,69 @@ defmodule System.TotalSystemTest do
     Process.sleep(200)
     assert Control.Controller.get_control_state() == 0
     assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
-    # # Send new cmds and pv_values
-    # Swarm.Gsm.add_desired_control_state(:manual, [1], 100)
-    # pv_cmd = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025}
-    # MessageSorter.Sorter.add_message({:pv_cmds, :rollrate}, msg_class, msg_time_ms, pv_cmd.rollrate)
-    # MessageSorter.Sorter.add_message({:pv_cmds, :pitchrate}, msg_class, msg_time_ms, pv_cmd.pitchrate)
-    # MessageSorter.Sorter.add_message({:pv_cmds, :yawrate}, msg_class, msg_time_ms, pv_cmd.yawrate)
-    # new_att_attrate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
-    # Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
-    # Process.sleep(400)
-    # # Switch to :manual mode
-    # # The pv_cmds should have expired, so the actuators should not have moved
-    # assert Control.Controller.get_control_state() == :manual
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
+    # Send new cmds and pv_values
+    # Switch to :manual mode
+    Swarm.Gsm.add_desired_control_state(1, [1], 100)
+    Process.sleep(100)
+    assert Control.Controller.get_control_state() == 1
+    pv_cmd = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025, thrust: 0.6}
+    MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd)
+    new_att_attrate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
+    Process.sleep(400)
+    # The pv_cmds should have expired, so the actuators should not have moved
+    assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
     # # Add pv_cmd again
-    # MessageSorter.Sorter.add_message({:pv_cmds, :rollrate}, msg_class, msg_time_ms, pv_cmd.rollrate)
-    # MessageSorter.Sorter.add_message({:pv_cmds, :pitchrate}, msg_class, msg_time_ms, pv_cmd.pitchrate)
-    # MessageSorter.Sorter.add_message({:pv_cmds, :yawrate}, msg_class, msg_time_ms, pv_cmd.yawrate)
-    # Process.sleep(100)
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) > aileron_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) < elevator_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) > rudder_neutral
-    # assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
-    # # Switch to :semi_auto
-    # pv_cmd = %{roll: -0.3, pitch: 0.01, yawrate: 0, heading: 0.2, speed: 4, altitude: 1}
-
+    MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd)
+    Process.sleep(120)
+    aileron_out = Actuation.SwInterface.get_output_for_actuator_name(:aileron)
+    elevator_out = Actuation.SwInterface.get_output_for_actuator_name(:elevator)
+    rudder_out = Actuation.SwInterface.get_output_for_actuator_name(:rudder)
+    throttle_out = Actuation.SwInterface.get_output_for_actuator_name(:throttle)
+    assert aileron_out > aileron_neutral
+    assert elevator_out < elevator_neutral
+    assert rudder_out > rudder_neutral
+    assert throttle_out > throttle_neutral
+    Process.sleep(400)
+    # The pv_cmds should have expired, so the actuators should not have moved
+    assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
+    # Switch to level 2
+    pv_cmd_3 = %{heading: 0.2, speed: 4, altitude: 1}
+    MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_cmd_3)
+    pv_cmd_2 = %{roll: -0.3, pitch: 0.01, yaw: 0.1, thrust: 0}
+    MessageSorter.Sorter.add_message({:pv_cmds, 2}, msg_class, msg_time_ms, pv_cmd_2)
+    pv_cmd_1 = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025, thrust: 0.3}
+    MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd_1)
+    new_att_attrate = %{attitude: %{roll: -0.1, pitch: 0.2, yaw: 0.05}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
+    Swarm.Gsm.add_desired_control_state(2, [1], 100)
+    Process.sleep(80)
+    assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) < aileron_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) < elevator_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) > rudder_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
+    max_cmd_delta = 0.01
+    assert abs(Actuation.SwInterface.get_output_for_actuator_name(:aileron) - aileron_out) > max_cmd_delta
+    assert abs(Actuation.SwInterface.get_output_for_actuator_name(:elevator) - elevator_out) > max_cmd_delta
+    assert abs(Actuation.SwInterface.get_output_for_actuator_name(:rudder) - rudder_out) > max_cmd_delta
+    assert abs(Actuation.SwInterface.get_output_for_actuator_name(:throttle) - throttle_out) > max_cmd_delta
+    # Switch to level 1
+    Swarm.Gsm.add_desired_control_state(1, [1], 100)
+    MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd_1)
+    Process.sleep(150)
+    assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) > aileron_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) < elevator_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) > rudder_neutral
+    assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) > throttle_neutral
   end
 
 end
