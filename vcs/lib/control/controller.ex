@@ -40,7 +40,8 @@ defmodule Control.Controller do
     control_state_config = %{
       name: @control_state_sorter,
       default_message_behavior: :last,
-      initial_value: -1
+      initial_value: -1,
+      value_type: :number
     }
     MessageSorter.System.start_sorter(control_state_config)
     join_process_variable_groups()

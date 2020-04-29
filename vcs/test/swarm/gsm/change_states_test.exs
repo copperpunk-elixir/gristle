@@ -17,7 +17,7 @@ defmodule Swarm.Gsm.ChangeStatesTest do
     }
     Swarm.System.start_link(config)
     Process.sleep(300)
-    new_state = :semi_auto
+    new_state = 2
     Swarm.Gsm.add_desired_control_state(new_state, [0], 300)
     Process.sleep(250)
     assert Swarm.Gsm.get_state() == new_state

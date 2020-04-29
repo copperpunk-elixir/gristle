@@ -1,6 +1,6 @@
 defmodule Actuation.HwInterfacePololuTest do
   use ExUnit.Case
-
+  require Logger
   setup do
     {:ok, [
         config: %{
@@ -21,10 +21,9 @@ defmodule Actuation.HwInterfacePololuTest do
   end
 
   test "Start HWInterface. Connect to Pololu Maestro. Change actuator values", context do
-    IO.puts("Connect servo to channel 0 if real actuation is desired")
+    Logger.info("Connect servo to channel 0 if real actuation is desired")
     config = context[:config]
-    {:ok, process_id} = Actuation.HwInterface.start_link(config.hw_interface)
-    Common.Utils.wait_for_genserver_start(process_id)
+    Actuation.HwInterface.start_link(config.hw_interface)
     Process.sleep(100)
     aileron = config.aileron_actuator
     # Set output to min_value

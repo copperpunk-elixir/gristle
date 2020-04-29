@@ -38,7 +38,8 @@ defmodule Swarm.Gsm do
     MessageSorter.System.start_link()
     desired_sorter_config = %{
       name: @desired_control_state_sorter,
-      default_message_behavior: :last
+      default_message_behavior: :last,
+      value_type: :number
     }
     MessageSorter.System.start_sorter(desired_sorter_config)
     :keep_state_and_data

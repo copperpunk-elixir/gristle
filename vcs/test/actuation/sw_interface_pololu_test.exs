@@ -1,6 +1,6 @@
 defmodule Actuation.SwInterfacePololuTest do
   use ExUnit.Case
-
+  require Logger
   setup do
     Comms.ProcessRegistry.start_link()
     {:ok, []}
@@ -17,8 +17,8 @@ defmodule Actuation.SwInterfacePololuTest do
       hw_interface: hw_interface_config,
       sw_interface: sw_interface_config
     }
-    IO.puts("Connect servo to channel 0 if real actuation is desired")
-    {:ok, process_id} = Actuation.System.start_link(config)
+    Logger.info("Connect servo to channel 0 if real actuation is desired")
+    Actuation.System.start_link(config)
     Process.sleep(100)
     # Test actuator values
     actuator = Map.get(sw_interface_config.actuators, actuator_name)
@@ -27,10 +27,10 @@ defmodule Actuation.SwInterfacePololuTest do
     failsafe_output = 0.5*(actuator.min_pw_ms + actuator.max_pw_ms)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == failsafe_output
     # Send min_cmd to Actuator
-    MessageSorter.Sorter.add_message({:actuator_cmds, :aileron}, [0], 400, actuator.cmd_limit_min)
+    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 400, %{actuator_name => actuator.cmd_limit_min})
     Process.sleep(200)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.min_pw_ms
-    MessageSorter.Sorter.add_message({:actuator_cmds, :aileron}, [0], 1000, actuator.cmd_limit_max)
+    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 1000, %{actuator_name =>actuator.cmd_limit_max})
     Process.sleep(300)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.max_pw_ms
   end

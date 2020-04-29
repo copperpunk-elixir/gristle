@@ -10,13 +10,15 @@ defmodule Workshop.MessageQueueTest  do
       registry_function: :via_tuple,
       messages: [
         %{name: :roll,
-          default_message_behavior: :last
+          default_message_behavior: :last,
+          value_type: :number
         },
         %{name: :pitch,
           default_message_behavior: :default_value,
-          default_value: default_pitch
+          default_value: default_pitch,
+          value_type: :number
         }
-        ]
+      ]
     }
     # Start registry
     {:ok, pid} = Comms.ProcessRegistry.start_link()

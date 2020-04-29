@@ -27,17 +27,20 @@ defmodule Control.Controller.Car do
       %{
         name: {:pv_cmds, 1},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, yawrate: 0}
+        default_value: %{thrust: 0, yawrate: 0},
+        value_type: :map
       },
       %{
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
-        default_value: %{yaw: 0}
+        default_value: %{yaw: 0},
+        value_type: :map
       },
       %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
-        default_value: %{speed: 0}
+        default_value: %{speed: 0},
+        value_type: :map
       }
     ]
   end

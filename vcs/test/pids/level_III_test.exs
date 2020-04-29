@@ -10,7 +10,8 @@ defmodule Pids.LevelIIITest do
     level_I_config = %{
       name: {:pv_cmds, 2},
       default_message_behavior: :default_value,
-      default_value: %{roll: 0, yaw: 0}
+      default_value: %{roll: 0, yaw: 0},
+      value_type: :map
     }
     MessageSorter.System.start_sorter(level_I_config)
     # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})

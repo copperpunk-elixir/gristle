@@ -25,14 +25,15 @@ defmodule Control.SendLevelIICorrectionTest do
     actuator_sorter_config = %{
       name: :actuator_cmds,
       default_message_behavior: :default_value,
-      default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral}
+      default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral},
+      value_type: :map
     }
     MessageSorter.System.start_sorter(actuator_sorter_config)
     # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :aileron}, default_message_behavior: :default_value, default_value: aileron_neutral})
     # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :elevator}, default_message_behavior: :default_value, default_value: elevator_neutral})
     # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :rudder}, default_message_behavior: :default_value, default_value: rudder_neutral})
-    Logger.info("SendLevelIIICorrectionTest")
-    op_name = :levelIII
+    Logger.info("SendLevelIICorrectionTest")
+    op_name = :levelII
     Comms.Operator.start_link(%{name: op_name})
     max_cmd_delta = 0.001
     Logger.info("Start Control Loop")

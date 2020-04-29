@@ -30,17 +30,20 @@ defmodule Control.Controller.Plane do
       %{
         name: {:pv_cmds, 1},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0}
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        value_type: :map
       },
       %{
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
-        default_value: %{roll: 0, pitch: 0, yaw: 0}
+        default_value: %{roll: 0, pitch: 0, yaw: 0},
+        value_type: :map
       },
       %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
-        default_value: %{heading: 0, speed: 0, altitude: 0}
+        default_value: %{heading: 0, speed: 0, altitude: 0},
+        value_type: :map
       }
     ]
   end

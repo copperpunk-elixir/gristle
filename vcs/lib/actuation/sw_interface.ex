@@ -22,9 +22,20 @@ defmodule Actuation.SwInterface do
   @impl GenServer
   def handle_cast(:start_message_sorters, state) do
     MessageSorter.System.start_link()
-    Enum.each(state.actuators, fn {actuator_name, actuator} ->
-      MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
+    failsafe_map = Enum.reduce(state.actuators, %{}, fn({actuator_name, actuator}, acc) ->
+      Map.put(acc, actuator_name, actuator.failsafe_cmd)
     end)
+    MessageSorter.System.start_sorter(
+      %{
+        name: :actuator_cmds,
+        default_message_behavior: :default_value,
+        default_value: failsafe_map,
+        value_type: :map
+      }
+    )
+    # Enum.each(state.actuators, fn {actuator_name, actuator} ->
+    #   MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
+    # end)
     {:noreply, state}
   end
 
@@ -46,16 +57,20 @@ defmodule Actuation.SwInterface do
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
     # actuator_interface_output_process_name = state.config.actuator_interface_output.process_name
+    actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
+    Logger.warn("actuator output map: #{inspect(actuator_output_map)}")
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
-      output = get_output_for_actuator_name(actuator_name)
-      # Logger.debug("move_actuator #{actuator_name} to #{output}")
+      output = Map.fetch!(actuator_output_map, actuator_name)
+      # output = get_output_for_actuator_name(actuator_name)
+      Logger.debug("move_actuator #{actuator_name} to #{output}")
       Actuation.HwInterface.set_output_for_actuator(actuator, output)
     end)
     {:noreply, state}
   end
 
   def get_output_for_actuator_name(actuator_name) do
-    MessageSorter.Sorter.get_value({:actuator_cmds, actuator_name})
+    actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
+    Map.get(actuator_output_map, actuator_name, nil)
   end
 
   defp start_message_sorters() do

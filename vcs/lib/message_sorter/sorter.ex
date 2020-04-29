@@ -23,7 +23,8 @@ defmodule MessageSorter.Sorter do
         messages: [],
         last_value: Map.get(config, :initial_value, nil),
         default_message_behavior: default_message_behavior,
-        default_value: default_value
+        default_value: default_value,
+        value_type: config.value_type
      }}
   end
 
@@ -34,7 +35,8 @@ defmodule MessageSorter.Sorter do
     messages =
     if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
       # Remove any messages that have the same classification (there should be at most 1)
-      if value == nil do
+      if value == nil || !is_valid_type?(value, state.value_type) do
+        Logger.error("Sorter add message rejected")
         state.messages
       else
         unique_msgs = Enum.reject(state.messages, fn msg ->
@@ -154,5 +156,15 @@ defmodule MessageSorter.Sorter do
 
   def via_tuple(name) do
     Comms.ProcessRegistry.via_tuple(__MODULE__, name)
+  end
+
+  defp is_valid_type?(value, desired_type) do
+    # TODO: Implement this function
+    case desired_type do
+      :number -> is_number(value)
+      :map -> is_map(value)
+      :atom -> is_atom(value)
+      _other -> false
+    end
   end
 end

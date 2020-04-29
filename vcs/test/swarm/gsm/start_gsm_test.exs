@@ -10,7 +10,7 @@ defmodule Swarm.Gsm.StartGsmTest do
   test "Start GSM" do
     IO.puts("SwarmGsm: Start Gsm")
     Swarm.System.start_link()
-    assert Swarm.Gsm.get_state() == -1#:initializing
+    assert Swarm.Gsm.get_state() == -1
   end
 
 end
