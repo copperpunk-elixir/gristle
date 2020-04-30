@@ -19,4 +19,10 @@ defmodule Common.Utils.Math do
   def deg2rad(x) do
     x*:math.pi()/180
   end
+
+  def integer_power(x, pow) do
+    Enum.reduce(1..pow, 1, fn (_iter, acc) ->
+      x*acc
+    end)
+  end
 end

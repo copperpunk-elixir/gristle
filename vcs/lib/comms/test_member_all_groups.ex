@@ -25,9 +25,9 @@ defmodule Comms.TestMemberAllGroups do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_attitude_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, :I}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, :II}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, :III}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
     {:noreply, state}
   end
 
@@ -60,9 +60,9 @@ defmodule Comms.TestMemberAllGroups do
     pv_cmds = Map.merge(state.pv_cmds, pv_cmd_map)
     pv_value_type =
       case level do
-        :III -> :position_velocity
-        :II -> :position_velocity
-        :I -> :attitude_attitude_rate
+        3 -> :position_velocity
+        2 -> :position_velocity
+        1 -> :attitude_attitude_rate
       end
     pv_values = get_pvs_from_map(pv_value_map, pv_value_type, state.pv_values_pid_system)
     {:noreply, %{state | pv_cmds: pv_cmds, pv_values_pid_system: pv_values}}

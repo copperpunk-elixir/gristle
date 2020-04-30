@@ -36,10 +36,6 @@ defmodule Pids.LevelIIITest do
     # Setup parameters
     pids = config.pid_config.pids
     heading_pid = pids.heading
-    roll_pid = pids.roll
-    yaw_pid = pids.yaw
-    rollrate_pid = pids.rollrate
-    yawrate_pid = pids.yawrate
 
     # ----- BEGIN HEADING-to-ROLL/YAW RUDDER TEST -----
     # Update heading, which affects both roll and yaw 

@@ -1,11 +1,13 @@
 defmodule Estimation.Estimator do
   use GenServer
   require Logger
+  @imu_watchdog_trigger 250
+  @ins_watchdog_trigger 2000
 
   def start_link(config) do
     Logger.debug("Start Estimation.Estimator")
     {:ok, process_id} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
-    begin()
+    GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
   end
 
@@ -21,16 +23,15 @@ defmodule Estimation.Estimator do
         telemetry_loop_timer: nil,
         telemetry_loop_interval_ms: config.telemetry_loop_interval_ms,
         estimator_health: :unknown,
-        watchdog_elapsed: %{imu: 0, ins: 0},
+        imu_watchdog_elapsed: 0,
+        ins_watchdog_elapsed: 0,
+        imu_watchdog_trigger: @imu_watchdog_trigger,
+        ins_watchdog_trigger: @ins_watchdog_trigger,
         attitude_rate: %{},
         attitude: %{},
         velocity: %{},
         position: %{}
      }}
-  end
-
-  def begin() do
-    GenServer.cast(__MODULE__, :begin)
   end
 
   @impl GenServer
@@ -39,68 +40,35 @@ defmodule Estimation.Estimator do
     MessageSorter.System.start_link()
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_attitude_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
-    GenServer.cast(self(), :start_imu_loop)
-    GenServer.cast(self(), :start_ins_loop)
-    GenServer.cast(self(), :start_telemetry_loop)
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:start_imu_loop, state) do
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    state = %{state | imu_loop_timer: imu_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_imu_loop, state) do
-    imu_loop_timer = Common.Utils.stop_loop(state.imu_loop_timer)
-    state = %{state | imu_loop_timer: imu_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:start_ins_loop, state) do
     ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    state = %{state | ins_loop_timer: ins_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_ins_loop, state) do
-    ins_loop_timer = Common.Utils.stop_loop(state.ins_loop_timer)
-    state = %{state | ins_loop_timer: ins_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:start_telemetry_loop, state) do
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
-    state = %{state | telemetry_loop_timer: telemetry_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_telemetry_loop, state) do
-    telemetry_loop_timer = Common.Utils.stop_loop(state.telemetry_loop_timer)
-    state = %{state | telemetry_loop_timer: telemetry_loop_timer}
+    imu_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
+    ins_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
+    state =
+      %{state |
+        imu_loop_timer: imu_loop_timer,
+        ins_loop_timer: ins_loop_timer,
+        telemetry_loop_timer: telemetry_loop_timer,
+        imu_watchdog_elapsed: imu_watchdog_elapsed,
+        ins_watchdog_elapsed: ins_watchdog_elapsed
+       }
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :attitude_attitude_rate}, pv_value_map}, state) do
     Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
-
     attitude = Map.get(pv_value_map, :attitude)
     attitude_rate = Map.get(pv_value_map, :attitude_rate)
     {attitude, attitude_rate, new_watchdog_elapsed} =
     if (attitude == nil) or (attitude_rate==nil) do
-      {state.attitude, state.attitude_rate, 0}
+      {state.attitude, state.attitude_rate, state.imu_watchdog_elapsed}
     else
-      new_watchdog_time = max(state.watchdog_elapsed.ins - state.imu_loop_interval_ms, 0)
+      new_watchdog_time = max(state.imu_watchdog_elapsed - 1.1*state.imu_loop_interval_ms, 0)
       {attitude, attitude_rate, new_watchdog_time}
     end
-    state = %{state | attitude: attitude, attitude_rate: attitude_rate, watchdog_elapsed: Map.put(state.watchdog_elapsed, :imu, new_watchdog_elapsed)}
+    state = %{state | attitude: attitude, attitude_rate: attitude_rate, imu_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 
@@ -108,17 +76,16 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast({{:pv_calculated, :position_velocity}, pv_value_map}, state) do
     Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
-
     position = Map.get(pv_value_map, :position)
     velocity = Map.get(pv_value_map, :velocity)
     {position, velocity, new_watchdog_elapsed} =
     if (position == nil) or (velocity==nil) do
-      {state.position, state.velocity, 0}
+      {state.position, state.velocity, state.ins_watchdog_elapsed}
     else
-      new_watchdog_time = max(state.watchdog_elapsed.ins - state.ins_loop_interval_ms, 0)
+      new_watchdog_time = max(state.ins_watchdog_elapsed - 1.1*state.ins_loop_interval_ms, 0)
       {position, velocity, new_watchdog_time}
     end
-    state = %{state | position: position, velocity: velocity, watchdog_elapsed: Map.put(state.watchdog_elapsed, :imu, new_watchdog_elapsed)}
+    state = %{state | position: position, velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 
@@ -128,7 +95,7 @@ defmodule Estimation.Estimator do
       __MODULE__,
       {{:pv_values, :attitude_attitude_rate}, %{attitude: state.attitude, attitude_rate: state.attitude_rate}, state.imu_loop_interval_ms/1000},
        {:pv_values, :attitude_attitude_rate},
-       self())
+      self())
     {:noreply, state}
   end
 
@@ -139,7 +106,6 @@ defmodule Estimation.Estimator do
       {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms/1000},
       {:pv_values, :position_velocity},
       self())
-
     {:noreply, state}
   end
 

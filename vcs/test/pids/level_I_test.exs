@@ -1,6 +1,5 @@
 defmodule Pids.LevelITest do
   use ExUnit.Case
-  alias Common.Constants, as: CC
 
   setup do
     Comms.ProcessRegistry.start_link()
@@ -22,8 +21,7 @@ defmodule Pids.LevelITest do
     max_delta = 0.001
     op_name = :start_pid_test
     Comms.Operator.start_link(%{name: op_name})
-    config = %{}
-    config = Map.merge(context[:config], config)
+    config =context[:config]
     Pids.System.start_link(config)
     Process.sleep(300)
     pv_cmd_map = %{rollrate: 0.0556}

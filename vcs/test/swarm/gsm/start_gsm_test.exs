@@ -3,6 +3,7 @@ defmodule Swarm.Gsm.StartGsmTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
+    Process.sleep(50)
     MessageSorter.System.start_link()
     {:ok, []}
   end

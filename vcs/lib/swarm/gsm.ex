@@ -11,18 +11,16 @@ defmodule Swarm.Gsm do
   def start_link(config \\ %{}) do
     Logger.debug("Start GSM")
     {:ok, pid} = Common.Utils.start_link_redudant(GenStateMachine, __MODULE__, config)
-    # {:ok, pid} = GenStateMachine.start_link(__MODULE__, config, name: __MODULE__)
-    begin()
-    start_state_loop()
+    GenServer.cast(pid, :begin)
     {:ok, pid}
   end
 
   def init(config) do
-    state = -1#:initializing
+    state = -1
     modules_to_montor = Map.get(config, :modules_to_monitor, [])
     module_health =
       Enum.reduce(modules_to_montor, %{}, fn (module, acc) ->
-        Map.put(acc, module, -1) #:initializing
+        Map.put(acc, module, -1) 
       end)
     data = %{
       state_loop_interval_ms: Map.get(config, :state_loop_interval_ms, @default_state_loop_interval_ms),
@@ -32,7 +30,7 @@ defmodule Swarm.Gsm do
     {:ok, state, data}
   end
 
-  def handle_event(:cast, :begin, _state, _data) do
+  def handle_event(:cast, :begin, _state, data) do
     Comms.Operator.start_link(%{name: __MODULE__})
     Comms.Operator.join_group(__MODULE__, @desired_control_state_sorter, self())
     MessageSorter.System.start_link()
@@ -42,10 +40,6 @@ defmodule Swarm.Gsm do
       value_type: :number
     }
     MessageSorter.System.start_sorter(desired_sorter_config)
-    :keep_state_and_data
-  end
-
-  def handle_event(:cast, :start_state_loop, _state, data) do
     state_loop_timer = Common.Utils.start_loop(self(), data.state_loop_interval_ms, :state_loop)
     {:keep_state, %{data | state_loop_timer: state_loop_timer}}
   end
@@ -93,17 +87,4 @@ defmodule Swarm.Gsm do
     IO.puts("Add desired cs: #{inspect(control_state)}")
     Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_desired_control_state, control_state, classification, time_validity_ms}, @desired_control_state_sorter, nil)
   end
-
-  defp begin() do
-    GenStateMachine.cast(__MODULE__, :begin)
-  end
-
-
-  defp start_state_loop() do
-    GenStateMachine.cast(__MODULE__, :start_state_loop)
-  end
-
-  # defp stop_state_loop() do
-  #   GenStateMachine.cast(__MODULE__, :stop_state_loop)
-  # end
 end

@@ -2,17 +2,10 @@ defmodule Control.Controller do
   use GenServer
   require Logger
 
-  @control_state_sorter :control_state
-  # @pv_cmds_values_I_group {:pv_cmds_values, :I}
-  # @pv_cmds_values_II_group {:pv_cmds_values, :II}
-  # @pv_cmds_values_III_group {:pv_cmds_values, :III}
-  # @pv_cmds_values_disarmed_group {:pv_cmds_values, :disarmed}
-
   def start_link(config) do
     Logger.debug("Start Control.ControllerCar")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    begin()
-    start_control_loop()
+    GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
   end
 
@@ -35,64 +28,34 @@ defmodule Control.Controller do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
-    GenServer.cast(self(), :start_pv_cmd_sorters)
+    # Start Message Sorters 
+    apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
     # Start control state sorter
     control_state_config = %{
-      name: @control_state_sorter,
+      name: :control_state,
       default_message_behavior: :last,
       initial_value: -1,
       value_type: :number
     }
     MessageSorter.System.start_sorter(control_state_config)
     join_process_variable_groups()
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:start_pv_cmd_sorters, state) do
-    apply(state.vehicle_module, :start_message_sorters, [])
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:start_control_loop, state) do
     control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
-    state = %{state | control_loop_timer: control_loop_timer}
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_control_loop, state) do
-    control_loop_timer = Common.Utils.stop_loop(state.control_loop_timer)
-    state = %{state | control_loop_timer: control_loop_timer}
-    {:noreply, state}
+    {:noreply, %{state | control_loop_timer: control_loop_timer}}
   end
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_attitude_rate}, pv_value_map, dt}, state) do
     Logger.warn("Control rx att/attrate: #{inspect(pv_value_map)}")
     Logger.warn("cs: #{state.control_state}")
-    cond do
-      state.control_state > 1 ->
-        Logger.warn("send to 2")
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 2}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 2}, self())
-      state.control_state > 0 ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 1}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 1}, self())
-      state.control_state > -1 ->
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 1}, %{}, pv_value_map,dt},{:pv_cmds_values, 1}, self())
-      true ->
-    end
-    # case state.control_state do
-    #   :auto ->
-    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_III_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_III_group, self())
-    #   :semi_auto ->
-    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_II_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_II_group, self())
-    #   :manual ->
-    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_I_group, state.pv_cmds, pv_value_map,dt},@pv_cmds_values_I_group, self())
-    #   :disarmed ->
-    #     Comms.Operator.send_local_msg_to_group(__MODULE__, {@pv_cmds_values_disarmed_group, %{}, %{},0},@pv_cmds_values_disarmed_group, self())
-    #   _other -> nil
-    # end
+    {destination_group, pv_cmds} =
+      case state.control_state do
+        3 -> {{:pv_cmds_values, 2}, state.pv_cmds}
+        2 -> {{:pv_cmds_values, 2}, state.pv_cmds}
+        1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
+        0 -> {{:pv_cmds_values, 1}, %{}}
+        _other -> {nil, nil}
+      end
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, dt}, destination_group, self())
     {:noreply, state}
   end
 
@@ -112,54 +75,33 @@ defmodule Control.Controller do
     Logger.debug("Control loop. CS: #{state.control_state}")
     # For every PV, get the corresponding command
     control_state = get_control_state()
-    # pv_cmds_list = apply(state.vehicle_module, :get_pv_cmds_list, [state.control_state])
-    pv_cmds = update_all_pv_cmds(control_state)
+    pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)
     Logger.warn("pv_cmds: #{inspect(pv_cmds)}")
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
-  def start_control_loop() do
-    GenServer.cast(__MODULE__, :start_control_loop)
+  def get_pv_cmd(pv_name) do
+    Enum.reduce(1..3, nil, fn (level, acc) ->
+      cmds = MessageSorter.Sorter.get_value({:pv_cmds, level})
+      Map.get(cmds, pv_name, acc)
+    end)
   end
 
-  def stop_control_loop() do
-    GenServer.cast(__MODULE__, :stop_control_loop)
-  end
-
-  def get_pv_cmd(level, pv_name) do
-    cmds = MessageSorter.Sorter.get_value({:pv_cmds, level})
-    Logger.warn("cmds #{level}: #{inspect(cmds)}")
-    Map.get(cmds, pv_name, nil)
-  end
-
-  def update_all_pv_cmds(control_state) do
+  def retrieve_pv_cmds_from_1_to_control_state(control_state) do
     Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
       Map.merge(acc, MessageSorter.Sorter.get_value({:pv_cmds, level}))
     end)
-    # case control_state do
-    #   :manual -> MessageSorter.Sorter.get_value({:pv_cmds, :level_I})
-    #   :semi_auto -> MessageSorter.Sorter.get_value({:pv_cmds, :level_II})
-    #   :auto -> MessageSorter.Sorter.get_value({:pv_cmds, :level_III})
-    #   _other ->
-    # end
-    # Enum.reduce(pv_cmds_list, %{}, fn (pv_name, acc) ->
-    #   Map.put(acc, pv_name, get_pv_cmd(pv_name))
-    # end)
   end
 
   # TODO: This is only for testing without GSM in loop
   def add_control_state(control_state) do
     # This is the only process adding to the control_state_sorter, so
     # the classification and time_validity_ms aren't really important
-    MessageSorter.Sorter.add_message(@control_state_sorter, [0], 100, control_state)
+    MessageSorter.Sorter.add_message(:control_state, [0], 100, control_state)
   end
 
   def get_control_state() do
-    MessageSorter.Sorter.get_value(@control_state_sorter)
-  end
-
-  defp begin() do
-    GenServer.cast(__MODULE__, :begin)
+    MessageSorter.Sorter.get_value(:control_state)
   end
 
   defp join_process_variable_groups() do

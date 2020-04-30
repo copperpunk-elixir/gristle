@@ -60,7 +60,7 @@ defmodule Control.SendLevelIICorrectionTest do
     # MessageSorter.Sorter.add_message({:pv_cmds, :pitch}, msg_class, msg_time_ms, pv_cmd.pitch)
     # MessageSorter.Sorter.add_message({:pv_cmds, :yaw}, msg_class, msg_time_ms, pv_cmd.yaw)
     Process.sleep(50)
-    roll_cmd = Control.Controller.get_pv_cmd(2, :roll)
+    roll_cmd = Control.Controller.get_pv_cmd(:roll)
     assert_in_delta(roll_cmd, pv_cmd.roll, max_cmd_delta)
     # Send PV value
     pv_att_att_rate = %{attitude: %{roll: 0.01, pitch: 0.02, yaw: 0.03}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}

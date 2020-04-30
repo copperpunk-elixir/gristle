@@ -8,22 +8,13 @@ defmodule Control.Controller.Plane do
     %{heading: heading, speed: speed, altitude: altitude}
   end
 
-  def start_message_sorters() do
+  def start_pv_cmds_message_sorters() do
     Logger.debug("Start Plane message sorters")
     MessageSorter.System.start_link()
     Enum.each(get_process_variable_list(), fn msg_sorter_config ->
       MessageSorter.System.start_sorter(msg_sorter_config)
     end)
   end
-
-  # def get_pv_cmds_list(control_state) do
-  #   case control_state do
-  #     3 -> [:heading, :speed, :altitude]
-  #     2 -> [:roll, :pitch, :yaw]
-  #     1 -> [:thrust, :rollrate, :pitchrate, :yawrate]
-  #     _other -> []
-  #   end
-  # end
 
   def get_process_variable_list() do
     [

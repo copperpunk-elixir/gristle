@@ -5,43 +5,33 @@ defmodule Control.Controller.Car do
     %{speed: speed_corr}
   end
 
-  def start_message_sorters() do
+  def start_pv_cmds_message_sorters() do
     Logger.debug("Start Car message sorters")
     MessageSorter.System.start_link()
-    Enum.each(get_process_variable_list(), fn msg_sorter_config ->
+    Enum.each(get_process_variable_map(), fn {_level, msg_sorter_config} ->
       MessageSorter.System.start_sorter(msg_sorter_config)
     end)
   end
 
-  # def get_pv_cmds_list(control_state) do
-  #   case control_state do
-  #     3 -> [:speed]
-  #     2 -> [:yaw]
-  #     1 -> [:thrust, :yawrate]
-  #     _other -> []
-  #   end
-  # end
-
-  def get_process_variable_list() do
-    [
-      %{
+  def get_process_variable_map() do
+    %{1 => %{
         name: {:pv_cmds, 1},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, yawrate: 0},
         value_type: :map
       },
-      %{
+      2 => %{
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, yaw: 0},
         value_type: :map
       },
-      %{
+      3 => %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
         default_value: %{speed: 0, yaw: 0},
         value_type: :map
       }
-    ]
+    }
   end
 end
