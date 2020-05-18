@@ -28,10 +28,10 @@ defmodule Common.Utils.Math do
   end
 
   def fp_from_uint(x, bits) do
-    {sig_start,exp_min_index,exp_max_index, exp_subtract,significand_div, exp_and} =
+    {sig_start,exp_min_index, exp_subtract,significand_div, exp_and} =
       case bits do
-        32 -> {0x7FFFFF,23,30,127, 8388608, 0x100}
-        64 -> {0xFFFFFFFFFFFFF,52,62,1023, 0x10000000000000, 0x800}
+        32 -> {0x7FFFFF,23,127, 8388608, 0x100}
+        64 -> {0xFFFFFFFFFFFFF,52,1023, 0x10000000000000, 0x800}
       end
     # significand = Bitwise.<<<(1,exp_min_index) -1
     significand =Bitwise.&&&(sig_start,x)
@@ -62,6 +62,11 @@ defmodule Common.Utils.Math do
 
     IO.puts("value: #{value}")
 
+  end
+
+  def twos_comp_16(x) do
+    <<si::signed-integer-16>> = <<x::unsigned-integer-16>>
+  si
   end
 
   def twos_comp_32(x) do
