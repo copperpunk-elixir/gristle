@@ -111,4 +111,9 @@ defmodule Common.Utils do
         timer
     end
   end
+
+  # Erlang float_to_binary shorthand
+  def eftb(number, num_decimals) do
+    :erlang.float_to_binary(number, [decimals: num_decimals])
+  end
 end
