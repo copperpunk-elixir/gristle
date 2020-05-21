@@ -44,8 +44,7 @@ defmodule Peripherals.Uart.VnIns do
         read_timer: nil,
         start_byte_index: -1,
         remaining_buffer: [],
-        # buffer_len: 0,
-        field_lengths: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8]
+        field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8]
      }
     }
   end
@@ -61,7 +60,6 @@ defmodule Peripherals.Uart.VnIns do
       _success ->
         Logger.debug("VN INS opened #{ins_port}")
     end
-    # Peripherals.Uart.Utils.open_active(state.uart_ref, state.port, state.baud)
     {:noreply, state}
   end
 
@@ -71,121 +69,99 @@ defmodule Peripherals.Uart.VnIns do
     # Enum.each(data_list, fn x->
     #   Logger.info("#{x}")
     # end)
-    # Logger.info("starting sbi: #{state.start_byte_index}")
     state = parse_data_buffer(data_list, state)
+    ins = state.ins
+    Logger.info("time: #{ins.gps_time}")
+    attitude = ins.attitude
+    Logger.info("rpy: #{eftb(attitude.roll*@rad2deg,2)}/#{eftb(attitude.pitch*@rad2deg,2)}/#{eftb(attitude.yaw*@rad2deg,2)}")
+    Logger.info("lat: #{eftb(ins.position.latitude*@rad2deg,6)}")
+    Logger.info("gps_status: #{ins.gps_status}")
+
     {:noreply, state}
-    # Logger.info("#{inspect(state)}")
-    # Logger.debug("Remaining buffer: #{inspect(remaining_buffer)}")
-    # {:noreply, %{state | buffer: remaining_buffer, start_byte_index: start_byte_index}}
+  end
+
+  defp publish_ins_data(ins) do
+
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
   defp parse_data_buffer(entire_buffer, state) do
-    if (Enum.empty?(entire_buffer)) do
-      %{state | remaining_buffer: [], start_byte_index: -1}
-    else
-      {valid_buffer, start_byte_index} =
-      if (state.start_byte_index < 0) do
-        # A start byte has not been found yet. Search for it
-        start_byte_index = Enum.find_index(entire_buffer, fn x -> x==@start_byte end)
-        if start_byte_index == nil do
-          # No start byte in the entire buffer, throw it all away
-          {[], -1}
-        else
-          # The buffer contains a start byte
-          # Throw out everything before the start byte
-          {_removed, valid_buffer} = Enum.split(entire_buffer,start_byte_index)
-          {valid_buffer, start_byte_index}
-          # {Enum.slice(data_list, start_byte_index, @message_length), start_byte_index}
-        end
+    {valid_buffer, start_byte_index} =
+    if (state.start_byte_index < 0) do
+      # A start byte has not been found yet. Search for it
+      start_byte_index = Enum.find_index(entire_buffer, fn x -> x==@start_byte end)
+      if start_byte_index == nil do
+        # No start byte in the entire buffer, throw it all away
+        {[], -1}
       else
-        # There is a valid start byte leftover from the last read
-        {entire_buffer, state.start_byte_index}
+        # The buffer contains a start byte
+        # Throw out everything before the start byte
+        {_removed, valid_buffer} = Enum.split(entire_buffer,start_byte_index)
+        {valid_buffer, start_byte_index}
       end
+    else
+      # There is a valid start byte leftover from the last read
+      {entire_buffer, state.start_byte_index}
+    end
 
-      # Logger.debug("SBI: #{start_byte_index}")
-      # Logger.debug("valid buffer: #{inspect(valid_buffer)}")
-      # The valid buffer should contain only the bytes after (and including) the start byte
-      message_group_index = 1
-      message_group = Enum.at(valid_buffer, message_group_index)
-      # The crc is calculated on everything after the start byte
-      crc_calculation_buffer_and_remaining = Enum.drop(valid_buffer, message_group_index)
-      # Logger.info("crc_buffer: #{inspect(crc_buffer)}")
-      field_mask = calculate_field_mask(crc_calculation_buffer_and_remaining)
-      # Logger.debug("msg group: #{message_group}")
-      # Logger.debug("crc buffer (len: #{length(crc_buffer)})): #{inspect(crc_buffer)}")
-      # {payload_buffer,remaining_buffer, start_byte_index, parse_again} =
-      {state, parse_again} =
-      if (message_group == 1) do
-        # Logger.debug("Message Group 1")
-        # This could be a good message
-        # Calculate the message length
-        if (field_mask > 0) do
-          payload_length = calculate_payload_length(field_mask, state.field_lengths)
-          # Logger.warn("payload_length: #{payload_length}")
-          # CRC calculation includes the message_group byte and the two field_mask bytes
-          # The CRC is contained in the two bytes immediately following the payload
-          crc_calculation_num_bytes = payload_length + 3
-
-          {crc_calculation_buffer, crc_and_remaining_buffer} = Enum.split(crc_calculation_buffer_and_remaining, crc_calculation_num_bytes);
-          # {crc_calc_list, crc} = Enum.split(crc_buffer, @crc_start_index-1)
-          # Logger.info("crc_calc_list len: #{length(crc_calc_list)}")
-                    # Logger.debug("calcb1/calcb2: #{crc_b1}/#{crc_b2}")
-          # Logger.debug("crcb1/crcb2: #{Enum.at(crc,0)}/#{Enum.at(crc,1)}")
-          unless Enum.empty?(crc_and_remaining_buffer) do
-            crc_calc_value = calculate_checksum(crc_calculation_buffer)
-            # Logger.debug("crc_calc_value: #{crc_calc_value}")
-            crc_b1 = crc_calc_value >>> 8
-            crc_b2 = crc_calc_value &&& 0xFF
-            if (crc_b1 == Enum.at(crc_and_remaining_buffer,0)) && (crc_b2 == Enum.at(crc_and_remaining_buffer,1)) do
-              # Good Checksum, drop entire message before we parse the next time
-              # Logger.warn("Good checksum")
-              # The payload does not include the message_group byte or the field_mask bytes
-              # We can leave the CRC bytes attached to the end of the payload buffer, because we know the length
-              # The remaining_buffer is everything after the CRC bytes
-              payload_buffer = Enum.drop(crc_calculation_buffer,3)
-              remaining_buffer = Enum.drop(payload_buffer, payload_length+2)
-              ins = parse_good_message(payload_buffer, field_mask, state.ins)
-              {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1, ins: ins}, true}
-              # {payload_buffer,remaining_buffer,-1, true}
-            else
-              # Logger.error("Bad checksum")
-              # Bad checksum, which doesn't mean we lost some data
-              # It could just mean that our "start byte" was just a data byte, so only
-              # Drop the start byte before we parse next
-              remaining_buffer = Enum.drop(valid_buffer,1)
-              {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1}, true}
-              # {[],remaining_buffer,-1, true}
-            end
+    # The valid buffer should contain only the bytes after (and including) the start byte
+    message_group_index = 1
+    message_group = Enum.at(valid_buffer, message_group_index)
+    # The crc is calculated on everything after the start byte
+    crc_calculation_buffer_and_remaining = Enum.drop(valid_buffer, message_group_index)
+    field_mask = calculate_field_mask(crc_calculation_buffer_and_remaining)
+    {state, parse_again} =
+    if (message_group == 1) do
+      # This could be a good message
+      # Calculate the message length
+      if (field_mask > 0) do
+        payload_length = calculate_payload_length(field_mask, state.field_lengths_binary_1)
+        # CRC calculation includes the message_group byte and the two field_mask bytes
+        # The CRC is contained in the two bytes immediately following the payload
+        crc_calculation_num_bytes = payload_length + 3
+        {crc_calculation_buffer, crc_and_remaining_buffer} = Enum.split(crc_calculation_buffer_and_remaining, crc_calculation_num_bytes);
+        unless Enum.empty?(crc_and_remaining_buffer) do
+          crc_calc_value = calculate_checksum(crc_calculation_buffer)
+          crc_b1 = crc_calc_value >>> 8
+          crc_b2 = crc_calc_value &&& 0xFF
+          if (crc_b1 == Enum.at(crc_and_remaining_buffer,0)) && (crc_b2 == Enum.at(crc_and_remaining_buffer,1)) do
+            # Good Checksum, drop entire message before we parse the next time
+            # The payload does not include the message_group byte or the field_mask bytes
+            # We can leave the CRC bytes attached to the end of the payload buffer, because we know the length
+            # The remaining_buffer is everything after the CRC bytes
+            payload_buffer = Enum.drop(crc_calculation_buffer,3)
+            remaining_buffer = Enum.drop(payload_buffer, payload_length+2)
+            ins = parse_good_message(payload_buffer, field_mask, state.ins)
+            {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1, ins: ins}, true}
           else
-            # Logger.warn("No checksum bytes to calculate")
-            # We have not received enough data to parse a complete message
-            # The next loop should try again with the same start_byte
-            {%{state | remaining_buffer: valid_buffer, start_byte_index: start_byte_index}, false}
-            # {[],valid_buffer,start_byte_index, false}
+            # Bad checksum, which doesn't mean we lost some data
+            # It could just mean that our "start byte" was just a data byte, so only
+            # Drop the start byte before we parse next
+            remaining_buffer = Enum.drop(valid_buffer,1)
+            {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1}, true}
           end
         else
-          {%{state | remaining_buffer: [], start_byte_index: -1}, false}
-          # {[], valid_buffer, -1, false}
+          # We have not received enough data to parse a complete message
+          # The next loop should try again with the same start_byte
+          {%{state | remaining_buffer: valid_buffer, start_byte_index: start_byte_index}, false}
         end
       else
         {%{state | remaining_buffer: [], start_byte_index: -1}, false}
-        # {[],valid_buffer,-1, false}
       end
-      if (parse_again) do
-        parse_data_buffer(state.remaining_buffer, state)
-      else
-        state
-      end
+    else
+      {%{state | remaining_buffer: [], start_byte_index: -1}, false}
     end
-
+    if (parse_again) do
+      parse_data_buffer(state.remaining_buffer, state)
+    else
+      state
+    end
   end
 
   @spec calculate_field_mask(list()) :: integer()
   defp calculate_field_mask(buffer) do
     field_mask_b1 = Enum.at(buffer,1)
     field_mask_b2 = Enum.at(buffer,2)
-    # Logger.warn("b1/b2: #{field_mask_b1}/#{field_mask_b2}")
     if field_mask_b1==nil do
       0
     else
@@ -237,10 +213,7 @@ defmodule Peripherals.Uart.VnIns do
   defp parse_good_message(buffer,field_mask, ins) do
     field_mask = <<field_mask::unsigned-integer-16>>
     <<_resv_bit::1, _time_gps_pps_bit::1, _sync_in_cnt_bit::1, ins_status_bit::1, _delta_theta_bit::1, mag_pres_bit::1, _imu_bit::1, accel_bit::1,velocity_bit::1, position_bit::1, angular_rate_bit::1, _qtn_bit::1, ypr_bit::1, _time_sync_bit::1, gps_time_bit::1, _time_startup_bit::1>> = field_mask
-    
-  # <<_time_startup_bit::1, gps_time_bit::1, _time_sync_bit::1, ypr_bit::1, _qtn_bit::1, angular_rate_bit::1, position_bit::1, velocity_bit::1>>
-    # <<accel_bit::1, _imu_bit::1, mag_pres_bit::1, _delta_theta_bit::1, ins_status_bit::1, _sync_in_cnt_bit::1, _time_gps_pps_bit::1, _resv_bit::1>>
-    # ins = state.ins
+
     {gps_time, buffer} =
     if (gps_time_bit == 1) do
       {gps_time_uint64, buffer} = Enum.split(buffer, 8)
@@ -264,8 +237,7 @@ defmodule Peripherals.Uart.VnIns do
     else
       {ins.attitude, buffer}
     end
-    
-    # Logger.warn("parse buffer: #{inspect(buffer)}")
+
     {body_rate, buffer} = if(angular_rate_bit==1) do
       {roll_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
       {pitch_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
@@ -363,54 +335,13 @@ defmodule Peripherals.Uart.VnIns do
       {ins.gps_status, buffer}
     end
 
-    # Logger.info("yaw: #{list_to_int(yaw_deg_uint32,4)}")
-    # Logger.info("roll_rate_rad: #{list_to_int(roll_rate_rad_uint32,4)}")
-    Logger.info("time: #{gps_time}")
-    Logger.info("rpy: #{eftb(attitude.roll*@rad2deg,2)}/#{eftb(attitude.pitch*@rad2deg,2)}/#{eftb(attitude.yaw*@rad2deg,2)}")
-    Logger.info("lat: #{eftb(position.latitude*@rad2deg,6)}")
-    Logger.info("gps_status: #{gps_status}")
-    # new_state = %{
-    #   gps_time: gps_time,
-    #   attitude: %{
-    #     roll: roll_deg*@deg2rad,
-    #     pitch: pitch_deg*@deg2rad,
-    #     yaw: yaw_deg*@deg2rad
-    #   }, 
-    #   body_rate: %{
-    #     roll: roll_rate_rad,
-    #     pitch: pitch_rate_rad,
-    #     yaw: yaw_rate_rad
-    #   },
-    #   position: %{
-    #     latitude: latitude_deg*@deg2rad,
-    #     longitude: longitude_deg*@deg2rad,
-    #     altitude: altitude_m
-    #   },
-    #   velocity: %{
-    #     north: vel_north_mps,
-    #     east: vel_east_mps,
-    #     down: vel_down_mps
-    #   },
-    #   # magnetometer: %{
-    #   #   x: mag_x_gauss,
-    #   #   y: mag_y_gauss,
-    #   #   z: mag_z_gauss
-    #   # },
-    #   # baro_pressure: pressure_kpa,
-    #   # temperator: temp_c,
-    #   ins_status: mode
-    # }
     %{gps_time: gps_time, attitude: attitude, body_rate: body_rate, body_accel: body_accel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
-    # Map.put(state, :ins, ins)
   end
 
   def list_to_int(x_list, bytes) do
     Enum.reduce(0..bytes-1, 0, fn(index,acc) ->
       acc + (Enum.at(x_list,index)<<<(8*index))
     end)
-    # Enum.reduce(Enum.with_index(x_list),0,fn ({value,index},acc) ->
-    #   acc + (value<<<(8*index))
-    # end)
   end
 
   def eftb(num, dec) do
