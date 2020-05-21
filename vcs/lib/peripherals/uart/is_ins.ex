@@ -21,7 +21,7 @@ defmodule Peripherals.Uart.IsIns do
         port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
         attitude: %{roll: 0,pitch: 0,yaw: 0},
-        attitude_rate: %{roll: 0, pitch: 0, yaw: 0},
+        body_rate: %{roll: 0, pitch: 0, yaw: 0},
         gps_time: 0,
         position: %{latitude: 0, longitude: 0, altitude: 0},
         position_ned: %{north: 0, east: 0, down: 0},
@@ -94,21 +94,8 @@ defmodule Peripherals.Uart.IsIns do
       "PIMU" -> parse_pimu(payload_list)
       "PINS1" -> parse_pins1(payload_list)
       unknown ->
-        IO.puts("Unknown message ID: #inspect(unknown)")
+        IO.puts("Unknown message ID: #{inspect(unknown)}")
         %{}
-    end
-  end
-
-  defp ascii_to_digit(x) do
-    case x do
-      x when x>=48 and x<=57 -> x-48
-      "P" -> 80
-      "I" -> 73
-      "M" -> 77
-      "U" -> 85
-      "N" -> 83
-      "," -> 44
-      _other -> 0
     end
   end
 
@@ -121,11 +108,11 @@ defmodule Peripherals.Uart.IsIns do
   defp parse_pimu(payload) do
     %{
       attitude: %{roll: String.to_float(Enum.at(payload, 3)), pitch: String.to_float(Enum.at(payload, 2)), yaw: String.to_float(Enum.at(payload, 4))},
-      attitude_rate: %{roll: String.to_float(Enum.at(payload, 9)), pitch: String.to_float(Enum.at(payload, 8)), yaw: String.to_float(Enum.at(payload, 10))}
+      body_rate: %{roll: String.to_float(Enum.at(payload, 9)), pitch: String.to_float(Enum.at(payload, 8)), yaw: String.to_float(Enum.at(payload, 10))}
     }
   end
 
   defp parse_pins1(payload) do
-    
+    Logger.warn("parse_pins1 not defined. #{inspect(payload)}")
   end
 end

@@ -44,7 +44,7 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :attitude_attitude_rate}, pv_value_map, dt}, state) do
+  def handle_cast({{:pv_values, :attitude_body_rate}, pv_value_map, dt}, state) do
     Logger.warn("Control rx att/attrate: #{inspect(pv_value_map)}")
     Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
@@ -105,7 +105,7 @@ defmodule Control.Controller do
   end
 
   defp join_process_variable_groups() do
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_attitude_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
   end
 end

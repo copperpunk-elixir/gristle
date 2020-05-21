@@ -69,7 +69,7 @@ defmodule System.TotalSystemTest do
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}
-    pv_calculated_att_attrate_group = {:pv_calculated, :attitude_attitude_rate}
+    pv_calculated_att_attrate_group = {:pv_calculated, :attitude_body_rate}
     # Actuators should be at neutral value
     aileron_neutral = config.pid_config.pids.rollrate.aileron.output_neutral
     elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
@@ -80,7 +80,7 @@ defmodule System.TotalSystemTest do
     assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
     assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
     # Send PV calculated values to estimator, no state yet
-    new_att_attrate = %{attitude: %{roll: 0.025, pitch: -0.03, yaw: 0.13}, attitude_rate: %{rollrate: 0.20, pitchrate: 0, yawrate: -0.2354}}
+    new_att_attrate = %{attitude: %{roll: 0.025, pitch: -0.03, yaw: 0.13}, body_rate: %{rollrate: 0.20, pitchrate: 0, yawrate: -0.2354}}
     new_pos_vel = %{position: %{x: 1, y: 2, z: 3}, velocity: %{x: -1, y: -2, z: -3}}
     Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
     Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_pos_vel_group, new_pos_vel}, pv_calculated_pos_vel_group, self())
@@ -115,7 +115,7 @@ defmodule System.TotalSystemTest do
     assert Control.Controller.get_control_state() == 1
     pv_cmd = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025, thrust: 0.6}
     MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd)
-    new_att_attrate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    new_att_attrate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
     Process.sleep(400)
     # The pv_cmds should have expired, so the actuators should not have moved
@@ -147,7 +147,7 @@ defmodule System.TotalSystemTest do
     MessageSorter.Sorter.add_message({:pv_cmds, 2}, msg_class, msg_time_ms, pv_cmd_2)
     pv_cmd_1 = %{rollrate: 0.2, pitchrate: -0.1, yawrate: 0.025, thrust: 0.3}
     MessageSorter.Sorter.add_message({:pv_cmds, 1}, msg_class, msg_time_ms, pv_cmd_1)
-    new_att_attrate = %{attitude: %{roll: -0.1, pitch: 0.2, yaw: 0.05}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    new_att_attrate = %{attitude: %{roll: -0.1, pitch: 0.2, yaw: 0.05}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     Comms.Operator.send_local_msg_to_group(op_name, {pv_calculated_att_attrate_group, new_att_attrate}, pv_calculated_att_attrate_group, self())
     Swarm.Gsm.add_desired_control_state(2, [1], 100)
     Process.sleep(80)

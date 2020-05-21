@@ -16,20 +16,7 @@ defmodule Peripherals.Uart.PololuServo do
 
   def open_port(device) do
     Logger.debug("Open port with device: #{inspect(device)}")
-    uart_ports = Circuits.UART.enumerate()
-    pololu_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
-      device_description = Map.get(port, :description)
-      if (device_description != nil) && String.contains?(String.downcase(device_description), "pololu") do
-        acc ++ [port_name]
-      else
-        acc
-      end
-    end)
-    command_port =
-      case length(pololu_ports) do
-        0 -> nil
-        _ -> Enum.min(pololu_ports)
-      end
+    command_port = Common.Utils.get_uart_devices_containing_string("pololu")
     Logger.debug("Pololu command port: #{command_port}")
     # Logger.debug("interface_ref: #{inspect(device.interface_ref)}")
     case Circuits.UART.open(device.interface_ref,command_port,[speed: device.baud, active: false]) do

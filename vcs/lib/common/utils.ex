@@ -112,6 +112,26 @@ defmodule Common.Utils do
     end
   end
 
+  @spec get_uart_devices_containing_string(binary()) :: list()
+  def get_uart_devices_containing_string(device_string) do
+    device_string = String.downcase(device_string)
+    Logger.debug("devicestring: #{device_string}")
+    uart_ports = Circuits.UART.enumerate()
+    matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
+      device_description = Map.get(port, :description)
+      Logger.debug("description: #{String.downcase(device_description)}")
+      if (device_description != nil) && String.contains?(String.downcase(device_description), device_string) do
+        acc ++ [port_name]
+      else
+        acc
+      end
+    end)
+    case length(matching_ports) do
+      0 -> nil
+      _ -> Enum.min(matching_ports)
+    end
+  end
+
   # Erlang float_to_binary shorthand
   def eftb(number, num_decimals) do
     :erlang.float_to_binary(number, [decimals: num_decimals])

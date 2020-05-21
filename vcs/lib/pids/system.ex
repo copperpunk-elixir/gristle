@@ -75,16 +75,16 @@ defmodule Pids.System do
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
         Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
-        Logger.warn("pv_value_map: #{inspect(pv_value_map.attitude_rate)}")
-        pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
+        Logger.warn("pv_value_map: #{inspect(pv_value_map.body_rate)}")
+        pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
         level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)
         pv_1_cmd_map = Map.put(pv_1_cmd_map, :thrust, level_2_thrust_cmd)
-        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.attitude_rate, dt, state.pv_output_pids)
+        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       1 ->
         Logger.warn("Manual")
-        pv_value_map = put_in(pv_value_map,[:attitude_rate, :thrust], 0)
-        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude_rate, dt, state.pv_output_pids)
+        pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
+        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
         Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       0 ->

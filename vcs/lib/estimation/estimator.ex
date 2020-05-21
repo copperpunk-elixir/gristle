@@ -27,7 +27,7 @@ defmodule Estimation.Estimator do
         ins_watchdog_elapsed: 0,
         imu_watchdog_trigger: @imu_watchdog_trigger,
         ins_watchdog_trigger: @ins_watchdog_trigger,
-        attitude_rate: %{},
+        body_rate: %{},
         attitude: %{},
         velocity: %{},
         position: %{}
@@ -38,7 +38,7 @@ defmodule Estimation.Estimator do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
-    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_attitude_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
@@ -57,18 +57,18 @@ defmodule Estimation.Estimator do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_calculated, :attitude_attitude_rate}, pv_value_map}, state) do
+  def handle_cast({{:pv_calculated, :attitude_body_rate}, pv_value_map}, state) do
     Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
     attitude = Map.get(pv_value_map, :attitude)
-    attitude_rate = Map.get(pv_value_map, :attitude_rate)
-    {attitude, attitude_rate, new_watchdog_elapsed} =
-    if (attitude == nil) or (attitude_rate==nil) do
-      {state.attitude, state.attitude_rate, state.imu_watchdog_elapsed}
+    body_rate = Map.get(pv_value_map, :body_rate)
+    {attitude, body_rate, new_watchdog_elapsed} =
+    if (attitude == nil) or (body_rate==nil) do
+      {state.attitude, state.body_rate, state.imu_watchdog_elapsed}
     else
       new_watchdog_time = max(state.imu_watchdog_elapsed - 1.1*state.imu_loop_interval_ms, 0)
-      {attitude, attitude_rate, new_watchdog_time}
+      {attitude, body_rate, new_watchdog_time}
     end
-    state = %{state | attitude: attitude, attitude_rate: attitude_rate, imu_watchdog_elapsed: new_watchdog_elapsed}
+    state = %{state | attitude: attitude, body_rate: body_rate, imu_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 
@@ -93,8 +93,8 @@ defmodule Estimation.Estimator do
   def handle_info(:imu_loop, state) do
     Comms.Operator.send_local_msg_to_group(
       __MODULE__,
-      {{:pv_values, :attitude_attitude_rate}, %{attitude: state.attitude, attitude_rate: state.attitude_rate}, state.imu_loop_interval_ms/1000},
-       {:pv_values, :attitude_attitude_rate},
+      {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},
+       {:pv_values, :attitude_body_rate},
       self())
     {:noreply, state}
   end

@@ -39,7 +39,7 @@ defmodule Pids.LevelIITest do
     # The aileron output will not be calculated until after the roll AND yaw
     # PIDs have been updated.
     pv_cmd_map = %{roll: 0.2, pitch: 3.0, yaw: -1.0, rollrate: 0.1}
-    pv_value_map = %{attitude: %{roll: 0.08, pitch: 1.0, yaw: -0.8}, attitude_rate: %{rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}}
+    pv_value_map = %{attitude: %{roll: 0.08, pitch: 1.0, yaw: -0.8}, body_rate: %{rollrate: 0.01, pitchrate: -0.05, yawrate: 0.5}}
     roll_corr= pv_cmd_map.roll - pv_value_map.attitude.roll
     # Level II correction
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 2}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, 2}, self())
@@ -53,7 +53,7 @@ defmodule Pids.LevelIITest do
     IO.puts("rollrate output: #{pv_cmd_map.rollrate}")
     assert_in_delta(pv_cmd_map.rollrate, exp_rollrate_output, max_rate_delta)
     # Level I correction
-    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.attitude_rate.rollrate
+    rollrate_corr = pv_cmd_map.rollrate - pv_value_map.body_rate.rollrate
     exp_rollrate_aileron_output = (rollrate_corr*rollrate_pid.aileron.kp)*Map.get(rollrate_pid.aileron, :weight,1)
     exp_aileron_output =
       exp_rollrate_aileron_output + 0.5

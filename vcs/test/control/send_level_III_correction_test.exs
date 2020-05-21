@@ -55,11 +55,11 @@ defmodule Control.SendLevelIIICorrectionTest do
     vx = speed*:math.cos(heading)
     vy = speed*:math.sin(heading)
     pv_velocity_pos = %{velocity: %{x: vx, y: vy, z: 0}, position: %{x: 5, y: 10, z: 10}}
-    pv_att_att_rate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, attitude_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    pv_att_att_rate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     dt = 0.05
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_velocity}, pv_velocity_pos, dt}, {:pv_values, :position_velocity}, self())
     Process.sleep(50)
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_attitude_rate}, pv_att_att_rate, dt}, {:pv_values, :attitude_attitude_rate}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_body_rate}, pv_att_att_rate, dt}, {:pv_values, :attitude_body_rate}, self())
     Process.sleep(100)
 
     # Now check PVII commands. Assert that they are all the correct signs
