@@ -27,7 +27,6 @@ defmodule Peripherals.Uart.VnIns do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: Map.get(config, :device_description, @default_device_description),
-        port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
@@ -41,16 +40,26 @@ defmodule Peripherals.Uart.VnIns do
           temperature: 0,
           gps_status: 0
         },
-        read_timer: nil,
         start_byte_index: -1,
         remaining_buffer: [],
-        field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8]
+        field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
+        new_ins_data_to_publish: false,
      }
     }
   end
 
   @impl GenServer
   def handle_cast(:begin, state) do
+    Comms.Operator.start_link(%{name: __MODULE__})
+    MessageSorter.System.start_link()
+    # Start Message Sorters
+    MessageSorter.System.start_sorter(
+      %{
+        name: :estimator_health,
+        default_message_behavior: :default_value,
+        default_value: 0,
+        value_type: :number
+        })
     Logger.debug("VN INS begin with process: #{inspect(self())}")
     ins_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
     case Circuits.UART.open(state.uart_ref, ins_port,[speed: state.baud, active: true]) do
@@ -60,6 +69,8 @@ defmodule Peripherals.Uart.VnIns do
       _success ->
         Logger.debug("VN INS opened #{ins_port}")
     end
+    # Join Goals group
+    join_goals_groups()
     {:noreply, state}
   end
 
@@ -77,11 +88,20 @@ defmodule Peripherals.Uart.VnIns do
     Logger.info("lat: #{eftb(ins.position.latitude*@rad2deg,6)}")
     Logger.info("gps_status: #{ins.gps_status}")
 
+    state = if (state.new_ins_data_to_publish) do
+      publish_ins_data(ins)
+      %{state | new_ins_data_to_publish: false}
+    else
+      state
+    end
     {:noreply, state}
   end
 
-  defp publish_ins_data(ins) do
-
+  defp publish_ins_data(ins_data) do
+    attitude_body_rate_value_map = %{attitude: ins_data.attitude, body_rate: ins_data.body_rate}
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_body_rate}, attitude_body_rate_value_map}, {:pv_calculated, :attitude_body_rate}, self())
+    position_velocity_value_map = %{position: ins_data.position, velocity: ins_data.velocity}
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -132,24 +152,41 @@ defmodule Peripherals.Uart.VnIns do
             payload_buffer = Enum.drop(crc_calculation_buffer,3)
             remaining_buffer = Enum.drop(payload_buffer, payload_length+2)
             ins = parse_good_message(payload_buffer, field_mask, state.ins)
-            {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1, ins: ins}, true}
+            state = %{state |
+                      remaining_buffer: remaining_buffer,
+                      start_byte_index: -1,
+                      ins: ins,
+                      new_ins_data_to_publish: true}
+            {state, true}
           else
             # Bad checksum, which doesn't mean we lost some data
             # It could just mean that our "start byte" was just a data byte, so only
             # Drop the start byte before we parse next
             remaining_buffer = Enum.drop(valid_buffer,1)
-            {%{state | remaining_buffer: remaining_buffer, start_byte_index: -1}, true}
+            state = %{state |
+                      remaining_buffer: remaining_buffer,
+                      start_byte_index: -1}
+            {state, true}
           end
         else
           # We have not received enough data to parse a complete message
           # The next loop should try again with the same start_byte
-          {%{state | remaining_buffer: valid_buffer, start_byte_index: start_byte_index}, false}
+          state = %{state |
+                    remaining_buffer: valid_buffer,
+                    start_byte_index: start_byte_index}
+          {state, false}
         end
       else
-        {%{state | remaining_buffer: [], start_byte_index: -1}, false}
+        state = %{state |
+                  remaining_buffer: [],
+                  start_byte_index: -1}
+        {state, false}
       end
     else
-      {%{state | remaining_buffer: [], start_byte_index: -1}, false}
+      state = %{state |
+                remaining_buffer: [],
+                start_byte_index: -1}
+      {state, false}
     end
     if (parse_again) do
       parse_data_buffer(state.remaining_buffer, state)
@@ -346,5 +383,9 @@ defmodule Peripherals.Uart.VnIns do
 
   def eftb(num, dec) do
     Common.Utils.eftb(num,dec)
+  end
+
+  defp join_goals_groups() do
+    # Comms.Operator.join_group(__MODULE__, {:goals, 3})
   end
 end

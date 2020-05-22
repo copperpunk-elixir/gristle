@@ -23,8 +23,8 @@ defmodule Comms.TestMemberAllGroups do
   def handle_cast(:join_all_groups, state) do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
+    # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
+    # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
@@ -43,7 +43,7 @@ defmodule Comms.TestMemberAllGroups do
       #     Map.put(state.pv_values, :attitude, values.attitude)
       #     |> Map.put(:body_rate, values.body_rate)
       # end
-    Logger.debug("pv values: #{inspect(pv_values)}")
+    # Logger.debug("pv values: #{inspect(pv_values)}")
     {:noreply, %{state | pv_values_estimator: pv_values}}
   end
 

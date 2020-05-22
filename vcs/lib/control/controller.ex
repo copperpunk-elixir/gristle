@@ -45,7 +45,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_body_rate}, pv_value_map, dt}, state) do
-    Logger.warn("Control rx att/attrate: #{inspect(pv_value_map)}")
+    Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
     Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
       case state.control_state do
@@ -61,7 +61,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
-    Logger.warn("Control rx vel/pos: #{inspect(pv_value_map)}")
+    Logger.warn("Control rx vel/pos/dt: #{inspect(pv_value_map)}/#{dt}")
     if (state.control_state == 3) do
       pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 3}, self())

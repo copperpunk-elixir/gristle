@@ -1,5 +1,5 @@
-defmodule Swarm.HealthySwarmTest do
-  alias Swarm.Heartbeat, as: Hb
+defmodule Cluster.HealthyClusterTest do
+  alias Cluster.Heartbeat, as: Hb
   use ExUnit.Case
   require Logger
 
@@ -13,14 +13,14 @@ defmodule Swarm.HealthySwarmTest do
         ward: 1
       }
     }
-    Swarm.System.start_link(config)
+    Cluster.System.start_link(config)
     {:ok, []}
   end
 
-  test "Create healthy swarm" do
-    Logger.info("Create healthy swarm")
+  test "Create healthy cluster" do
+    Logger.info("Create healthy cluster")
     Process.sleep(400)
-    assert Hb.swarm_healthy?() == false
+    assert Hb.cluster_healthy?() == false
     assert Hb.node_healthy?(0) == false
     Hb.add_heartbeat(%{node: 1, ward: 2,})
     Hb.add_heartbeat(%{node: 2, ward: 3})
@@ -30,6 +30,6 @@ defmodule Swarm.HealthySwarmTest do
     assert Hb.node_healthy?(1) == true
     assert Hb.node_healthy?(2) == true
     assert Hb.node_healthy?(3) == true
-    assert Hb.swarm_healthy?() == true
+    assert Hb.cluster_healthy?() == true
   end
 end

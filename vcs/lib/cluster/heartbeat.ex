@@ -1,4 +1,4 @@
-defmodule Swarm.Heartbeat do
+defmodule Cluster.Heartbeat do
   use GenServer
   require Logger
 
@@ -26,7 +26,7 @@ defmodule Swarm.Heartbeat do
         heartbeat_status_loop_timer: nil,
         send_heartbeat_loop_interval_ms: Map.get(config, :send_heartbeat_loop_interval_ms, @default_send_heartbeat_loop_interval_ms),
         send_heartbeat_loop_timer: nil,
-        swarm_status: 0,
+        cluster_status: 0,
         all_nodes: %{}
      }}
   end
@@ -73,9 +73,9 @@ defmodule Swarm.Heartbeat do
   end
 
   @impl GenServer
-  def handle_call(:is_swarm_healthy, _from, state) do
-    swarm_healthy = state.swarm_status == 1
-    {:reply, swarm_healthy , state}
+  def handle_call(:is_cluster_healthy, _from, state) do
+    cluster_healthy = state.cluster_status == 1
+    {:reply, cluster_healthy , state}
   end
 
   @impl GenServer
@@ -90,9 +90,9 @@ defmodule Swarm.Heartbeat do
     all_nodes = unpack_heartbeats()
     Logger.debug("All node heartbeats: #{inspect(all_nodes)}")
     all_nodes = update_ward_status(all_nodes)
-    swarm_status = get_swarm_status(all_nodes)
-    Logger.debug("swarm status: #{swarm_status}")
-    {:noreply, %{state | all_nodes: all_nodes, swarm_status: swarm_status}}
+    cluster_status = get_cluster_status(all_nodes)
+    Logger.debug("cluster status: #{cluster_status}")
+    {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end
 
   @impl GenServer
@@ -122,8 +122,8 @@ defmodule Swarm.Heartbeat do
     end)
   end
 
-  def get_swarm_status(all_nodes) do
-    # Create list of unhealthy nodes. A healthy swarm will have an empty list
+  def get_cluster_status(all_nodes) do
+    # Create list of unhealthy nodes. A healthy cluster will have an empty list
     case Enum.empty?(all_nodes) do
       true -> 0
       false ->
@@ -152,8 +152,8 @@ defmodule Swarm.Heartbeat do
     Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat, heartbeat_map, @default_heartbeat_duration_ms}, {:hb, :node}, nil)
   end
 
-  def swarm_healthy?() do
-    GenServer.call(__MODULE__, :is_swarm_healthy)
+  def cluster_healthy?() do
+    GenServer.call(__MODULE__, :is_cluster_healthy)
   end
 
   def node_healthy?(node) do

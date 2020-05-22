@@ -2,9 +2,9 @@ defmodule Control.Controller.Plane do
   require Logger
   alias Common.Utils.Math, as: Math
   def get_auto_pv_value_map(pv_value_map) do
-    heading = :math.atan2(pv_value_map.velocity.y, pv_value_map.velocity.x)
-    speed = Math.hypot(pv_value_map.velocity.x, pv_value_map.velocity.y)
-    altitude = pv_value_map.position.z
+    heading = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
+    speed = Math.hypot(pv_value_map.velocity.north, pv_value_map.velocity.east)
+    altitude = pv_value_map.position.altitude
     %{heading: heading, speed: speed, altitude: altitude}
   end
 

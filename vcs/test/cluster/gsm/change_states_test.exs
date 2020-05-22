@@ -1,4 +1,4 @@
-defmodule Swarm.Gsm.ChangeStatesTest do
+defmodule Cluster.Gsm.ChangeStatesTest do
   use ExUnit.Case
 
   setup do
@@ -8,21 +8,21 @@ defmodule Swarm.Gsm.ChangeStatesTest do
   end
 
   test "Change states" do
-    IO.puts("SwarmGsm: Change states")
+    IO.puts("ClusterGsm: Change states")
     config = %{
       gsm: %{
         modules_to_monitor: [:estimator],
         state_loop_interval_ms: 200
       }
     }
-    Swarm.System.start_link(config)
+    Cluster.System.start_link(config)
     Process.sleep(300)
     new_state = 2
-    Swarm.Gsm.add_desired_control_state(new_state, [0], 300)
+    Cluster.Gsm.add_desired_control_state(new_state, [0], 300)
     Process.sleep(250)
-    assert Swarm.Gsm.get_state() == new_state
+    assert Cluster.Gsm.get_state() == new_state
     # State should hold even after it expires
     Process.sleep(200)
-    assert Swarm.Gsm.get_state() == new_state
+    assert Cluster.Gsm.get_state() == new_state
   end
 end
