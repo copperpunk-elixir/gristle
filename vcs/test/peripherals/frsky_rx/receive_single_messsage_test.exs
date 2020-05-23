@@ -7,12 +7,12 @@ defmodule Peripherals.FrskyRx.ReceiveSingleMessageTest do
     {:ok, []}
   end
 
-  test "Receive Single Message" do
-    Peripherals.Uart.FrskyRx.start_link(%{})
-    Process.sleep(250)
-    Enum.each(0..100, fn _index ->
-      Logger.debug("#{Peripherals.Uart.FrskyRx.get_value_for_channel(0)}")
-      Process.sleep(20)
-    end)
-  end
+  # test "Receive Single Message" do
+  #   Peripherals.Uart.FrskyRx.start_link(%{})
+  #   Process.sleep(250)
+  #   Enum.each(0..100, fn _index ->
+  #     Logger.debug("#{Peripherals.Uart.FrskyRx.get_value_for_channel(0)}")
+  #     Process.sleep(20)
+  #   end)
+  # end
 end

@@ -2,10 +2,10 @@ defmodule Control.Controller.Plane do
   require Logger
   alias Common.Utils.Math, as: Math
   def get_auto_pv_value_map(pv_value_map) do
-    heading = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
+    course = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
     speed = Math.hypot(pv_value_map.velocity.north, pv_value_map.velocity.east)
     altitude = pv_value_map.position.altitude
-    %{heading: heading, speed: speed, altitude: altitude}
+    %{course: course, speed: speed, altitude: altitude}
   end
 
   def start_pv_cmds_message_sorters() do
@@ -33,7 +33,7 @@ defmodule Control.Controller.Plane do
       %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
-        default_value: %{heading: 0, speed: 0, altitude: 0},
+        default_value: %{course: 0, speed: 0, altitude: 0},
         value_type: :map
       }
     ]

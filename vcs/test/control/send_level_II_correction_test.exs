@@ -10,7 +10,7 @@ defmodule Control.SendLevelIICorrectionTest do
       modules_to_monitor: [:estimator],
       state_loop_interval_ms: 50,
     }
-    Swarm.Gsm.start_link(swarm_gsm_config)
+    Cluster.Gsm.start_link(swarm_gsm_config)
     {:ok, [config: pid_config]}
   end
 
@@ -43,7 +43,7 @@ defmodule Control.SendLevelIICorrectionTest do
     # Put into control state :auto
     assert Control.Controller.get_control_state() == -1
     new_state = 2#:semi_auto
-    Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
+    Cluster.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)
     assert Control.Controller.get_control_state() == new_state
     Logger.info(inspect(pid_config.pids))

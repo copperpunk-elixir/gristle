@@ -7,9 +7,9 @@ defmodule Peripherals.IsIns.ParsePimuTest do
     {:ok, []}
   end
 
-  test "Read PIMU messages" do
-    {:ok, pid} = Peripherals.Uart.IsIns.start_link(%{})
-    Process.sleep(4500)
-    assert true
-  end
+  # test "Read PIMU messages" do
+  #   {:ok, pid} = Peripherals.Uart.IsIns.start_link(%{})
+  #   Process.sleep(4500)
+  #   assert true
+  # end
 end

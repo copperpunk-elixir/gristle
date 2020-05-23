@@ -141,7 +141,7 @@ defmodule System.TotalSystemTest do
     assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral
     assert Actuation.SwInterface.get_output_for_actuator_name(:throttle) == throttle_neutral
     # Switch to level 2
-    pv_cmd_3 = %{heading: 0.2, speed: 4, altitude: 1}
+    pv_cmd_3 = %{course: 0.2, speed: 4, altitude: 1}
     MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_cmd_3)
     pv_cmd_2 = %{roll: -0.3, pitch: 0.01, yaw: 0.1, thrust: 0}
     MessageSorter.Sorter.add_message({:pv_cmds, 2}, msg_class, msg_time_ms, pv_cmd_2)

@@ -35,26 +35,26 @@ defmodule Pids.LevelIIITest do
     Process.sleep(200)
     # Setup parameters
     pids = config.pid_config.pids
-    heading_pid = pids.heading
+    course_pid = pids.course
 
-    # ----- BEGIN HEADING-to-ROLL/YAW RUDDER TEST -----
-    # Update heading, which affects both roll and yaw 
-    pv_cmd_map = %{heading: 0.3}
-    pv_value_map = %{heading: -0.2}
-    heading_corr= pv_cmd_map.heading - pv_value_map.heading
+    # ----- BEGIN COURSE-to-ROLL/YAW RUDDER TEST -----
+    # Update course, which affects both roll and yaw 
+    pv_cmd_map = %{course: 0.3}
+    pv_value_map = %{course: -0.2}
+    course_corr= pv_cmd_map.course - pv_value_map.course
     # Level III correction
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 3}, pv_cmd_map, pv_value_map, dt}, {:pv_cmds_values, 3}, self())
     Process.sleep(50)
-    exp_heading_roll_output = heading_corr*heading_pid.roll.kp
-    exp_heading_yaw_output = heading_corr*heading_pid.yaw.kp
+    exp_course_roll_output = course_corr*course_pid.roll.kp
+    exp_course_yaw_output = course_corr*course_pid.yaw.kp
     exp_roll_output =
-    (exp_heading_roll_output + heading_pid.roll.output_neutral)*Map.get(heading_pid.roll, :weight, 1)
-      |> Common.Utils.Math.constrain(heading_pid.roll.output_min, heading_pid.roll.output_max)
-    exp_yaw_output = (exp_heading_yaw_output + heading_pid.yaw.output_neutral)*Map.get(heading_pid.yaw, :weight, 1)
-    |> Common.Utils.Math.constrain(heading_pid.yaw.output_min, heading_pid.yaw.output_max)
+    (exp_course_roll_output + course_pid.roll.output_neutral)*Map.get(course_pid.roll, :weight, 1)
+      |> Common.Utils.Math.constrain(course_pid.roll.output_min, course_pid.roll.output_max)
+    exp_yaw_output = (exp_course_yaw_output + course_pid.yaw.output_neutral)*Map.get(course_pid.yaw, :weight, 1)
+    |> Common.Utils.Math.constrain(course_pid.yaw.output_min, course_pid.yaw.output_max)
     Process.sleep(50)
-    roll_output = Pids.Pid.get_output(:heading, :roll, Map.get(heading_pid.roll,:weight,1))
-    yaw_output = Pids.Pid.get_output(:heading, :yaw, Map.get(heading_pid.yaw,:weight,1))
+    roll_output = Pids.Pid.get_output(:course, :roll, Map.get(course_pid.roll,:weight,1))
+    yaw_output = Pids.Pid.get_output(:course, :yaw, Map.get(course_pid.yaw,:weight,1))
     attitude_cmd = MessageSorter.Sorter.get_value({:pv_cmds, 2})
     roll_cmd = attitude_cmd.roll# MessageSorter.Sorter.get_value({:pv_cmds, :roll})
     yaw_cmd = attitude_cmd.yaw # MessageSorter.Sorter.get_value({:pv_cmds, :yaw})

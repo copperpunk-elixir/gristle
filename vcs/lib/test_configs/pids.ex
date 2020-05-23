@@ -23,7 +23,7 @@ defmodule TestConfigs.Pids do
       roll: %{rollrate: Map.merge(%{kp: 0.075}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 0.2}, constraints.pitchrate)},
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
-      heading: %{roll: Map.merge(%{kp: 0.2}, constraints.roll),
+      course: %{roll: Map.merge(%{kp: 0.2}, constraints.roll),
                  yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
       speed: %{thrust: Map.merge(%{kp: 1.0, weight: 0.9}, constraints.thrust),
                pitch: Map.merge(%{kp: -0.2, weight: 0.1}, constraints.pitch)},

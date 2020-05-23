@@ -10,7 +10,7 @@ defmodule Control.SendLevelIIICorrectionTest do
       modules_to_monitor: [:estimator],
       state_loop_interval_ms: 50
     }
-    Swarm.Gsm.start_link(swarm_gsm_config)
+    Cluster.Gsm.start_link(swarm_gsm_config)
     {:ok, []}
   end
 
@@ -26,7 +26,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     # Put into control state :auto
     assert Control.Controller.get_control_state() == -1
     new_state = 3#:auto
-    Swarm.Gsm.add_desired_control_state(new_state, [0], 1000)
+    Cluster.Gsm.add_desired_control_state(new_state, [0], 1000)
     Process.sleep(100)
     assert Control.Controller.get_control_state() == new_state
     # Verify that none of the PVs in PVII have a command
@@ -40,21 +40,21 @@ defmodule Control.SendLevelIIICorrectionTest do
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :yaw}), 0, max_cmd_delta)
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :thrust}), 0, max_cmd_delta)
     # Send PVIII command
-    pv_3_cmds = %{heading: :math.pi()/180*10, speed: 10, altitude: 5}
+    pv_3_cmds = %{course: :math.pi()/180*10, speed: 10, altitude: 5}
     msg_class = [2,5]
     msg_time_ms = 500
     MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_3_cmds)
-    # MessageSorter.Sorter.add_message({:pv_cmds, :heading}, msg_class, msg_time_ms, pv_cmd.heading)
+    # MessageSorter.Sorter.add_message({:pv_cmds, :course}, msg_class, msg_time_ms, pv_cmd.course)
     # MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
     Process.sleep(50)
-    heading_cmd = Control.Controller.get_pv_cmd(:heading)
-    assert_in_delta(heading_cmd, pv_3_cmds.heading, max_cmd_delta)
+    course_cmd = Control.Controller.get_pv_cmd(:course)
+    assert_in_delta(course_cmd, pv_3_cmds.course, max_cmd_delta)
     # Send PV value
-    heading = :math.pi()/180*20
+    course = :math.pi()/180*20
     speed = 5
-    vx = speed*:math.cos(heading)
-    vy = speed*:math.sin(heading)
-    pv_velocity_pos = %{velocity: %{x: vx, y: vy, z: 0}, position: %{x: 5, y: 10, z: 10}}
+    vx = speed*:math.cos(course)
+    vy = speed*:math.sin(course)
+    pv_velocity_pos = %{velocity: %{north: vx, east: vy, down: 0}, position: %{latitude: 5, longitude: 10, altitude: 10}}
     pv_att_att_rate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     dt = 0.05
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_velocity}, pv_velocity_pos, dt}, {:pv_values, :position_velocity}, self())
