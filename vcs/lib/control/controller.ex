@@ -12,7 +12,7 @@ defmodule Control.Controller do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([__MODULE__, vehicle_type])
+    vehicle_module = Module.concat([Vehicle, vehicle_type])
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
