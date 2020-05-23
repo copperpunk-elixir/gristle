@@ -8,9 +8,8 @@ To run unit tests:
     `mix test test/` from root project folder
 
 The diagram of the architecture is below.  
-It can be viewed as an [.html](https://github.com/some-assembly-required/gristle/blob/master/resources/diagrams/images/VCS_v0.7.html) file, although you cannot preview it in Github.  
 The raw Draw.io file is available in the [resources](https://github.com/some-assembly-required/gristle/tree/master/resources/diagrams) folder.  
-![diagram](https://github.com/some-assembly-required/gristle/blob/master/resources/diagrams/images/VCS_v0.7.png)
+![diagram](https://github.com/some-assembly-required/gristle/blob/master/resources/diagrams/images/VCS_current.png)
 
 ## Targets
 
