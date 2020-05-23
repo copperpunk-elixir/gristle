@@ -17,7 +17,7 @@ defmodule Peripherals.Uart.IsIns do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        uart_ref: Peripherals.Uart.Utils.get_uart_ref(),
+        uart_ref: Circuits.UART.start_link(),
         port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
         attitude: %{roll: 0,pitch: 0,yaw: 0},
@@ -37,7 +37,7 @@ defmodule Peripherals.Uart.IsIns do
   @impl GenServer
   def handle_cast(:begin, state) do
     Logger.debug("VN INS begin with process: #{inspect(self())}")
-    Peripherals.Uart.Utils.open_active(state.uart_ref, state.port, state.baud)
+    Circuits.UART.open(state.uart_ref, state.port, [speed: state.baud, active: true])
     {:noreply, state}
   end
 

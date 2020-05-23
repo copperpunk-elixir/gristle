@@ -16,7 +16,7 @@ defmodule Peripherals.Uart.VnIns do
 
   def start_link(config) do
     Logger.debug("Start VectorNav INS GenServer")
-    {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_redudant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
@@ -40,7 +40,7 @@ defmodule Peripherals.Uart.VnIns do
           temperature: 0,
           gps_status: 0
         },
-        start_byte_index: -1,
+        start_byte_found: false,
         remaining_buffer: [],
         field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
         new_ins_data_to_publish: false,
@@ -106,92 +106,95 @@ defmodule Peripherals.Uart.VnIns do
 
   @spec parse_data_buffer(list(), map()) :: map()
   defp parse_data_buffer(entire_buffer, state) do
-    {valid_buffer, start_byte_index} =
-    if (state.start_byte_index < 0) do
+    {valid_buffer, start_byte_found} =
+    if (!state.start_byte_found) do
       # A start byte has not been found yet. Search for it
       start_byte_index = Enum.find_index(entire_buffer, fn x -> x==@start_byte end)
       if start_byte_index == nil do
         # No start byte in the entire buffer, throw it all away
-        {[], -1}
+        {[], false}
       else
         # The buffer contains a start byte
         # Throw out everything before the start byte
         {_removed, valid_buffer} = Enum.split(entire_buffer,start_byte_index)
-        {valid_buffer, start_byte_index}
+        {valid_buffer, true}
       end
     else
       # There is a valid start byte leftover from the last read
-      {entire_buffer, state.start_byte_index}
+      {entire_buffer, true}
     end
-
-    # The valid buffer should contain only the bytes after (and including) the start byte
-    message_group_index = 1
-    message_group = Enum.at(valid_buffer, message_group_index)
-    # The crc is calculated on everything after the start byte
-    crc_calculation_buffer_and_remaining = Enum.drop(valid_buffer, message_group_index)
-    field_mask = calculate_field_mask(crc_calculation_buffer_and_remaining)
-    {state, parse_again} =
-    if (message_group == 1) do
-      # This could be a good message
-      # Calculate the message length
-      if (field_mask > 0) do
-        payload_length = calculate_payload_length(field_mask, state.field_lengths_binary_1)
-        # CRC calculation includes the message_group byte and the two field_mask bytes
-        # The CRC is contained in the two bytes immediately following the payload
-        crc_calculation_num_bytes = payload_length + 3
-        {crc_calculation_buffer, crc_and_remaining_buffer} = Enum.split(crc_calculation_buffer_and_remaining, crc_calculation_num_bytes);
-        unless Enum.empty?(crc_and_remaining_buffer) do
-          crc_calc_value = calculate_checksum(crc_calculation_buffer)
-          crc_b1 = crc_calc_value >>> 8
-          crc_b2 = crc_calc_value &&& 0xFF
-          if (crc_b1 == Enum.at(crc_and_remaining_buffer,0)) && (crc_b2 == Enum.at(crc_and_remaining_buffer,1)) do
-            # Good Checksum, drop entire message before we parse the next time
-            # The payload does not include the message_group byte or the field_mask bytes
-            # We can leave the CRC bytes attached to the end of the payload buffer, because we know the length
-            # The remaining_buffer is everything after the CRC bytes
-            payload_buffer = Enum.drop(crc_calculation_buffer,3)
-            remaining_buffer = Enum.drop(payload_buffer, payload_length+2)
-            ins = parse_good_message(payload_buffer, field_mask, state.ins)
-            state = %{state |
-                      remaining_buffer: remaining_buffer,
-                      start_byte_index: -1,
-                      ins: ins,
-                      new_ins_data_to_publish: true}
-            {state, true}
+    if start_byte_found do
+      # The valid buffer should contain only the bytes after (and including) the start byte
+      message_group_index = 1
+      message_group = Enum.at(valid_buffer, message_group_index)
+      # The crc is calculated on everything after the start byte
+      crc_calculation_buffer_and_remaining = Enum.drop(valid_buffer, message_group_index)
+      field_mask = calculate_field_mask(crc_calculation_buffer_and_remaining)
+      {state, parse_again} =
+      if (message_group == 1) do
+        # This could be a good message
+        # Calculate the message length
+        if (field_mask > 0) do
+          payload_length = calculate_payload_length(field_mask, state.field_lengths_binary_1)
+          # CRC calculation includes the message_group byte and the two field_mask bytes
+          # The CRC is contained in the two bytes immediately following the payload
+          crc_calculation_num_bytes = payload_length + 3
+          {crc_calculation_buffer, crc_and_remaining_buffer} = Enum.split(crc_calculation_buffer_and_remaining, crc_calculation_num_bytes);
+          unless Enum.empty?(crc_and_remaining_buffer) do
+            crc_calc_value = calculate_checksum(crc_calculation_buffer)
+            crc_b1 = crc_calc_value >>> 8
+            crc_b2 = crc_calc_value &&& 0xFF
+            if (crc_b1 == Enum.at(crc_and_remaining_buffer,0)) && (crc_b2 == Enum.at(crc_and_remaining_buffer,1)) do
+              # Good Checksum, drop entire message before we parse the next time
+              # The payload does not include the message_group byte or the field_mask bytes
+              # We can leave the CRC bytes attached to the end of the payload buffer, because we know the length
+              # The remaining_buffer is everything after the CRC bytes
+              payload_buffer = Enum.drop(crc_calculation_buffer,3)
+              remaining_buffer = Enum.drop(payload_buffer, payload_length+2)
+              ins = parse_good_message(payload_buffer, field_mask, state.ins)
+              state = %{state |
+                        remaining_buffer: remaining_buffer,
+                        start_byte_found: false,
+                        ins: ins,
+                        new_ins_data_to_publish: true}
+              {state, true}
+            else
+              # Bad checksum, which doesn't mean we lost some data
+              # It could just mean that our "start byte" was just a data byte, so only
+              # Drop the start byte before we parse next
+              remaining_buffer = Enum.drop(valid_buffer,1)
+              state = %{state |
+                        remaining_buffer: remaining_buffer,
+                        start_byte_found: false}
+              {state, true}
+            end
           else
-            # Bad checksum, which doesn't mean we lost some data
-            # It could just mean that our "start byte" was just a data byte, so only
-            # Drop the start byte before we parse next
-            remaining_buffer = Enum.drop(valid_buffer,1)
+            # We have not received enough data to parse a complete message
+            # The next loop should try again with the same start_byte
             state = %{state |
-                      remaining_buffer: remaining_buffer,
-                      start_byte_index: -1}
-            {state, true}
+                      remaining_buffer: valid_buffer,
+                      start_byte_found: true}
+            {state, false}
           end
         else
-          # We have not received enough data to parse a complete message
-          # The next loop should try again with the same start_byte
           state = %{state |
-                    remaining_buffer: valid_buffer,
-                    start_byte_index: start_byte_index}
+                    remaining_buffer: [],
+                    start_byte_found: false}
           {state, false}
         end
       else
         state = %{state |
                   remaining_buffer: [],
-                  start_byte_index: -1}
+                  start_byte_found: false}
         {state, false}
       end
+      if (parse_again) do
+        parse_data_buffer(state.remaining_buffer, state)
+      else
+        state
+      end
     else
-      state = %{state |
-                remaining_buffer: [],
-                start_byte_index: -1}
-      {state, false}
-    end
-    if (parse_again) do
-      parse_data_buffer(state.remaining_buffer, state)
-    else
-      state
+      %{state | start_byte_found: false}
     end
   end
 

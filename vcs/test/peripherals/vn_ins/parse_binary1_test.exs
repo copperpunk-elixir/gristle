@@ -7,9 +7,9 @@ defmodule Peripherals.VnIns.ParseBinary1Test do
     {:ok, []}
   end
 
-  # test "Read Binary1 messages" do
-  #   {:ok, pid} = Peripherals.Uart.VnIns.start_link(%{})
-  #   Process.sleep(3500)
-  #   assert true
-  # end
+  test "Read Binary1 messages" do
+    {:ok, pid} = Peripherals.Uart.VnIns.start_link(%{})
+    Process.sleep(3500)
+    assert true
+  end
 end
