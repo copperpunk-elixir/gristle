@@ -9,6 +9,9 @@ defmodule Peripherals.Uart.FrskyRx do
   @end_byte 0x00
   @end_byte_index 24
   @valid_frame_count_min 3
+  @pw_mid 992
+  @pw_half_range 800
+
 
   def start_link(config) do
     Logger.info("Start FrskyRx GenServer")
@@ -29,7 +32,9 @@ defmodule Peripherals.Uart.FrskyRx do
         failsafe_active: false,
         frame_lost: false,
         valid_frame_count: 0,
-        new_frsky_data_to_publish: false
+        new_frsky_data_to_publish: false,
+        publish_rx_output_loop_timer: nil,
+        publish_rx_output_loop_interval_ms: config.publish_rx_output_loop_interval_ms
      }}
   end
 
@@ -44,6 +49,15 @@ defmodule Peripherals.Uart.FrskyRx do
       _success ->
         Logger.debug("FrskyRx opened #{frsky_port}")
     end
+    publish_rx_output_loop_timer = Common.Utils.start_loop(self(), state.publish_rx_output_loop_interval_ms, :publish_rx_output_loop)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info(:publish_rx_output_loop, state) do
+    if (state.new_frsky_data_to_publish and !state.frame_lost) do
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, state.channel_values, state.failsafe_active}, :rx_output, self())
+    end
     {:noreply, state}
   end
 
@@ -51,9 +65,6 @@ defmodule Peripherals.Uart.FrskyRx do
   def handle_info({:circuits_uart, _port, data}, state) do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
-    if (state.new_frsky_data_to_publish and !state.frame_lost) do
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {:sbus_rx, state.channel_values, state.failsafe_active}, :sbus_rx, self())
-    end
     {:noreply, state}
   end
 
@@ -143,17 +154,17 @@ defmodule Peripherals.Uart.FrskyRx do
       (Enum.at(payload,6)>>>7) + (Enum.at(payload,7)<<<1) + (Enum.at(payload,8)<<<9),
       (Enum.at(payload,8)>>>2) + (Enum.at(payload,9)<<<6),
       (Enum.at(payload,9)>>>5) + (Enum.at(payload,10)<<<3),
-      (Enum.at(payload,11)) + (Enum.at(payload,12)<<<8),
-      (Enum.at(payload,12)>>>3) + (Enum.at(payload,13)<<<5),
-      (Enum.at(payload,13)>>>6) + (Enum.at(payload,14)<<<2) + (Enum.at(payload,15)<<<10),
-      (Enum.at(payload,15)>>>1) + (Enum.at(payload,16)<<<7),
-      (Enum.at(payload,16)>>>4) + (Enum.at(payload,17)<<<4),
-      (Enum.at(payload,17)>>>7) + (Enum.at(payload,18)<<<1) + (Enum.at(payload,19)<<<9),
-      (Enum.at(payload,19)>>>2) + (Enum.at(payload,20)<<<6),
-      (Enum.at(payload,20)>>>5) + (Enum.at(payload,21)<<<3),
+      # (Enum.at(payload,11)) + (Enum.at(payload,12)<<<8),
+      # (Enum.at(payload,12)>>>3) + (Enum.at(payload,13)<<<5),
+      # (Enum.at(payload,13)>>>6) + (Enum.at(payload,14)<<<2) + (Enum.at(payload,15)<<<10),
+      # (Enum.at(payload,15)>>>1) + (Enum.at(payload,16)<<<7),
+      # (Enum.at(payload,16)>>>4) + (Enum.at(payload,17)<<<4),
+      # (Enum.at(payload,17)>>>7) + (Enum.at(payload,18)<<<1) + (Enum.at(payload,19)<<<9),
+      # (Enum.at(payload,19)>>>2) + (Enum.at(payload,20)<<<6),
+      # (Enum.at(payload,20)>>>5) + (Enum.at(payload,21)<<<3),
       ]
     channels = Enum.reduce(Enum.reverse(channels), [], fn (value, acc) ->
-      [value &&& 0x07FF] ++ acc
+      [((value &&& 0x07FF) -@pw_mid)/@pw_half_range] ++ acc
     end)
     flag_byte = Enum.at(payload,22)
     failsafe_active = ((flag_byte &&& 0x08) > 0)
