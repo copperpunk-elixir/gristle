@@ -71,7 +71,7 @@ defmodule Command.Commander do
           end
         Map.put(acc, channel, output_value)
       end)
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},cmds}, {:goals, control_state}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},{:command,:rx_output}, cmds}, {:goals, control_state}, self())
     end
   end
 end

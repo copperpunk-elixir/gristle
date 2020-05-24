@@ -38,8 +38,8 @@ defmodule Navigation.Navigator do
   end
 
   @impl GenServer
-  def handle_cast({{:goals, level}, goals_map}, state) do
-    Logger.warn("rx goals #{level}: #{inspect(goals_map)}")
+  def handle_cast({{:goals, level},source, goals_map}, state) do
+    Logger.warn("rx goals #{level} from #{inspect(source)}: #{inspect(goals_map)}")
 
     {:noreply, state}
   end
