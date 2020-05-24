@@ -16,13 +16,12 @@ defmodule Command.Commander do
   def init(config) do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Vehicle, vehicle_type])
-    Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
         commands: %{
         },
-        pv_values: %{altitude: 3}
+        pv_values: %{}
      }}
   end
 
@@ -31,30 +30,19 @@ defmodule Command.Commander do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
     # Start FrSky Sorter
-    Peripherals.Uart.FrskyRx.start_link(%{})
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
-    Logger.debug("rx_output: #{inspect(channel_output)}")
-    cmds = convert_rx_output_to_cmds(channel_output, state.vehicle_module, state.pv_values)
-    Logger.warn("cmds: #{inspect(cmds)}")
-    # Send commands to Goals
+    # Logger.debug("rx_output: #{inspect(channel_output)}")
+    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.pv_values)
     {:noreply, state}
   end
 
-  # @impl GenServer
-  # def handle_call({:get_command, level, cmd_name}, _from, state) do
-  #   Logger.info("state: #{inspect(state)}")
-  #   cmds_at_level = Map.get(state.commands,level)
-  #   cmd = Map.get(cmds_at_level, cmd_name)
-  #   {:reply,cmd, state}
-  # end
-
-  @spec convert_rx_output_to_cmds(list(), atom(), map()) :: map()
-  defp convert_rx_output_to_cmds(rx_output, vehicle_module, pv_values) do
+  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), map()) :: atom()
+  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module, pv_values) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_float = Enum.at(rx_output, @transmit_channel)
     if (transmit_float > 0) do
@@ -83,14 +71,7 @@ defmodule Command.Commander do
           end
         Map.put(acc, channel, output_value)
       end)
-      Logger.debug("cmds: #{inspect(cmds)}")
-      %{control_state => cmds}
-    else
-      %{}
+      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},cmds}, {:goals, control_state}, self())
     end
   end
-
-  # def get_cmd(level, cmd_name) do
-  #   GenServer.call(__MODULE__, {:get_command, level, cmd_name})
-  # end
 end

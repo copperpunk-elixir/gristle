@@ -6,7 +6,8 @@ defmodule Command.System do
     Comms.ProcessRegistry.start_link()
     Supervisor.start_link(
       [
-        {Command.Commander, config.commander}
+        {Command.Commander, config.commander},
+        {Peripherals.Uart.FrskyRx, config.frsky_rx}
       ],
       strategy: :one_for_one
     )
