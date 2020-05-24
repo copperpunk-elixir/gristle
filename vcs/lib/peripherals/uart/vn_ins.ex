@@ -82,11 +82,10 @@ defmodule Peripherals.Uart.VnIns do
     # end)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
-    Logger.info("time: #{ins.gps_time}")
-    attitude = ins.attitude
-    Logger.info("rpy: #{eftb(attitude.roll*@rad2deg,2)}/#{eftb(attitude.pitch*@rad2deg,2)}/#{eftb(attitude.yaw*@rad2deg,2)}")
-    Logger.info("lat: #{eftb(ins.position.latitude*@rad2deg,6)}")
-    Logger.info("gps_status: #{ins.gps_status}")
+    # Logger.info("time: #{ins.gps_time}")
+    # Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
+    # Logger.info("lat: #{eftb(ins.position.latitude*@rad2deg,6)}")
+    # Logger.info("gps_status: #{ins.gps_status}")
 
     state = if (state.new_ins_data_to_publish) do
       publish_ins_data(ins)

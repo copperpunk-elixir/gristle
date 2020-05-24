@@ -113,7 +113,7 @@ defmodule Comms.Operator do
   end
 
   def send_global_msg_to_group(operator_name, message, group, sender) do
-    Logger.debug("send global: #{inspect(message)}")
+    # Logger.debug("send global: #{inspect(message)}")
     GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, group, sender, :global})
   end
 

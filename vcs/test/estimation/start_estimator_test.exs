@@ -36,7 +36,6 @@ defmodule Estimation.StartEstimatorTest do
   test "Receive INS messages" do
     # This is a visual test - Confirm that the INS Logger output matches the Estimator rx Logger output
     # Both in value and in desired rate
-    {:ok, pid} = Peripherals.Uart.VnIns.start_link(%{})
     Process.sleep(3500)
   end
 end

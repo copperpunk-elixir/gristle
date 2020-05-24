@@ -40,8 +40,8 @@ defmodule Estimation.Estimator do
     MessageSorter.System.start_link()
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
-    imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    imu_loop_timer = nil#Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
+    ins_loop_timer = nil#Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
     imu_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
     ins_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
@@ -58,7 +58,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :attitude_body_rate}, pv_value_map}, state) do
-    Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
+    # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     attitude = Map.get(pv_value_map, :attitude)
     body_rate = Map.get(pv_value_map, :body_rate)
     {attitude, body_rate, new_watchdog_elapsed} =
@@ -75,7 +75,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :position_velocity}, pv_value_map}, state) do
-    Logger.warn("Estimator rx: #{inspect(pv_value_map)}")
+    # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     position = Map.get(pv_value_map, :position)
     velocity = Map.get(pv_value_map, :velocity)
     {position, velocity, new_watchdog_elapsed} =
@@ -111,6 +111,11 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:telemetry_loop, state) do
+    Comms.Operator.send_global_msg_to_group(
+      __MODULE__,
+      {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, body_rate: state.body_rate}},
+      :pv_estimate,
+      self())
     {:noreply, state}
   end
 end

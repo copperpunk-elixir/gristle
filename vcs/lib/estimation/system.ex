@@ -6,7 +6,8 @@ defmodule Estimation.System do
     Comms.ProcessRegistry.start_link()
     Supervisor.start_link(
       [
-        {Estimation.Estimator, config.estimator}
+        {Estimation.Estimator, config.estimator},
+        {Peripherals.Uart.VnIns, %{}}
       ],
       strategy: :one_for_one
     )

@@ -31,6 +31,7 @@ defmodule Command.Commander do
     MessageSorter.System.start_link()
     # Start FrSky Sorter
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
+    Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     {:noreply, state}
   end
 
@@ -39,6 +40,15 @@ defmodule Command.Commander do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
     convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.pv_values)
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:pv_estimate, pv_values}, state) do
+    # Logger.debug("position: #{inspect(pv_values.position)}")
+    # Logger.debug("velocity: #{inspect(pv_values.velocity)}")
+    # Logger.debug("attitude: #{inspect(pv_values.attitude)}")
+    # Logger.debug("bodyrate: #{inspect(pv_values.body_rate)}")
+    {:noreply, %{state | pv_values: pv_values}}
   end
 
   @spec convert_rx_output_to_cmds_and_publish(list(), atom(), map()) :: atom()
