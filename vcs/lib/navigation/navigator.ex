@@ -32,32 +32,24 @@ defmodule Navigation.Navigator do
     Comms.Operator.join_group(__MODULE__, {:goals, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 3}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
-    navigator_loop_timer =nil# Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
+    navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
     start_goals_sorter(state.vehicle_module)
+    apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
     {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
   end
 
   @impl GenServer
-  def handle_cast({{:goals, level},source, goals_map}, state) do
-    Logger.warn("rx goals #{level} from #{inspect(source)}: #{inspect(goals_map)}")
-
+  def handle_cast({{:goals, level},classification, time_validity_ms, goals_map}, state) do
+    Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
+    MessageSorter.Sorter.add_message({:goals, level}, classification, time_validity_ms, goals_map)
     {:noreply, state}
   end
 
-  defp start_goal_restrictions_sorter(vehicle_module) do
-    # Goal Restrictions
-    level_pv_sorter_map = apply(vehicle_module, :get_process_variable_map, [])
-    pv_default_value_map = get_in(level_pv_sorter_map, [3, :default_value])
-    Enum.each(pv_default_value_map, fn {pv, _default_value} ->
-      config = %{
-      name: {:goal_restrictions, pv},
-      default_message_behavior: :default_value,
-      default_value: nil,
-      value_type: :number
-    }
-      MessageSorter.System.start_sorter(config)
-    end)
-    # MessageSorter.System.start_sorter(:control_state)
+  @impl GenServer
+  def handle_info(:navigator_loop, state) do
+    goals_2 = MessageSorter.Sorter.get_value({:goals, 2})
+    MessageSorter.Sorter.add_message({:pv_cmds, 2}, [0,1], 200, goals_2)
+    {:noreply, state}
   end
 
   @spec start_goals_sorter(atom()) :: atom()
