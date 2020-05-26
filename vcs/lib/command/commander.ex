@@ -4,6 +4,8 @@ defmodule Command.Commander do
 
   @rx_control_state_channel 4
   @transmit_channel 5
+  @default_rx_output_classification [0,0]
+  @default_rx_output_time_validity_ms 100
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
@@ -19,6 +21,8 @@ defmodule Command.Commander do
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
+        rx_output_classification: Map.get(config, :rx_output_classification, @default_rx_output_classification),
+        rx_output_time_validity_ms: Map.get(config, :rx_output_time_validity_ms, @default_rx_output_time_validity_ms),
         commands: %{
         },
         pv_values: %{}
@@ -38,7 +42,7 @@ defmodule Command.Commander do
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
-    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.pv_values)
+    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.rx_output_classification, state.rx_output_time_validity_ms, state.pv_values)
     {:noreply, state}
   end
 
@@ -51,8 +55,8 @@ defmodule Command.Commander do
     {:noreply, %{state | pv_values: pv_values}}
   end
 
-  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), map()) :: atom()
-  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module, pv_values) do
+  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), list(), integer(), map()) :: atom()
+  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module,classification, time_validity_ms, pv_values) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_float = Enum.at(rx_output, @transmit_channel)
     if (transmit_float > 0) do
@@ -81,7 +85,7 @@ defmodule Command.Commander do
           end
         Map.put(acc, channel, output_value)
       end)
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},{:command,:rx_output}, cmds}, {:goals, control_state}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},classification, time_validity_ms, cmds}, {:goals, control_state}, self())
     end
   end
 end
