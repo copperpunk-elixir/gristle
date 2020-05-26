@@ -7,21 +7,24 @@ defmodule Actuation.SwInterfacePololuTest do
   end
 
   test "Start HWInterface. Connect to Pololu Maestro. Change actuator values" do
-    actuator_name = :aileron
-    hw_interface_config = TestConfigs.Actuation.get_hw_config_pololu()
-    actuator_list = [actuator_name]
-    channels_list = [0]
-    failsafes_list = [0.5]
-    sw_interface_config = TestConfigs.Actuation.get_sw_config_actuators(actuator_list, channels_list, failsafes_list)
-    config = %{
-      hw_interface: hw_interface_config,
-      sw_interface: sw_interface_config
-    }
+    # actuator_name = :aileron
+    # hw_interface_config = TestConfigs.Actuation.get_hw_config_pololu()
+    # actuator_list = [actuator_name]
+    # channels_list = [0]
+    # failsafes_list = [0.5]
+    # sw_interface_config = TestConfigs.Actuation.get_sw_config_actuators(actuator_list, channels_list, failsafes_list)
+    # config = %{
+    #   hw_interface: hw_interface_config,
+    #   sw_interface: sw_interface_config
+    # }
+    actuator_name= :aileron
+    config = Configuration.Vehicle.Plane.Actuation.get_config()
+    actuators = config.sw_interface.actuators
     Logger.info("Connect servo to channel 0 if real actuation is desired")
     Actuation.System.start_link(config)
     Process.sleep(100)
     # Test actuator values
-    actuator = Map.get(sw_interface_config.actuators, actuator_name)
+    actuator = Map.get(actuators, actuator_name)
     # With no valid commands, the actuator output should be the failsafe_cmd
     Process.sleep(150)
     failsafe_output = 0.5*(actuator.min_pw_ms + actuator.max_pw_ms)

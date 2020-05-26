@@ -12,7 +12,7 @@ defmodule Peripherals.Uart.VnIns do
   # @message_length 108
   # @crc_start_index 106
   @deg2rad 0.017453293
-  @rad2deg 57.295779513
+  # @rad2deg 57.295779513
 
   def start_link(config) do
     Logger.debug("Start VectorNav INS GenServer")

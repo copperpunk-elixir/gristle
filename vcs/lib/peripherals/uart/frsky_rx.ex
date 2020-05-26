@@ -42,7 +42,7 @@ defmodule Peripherals.Uart.FrskyRx do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     frsky_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
-    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: 115_200, active: true, stop_bits: 2]) do
+    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: 2]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
         raise "#{frsky_port} is unavailable"

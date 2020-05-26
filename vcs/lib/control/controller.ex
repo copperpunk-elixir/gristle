@@ -29,15 +29,15 @@ defmodule Control.Controller do
     Comms.Operator.start_link(%{name: __MODULE__})
     MessageSorter.System.start_link()
     # Start Message Sorters 
-    apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
-    # Start control state sorter
-    control_state_config = %{
-      name: :control_state,
-      default_message_behavior: :last,
-      initial_value: -1,
-      value_type: :number
-    }
-    MessageSorter.System.start_sorter(control_state_config)
+    # apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
+    # # Start control state sorter
+    # control_state_config = %{
+    #   name: :control_state,
+    #   default_message_behavior: :last,
+    #   initial_value: -1,
+    #   value_type: :number
+    # }
+    # MessageSorter.System.start_sorter(control_state_config)
     join_process_variable_groups()
     control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
     {:noreply, %{state | control_loop_timer: control_loop_timer}}

@@ -11,6 +11,7 @@ defmodule Common.Utils do
       case parent_module do
         GenServer -> GenServer.start_link(module, config, name: name)
         GenStateMachine -> GenStateMachine.start_link(module, config, name: name)
+        Supervisor -> Supervisor.start_link(module, config, name: name)
         DynamicSupervisor -> DynamicSupervisor.start_link(module, config, name: name)
         Registry -> apply(Registry, :start_link, [config])
       end
@@ -35,6 +36,7 @@ defmodule Common.Utils do
       case parent_module do
         GenServer -> GenServer.start_link(module, config, name: name)
         GenStateMachine -> GenStateMachine.start_link(module, config, name: name)
+        Supervisor -> Supervisor.start_link(module, config, name: name)
         DynamicSupervisor -> DynamicSupervisor.start_link(module, config, name: name)
         Registry -> apply(Registry, :start_link, [config])
       end
