@@ -47,8 +47,8 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_info(:navigator_loop, state) do
-    goals_2 = MessageSorter.Sorter.get_value({:goals, 2})
-    MessageSorter.Sorter.add_message({:pv_cmds, 2}, [0,1], 200, goals_2)
+    # goals_2 = MessageSorter.Sorter.get_value({:goals, 2})
+    # MessageSorter.Sorter.add_message({:pv_cmds, 2}, [0,1], 200, goals_2)
     {:noreply, state}
   end
 
