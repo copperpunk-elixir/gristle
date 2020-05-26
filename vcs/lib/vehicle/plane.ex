@@ -40,6 +40,16 @@ defmodule Vehicle.Plane do
     ]
   end
 
+  @spec get_control_state_config() :: map()
+  def get_control_state_config() do
+    %{
+      name: :control_state,
+      default_message_behavior: :default_value,
+      default_value: 3,
+      value_type: :number
+    }
+  end
+
   @spec get_rx_output_channel_map(:integer) :: list()
   def get_rx_output_channel_map(control_state) do
     # channel, absolute/relative, min, max

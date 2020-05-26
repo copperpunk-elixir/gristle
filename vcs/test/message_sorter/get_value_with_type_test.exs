@@ -19,7 +19,7 @@ defmodule Workshop.MessageQueueTest  do
       value_type: :number
     }
     # Start registry
-    {:ok, pid} = Comms.ProcessRegistry.start_link()
+    Comms.ProcessRegistry.start_link()
     MessageSorter.System.start_sorter(roll_config)
     MessageSorter.System.start_sorter(pitch_config)
     Process.sleep(200)
