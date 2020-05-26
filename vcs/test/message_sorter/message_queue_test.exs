@@ -1,5 +1,4 @@
-defmodule Workshop.MessageQueueTest  do
-  alias MessageSorter.Sorter
+defmodule MessageSorter.MessageQueueTest  do
   use ExUnit.Case
 
   test "Multiple MessageSorters" do
@@ -29,50 +28,50 @@ defmodule Workshop.MessageQueueTest  do
     end)
 
     # Add messages to MessageSorter
-    msg1 = MessageSorter.MsgStruct.create_msg([1,0,0], Sorter.get_expiration_mono_ms(500), 1.0)
-    Sorter.add_message(:roll, msg1)
+    msg1 = MessageSorter.MsgStruct.create_msg([1,0,0], MessageSorter.Sorter.get_expiration_mono_ms(500), 1.0)
+    MessageSorter.Sorter.add_message(:roll, msg1)
     Process.sleep(10)
-    assert length(Sorter.get_all_messages(:roll)) == 1
-    assert Sorter.get_message(:roll).value == msg1.value
-    assert Sorter.get_message(:roll).classification == msg1.classification
-    assert Sorter.get_value(:roll) == msg1.value
+    assert length(MessageSorter.Sorter.get_all_messages(:roll)) == 1
+    assert MessageSorter.Sorter.get_message(:roll).value == msg1.value
+    assert MessageSorter.Sorter.get_message(:roll).classification == msg1.classification
+    assert MessageSorter.Sorter.get_value(:roll) == msg1.value
 
-    msg2 = MessageSorter.MsgStruct.create_msg([0,2,0], Sorter.get_expiration_mono_ms(500), 2.0)
-    Sorter.add_message(:roll, msg2)
+    msg2 = MessageSorter.MsgStruct.create_msg([0,2,0], MessageSorter.Sorter.get_expiration_mono_ms(500), 2.0)
+    MessageSorter.Sorter.add_message(:roll, msg2)
     Process.sleep(10)
-    assert length(Sorter.get_all_messages(:roll)) == 2
-    assert Sorter.get_value(:roll) == msg2.value
+    assert length(MessageSorter.Sorter.get_all_messages(:roll)) == 2
+    assert MessageSorter.Sorter.get_value(:roll) == msg2.value
     Process.sleep(200)
-    msg3 = MessageSorter.MsgStruct.create_msg([0,2,1], Sorter.get_expiration_mono_ms(500), 3.0)
-    Sorter.add_message(:roll, msg3)
+    msg3 = MessageSorter.MsgStruct.create_msg([0,2,1], MessageSorter.Sorter.get_expiration_mono_ms(500), 3.0)
+    MessageSorter.Sorter.add_message(:roll, msg3)
     Process.sleep(10)
-    msg4 = MessageSorter.MsgStruct.create_msg([1,0,3], Sorter.get_expiration_mono_ms(500), 4.0)
-    Sorter.add_message(:roll, msg4)
+    msg4 = MessageSorter.MsgStruct.create_msg([1,0,3], MessageSorter.Sorter.get_expiration_mono_ms(500), 4.0)
+    MessageSorter.Sorter.add_message(:roll, msg4)
     Process.sleep(10)
-    msg5 = MessageSorter.MsgStruct.create_msg([0,0,5], Sorter.get_expiration_mono_ms(500), 5.0)
-    Sorter.add_message(:roll, msg5)
+    msg5 = MessageSorter.MsgStruct.create_msg([0,0,5], MessageSorter.Sorter.get_expiration_mono_ms(500), 5.0)
+    MessageSorter.Sorter.add_message(:roll, msg5)
     Process.sleep(300)
     # Add all messages to pitch sorter, should not affect roll
-    Sorter.add_message(:pitch, msg3)
-    Sorter.add_message(:pitch, msg4)
-    Sorter.add_message(:pitch, msg5)
+    MessageSorter.Sorter.add_message(:pitch, msg3)
+    MessageSorter.Sorter.add_message(:pitch, msg4)
+    MessageSorter.Sorter.add_message(:pitch, msg5)
     # Pitch messages should all still be there
-    assert length(Sorter.get_all_messages(:pitch)) == 3
+    assert length(MessageSorter.Sorter.get_all_messages(:pitch)) == 3
     # Back to roll
     # msg1 and msg2 should have expired
-    assert Sorter.get_value(:roll) == msg5.value
+    assert MessageSorter.Sorter.get_value(:roll) == msg5.value
     # Add msg6, which should get rejected because the classfication doesn't match
-    msg6 = MessageSorter.MsgStruct.create_msg([0,0], Sorter.get_expiration_mono_ms(1000), -1)
-    Sorter.add_message(:roll, msg6)
+    msg6 = MessageSorter.MsgStruct.create_msg([0,0], MessageSorter.Sorter.get_expiration_mono_ms(1000), -1)
+    MessageSorter.Sorter.add_message(:roll, msg6)
     Process.sleep(10)
-    assert length(Sorter.get_all_messages(:roll)) == 3
-    assert Sorter.get_value(:roll) == msg5.value
+    assert length(MessageSorter.Sorter.get_all_messages(:roll)) == 3
+    assert MessageSorter.Sorter.get_value(:roll) == msg5.value
     Process.sleep(200)
     # all roll messages should be expired, therefore roll
     # will hold the last value
-    assert Sorter.get_value(:roll) == msg5.value
+    assert MessageSorter.Sorter.get_value(:roll) == msg5.value
     # all pitch messages should be expired, therefore pitch
     # will hold its default value
-    assert Sorter.get_value(:pitch) == default_pitch
+    assert MessageSorter.Sorter.get_value(:pitch) == default_pitch
   end
 end

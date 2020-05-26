@@ -70,19 +70,25 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
-  def handle_call(:get_value, _from, state) do
+  def handle_call({:get_value, with_type}, _from, state) do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
-    value =
+    {value, value_type} =
     if msg == nil do
       case state.default_message_behavior do
-        :last -> state.last_value
-        :default_value -> state.default_value
+        :last -> {state.last_value, :last}
+        :default_value -> {state.default_value, :default_value}
       end
     else
-      msg.value
+      {msg.value, :current}
     end
-    {:reply, value, %{state | messages: messages, last_value: value}}
+    return_value =
+    if (with_type == true) do
+      {value, value_type}
+    else
+      value
+    end
+    {:reply, return_value, %{state | messages: messages, last_value: value}}
   end
 
   def add_message(name, classification, time_validity_ms, value) do
@@ -109,7 +115,11 @@ defmodule MessageSorter.Sorter do
   end
 
   def get_value(name, timeout \\ @default_call_timeout) do
-    GenServer.call(via_tuple(name), :get_value, timeout)
+    GenServer.call(via_tuple(name), {:get_value, false}, timeout)
+  end
+
+  def get_value_with_type(name, timeout \\ @default_call_timeout) do
+    GenServer.call(via_tuple(name), {:get_value, true}, timeout)
   end
 
   def remove_messages_for_classification(name, classification) do
