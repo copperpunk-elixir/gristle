@@ -11,17 +11,18 @@ defmodule Navigation.ProcessGoalsMessageTest do
 
   test "Check Goals message sorter for content" do
     vehicle_type = :Plane
-    config = %{navigator: %{vehicle_type: vehicle_type, navigator_loop_interval_ms: 100 }}
+    default_pv_cmds_level = 3
+    config = %{navigator: %{vehicle_type: vehicle_type, navigator_loop_interval_ms: 100, default_pv_cmds_level: default_pv_cmds_level }}
     Navigation.System.start_link(config)
     Process.sleep(500)
     # Fake goals_output
-    control_state = 2
+    control_state_cmd = 2
     classification = [1, __MODULE__]
     time_validity_ms = 200
     goals = %{roll: 0.2, pitch: 1, yaw: -1, thrust: 0.5}
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:goals, control_state},classification, time_validity_ms,goals},{:goals, control_state}, self())
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:goals, control_state_cmd},classification, time_validity_ms,goals},{:goals, control_state_cmd}, self())
     Process.sleep(150)
-    sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state})
+    sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state_cmd})
     Logger.warn("sorted goal: #{inspect(sorted_goal)}")
     assert sorted_goal.roll == goals.roll
     assert sorted_goal.pitch == goals.pitch
@@ -29,18 +30,25 @@ defmodule Navigation.ProcessGoalsMessageTest do
     Process.sleep(time_validity_ms)
     vehicle_module =Module.concat([Vehicle, vehicle_type])
     pv_list = apply(vehicle_module, :get_process_variable_list, [])
-    default_values = Enum.at(pv_list, control_state-1).default_value
-    sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state})
+    default_values = Enum.at(pv_list, control_state_cmd-1).default_value
+    sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state_cmd})
     assert sorted_goal.roll == default_values.roll
 
     # Join Start PV_cmds group and verity that Navigator is sending messages
     apply(vehicle_module, :start_pv_cmds_message_sorters, [])
-    Process.sleep(500)
-    pv_cmds_2 = MessageSorter.Sorter.get_value({:pv_cmds, 2})
-    assert pv_cmds_2.pitch == default_values.pitch
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:goals, control_state},classification, 1000,goals},{:goals, control_state}, self())
     Process.sleep(200)
     pv_cmds_2 = MessageSorter.Sorter.get_value({:pv_cmds, 2})
-    assert pv_cmds_2.pitch == goals.pitch
+    assert pv_cmds_2.pitch == default_values.pitch
+    # Until we send the a valid goals command, the Navigator should be using the default commands of
+    # the default_pv_cmds_level
+    control_state_current = MessageSorter.Sorter.get_value(:control_state)
+    assert control_state_current == default_pv_cmds_level
+    # Now send another valid command
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:goals, control_state_cmd},classification, 1000,goals},{:goals, control_state_cmd}, self())
+    Process.sleep(200)
+    pv_cmds_2 = MessageSorter.Sorter.get_value({:pv_cmds, 2})
+    assert pv_cmds_2.yaw == goals.yaw
+    control_state_current = MessageSorter.Sorter.get_value(:control_state)
+    assert control_state_current == control_state_cmd
   end
 end
