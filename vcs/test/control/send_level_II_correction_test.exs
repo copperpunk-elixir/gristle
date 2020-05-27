@@ -3,14 +3,10 @@ defmodule Control.SendLevelIICorrectionTest do
   require Logger
 
   setup do
-    pid_config = TestConfigs.Pids.get_pid_config_plane()
+    pid_config = Configuration.Vehicle.Plane.Pids.get_pid_config()
     Comms.ProcessRegistry.start_link()
     Pids.System.start_link(pid_config)
-    swarm_gsm_config =%{
-      modules_to_monitor: [:estimator],
-      state_loop_interval_ms: 50,
-    }
-    Cluster.Gsm.start_link(swarm_gsm_config)
+    MessageSorter.System.start_link(:Plane)
     {:ok, [config: pid_config]}
   end
 
@@ -21,31 +17,23 @@ defmodule Control.SendLevelIICorrectionTest do
     elevator_neutral = pid_config.pids.pitchrate.elevator.output_neutral
     rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
 
-    MessageSorter.System.start_link()
-    actuator_sorter_config = %{
-      name: :actuator_cmds,
-      default_message_behavior: :default_value,
-      default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral},
-      value_type: :map
-    }
-    MessageSorter.System.start_sorter(actuator_sorter_config)
-    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :aileron}, default_message_behavior: :default_value, default_value: aileron_neutral})
-    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :elevator}, default_message_behavior: :default_value, default_value: elevator_neutral})
-    # MessageSorter.System.start_sorter(%{name: {:actuator_cmds, :rudder}, default_message_behavior: :default_value, default_value: rudder_neutral})
+    # MessageSorter.System.start_link()
+    # actuator_sorter_config = %{
+    #   name: :actuator_cmds,
+    #   default_message_behavior: :default_value,
+    #   default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral},
+    #   value_type: :map
+    # }
+    # MessageSorter.System.start_sorter(actuator_sorter_config)
     Logger.info("SendLevelIICorrectionTest")
     op_name = :levelII
     Comms.Operator.start_link(%{name: op_name})
     max_cmd_delta = 0.001
     Logger.info("Start Control Loop")
-    config = %{controller: TestConfigs.Control.get_config_plane()}
+    config = Configuration.Vehicle.Plane.Control.get_config()
     Control.System.start_link(config)
     Process.sleep(200)
     # Put into control state :auto
-    assert Control.Controller.get_control_state() == -1
-    new_state = 2#:semi_auto
-    Cluster.Gsm.add_desired_control_state(new_state, [0], 1000)
-    Process.sleep(100)
-    assert Control.Controller.get_control_state() == new_state
     Logger.info(inspect(pid_config.pids))
     # Verify that none of the PVs in PVII have a command
     assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral

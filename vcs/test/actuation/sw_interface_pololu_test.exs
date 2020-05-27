@@ -17,6 +17,8 @@ defmodule Actuation.SwInterfacePololuTest do
     #   hw_interface: hw_interface_config,
     #   sw_interface: sw_interface_config
     # }
+    MessageSorter.System.start_link(:Plane)
+    Process.sleep(200)
     actuator_name= :aileron
     config = Configuration.Vehicle.Plane.Actuation.get_config()
     actuators = config.sw_interface.actuators
@@ -30,10 +32,13 @@ defmodule Actuation.SwInterfacePololuTest do
     failsafe_output = 0.5*(actuator.min_pw_ms + actuator.max_pw_ms)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == failsafe_output
     # Send min_cmd to Actuator
-    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 400, %{actuator_name => actuator.cmd_limit_min})
+    current_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
+    new_cmds = Map.merge(current_cmds, %{actuator_name => actuator.cmd_limit_min})
+    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 400, new_cmds)
     Process.sleep(200)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.min_pw_ms
-    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 1000, %{actuator_name =>actuator.cmd_limit_max})
+    new_cmds = Map.merge(current_cmds, %{actuator_name => actuator.cmd_limit_max})
+    MessageSorter.Sorter.add_message(:actuator_cmds, [0], 1000, new_cmds)
     Process.sleep(300)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.max_pw_ms
   end

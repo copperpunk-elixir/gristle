@@ -2,18 +2,10 @@ defmodule Pids.LevelIIITest do
   use ExUnit.Case
 
   setup do
-    pid_config = TestConfigs.Pids.get_pid_config_plane()
-    {:ok, _} = Comms.ProcessRegistry.start_link()
-    {:ok, _} = Pids.System.start_link(pid_config)
-    MessageSorter.System.start_link()
-    Process.sleep(200)
-    level_I_config = %{
-      name: {:pv_cmds, 2},
-      default_message_behavior: :default_value,
-      default_value: %{roll: 0, yaw: 0},
-      value_type: :map
-    }
-    MessageSorter.System.start_sorter(level_I_config)
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    Comms.ProcessRegistry.start_link()
+    Pids.System.start_link(pid_config)
+    MessageSorter.System.start_link(:Plane)
     # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})
     # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0})
 

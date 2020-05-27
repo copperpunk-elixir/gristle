@@ -12,7 +12,7 @@ defmodule Control.Controller do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Vehicle, vehicle_type])
+    vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type, Control])
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
@@ -27,7 +27,7 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    MessageSorter.System.start_link()
+    # MessageSorter.System.start_link()
     # Start Message Sorters 
     # apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
     # # Start control state sorter

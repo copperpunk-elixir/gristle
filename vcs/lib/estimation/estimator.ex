@@ -37,7 +37,6 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    MessageSorter.System.start_link()
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
@@ -58,7 +57,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :attitude_body_rate}, pv_value_map}, state) do
-    # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
+    Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     attitude = Map.get(pv_value_map, :attitude)
     body_rate = Map.get(pv_value_map, :body_rate)
     {attitude, body_rate, new_watchdog_elapsed} =

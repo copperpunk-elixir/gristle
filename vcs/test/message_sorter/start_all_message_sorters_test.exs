@@ -23,13 +23,12 @@ defmodule MessageSorter.StartAllMessageSortersTest do
     Enum.each(all_configs, fn child_spec ->
       config = elem(child_spec.start,2)
       |> Enum.at(0)
-      {value, value_type} = MessageSorter.Sorter.get_value_with_type(config.name)
-      Logger.debug("sorter #{inspect(config.name)} has value #{inspect(value)} from type #{value_type}")
+      {value, value_status} = MessageSorter.Sorter.get_value_with_status(config.name)
+      Logger.debug("sorter #{inspect(config.name)} has value #{inspect(value)} from status #{value_status}")
     end)
     Process.sleep(200)
-    {actuator_cmds, actuator_cmds_type} = MessageSorter.Sorter.get_value_with_type(:actuator_cmds)
+    {actuator_cmds, actuator_cmds_status} = MessageSorter.Sorter.get_value_with_status(:actuator_cmds)
     assert actuator_cmds.aileron == 0.5
-    assert actuator_cmds_type == :default_value
-    
+    assert actuator_cmds_status == :default_value
   end
 end

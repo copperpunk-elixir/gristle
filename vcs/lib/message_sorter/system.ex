@@ -21,7 +21,6 @@ defmodule MessageSorter.System do
   def init(vehicle_type) do
     vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type])
     children = get_all_children(vehicle_module)
-    IO.inspect(children)
     Supervisor.init(children, strategy: :one_for_one)
     # DynamicSupervisor.init(strategy: :one_for_one)
   end
