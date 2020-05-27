@@ -51,7 +51,6 @@ defmodule Peripherals.Uart.VnIns do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    # Start Message Sorters
     Logger.debug("VN INS begin with process: #{inspect(self())}")
     ins_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
     case Circuits.UART.open(state.uart_ref, ins_port,[speed: state.baud, active: true]) do

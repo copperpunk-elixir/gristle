@@ -71,20 +71,4 @@ defmodule Navigation.Navigator do
     MessageSorter.Sorter.add_message({:pv_cmds, control_state}, [0,1], 2*state.navigator_loop_interval_ms, pv_cmds)
     {:noreply, state}
   end
-
-  # @spec start_goals_sorter(atom()) :: atom()
-  # defp start_goals_sorter(vehicle_module) do
-  #   level_pv_sorter_list = apply(vehicle_module, :get_process_variable_list, [])
-  #   Enum.each(level_pv_sorter_list,fn pv_cmds_config ->
-  #     {:pv_cmds, level} = pv_cmds_config.name
-  #     goals_config = %{pv_cmds_config | name: {:goals, level}}
-  #    MessageSorter.System.start_sorter(goals_config)
-  #   end)
-  # end
-
-  # @spec start_command_state_sorter(atom()) :: atom()
-  # def start_command_state_sorter(vehicle_module) do
-  #   config = apply(vehicle_module, :get_control_state_config, [])
-  #   MessageSorter.System.start_sorter(config)
-  # end
 end

@@ -14,7 +14,6 @@ defmodule MessageSorter.Sorter do
   def init(config) do
     {default_message_behavior, default_value} =
       case Map.get(config, :default_message_behavior) do
-        # nil -> {:default_value, nil}
         :last -> {:last, nil}
         :default_value -> {:default_value, config.default_value}
         :decay -> {:decay, config.decay_value}
@@ -94,23 +93,19 @@ defmodule MessageSorter.Sorter do
   def add_message(name, classification, time_validity_ms, value) do
     Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})
   end
 
   def add_message(name, msg_struct) do
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.cast(via_tuple(name), {:add_message, msg_struct.classification, msg_struct.expiration_mono_ms, msg_struct.value})
   end
 
   def get_message(name) do
     Logger.debug("Get message: from #{inspect(name)}")
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end
 
   def get_all_messages(name) do
-    # name_in_registry = Comms.ProcessRegistry.via_tuple(__MODULE__, name)
     GenServer.call(via_tuple(name), :get_all_messages, @default_call_timeout)
   end
 

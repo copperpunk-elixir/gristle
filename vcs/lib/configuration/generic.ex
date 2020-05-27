@@ -1,4 +1,5 @@
 defmodule Configuration.Generic do
+  require Logger
 
   @spec get_estimator_config() :: map()
   def get_estimator_config() do
@@ -28,5 +29,35 @@ defmodule Configuration.Generic do
         value_type: :number
       }
     ]
+  end
+
+  @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
+  def get_message_sorter_classification_time_validity_ms(sender, sorter) do
+    Logger.warn("sender: #{inspect(sender)}")
+    classification_all = %{
+      :actuator_cmds => %{
+        Pids.System => [0,1]
+      },
+      :pv_cmds => %{
+        Pids.System => [0,1]
+      },
+      :rx_output => %{
+        Command.Commander => [0,1]
+      }
+    }
+
+    time_validity_all = %{
+      {:hb, :node} => 500,
+      :actuator_cmds => 200,
+      :pv_cmds => 200,
+      :rx_output => 100
+    }
+
+    classification =
+      Map.get(classification_all, sorter, %{})
+      |> Map.get(sender, nil)
+    time_validity = Map.get(time_validity_all, sorter, 0)
+    Logger.warn("class/time: #{inspect(classification)}/#{time_validity}")
+    {classification, time_validity}
   end
 end

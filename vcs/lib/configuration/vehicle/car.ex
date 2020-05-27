@@ -5,13 +5,13 @@ defmodule Configuration.Vehicle.Car do
     %{speed: speed_corr}
   end
 
-  def start_pv_cmds_message_sorters() do
-    Logger.debug("Start Car message sorters")
-    MessageSorter.System.start_link()
-    Enum.each(get_process_variable_map(), fn {_level, msg_sorter_config} ->
-      MessageSorter.System.start_sorter(msg_sorter_config)
-    end)
-  end
+  # def start_pv_cmds_message_sorters() do
+  #   Logger.debug("Start Car message sorters")
+  #   MessageSorter.System.start_link()
+  #   Enum.each(get_process_variable_map(), fn {_level, msg_sorter_config} ->
+  #     MessageSorter.System.start_sorter(msg_sorter_config)
+  #   end)
+  # end
 
   def get_process_variable_map() do
     %{1 => %{

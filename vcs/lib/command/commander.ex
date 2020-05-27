@@ -4,8 +4,6 @@ defmodule Command.Commander do
 
   @rx_control_state_channel 4
   @transmit_channel 5
-  @default_rx_output_classification [0,0]
-  @default_rx_output_time_validity_ms 100
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
@@ -18,11 +16,12 @@ defmodule Command.Commander do
   def init(config) do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
+    {rx_output_classification, rx_output_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :rx_output)
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
-        rx_output_classification: Map.get(config, :rx_output_classification, @default_rx_output_classification),
-        rx_output_time_validity_ms: Map.get(config, :rx_output_time_validity_ms, @default_rx_output_time_validity_ms),
+        rx_output_classification: rx_output_classification,
+        rx_output_time_validity_ms: rx_output_time_validity_ms,
         commands: %{
         },
         pv_values: %{}
@@ -32,7 +31,6 @@ defmodule Command.Commander do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    # MessageSorter.System.start_link(state.vehicle_module)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     {:noreply, state}
