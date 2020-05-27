@@ -24,7 +24,6 @@ defmodule Navigation.ProcessGoalsMessageTest do
     Comms.Operator.send_global_msg_to_group(__MODULE__, {{:goals, control_state_cmd},classification, time_validity_ms,goals},{:goals, control_state_cmd}, self())
     Process.sleep(150)
     sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state_cmd})
-    Logger.warn("sorted goal: #{inspect(sorted_goal)}")
     assert sorted_goal.roll == goals.roll
     assert sorted_goal.pitch == goals.pitch
     # Let the commands expire

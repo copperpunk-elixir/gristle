@@ -70,13 +70,11 @@ defmodule Command.Commander do
         absolute_or_relative = elem(channel_tuple, 1)
         min_value = elem(channel_tuple, 2)
         max_value = elem(channel_tuple, 3)
+        mid_value = (min_value + max_value)/2
+        delta_value_each_side = max_value - mid_value
         inverted_multiplier = elem(channel_tuple, 4)
         unscaled_value = inverted_multiplier*Enum.at(rx_output, index)
-        scaled_value = if (unscaled_value > 0) do
-          unscaled_value*max_value
-        else
-          -unscaled_value*min_value
-        end
+        scaled_value = mid_value + unscaled_value*delta_value_each_side
         output_value =
           case absolute_or_relative do
             :absolute -> scaled_value

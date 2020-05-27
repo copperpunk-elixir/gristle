@@ -67,25 +67,25 @@ defmodule Pids.System do
     case level do
       3 ->
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, dt, state.pv_output_pids)
-        Logger.warn("PID Level 3")
+        # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
       2 ->
-        Logger.warn("PID Level 2")
+        # Logger.warn("PID Level 2")
         level_1_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude, dt, state.pv_output_pids)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
-        Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
-        Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.body_rate)}")
+        # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
+        # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.body_rate)}")
         pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
         level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)
         pv_1_cmd_map = Map.put(pv_1_cmd_map, :thrust, level_2_thrust_cmd)
         actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       1 ->
-        Logger.warn("PID Level 1")
+        # Logger.warn("PID Level 1")
         pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
         actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
-        Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
+        # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       0 ->
         Logger.warn("PID level 0 - How did we get here?")
@@ -99,13 +99,13 @@ defmodule Pids.System do
       # If a command does not yet exist, then do not ignore it. Rather pass the pv_value as the cmd
       # i.e., the correction=0
       pv_cmd = Map.get(pv_cmd_map, pv_name, pv_value)
-      Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
+      # Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
       pv_output_map = Map.get(pv_output_pids, pv_name)
       Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
-        Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
+        # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
         output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
         total_output = output*weight + Map.get(acc, output_variable_name, 0)
-        Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
+        # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
         Map.put(acc, output_variable_name, total_output)
       end)
     end)

@@ -45,8 +45,8 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_body_rate}, pv_value_map, dt}, state) do
-    Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
-    Logger.warn("cs: #{state.control_state}")
+    # Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
+    # Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
       case state.control_state do
         3 -> {{:pv_cmds_values, 2}, state.pv_cmds}
@@ -55,7 +55,7 @@ defmodule Control.Controller do
         0 -> {{:pv_cmds_values, 1}, %{}}
         _other -> {nil, nil}
       end
-    Logger.warn("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
+    # Logger.warn("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, dt}, destination_group, self())
     {:noreply, state}
   end
@@ -74,7 +74,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_info(:control_loop, state) do
-    Logger.debug("Control loop. CS: #{state.control_state}")
+    # Logger.debug("Control loop. CS: #{state.control_state}")
     # For every PV, get the corresponding command
     control_state = get_control_state()
     pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)

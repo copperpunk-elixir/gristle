@@ -3,14 +3,15 @@ defmodule Peripherals.Uart.FrskyRx do
   use GenServer
   require Logger
 
-  @default_device_description "Arduino Micro"
+  # @default_device_description "Arduino Micro"
+  @default_device_description "Feather M0"
   @default_baud 115_200
   @start_byte 0x0F
   @end_byte 0x00
   @end_byte_index 24
   @valid_frame_count_min 3
-  @pw_mid 992
-  @pw_half_range 800
+  @pw_mid 991.5
+  @pw_half_range 819.5
 
 
   def start_link(config) do
@@ -164,6 +165,7 @@ defmodule Peripherals.Uart.FrskyRx do
       # (Enum.at(payload,20)>>>5) + (Enum.at(payload,21)<<<3),
       ]
     channels = Enum.reduce(Enum.reverse(channels), [], fn (value, acc) ->
+      # [(value &&& 0x07FF)] ++ acc
       [((value &&& 0x07FF) -@pw_mid)/@pw_half_range] ++ acc
     end)
     flag_byte = Enum.at(payload,22)

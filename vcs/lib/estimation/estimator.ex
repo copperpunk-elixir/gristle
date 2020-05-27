@@ -93,7 +93,6 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     body_rate = state.body_rate
     unless (Enum.empty?(attitude) or Enum.empty?(body_rate)) do
-      Logger.warn("est send imu loop")
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},

@@ -5,7 +5,7 @@ defmodule Actuation.HwInterfacePololuTest do
     {:ok, []}
   end
 
-  test "Start HWInterface. Connect to Pololu Maestro. Change actuator values", context do
+  test "Start HWInterface. Connect to Pololu Maestro. Change actuator values" do
     Logger.info("Connect servo to channel 0 if real actuation is desired")
     config = Configuration.Vehicle.Plane.Actuation.get_config()
     Actuation.HwInterface.start_link(config.hw_interface)
