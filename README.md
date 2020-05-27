@@ -1,2 +1,1 @@
-# DEPRECATED  
-Please go to https://github.com/copperpunk/gristle/ for the current repository.
+Working repository for the Elixir-based vehicle control system that will revolutionize autonomous travel and let all of us work on fun stuff forever.
