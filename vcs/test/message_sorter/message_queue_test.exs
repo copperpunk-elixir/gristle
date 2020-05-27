@@ -2,8 +2,8 @@ defmodule MessageSorter.MessageQueueTest  do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_link(:Plane)
+    # Comms.ProcessRegistry.start_link()
+    # MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end
 

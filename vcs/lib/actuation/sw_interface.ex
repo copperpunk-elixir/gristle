@@ -58,7 +58,7 @@ defmodule Actuation.SwInterface do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
     # actuator_interface_output_process_name = state.config.actuator_interface_output.process_name
     actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
-    Logger.warn("actuator output map: #{inspect(actuator_output_map)}")
+    Logger.warn("act_sw loop. actuator output map: #{inspect(actuator_output_map)}")
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
       output = Map.fetch!(actuator_output_map, actuator_name)
       # output = get_output_for_actuator_name(actuator_name)

@@ -2,10 +2,10 @@ defmodule Control.StartLoopTest do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
-    Process.sleep(50)
-    Comms.Operator.start_link(%{name: :start_loop_test})
-    MessageSorter.System.start_link(:Plane)
+    # Comms.ProcessRegistry.start_link()
+    # Process.sleep(50)
+    # Comms.Operator.start_link(%{name: :start_loop_test})
+    # MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end
 

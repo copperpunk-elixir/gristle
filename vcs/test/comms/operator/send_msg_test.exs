@@ -2,9 +2,9 @@ defmodule Comms.Operator.SendMsgTest do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
-    Process.sleep(50)
-    MessageSorter.System.start_link()
+    # Comms.ProcessRegistry.start_link()
+    # Process.sleep(50)
+    # MessageSorter.System.start_link()
     {:ok, []}
   end
 

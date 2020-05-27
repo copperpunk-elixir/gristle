@@ -3,8 +3,9 @@ defmodule Control.SendLevelIIICorrectionTest do
   require Logger
 
   setup do
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Comms.ProcessRegistry.start_link()
+    Process.sleep(100)
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Pids.System.start_link(pid_config)
     MessageSorter.System.start_link(:Plane)
     {:ok, [config: pid_config]}

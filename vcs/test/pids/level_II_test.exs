@@ -2,9 +2,9 @@ defmodule Pids.LevelIITest do
   use ExUnit.Case
 
   setup do
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
-
     Comms.ProcessRegistry.start_link()
+    Process.sleep(100)
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Pids.System.start_link(pid_config)
 
     {:ok, [

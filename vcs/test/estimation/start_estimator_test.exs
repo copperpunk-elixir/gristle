@@ -2,6 +2,8 @@ defmodule Estimation.StartEstimatorTest do
   use ExUnit.Case
 
   setup do
+    Comms.ProcessRegistry.start_link()
+    Process.sleep(100)
     config = Configuration.Generic.get_estimator_config()
     Estimation.System.start_link(config)
     MessageSorter.System.start_link(:Plane)

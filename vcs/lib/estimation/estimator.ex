@@ -40,7 +40,7 @@ defmodule Estimation.Estimator do
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    ins_loop_timer =nil# Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
     imu_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
     ins_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
@@ -93,6 +93,7 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     body_rate = state.body_rate
     unless (Enum.empty?(attitude) or Enum.empty?(body_rate)) do
+      Logger.warn("est send imu loop")
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},
