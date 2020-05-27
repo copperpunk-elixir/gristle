@@ -7,28 +7,7 @@ defmodule MessageSorter.MessageQueueTest  do
     {:ok, []}
   end
 
-  # TODO - rewrite this test to match the new MessageSorter logic
-
-  # test "Multiple MessageSorters" do
-  #   # Start registry
-
-  #   config = Configuration.Vehicle.Plane.Control.get_pv_cmds_sorter_configs()
-  #   level_2_config = Enum.at(config, 1)
-  #   sorter_name = {:pv_cmds, 2}
-
-  #   # Add messages to MessageSorter
-  #   msg1 = MessageSorter.MsgStruct.create_msg([1,0,0], MessageSorter.Sorter.get_expiration_mono_ms(500), 1.0)
-  #   MessageSorter.Sorter.add_message(:roll, msg1)
-  #   Process.sleep(10)
-  #   assert length(MessageSorter.Sorter.get_all_messages(:roll)) == 1
-  #   assert MessageSorter.Sorter.get_message(:roll).value == msg1.value
-  #   assert MessageSorter.Sorter.get_message(:roll).classification == msg1.classification
-  #   assert MessageSorter.Sorter.get_value(:roll) == msg1.value
-
-  #   msg2 = MessageSorter.MsgStruct.create_msg([0,2,0], MessageSorter.Sorter.get_expiration_mono_ms(500), 2.0)
-  #   MessageSorter.Sorter.add_message(:roll, msg2)
-  #   Process.sleep(10)
-  #   assert length(MessageSorter.Sorter.get_all_messages(:roll)) == 2
+  # TODO - rewrite this test to match the new MessageSorter .get_all_messages(:roll)) == 2
   #   assert MessageSorter.Sorter.get_value(:roll) == msg2.value
   #   Process.sleep(200)
   #   msg3 = MessageSorter.MsgStruct.create_msg([0,2,1], MessageSorter.Sorter.get_expiration_mono_ms(500), 3.0)

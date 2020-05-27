@@ -3,7 +3,7 @@ defmodule Control.SendLevelIICorrectionTest do
   require Logger
 
   setup do
-    pid_config = Configuration.Vehicle.Plane.Pids.get_pid_config()
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Comms.ProcessRegistry.start_link()
     Pids.System.start_link(pid_config)
     MessageSorter.System.start_link(:Plane)
@@ -33,7 +33,6 @@ defmodule Control.SendLevelIICorrectionTest do
     config = Configuration.Vehicle.Plane.Control.get_config()
     Control.System.start_link(config)
     Process.sleep(200)
-    # Put into control state :auto
     Logger.info(inspect(pid_config.pids))
     # Verify that none of the PVs in PVII have a command
     assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral
