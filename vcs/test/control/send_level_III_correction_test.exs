@@ -7,10 +7,15 @@ defmodule Control.SendLevelIIICorrectionTest do
     Comms.ProcessRegistry.start_link()
     Pids.System.start_link(pid_config)
     MessageSorter.System.start_link(:Plane)
-    {:ok, []}
+    {:ok, [config: pid_config]}
   end
 
-  test "SendLevelIIICorrectionTest" do
+  test "SendLevelIIICorrectionTest", context do
+    pid_config = context[:config]
+    aileron_neutral = pid_config.pids.rollrate.aileron.output_neutral
+    elevator_neutral = pid_config.pids.pitchrate.elevator.output_neutral
+    rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
+
     IO.puts("SendLevelIIICorrectionTest")
     op_name = :levelIII
     Comms.Operator.start_link(%{name: op_name})
@@ -26,6 +31,11 @@ defmodule Control.SendLevelIIICorrectionTest do
     assert_in_delta(pv_2_cmds.roll, 0, max_cmd_delta)
     assert_in_delta(pv_2_cmds.pitch, 0, max_cmd_delta)
     assert_in_delta(pv_2_cmds.yaw, 0, max_cmd_delta)
+
+    assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral
+    assert Pids.Pid.get_output(:pitchrate, :elevator) == pid_config.pids.pitchrate.elevator.output_neutral
+    assert Pids.Pid.get_output(:yawrate, :rudder) == pid_config.pids.yawrate.rudder.output_neutral
+
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :pitch}), 0, max_cmd_delta)
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :yaw}), 0, max_cmd_delta)
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :thrust}), 0, max_cmd_delta)
@@ -60,6 +70,14 @@ defmodule Control.SendLevelIIICorrectionTest do
     assert pv_2_cmds.roll < 0
     assert pv_2_cmds.pitch < 0
     assert pv_2_cmds.yaw < 0
+    # Level 1
+    assert Pids.Pid.get_output(:rollrate, :aileron) < aileron_neutral
+    assert Pids.Pid.get_output(:pitchrate, :elevator) < elevator_neutral
+    assert Pids.Pid.get_output(:yawrate, :rudder) < rudder_neutral
+    actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
+    assert actuator_cmds.aileron < aileron_neutral
+    assert actuator_cmds.elevator < elevator_neutral
+    assert actuator_cmds.rudder < rudder_neutral
 
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :roll}) < 0
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :yaw}) < 0
