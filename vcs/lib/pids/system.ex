@@ -99,13 +99,13 @@ defmodule Pids.System do
       # If a command does not yet exist, then do not ignore it. Rather pass the pv_value as the cmd
       # i.e., the correction=0
       pv_cmd = Map.get(pv_cmd_map, pv_name, pv_value)
-      # Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
+      Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
       pv_output_map = Map.get(pv_output_pids, pv_name)
       Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
-        # Logger.debug("pv/cv/cmd/value: #{process_var_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
+        Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
         output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
         total_output = output*weight + Map.get(acc, output_variable_name, 0)
-        # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
+        Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
         Map.put(acc, output_variable_name, total_output)
       end)
     end)

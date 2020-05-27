@@ -277,9 +277,9 @@ defmodule Peripherals.Uart.VnIns do
       pitch_rate_rad = list_to_int(pitch_rate_rad_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
       yaw_rate_rad = list_to_int(yaw_rate_rad_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
       {%{
-            roll: roll_rate_rad,
-            pitch: pitch_rate_rad,
-            yaw: yaw_rate_rad
+            rollrate: roll_rate_rad,
+            pitchrate: pitch_rate_rad,
+            yawrate: yaw_rate_rad
       }, buffer}
     else
       {ins.body_rate, buffer}

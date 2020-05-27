@@ -3,6 +3,7 @@ defmodule System.TotalSystemTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
+    Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
     # ----- BEGIN Swarm setup -----
     cluster_config = %{

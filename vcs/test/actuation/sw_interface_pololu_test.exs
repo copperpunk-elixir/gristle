@@ -3,6 +3,7 @@ defmodule Actuation.SwInterfacePololuTest do
   require Logger
   setup do
     Comms.ProcessRegistry.start_link()
+    Process.sleep(100)
     {:ok, []}
   end
 

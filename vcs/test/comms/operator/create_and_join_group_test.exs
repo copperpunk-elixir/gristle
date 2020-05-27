@@ -2,7 +2,7 @@ defmodule Comms.Operator.CreateAndJoinGroupTest do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    # Comms.ProcessRegistry.start_link()
     {:ok, []}
   end
 

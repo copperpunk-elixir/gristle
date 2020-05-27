@@ -45,7 +45,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_body_rate}, pv_value_map, dt}, state) do
-    # Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
+    Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
     Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
       case state.control_state do
@@ -55,6 +55,7 @@ defmodule Control.Controller do
         0 -> {{:pv_cmds_values, 1}, %{}}
         _other -> {nil, nil}
       end
+    Logger.warn("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, dt}, destination_group, self())
     {:noreply, state}
   end
