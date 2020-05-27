@@ -17,7 +17,7 @@ defmodule Command.Commander do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Vehicle, vehicle_type])
+    vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
@@ -32,8 +32,7 @@ defmodule Command.Commander do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    MessageSorter.System.start_link()
-    # Start FrSky Sorter
+    # MessageSorter.System.start_link(state.vehicle_module)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     {:noreply, state}

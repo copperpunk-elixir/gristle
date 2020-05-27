@@ -1,4 +1,4 @@
-defmodule Vehicle.Car do
+defmodule Configuration.Vehicle.Car do
   require Logger
   def get_auto_pv_value_map(pv_map, pv_cmds) do
     speed_corr = pv_cmds.speed - Common.Utils.Math.hypot(pv_map.velocity.x, pv_map.velocity.y)

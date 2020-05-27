@@ -14,7 +14,7 @@ defmodule MessageSorter.Sorter do
   def init(config) do
     {default_message_behavior, default_value} =
       case Map.get(config, :default_message_behavior) do
-        nil -> {:default_value, nil}
+        # nil -> {:default_value, nil}
         :last -> {:last, nil}
         :default_value -> {:default_value, config.default_value}
         :decay -> {:decay, config.decay_value}
@@ -70,10 +70,10 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
-  def handle_call({:get_value, with_type}, _from, state) do
+  def handle_call({:get_value, with_status}, _from, state) do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
-    {value, value_type} =
+    {value, value_status} =
     if msg == nil do
       case state.default_message_behavior do
         :last -> {state.last_value, :last}
@@ -83,8 +83,8 @@ defmodule MessageSorter.Sorter do
       {msg.value, :current}
     end
     return_value =
-    if (with_type == true) do
-      {value, value_type}
+    if (with_status == true) do
+      {value, value_status}
     else
       value
     end
@@ -122,7 +122,7 @@ defmodule MessageSorter.Sorter do
     end
   end
 
-  def get_value_with_type(name, timeout \\ @default_call_timeout) do
+  def get_value_with_status(name, timeout \\ @default_call_timeout) do
     unless (GenServer.whereis(via_tuple(name)) == nil) do
       GenServer.call(via_tuple(name), {:get_value, true}, timeout)
     else

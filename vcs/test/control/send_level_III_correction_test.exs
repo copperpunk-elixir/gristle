@@ -3,14 +3,10 @@ defmodule Control.SendLevelIIICorrectionTest do
   require Logger
 
   setup do
-    pid_config = TestConfigs.Pids.get_pid_config_plane()
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Comms.ProcessRegistry.start_link()
     Pids.System.start_link(pid_config)
-    swarm_gsm_config =%{
-      modules_to_monitor: [:estimator],
-      state_loop_interval_ms: 50
-    }
-    Cluster.Gsm.start_link(swarm_gsm_config)
+    MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end
 
@@ -20,15 +16,9 @@ defmodule Control.SendLevelIIICorrectionTest do
     Comms.Operator.start_link(%{name: op_name})
     max_cmd_delta = 0.001
     IO.puts("Start Control Loop")
-    config = %{controller: TestConfigs.Control.get_config_plane()}
+    config = Configuration.Vehicle.Plane.Control.get_config()
     Control.System.start_link(config)
     Process.sleep(200)
-    # Put into control state :auto
-    assert Control.Controller.get_control_state() == -1
-    new_state = 3#:auto
-    Cluster.Gsm.add_desired_control_state(new_state, [0], 1000)
-    Process.sleep(100)
-    assert Control.Controller.get_control_state() == new_state
     # Verify that none of the PVs in PVII have a command
     pv_1_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 1})
     pv_2_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 2})
@@ -70,7 +60,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     assert pv_2_cmds.roll < 0
     assert pv_2_cmds.pitch < 0
     assert pv_2_cmds.yaw < 0
-    
+
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :roll}) < 0
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :yaw}) < 0
     # assert MessageSorter.Sorter.get_value({:pv_cmds, :pitch}) < 0

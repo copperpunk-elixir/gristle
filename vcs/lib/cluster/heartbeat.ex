@@ -33,13 +33,13 @@ defmodule Cluster.Heartbeat do
 
   def handle_cast(:begin , state) do
     Process.sleep(100)
-    sorter_config = %{
-      name: @node_sorter,
-      value_type: :map
-    }
+    # sorter_config = %{
+    #   name: @node_sorter,
+    #   value_type: :map
+    # }
     Comms.Operator.start_link(%{name: __MODULE__})
     Comms.Operator.join_group(__MODULE__, @node_sorter, self())
-    MessageSorter.System.start_sorter(sorter_config)
+    # MessageSorter.System.start_sorter(sorter_config)
     {:noreply, state}
   end
 

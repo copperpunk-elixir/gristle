@@ -5,7 +5,7 @@ defmodule Actuation.SwInterface do
   def start_link(config) do
     Logger.debug("Start Actuation SwInterface")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    start_message_sorters()
+    # start_message_sorters()
     start_actuator_loop()
     {:ok, process_id}
   end
@@ -19,25 +19,25 @@ defmodule Actuation.SwInterface do
      }}
   end
 
-  @impl GenServer
-  def handle_cast(:start_message_sorters, state) do
-    MessageSorter.System.start_link()
-    failsafe_map = Enum.reduce(state.actuators, %{}, fn({actuator_name, actuator}, acc) ->
-      Map.put(acc, actuator_name, actuator.failsafe_cmd)
-    end)
-    MessageSorter.System.start_sorter(
-      %{
-        name: :actuator_cmds,
-        default_message_behavior: :default_value,
-        default_value: failsafe_map,
-        value_type: :map
-      }
-    )
-    # Enum.each(state.actuators, fn {actuator_name, actuator} ->
-    #   MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
-    # end)
-    {:noreply, state}
-  end
+  # @impl GenServer
+  # def handle_cast(:start_message_sorters, state) do
+  #   # MessageSorter.System.start_link()
+  #   # failsafe_map = Enum.reduce(state.actuators, %{}, fn({actuator_name, actuator}, acc) ->
+  #   #   Map.put(acc, actuator_name, actuator.failsafe_cmd)
+  #   # end)
+  #   # MessageSorter.System.start_sorter(
+  #   #   %{
+  #   #     name: :actuator_cmds,
+  #   #     default_message_behavior: :default_value,
+  #   #     default_value: failsafe_map,
+  #   #     value_type: :map
+  #   #   }
+  #   # )
+  #   # Enum.each(state.actuators, fn {actuator_name, actuator} ->
+  #   #   MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
+  #   # end)
+  #   {:noreply, state}
+  # end
 
     @impl GenServer
   def handle_cast(:start_actuator_loop, state) do
@@ -46,12 +46,12 @@ defmodule Actuation.SwInterface do
       {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_cast(:stop_actuator_loop, state) do
-    actuator_timer = Common.Utils.stop_loop(state.actuator_timer)
-    state = %{state | actuator_timer: actuator_timer}
-    {:noreply, state}
-  end
+  # @impl GenServer
+  # def handle_cast(:stop_actuator_loop, state) do
+  #   actuator_timer = Common.Utils.stop_loop(state.actuator_timer)
+  #   state = %{state | actuator_timer: actuator_timer}
+  #   {:noreply, state}
+  # end
 
   @impl GenServer
   def handle_info(:actuator_loop, state) do
@@ -73,15 +73,15 @@ defmodule Actuation.SwInterface do
     Map.get(actuator_output_map, actuator_name, nil)
   end
 
-  defp start_message_sorters() do
-    GenServer.cast(__MODULE__, :start_message_sorters)
-  end
+  # defp start_message_sorters() do
+  #   GenServer.cast(__MODULE__, :start_message_sorters)
+  # end
 
   defp start_actuator_loop() do
     GenServer.cast(__MODULE__, :start_actuator_loop)
   end
 
-  defp stop_actuator_loop() do
-    GenServer.cast(__MODULE__, :stop_actuator_loop)
-  end
+  # defp stop_actuator_loop() do
+  #   GenServer.cast(__MODULE__, :stop_actuator_loop)
+  # end
 end

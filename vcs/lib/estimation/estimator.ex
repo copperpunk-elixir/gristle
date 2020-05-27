@@ -37,7 +37,6 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    MessageSorter.System.start_link()
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
@@ -91,31 +90,45 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:imu_loop, state) do
-    Comms.Operator.send_local_msg_to_group(
-      __MODULE__,
-      {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},
-       {:pv_values, :attitude_body_rate},
-      self())
+    attitude = state.attitude
+    body_rate = state.body_rate
+    unless (Enum.empty?(attitude) or Enum.empty?(body_rate)) do
+      Comms.Operator.send_local_msg_to_group(
+        __MODULE__,
+        {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},
+        {:pv_values, :attitude_body_rate},
+        self())
+    end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:ins_loop, state) do
-    Comms.Operator.send_local_msg_to_group(
-      __MODULE__,
-      {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms/1000},
-      {:pv_values, :position_velocity},
-      self())
+    position = state.position
+    velocity = state.velocity
+    unless (Enum.empty?(position) or Enum.empty?(velocity)) do
+      Comms.Operator.send_local_msg_to_group(
+        __MODULE__,
+        {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms/1000},
+        {:pv_values, :position_velocity},
+        self())
+    end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:telemetry_loop, state) do
-    Comms.Operator.send_global_msg_to_group(
-      __MODULE__,
-      {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, body_rate: state.body_rate}},
-      :pv_estimate,
-      self())
+    position = state.position
+    velocity = state.velocity
+    attitude = state.attitude
+    body_rate = state.body_rate
+    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(body_rate)) do
+      Comms.Operator.send_global_msg_to_group(
+        __MODULE__,
+        {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, body_rate: state.body_rate}},
+        :pv_estimate,
+        self())
+    end
     {:noreply, state}
   end
 end

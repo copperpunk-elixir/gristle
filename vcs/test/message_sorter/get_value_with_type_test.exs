@@ -2,50 +2,35 @@ defmodule Workshop.MessageQueueTest  do
   use ExUnit.Case
 
   setup do
-    MessageSorter.System.start_link()
+    Comms.ProcessRegistry.start_link()
+    MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end
 
   test "Get Value with Type" do
-    roll_config = %{
-      name: :roll,
-      default_message_behavior: :last,
-      value_type: :number
-    }
-    pitch_config = %{
-      name: :pitch,
-      default_message_behavior: :default_value,
-      default_value: 2.1,
-      value_type: :number
-    }
+    config = Configuration.Vehicle.Plane.Control.get_pv_cmds_sorter_configs()
+    level_2_config = Enum.at(config, 1)
+    sorter_name = {:pv_cmds, 2}
     # Start registry
     Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_sorter(roll_config)
-    MessageSorter.System.start_sorter(pitch_config)
     Process.sleep(200)
-    assert MessageSorter.Sorter.get_value(roll_config.name) == nil
-    assert MessageSorter.Sorter.get_value(pitch_config.name) == pitch_config.default_value
-    {roll_value, roll_type} = MessageSorter.Sorter.get_value_with_type(roll_config.name)
-    assert roll_value == nil
-    assert roll_type == :last
+    {current_cmds, current_cmd_status} = MessageSorter.Sorter.get_value_with_status(sorter_name)
+    assert current_cmds.roll == level_2_config.default_value.roll
+    assert current_cmds.pitch == level_2_config.default_value.pitch
+    assert current_cmd_status == :default_value
     new_roll_value = 1.1
     new_pitch_value = -0.5
-    MessageSorter.Sorter.add_message(roll_config.name, [1],100,new_roll_value)
-    MessageSorter.Sorter.add_message(pitch_config.name, [1],100,new_pitch_value)
+    new_cmds = Map.merge(current_cmds, %{roll: new_roll_value, pitch: new_pitch_value})
+    MessageSorter.Sorter.add_message(sorter_name, [1],100,new_cmds)
     Process.sleep(50)
-    {roll_value, roll_type} = MessageSorter.Sorter.get_value_with_type(roll_config.name)
-    {pitch_value, pitch_type} = MessageSorter.Sorter.get_value_with_type(pitch_config.name)
-    assert roll_value == new_roll_value
-    assert roll_type == :current
-    assert pitch_value == new_pitch_value
-    assert pitch_type == :current
+    {current_cmds, current_cmd_status} = MessageSorter.Sorter.get_value_with_status(sorter_name)
+    assert current_cmds.roll == new_roll_value
+    assert current_cmds.pitch == new_pitch_value
+    assert current_cmd_status == :current
     Process.sleep(100)
-    {roll_value, roll_type} = MessageSorter.Sorter.get_value_with_type(roll_config.name)
-    {pitch_value, pitch_type} = MessageSorter.Sorter.get_value_with_type(pitch_config.name)
-    assert roll_value == new_roll_value
-    assert roll_type == :last
-    assert pitch_value == pitch_config.default_value
-    assert pitch_type == :default_value
-
+    {current_cmds, current_cmd_status} = MessageSorter.Sorter.get_value_with_status(sorter_name)
+    assert current_cmds.roll == level_2_config.default_value.roll
+    assert current_cmds.pitch == level_2_config.default_value.pitch
+    assert current_cmd_status == :default_value
   end
 end

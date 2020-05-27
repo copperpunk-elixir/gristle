@@ -4,7 +4,7 @@ defmodule Navigation.ProcessGoalsMessageTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_link()
+    MessageSorter.System.start_link(:Plane)
     Comms.Operator.start_link(%{name: __MODULE__})
     {:ok, []}
   end
@@ -28,15 +28,13 @@ defmodule Navigation.ProcessGoalsMessageTest do
     assert sorted_goal.pitch == goals.pitch
     # Let the commands expire
     Process.sleep(time_validity_ms)
-    vehicle_module =Module.concat([Vehicle, vehicle_type])
-    pv_list = apply(vehicle_module, :get_process_variable_list, [])
+    vehicle_module =Module.concat([Configuration.Vehicle, vehicle_type, Control])
+    pv_list = apply(vehicle_module, :get_pv_cmds_sorter_configs, [])
     default_values = Enum.at(pv_list, control_state_cmd-1).default_value
     sorted_goal = MessageSorter.Sorter.get_value({:goals, control_state_cmd})
     assert sorted_goal.roll == default_values.roll
 
-    # Join Start PV_cmds group and verity that Navigator is sending messages
-    apply(vehicle_module, :start_pv_cmds_message_sorters, [])
-    Process.sleep(200)
+    # Verify that Navigator is sending messages
     pv_cmds_2 = MessageSorter.Sorter.get_value({:pv_cmds, 2})
     assert pv_cmds_2.pitch == default_values.pitch
     # Until we send the a valid goals command, the Navigator should be using the default commands of

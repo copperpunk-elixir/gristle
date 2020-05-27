@@ -4,7 +4,7 @@ defmodule Cluster.SetupTest do
 
   setup do
     Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_link()
+    MessageSorter.System.start_link(:Plane)
     config = %{
       heartbeat: %{
         heartbeat_loop_interval_ms: 100

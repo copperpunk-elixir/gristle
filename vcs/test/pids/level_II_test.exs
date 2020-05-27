@@ -2,21 +2,14 @@ defmodule Pids.LevelIITest do
   use ExUnit.Case
 
   setup do
-    hw_interface_config = TestConfigs.Actuation.get_hw_config_pololu()
-    actuator_list = [:aileron, :rudder, :throttle]
-    channels_list = [0,1,2]
-    failsafes_list = [0.5, 0.5, 0.0]
-    actuator_config = TestConfigs.Actuation.get_sw_config_actuators(actuator_list, channels_list, failsafes_list)
-    pid_config = TestConfigs.Pids.get_pid_config_plane()
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
 
-    {:ok, _} = Comms.ProcessRegistry.start_link()
-    {:ok, _} = Pids.System.start_link(pid_config)
+    Comms.ProcessRegistry.start_link()
+    Pids.System.start_link(pid_config)
 
     {:ok, [
         config: %{
-          pid_config: pid_config,
-          hw_interface_config: hw_interface_config,
-          actuator_config: actuator_config,
+          pid_config: pid_config
         }
       ]}
   end

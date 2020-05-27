@@ -12,7 +12,7 @@ defmodule Control.Controller do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Vehicle, vehicle_type])
+    vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type, Control])
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
@@ -27,17 +27,17 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    MessageSorter.System.start_link()
+    # MessageSorter.System.start_link()
     # Start Message Sorters 
-    apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
-    # Start control state sorter
-    control_state_config = %{
-      name: :control_state,
-      default_message_behavior: :last,
-      initial_value: -1,
-      value_type: :number
-    }
-    MessageSorter.System.start_sorter(control_state_config)
+    # apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
+    # # Start control state sorter
+    # control_state_config = %{
+    #   name: :control_state,
+    #   default_message_behavior: :last,
+    #   initial_value: -1,
+    #   value_type: :number
+    # }
+    # MessageSorter.System.start_sorter(control_state_config)
     join_process_variable_groups()
     control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
     {:noreply, %{state | control_loop_timer: control_loop_timer}}
@@ -45,7 +45,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :attitude_body_rate}, pv_value_map, dt}, state) do
-    Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
+    # Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
     Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
       case state.control_state do
@@ -61,7 +61,8 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
-    Logger.warn("Control rx vel/pos/dt: #{inspect(pv_value_map)}/#{dt}")
+    # Logger.warn("Control rx vel/pos/dt: #{inspect(pv_value_map)}/#{dt}")
+    Logger.warn("Control state: #{state.control_state}")
     if (state.control_state == 3) do
       pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map])
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 3}, self())
@@ -76,7 +77,7 @@ defmodule Control.Controller do
     # For every PV, get the corresponding command
     control_state = get_control_state()
     pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)
-    Logger.warn("pv_cmds: #{inspect(pv_cmds)}")
+    # Logger.warn("pv_cmds: #{inspect(pv_cmds)}")
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 

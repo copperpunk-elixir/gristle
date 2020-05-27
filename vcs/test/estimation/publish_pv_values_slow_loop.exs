@@ -2,10 +2,9 @@ defmodule Estimation.PublishPVValuesSlowLoop do
   use ExUnit.Case
 
   setup do
-    config = TestConfigs.Estimation.get_estimator_config()
+    config = Configuration.Generic.get_estimator_config()
     Estimation.System.start_link(config)
-    MessageSorter.System.start_link()
-    MessageSorter.System.start_sorter(%{name: :estimator_health, default_message_behavior: :default_value, default_value: :unhealthy})
+    MessageSorter.System.start_link(:Plane)
     Comms.TestMemberAllGroups.start_link()
     {:ok, [config: config]}
   end

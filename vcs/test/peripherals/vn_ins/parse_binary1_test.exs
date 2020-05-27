@@ -3,13 +3,13 @@ defmodule Peripherals.VnIns.ParseBinary1Test do
 
   setup do
     Comms.ProcessRegistry.start_link()
-    MessageSorter.System.start_link()
+    MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end
 
-  # test "Read Binary1 messages" do
-  #   {:ok, pid} = Peripherals.Uart.VnIns.start_link(%{})
-  #   Process.sleep(3500)
-  #   assert true
-  # end
+  test "Read Binary1 messages" do
+    {:ok, pid} = Peripherals.Uart.VnIns.start_link(%{})
+    Process.sleep(3500)
+    assert true
+  end
 end

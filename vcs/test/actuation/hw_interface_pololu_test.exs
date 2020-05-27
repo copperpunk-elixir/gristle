@@ -2,30 +2,15 @@ defmodule Actuation.HwInterfacePololuTest do
   use ExUnit.Case
   require Logger
   setup do
-    {:ok, [
-        config: %{
-          hw_interface: %{
-            interface_driver_name: :pololu
-          },
-          aileron_actuator: %{
-            channel_number: 0,
-            reversed: false,
-            min_pw_ms: 1100,
-            max_pw_ms: 1900,
-            cmd_limit_min: 0,
-            cmd_limit_max: 1,
-            failsafe_cmd: 0.5
-          }
-        }
-      ]}
+    {:ok, []}
   end
 
   test "Start HWInterface. Connect to Pololu Maestro. Change actuator values", context do
     Logger.info("Connect servo to channel 0 if real actuation is desired")
-    config = context[:config]
+    config = Configuration.Vehicle.Plane.Actuation.get_config()
     Actuation.HwInterface.start_link(config.hw_interface)
     Process.sleep(100)
-    aileron = config.aileron_actuator
+    aileron = config.sw_interface.actuators.aileron
     # Set output to min_value
     Actuation.HwInterface.set_output_for_actuator(aileron, aileron.cmd_limit_min)
     assert Actuation.HwInterface.get_output_for_actuator(aileron) == aileron.min_pw_ms

@@ -29,16 +29,15 @@ defmodule Navigation.Navigator do
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
     # Start sorters
-    MessageSorter.System.start_link()
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 3}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
-    start_goals_sorter(state.vehicle_module)
-    start_command_state_sorter(state.vehicle_module)
+    # start_goals_sorter(state.vehicle_module)
+    # start_command_state_sorter(state.vehicle_module)
     navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
-    apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
+    # apply(state.vehicle_module, :start_pv_cmds_message_sorters, [])
     {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
   end
 
@@ -54,8 +53,8 @@ defmodule Navigation.Navigator do
     # Start with Goals 4, move through goals 1
     # If there a no current commands, then take the command from default_pv_cmds_level
     {pv_cmds, control_state} = Enum.reduce(4..1, {%{}, 0}, fn (pv_cmd_level, acc) ->
-      {cmd_values, cmd_type} = MessageSorter.Sorter.get_value_with_type({:goals, pv_cmd_level})
-      if (cmd_type == :current) do
+      {cmd_values, cmd_status} = MessageSorter.Sorter.get_value_with_status({:goals, pv_cmd_level})
+      if (cmd_status == :current) do
         {cmd_values, pv_cmd_level}
       else
         acc
@@ -73,19 +72,19 @@ defmodule Navigation.Navigator do
     {:noreply, state}
   end
 
-  @spec start_goals_sorter(atom()) :: atom()
-  defp start_goals_sorter(vehicle_module) do
-    level_pv_sorter_list = apply(vehicle_module, :get_process_variable_list, [])
-    Enum.each(level_pv_sorter_list,fn pv_cmds_config ->
-      {:pv_cmds, level} = pv_cmds_config.name
-      goals_config = %{pv_cmds_config | name: {:goals, level}}
-     MessageSorter.System.start_sorter(goals_config)
-    end)
-  end
+  # @spec start_goals_sorter(atom()) :: atom()
+  # defp start_goals_sorter(vehicle_module) do
+  #   level_pv_sorter_list = apply(vehicle_module, :get_process_variable_list, [])
+  #   Enum.each(level_pv_sorter_list,fn pv_cmds_config ->
+  #     {:pv_cmds, level} = pv_cmds_config.name
+  #     goals_config = %{pv_cmds_config | name: {:goals, level}}
+  #    MessageSorter.System.start_sorter(goals_config)
+  #   end)
+  # end
 
-  @spec start_command_state_sorter(atom()) :: atom()
-  def start_command_state_sorter(vehicle_module) do
-    config = apply(vehicle_module, :get_control_state_config, [])
-    MessageSorter.System.start_sorter(config)
-  end
+  # @spec start_command_state_sorter(atom()) :: atom()
+  # def start_command_state_sorter(vehicle_module) do
+  #   config = apply(vehicle_module, :get_control_state_config, [])
+  #   MessageSorter.System.start_sorter(config)
+  # end
 end
