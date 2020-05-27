@@ -1,2 +1,2 @@
-# gristle
-Stand-in for modular vehicle/payload design and testing
+# DEPRECATED  
+Please go to https://github.com/copperpunk/gristle/ for the current repository.
