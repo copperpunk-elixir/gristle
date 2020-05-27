@@ -3,8 +3,8 @@ defmodule Peripherals.Uart.FrskyRx do
   use GenServer
   require Logger
 
-  # @default_device_description "Arduino Micro"
-  @default_device_description "Feather M0"
+  @default_device_description "Arduino Micro"
+  # @default_device_description "Feather M0"
   @default_baud 115_200
   @start_byte 0x0F
   @end_byte 0x00

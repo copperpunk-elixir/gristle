@@ -6,6 +6,7 @@ defmodule Pids.System do
 
   def start_link(config) do
     Logger.debug("Start PIDs.System #{config[:name]}")
+    Logger.info("module: #{inspect(__MODULE__)}")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(pid, :start_pids)
     GenServer.cast(pid, :reduce_config)
@@ -18,13 +19,15 @@ defmodule Pids.System do
   # they are unnessary after startup.
   @impl GenServer
   def init(config) do
+    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :actuator_cmds)
+    {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     {:ok, %{
         pids: config.pids,
         pv_output_pids: %{},
-        act_msg_class: config.actuator_cmds_msg_classification,
-        act_msg_time_ms: config.actuator_cmds_msg_time_validity_ms,
-        pv_msg_class: config.pv_cmds_msg_classification,
-        pv_msg_time_ms: config.pv_cmds_msg_time_validity_ms
+        act_msg_class: act_msg_class,
+        act_msg_time_ms: act_msg_time_ms,
+        pv_msg_class: pv_msg_class,
+        pv_msg_time_ms: pv_msg_time_ms
      }}
   end
 

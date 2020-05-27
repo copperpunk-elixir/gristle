@@ -31,14 +31,10 @@ defmodule Configuration.Vehicle.Plane.Pids do
                   pitch: Map.merge(%{kp: 1.0, weight: 0.9}, constraints.pitch)},
     }
 
-    classification = [1,2]
-    time_validity_ms = 200
     %{
       pids: pids,
-      actuator_cmds_msg_classification: classification,
-      actuator_cmds_msg_time_validity_ms: time_validity_ms,
-      pv_cmds_msg_classification: classification,
-      pv_cmds_msg_time_validity_ms: time_validity_ms
+      actuator_cmds_msg_classification: [0,1],
+      pv_cmds_msg_classification: [0,1]
     }
   end
 end

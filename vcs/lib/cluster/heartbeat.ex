@@ -4,7 +4,6 @@ defmodule Cluster.Heartbeat do
 
   @default_heartbeat_status_loop_interval_ms 100
   @default_send_heartbeat_loop_interval_ms 100
-  @default_heartbeat_duration_ms 500
   @node_sorter {:hb, :node}
 
   def start_link(config \\ %{}) do
@@ -19,6 +18,7 @@ defmodule Cluster.Heartbeat do
   def init(config) do
     node = Map.get(config, :node, 0)
     ward = Map.get(config, :ward, 0)
+    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     {:ok, %{
         node: node,
         hb_map: %{node: node, ward: ward},
@@ -26,6 +26,7 @@ defmodule Cluster.Heartbeat do
         heartbeat_status_loop_timer: nil,
         send_heartbeat_loop_interval_ms: Map.get(config, :send_heartbeat_loop_interval_ms, @default_send_heartbeat_loop_interval_ms),
         send_heartbeat_loop_timer: nil,
+        heartbeat_time_validity_ms: heartbeat_time_validity_ms,
         cluster_status: 0,
         all_nodes: %{}
      }}
@@ -97,7 +98,7 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_info(:send_heartbeat, state) do
-    MessageSorter.Sorter.add_message(@node_sorter, [state.node], @default_heartbeat_duration_ms, state.hb_map)
+    MessageSorter.Sorter.add_message(@node_sorter, [state.node], state.heartbeat_time_validity_ms, state.hb_map)
     {:noreply, state}
   end
 
@@ -145,11 +146,6 @@ defmodule Cluster.Heartbeat do
 
   def get_node_status(all_nodes, node_name) do
     get_in(all_nodes, [node_name, :status])
-  end
-
-  def add_heartbeat(heartbeat_map) do
-    # GenServer.cast(__MODULE__, {:add_heartbeat, heartbeat_map, time_validity_ms})
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat, heartbeat_map, @default_heartbeat_duration_ms}, {:hb, :node}, nil)
   end
 
   def cluster_healthy?() do
