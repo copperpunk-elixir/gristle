@@ -3,8 +3,8 @@ defmodule Peripherals.Uart.FrskyRx do
   use GenServer
   require Logger
 
-  @default_device_description "Arduino Micro"
-  # @default_device_description "Feather M0"
+  # @default_device_description "Arduino Micro"
+  @default_device_description "Feather M0"
   @default_baud 115_200
   @start_byte 0x0F
   @end_byte 0x00
@@ -51,7 +51,7 @@ defmodule Peripherals.Uart.FrskyRx do
         Logger.debug("FrskyRx opened #{frsky_port}")
     end
     publish_rx_output_loop_timer = Common.Utils.start_loop(self(), state.publish_rx_output_loop_interval_ms, :publish_rx_output_loop)
-    {:noreply, state}
+    {:noreply, %{state | publish_rx_output_loop_timer: publish_rx_output_loop_timer}}
   end
 
   @impl GenServer
@@ -92,48 +92,56 @@ defmodule Peripherals.Uart.FrskyRx do
     {state, parse_again} =
     if start_byte_found do
       end_byte = Enum.at(valid_buffer,@end_byte_index)
-      if end_byte == @end_byte do
-    # good checksum, drop entire message before we parse the next time
-        # the payload does not include the message_group byte or the field_mask bytes
-        # we can leave the crc bytes attached to the end of the payload buffer, because we know the length
-        # the remaining_buffer is everything after the crc bytes
-        payload_buffer = Enum.drop(valid_buffer,1)
-        remaining_buffer = Enum.drop(payload_buffer, @end_byte_index)
-        {frsky_channels, failsafe_active, frame_lost} = parse_good_message(payload_buffer)
-        valid_frame_count = state.valid_frame_count + 1
-        {channel_values, failsafe_active, frame_lost, new_frsky_data_to_publish, valid_frame_count} = if (valid_frame_count > @valid_frame_count_min) do
-          # decrement valid_frame_count to avoid a gigantic number
-          {frsky_channels, failsafe_active, frame_lost, true, valid_frame_count-1}
+      unless end_byte == nil do
+        if end_byte == @end_byte do
+          # good checksum, drop entire message before we parse the next time
+          # the payload does not include the message_group byte or the field_mask bytes
+          # we can leave the crc bytes attached to the end of the payload buffer, because we know the length
+          # the remaining_buffer is everything after the crc bytes
+          payload_buffer = Enum.drop(valid_buffer,1)
+          remaining_buffer = Enum.drop(payload_buffer, @end_byte_index)
+          {frsky_channels, failsafe_active, frame_lost} = parse_good_message(payload_buffer)
+          valid_frame_count = state.valid_frame_count + 1
+          {channel_values, failsafe_active, frame_lost, new_frsky_data_to_publish, valid_frame_count} =
+          if (valid_frame_count > @valid_frame_count_min) do
+            # decrement valid_frame_count to avoid a gigantic number
+            {frsky_channels, failsafe_active, frame_lost, true, valid_frame_count-1}
+          else
+            {state.channel_values, state.failsafe_active, state.frame_lost, false, valid_frame_count}
+          end
+          state = %{state |
+                    remaining_buffer: remaining_buffer,
+                    start_byte_found: false,
+                    channel_values: channel_values,
+                    failsafe_active: failsafe_active,
+                    frame_lost: frame_lost,
+                    valid_frame_count: valid_frame_count,
+                    new_frsky_data_to_publish: new_frsky_data_to_publish}
+          {state, true}
         else
-          {state.channel_values, state.failsafe_active, state.frame_lost, false, valid_frame_count}
+          # bad checksum, which doesn't mean we lost some data
+          # it could just mean that our "start byte" was just a data byte, so only
+          # drop the start byte before we parse next
+          remaining_buffer = Enum.drop(valid_buffer,1)
+          state = %{state |
+                    remaining_buffer: remaining_buffer,
+                    start_byte_found: false,
+                    valid_frame_count: 0
+                   }
+          {state, true}
         end
-        state = %{state |
-                  remaining_buffer: remaining_buffer,
-                  start_byte_found: false,
-                  channel_values: channel_values,
-                  failsafe_active: failsafe_active,
-                  frame_lost: frame_lost,
-                  valid_frame_count: valid_frame_count,
-                  new_frsky_data_to_publish: new_frsky_data_to_publish}
-        {state, true}
       else
-        # bad checksum, which doesn't mean we lost some data
-        # it could just mean that our "start byte" was just a data byte, so only
-        # drop the start byte before we parse next
-        remaining_buffer = Enum.drop(valid_buffer,1)
-        state = %{state |
-                  remaining_buffer: remaining_buffer,
-                  start_byte_found: false,
-                  valid_frame_count: 0
-                 }
-        {state, true}
-      end
-    else
-      # we have not received enough data to parse a complete message
+        # we have not received enough data to parse a complete message
       # the next loop should try again with the same start_byte
       state = %{state |
                 remaining_buffer: valid_buffer,
                 start_byte_found: true}
+      {state, false}
+      end
+    else
+      state = %{state |
+                remaining_buffer: valid_buffer,
+               start_byte_found: false}
       {state, false}
     end
     if (parse_again) do
