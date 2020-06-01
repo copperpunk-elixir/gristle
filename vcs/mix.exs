@@ -56,7 +56,11 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
       # Package dependencies
       {:circuits_uart, "~> 1.3"},
-      {:gen_state_machine, "~> 2.0"}
+      {:gen_state_machine, "~> 2.0"},
+      #Scenic dependencies
+      {:scenic, "~> 0.10"},
+      {:scenic_driver_glfw, "~> 0.10", targets: :host},
+      {:scenic_sensor, "~> 0.7"}
     ]
   end
 

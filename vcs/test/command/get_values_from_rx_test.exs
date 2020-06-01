@@ -21,7 +21,9 @@ defmodule Command.GetGoalsFromRxTest do
 
     command_config = %{
       commander: %{vehicle_type: :Plane},
-      frsky_rx: %{publish_rx_output_loop_interval_ms: 100}
+      frsky_rx: %{
+        device_description: "Arduino Micro",
+        publish_rx_output_loop_interval_ms: 100}
     }
     Command.System.start_link(command_config)
     Process.sleep(4000)

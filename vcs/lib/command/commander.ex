@@ -76,11 +76,25 @@ defmodule Command.Commander do
         output_value =
           case absolute_or_relative do
             :absolute -> scaled_value
-            :relative -> Map.get(pv_values, channel, 0) + scaled_value
+            :relative ->
+              current_value =
+                case channel do
+                  :course ->
+                    Map.get(pv_values,:calculated, %{})
+                    |> Map.get(:course, 0)
+                  :speed ->
+                    Map.get(pv_values,:calculated, %{})
+                    |> Map.get(:speed, 0)
+                  :altitude -> Map.get(pv_values, :position, %{})
+                  |> Map.get(:altitude, 0)
+                  _other -> 0
+                end
+              current_value + scaled_value
           end
         Map.put(acc, channel, output_value)
       end)
       Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},classification, time_validity_ms, cmds}, {:goals, control_state}, self())
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
     end
   end
 end
