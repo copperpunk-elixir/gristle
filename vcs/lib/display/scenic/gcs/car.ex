@@ -115,7 +115,7 @@ defmodule Display.Scenic.Gcs.Car do
           graph
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
           |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
-
+        other -> graph
       end
 
     graph = Enum.reduce(1..4, graph, fn (goal_level, acc) ->

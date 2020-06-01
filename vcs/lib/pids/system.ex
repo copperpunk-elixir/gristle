@@ -66,7 +66,7 @@ defmodule Pids.System do
 
   @impl GenServer
   def handle_cast({{@pv_cmds_values_group, level}, pv_cmd_map, pv_value_map, dt}, state) do
-    Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+    # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, dt, state.pv_output_pids)
@@ -103,14 +103,18 @@ defmodule Pids.System do
       # i.e., the correction=0
       pv_cmd = Map.get(pv_cmd_map, pv_name, pv_value)
       # Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
-      pv_output_map = Map.get(pv_output_pids, pv_name)
-      Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
-        # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
-        output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
-        total_output = output*weight + Map.get(acc, output_variable_name, 0)
-        # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
-        Map.put(acc, output_variable_name, total_output)
-      end)
+      pv_output_map = Map.get(pv_output_pids, pv_name, %{})
+      unless Enum.empty?(pv_output_map) do
+        Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
+          # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
+          output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
+          total_output = output*weight + Map.get(acc, output_variable_name, 0)
+          # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
+          Map.put(acc, output_variable_name, total_output)
+        end)
+      else
+        output_variable_list
+      end
     end)
   end
 

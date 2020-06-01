@@ -125,7 +125,7 @@ defmodule Display.Scenic.Gcs.Plane do
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
           |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
           |> Scenic.Graph.modify(:altitude_cmd, &text(&1,altitude <> @meters))
-
+         _other -> graph
       end
 
     graph = Enum.reduce(1..4, graph, fn (goal_level, acc) ->

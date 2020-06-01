@@ -89,10 +89,10 @@ defmodule Cluster.Heartbeat do
   def handle_info(:calc_heartbeat_status, state) do
     # Get Heartbeat status
     all_nodes = unpack_heartbeats()
-    Logger.debug("All node heartbeats: #{inspect(all_nodes)}")
+    # Logger.debug("All node heartbeats: #{inspect(all_nodes)}")
     all_nodes = update_ward_status(all_nodes)
     cluster_status = get_cluster_status(all_nodes)
-    Logger.debug("cluster status: #{cluster_status}")
+    # Logger.debug("cluster status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end
 

@@ -33,7 +33,7 @@ defmodule Control.SendLevelIICorrectionTest do
     Logger.info("Start Control Loop")
     config = Configuration.Vehicle.Plane.Control.get_config()
     Control.System.start_link(config)
-    Process.sleep(200)
+    Process.sleep(2000)
     # Verify that none of the PVs in PVII have a command
     assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral
     assert Pids.Pid.get_output(:pitchrate, :elevator) == pid_config.pids.pitchrate.elevator.output_neutral

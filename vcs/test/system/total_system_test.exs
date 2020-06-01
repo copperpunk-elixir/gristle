@@ -2,9 +2,12 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
+    vehicle_type = :Car
+    vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    MessageSorter.System.start_link(:Plane)
+    MessageSorter.System.start_link(vehicle_type)
     # ----- BEGIN Swarm setup -----
     cluster_config = %{
       heartbeat: %{
@@ -17,26 +20,18 @@ defmodule System.TotalSystemTest do
     # ----- END Swarm setup -----
 
     # ----- BEGIN Actuation setup -----
-    # hw_interface_config = TestConfigs.Actuation.get_hw_config_pololu()
-    # actuator_list = [:aileron, :elevator, :throttle, :rudder]
-    # channels_list = [0, 1, 2, 3]
-    # failsafes_list = [0.5, 0.5, 0, 0.5]
-    # sw_interface_config = TestConfigs.Actuation.get_sw_config_actuators(actuator_list, channels_list, failsafes_list)
-    # actuation_config = %{
-    #   hw_interface: hw_interface_config,
-    #   sw_interface: sw_interface_config
-    # }
-    actuation_config = Configuration.Vehicle.Plane.Actuation.get_config()
+ 
+    actuation_config = apply(Module.concat(vehicle_config_module, Actuation), :get_config, [])
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
 
     # ----- BEGIN PID setup -----
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    pid_config = apply(Module.concat(vehicle_config_module, Pids), :get_config, [])
     Pids.System.start_link(pid_config)
     # ----- END PID setup -----
 
     # ----- BEGIN Control setup -----
-    control_config = Configuration.Vehicle.Plane.Control.get_config()
+    control_config = apply(Module.concat(vehicle_config_module, Control), :get_config, [])
     Control.System.start_link(control_config)
     # ----- END Control setup -----
 
@@ -44,13 +39,23 @@ defmodule System.TotalSystemTest do
     estimation_config = Configuration.Generic.get_estimator_config()
     Estimation.System.start_link(estimation_config)
     # ----- END Estimation setup -----
+    # ----- BEGIN Navigation setup -----
+    navigation_config = apply(Module.concat(vehicle_config_module, Navigation), :get_config, [])
+    Navigation.System.start_link(navigation_config)
+    # ----- END Navigation setup -----
+    # ----- BEGIN Command setup -----
+    command_config = apply(Module.concat(vehicle_config_module, Command), :get_config, [])
+    Command.System.start_link(command_config)
+    # ----- END Command setup -----
 
     config = %{
       cluster_config: cluster_config,
       actuation_config: actuation_config,
       pid_config: pid_config,
       control_config: control_config,
-      estimation_config: estimation_config
+      estimation_config: estimation_config,
+      # navigation_config: navigation_config
+
     }
 
     {:ok, [
@@ -70,9 +75,9 @@ defmodule System.TotalSystemTest do
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}
     pv_calculated_att_attrate_group = {:pv_calculated, :attitude_body_rate}
     # Actuators should be at neutral value
-    aileron_neutral = config.pid_config.pids.rollrate.aileron.output_neutral
-    elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
-    rudder_neutral = config.pid_config.pids.yawrate.rudder.output_neutral
+    # aileron_neutral = config.pid_config.pids.rollrate.aileron.output_neutral
+    # elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
+    steering_neutral = config.pid_config.pids.yawrate.steering.output_neutral
     throttle_neutral = config.pid_config.pids.thrust.throttle.output_neutral
     # assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
     # assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral

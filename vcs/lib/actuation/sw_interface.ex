@@ -19,26 +19,6 @@ defmodule Actuation.SwInterface do
      }}
   end
 
-  # @impl GenServer
-  # def handle_cast(:start_message_sorters, state) do
-  #   # MessageSorter.System.start_link()
-  #   # failsafe_map = Enum.reduce(state.actuators, %{}, fn({actuator_name, actuator}, acc) ->
-  #   #   Map.put(acc, actuator_name, actuator.failsafe_cmd)
-  #   # end)
-  #   # MessageSorter.System.start_sorter(
-  #   #   %{
-  #   #     name: :actuator_cmds,
-  #   #     default_message_behavior: :default_value,
-  #   #     default_value: failsafe_map,
-  #   #     value_type: :map
-  #   #   }
-  #   # )
-  #   # Enum.each(state.actuators, fn {actuator_name, actuator} ->
-  #   #   MessageSorter.System.start_sorter(%{name: {:actuator_cmds, actuator_name}, default_message_behavior: :default_value, default_value: actuator.failsafe_cmd})
-  #   # end)
-  #   {:noreply, state}
-  # end
-
     @impl GenServer
   def handle_cast(:start_actuator_loop, state) do
       actuator_timer = Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
@@ -62,7 +42,9 @@ defmodule Actuation.SwInterface do
     Enum.each(state.actuators, fn {actuator_name, actuator} ->
       output = Map.fetch!(actuator_output_map, actuator_name)
       # output = get_output_for_actuator_name(actuator_name)
-      Logger.debug("move_actuator #{actuator_name} to #{output}")
+      # if (actuator_name == :steering) do
+      Logger.debug("move_actuator #{actuator_name} to #{Common.Utils.eftb(output, 3)}")
+      # end
       Actuation.HwInterface.set_output_for_actuator(actuator, output)
     end)
     {:noreply, state}

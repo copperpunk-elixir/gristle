@@ -91,7 +91,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def add_message(name, classification, time_validity_ms, value) do
-    Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}")
+    # Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
     GenServer.cast(via_tuple(name), {:add_message, classification, expiration_mono_ms, value})
   end
@@ -101,7 +101,7 @@ defmodule MessageSorter.Sorter do
   end
 
   def get_message(name) do
-    Logger.debug("Get message: from #{inspect(name)}")
+    # Logger.debug("Get message: from #{inspect(name)}")
     GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end
 
