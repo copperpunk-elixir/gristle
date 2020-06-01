@@ -4,7 +4,7 @@ defmodule Peripherals.Uart.FrskyRx do
   require Logger
 
   # @default_device_description "Arduino Micro"
-  @default_device_description "Feather M0"
+  # @default_device_description "Feather M0"
   @default_baud 115_200
   @start_byte 0x0F
   @end_byte 0x00
@@ -26,7 +26,7 @@ defmodule Peripherals.Uart.FrskyRx do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: Map.get(config, :device_description, @default_device_description),
+        device_description: config.device_description,
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],

@@ -62,16 +62,17 @@ defmodule Command.Commander do
         control_state_float > -0.5 -> 2
         true -> 1
       end
-      channel_map = Enum.with_index(apply(vehicle_module, :get_rx_output_channel_map, [control_state]))
-      cmds = Enum.reduce(channel_map, %{}, fn ({channel_tuple, index}, acc) ->
-        channel = elem(channel_tuple, 0)
-        absolute_or_relative = elem(channel_tuple, 1)
-        min_value = elem(channel_tuple, 2)
-        max_value = elem(channel_tuple, 3)
+      channel_map = apply(vehicle_module, :get_rx_output_channel_map, [control_state])
+      cmds = Enum.reduce(channel_map, %{}, fn (channel_tuple, acc) ->
+        channel_index = elem(channel_tuple, 0)
+        channel = elem(channel_tuple, 1)
+        absolute_or_relative = elem(channel_tuple, 2)
+        min_value = elem(channel_tuple, 3)
+        max_value = elem(channel_tuple, 4)
         mid_value = (min_value + max_value)/2
         delta_value_each_side = max_value - mid_value
-        inverted_multiplier = elem(channel_tuple, 4)
-        unscaled_value = inverted_multiplier*Enum.at(rx_output, index)
+        inverted_multiplier = elem(channel_tuple, 5)
+        unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
         scaled_value = mid_value + unscaled_value*delta_value_each_side
         output_value =
           case absolute_or_relative do
