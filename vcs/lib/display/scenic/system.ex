@@ -9,7 +9,7 @@ defmodule Display.Scenic.System do
 
     main_viewport_config = %{
       name: :main_viewport,
-      size: {1400, 600},
+      size: {800, 600},
       default_scene: {default_scene, nil},
       drivers: [
         %{
