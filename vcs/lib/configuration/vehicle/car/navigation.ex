@@ -1,10 +1,10 @@
-defmodule Configuration.Vehicle.Plane.Navigation do
+defmodule Configuration.Vehicle.Car.Navigation do
   require Logger
 
   def get_config() do
     %{
       navigator: %{
-        vehicle_type: :Plane,
+        vehicle_type: :Car,
         navigator_loop_interval_ms: 20,
         default_pv_cmds_level: 3
       }
@@ -15,27 +15,39 @@ defmodule Configuration.Vehicle.Plane.Navigation do
   def get_goals_sorter_configs() do
     [
       %{
+        name: {:goals, -1},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, yawrate: 0},
+        value_type: :map
+      },
+      %{
+        name: {:goals, 0},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, yawrate: 0},
+        value_type: :map
+      },
+      %{
         name: {:goals, 1},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        default_value: %{thrust: 0, yawrate: 0},
         value_type: :map
       },
       %{
         name: {:goals, 2},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, roll: 0, pitch: 0, yaw: 0},
+        default_value: %{thrust: 0, yaw: 0},
         value_type: :map
       },
       %{
         name: {:goals, 3},
         default_message_behavior: :default_value,
-        default_value: %{course: 0, speed: 0, altitude: 0},
+        default_value: %{course: 0, speed: 0},
         value_type: :map
       },
       %{
         name: {:goals, 4},
         default_message_behavior: :default_value,
-        default_value: %{latitude: 0, longitude: 0, altitude: 0, course: 0, speed: 0},
+        default_value: %{latitude: 0, longitude: 0, course: 0, speed: 0},
         value_type: :map
       }
     ]

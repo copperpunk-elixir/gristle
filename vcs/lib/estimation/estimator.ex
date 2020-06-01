@@ -122,18 +122,18 @@ defmodule Estimation.Estimator do
     velocity = state.velocity
     attitude = state.attitude
     body_rate = state.body_rate
-    speed = Common.Utils.Math.hypot(velocity.north, velocity.east)
-    course =
-    if (speed < 2) do
-      attitude.yaw
-    else
-      :math.atan2(velocity.east, velocity.north)
-    end
-    calculated = %{
-      speed: speed,
-      course: course
-    }
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(body_rate)) do
+      speed = Common.Utils.Math.hypot(velocity.north, velocity.east)
+      course =
+      if (speed < 2) do
+        attitude.yaw
+      else
+        :math.atan2(velocity.east, velocity.north)
+      end
+      calculated = %{
+        speed: speed,
+        course: course
+      }
       Comms.Operator.send_global_msg_to_group(
         __MODULE__,
         {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, body_rate: state.body_rate, calculated: calculated}},

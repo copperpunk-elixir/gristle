@@ -3,7 +3,8 @@ defmodule Command.Commander do
   require Logger
 
   @rx_control_state_channel 4
-  @transmit_channel 5
+  @rx_armed_state_channel 5
+  @transmit_channel 6
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
@@ -54,13 +55,19 @@ defmodule Command.Commander do
 
   @spec convert_rx_output_to_cmds_and_publish(list(), atom(), list(), integer(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module,classification, time_validity_ms, pv_values) do
+    armed_state_float = Enum.at(rx_output, @rx_armed_state_channel)
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_float = Enum.at(rx_output, @transmit_channel)
     if (transmit_float > 0) do
       control_state = cond do
-        control_state_float > 0.5 -> 3
-        control_state_float > -0.5 -> 2
-        true -> 1
+        (armed_state_float < -0.5) -> -1
+        (armed_state_float < 0.5) -> 0
+        true ->
+          cond do
+            control_state_float > 0.5 -> 3
+            control_state_float > -0.5 -> 2
+            true -> 1
+          end
       end
       channel_map = apply(vehicle_module, :get_rx_output_channel_map, [control_state])
       cmds = Enum.reduce(channel_map, %{}, fn (channel_tuple, acc) ->

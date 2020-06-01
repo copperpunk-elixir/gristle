@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Plane.Actuation do
+defmodule Configuration.Vehicle.Car.Actuation do
 
   @spec get_config() :: map()
   def get_config() do
@@ -17,9 +17,9 @@ defmodule Configuration.Vehicle.Plane.Actuation do
 
   @spec get_names_channels_failsafes() :: tuple()
   def get_names_channels_failsafes() do
-    actuator_names = [:aileron,  :elevator, :throttle, :rudder]
-    channels = [0, 1, 2, 3]
-    failsafes = [0.5, 0.5, 0.0, 0.5]
+    actuator_names = [:steering, :throttle]
+    channels = [0, 1]
+    failsafes = [0.5, 0.0]
     {actuator_names, channels, failsafes}
   end
 
