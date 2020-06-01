@@ -18,7 +18,7 @@ defmodule Configuration.Vehicle.Plane.Command do
         {:yaw, :relative, -0.52, 0.52, 1}
       ]
       3 -> [
-        {:heading, :relative, -0.52, 0.52, 1},
+        {:course, :relative, -0.52, 0.52, 1},
         {:altitude, :relative, -2, 2, 1},
         {:speed, :absolute, 6, 12, 1}
       ]

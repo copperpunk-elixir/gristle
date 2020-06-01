@@ -9,7 +9,7 @@ defmodule Configuration.Generic do
         imu_loop_timeout_ms: 1000,
         ins_loop_interval_ms: 100,
         ins_loop_timeout_ms: 2000,
-        telemetry_loop_interval_ms: 1000,
+        telemetry_loop_interval_ms: 200,
       }}
   end
 

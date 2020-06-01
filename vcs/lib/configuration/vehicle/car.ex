@@ -23,13 +23,13 @@ defmodule Configuration.Vehicle.Car do
       2 => %{
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, yaw: 0},
+        default_value: %{thrust: 0, course: 0},
         value_type: :map
       },
       3 => %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
-        default_value: %{speed: 0, yaw: 0},
+        default_value: %{speed: 0, course: 0},
         value_type: :map
       }
     }
