@@ -47,7 +47,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_3_cmds)
     # MessageSorter.Sorter.add_message({:pv_cmds, :course}, msg_class, msg_time_ms, pv_cmd.course)
     # MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
-    Process.sleep(50)
+    Process.sleep(150)
     course_cmd = Control.Controller.get_pv_cmd(:course)
     assert_in_delta(course_cmd, pv_3_cmds.course, max_cmd_delta)
     # Send PV value

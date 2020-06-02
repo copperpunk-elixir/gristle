@@ -2,7 +2,7 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :Plane
+    vehicle_type = :Car
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()

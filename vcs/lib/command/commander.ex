@@ -80,9 +80,6 @@ defmodule Command.Commander do
       else
         state.reference_cmds
       end
-      # unless Enum.empty?(reference_cmds) do
-      #   Logger.warn("ref cmds: #{inspect(reference_cmds)}")
-      # end
 
       channel_map = apply(state.vehicle_module, :get_rx_output_channel_map, [control_state])
       {cmds, reference_cmds} = Enum.reduce(channel_map, {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->

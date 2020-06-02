@@ -166,7 +166,7 @@ defmodule Common.Utils do
   @spec constrain_angle_to_compass(number()) :: number()
   def constrain_angle_to_compass(angle) do
     cond do
-      angle < 0 -> angle + 2.0*:math.pi()
+      angle < 0.0 -> angle + 2.0*:math.pi()
       angle > 2.0*:math.pi() -> angle - 2.0*:math.pi()
       true -> angle
     end
