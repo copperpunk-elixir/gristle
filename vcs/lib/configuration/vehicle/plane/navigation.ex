@@ -15,6 +15,18 @@ defmodule Configuration.Vehicle.Plane.Navigation do
   def get_goals_sorter_configs() do
     [
       %{
+        name: {:goals, -1},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        value_type: :map
+      },
+      %{
+        name: {:goals, 0},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        value_type: :map
+      },
+      %{
         name: {:goals, 1},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},

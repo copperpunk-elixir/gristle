@@ -42,7 +42,7 @@ defmodule Display.Scenic.Gcs.Utils do
           text_align: :center_middle,
           font_size:  font_size,
           id: id,
-          translate: {0, index*row},
+          translate: {0, index*row}
         )
       end,
         translate: {offset_x + 1.5*col + h_spacing, offset_y + row/2},
@@ -74,7 +74,7 @@ defmodule Display.Scenic.Gcs.Utils do
           text_align: :center_middle,
           font_size:  font_size,
           id: id,
-          translate: {index*(col+h_spacing), 0},
+          translate: {index*(col+h_spacing), 0}
         )
       end,
         translate: {offset_x + 0.5*col + h_spacing, offset_y + row/2},

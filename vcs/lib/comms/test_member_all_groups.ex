@@ -21,9 +21,9 @@ defmodule Comms.TestMemberAllGroups do
 
   @impl GenServer
   def handle_cast(:join_all_groups, state) do
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_body_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
+    # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
@@ -39,9 +39,9 @@ defmodule Comms.TestMemberAllGroups do
       #   :position_velocity ->
       #     Map.put(state.pv_values, :position, values.position)
       #     |> Map.put(:velocity, values.velocity)
-      #   :attitude_body_rate ->
+      #   :attitude_bodyrate ->
       #     Map.put(state.pv_values, :attitude, values.attitude)
-      #     |> Map.put(:body_rate, values.body_rate)
+      #     |> Map.put(:bodyrate, values.bodyrate)
       # end
     # Logger.debug("pv values: #{inspect(pv_values)}")
     {:noreply, %{state | pv_values_estimator: pv_values}}
@@ -62,7 +62,7 @@ defmodule Comms.TestMemberAllGroups do
       case level do
         3 -> :position_velocity
         2 -> :position_velocity
-        1 -> :attitude_body_rate
+        1 -> :attitude_bodyrate
       end
     pv_values = get_pvs_from_map(pv_value_map, pv_value_type, state.pv_values_pid_system)
     {:noreply, %{state | pv_cmds: pv_cmds, pv_values_pid_system: pv_values}}
@@ -83,9 +83,9 @@ defmodule Comms.TestMemberAllGroups do
         :position_velocity ->
           Map.put(pvs_to_update, :position, pv_map.position)
           |> Map.put(:velocity, pv_map.velocity)
-        :attitude_body_rate ->
+        :attitude_bodyrate ->
           Map.put(pvs_to_update, :attitude, pv_map.attitude)
-          |> Map.put(:body_rate, pv_map.body_rate)
+          |> Map.put(:bodyrate, pv_map.bodyrate)
       end
 
 

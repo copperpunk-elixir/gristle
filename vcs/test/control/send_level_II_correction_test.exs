@@ -50,9 +50,9 @@ defmodule Control.SendLevelIICorrectionTest do
     roll_cmd = Control.Controller.get_pv_cmd(:roll)
     assert_in_delta(roll_cmd, pv_cmd.roll, max_cmd_delta)
     # Send PV value
-    pv_att_att_rate = %{attitude: %{roll: 0.01, pitch: 0.02, yaw: 0.03}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    pv_att_att_rate = %{attitude: %{roll: 0.01, pitch: 0.02, yaw: 0.03}, bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     dt = 0.05
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_body_rate}, pv_att_att_rate, dt}, {:pv_values, :attitude_body_rate}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_bodyrate}, pv_att_att_rate, dt}, {:pv_values, :attitude_bodyrate}, self())
     Process.sleep(20)
     # PVII command will propogate to PVI commands, which will turn into actuator commands
     # Check actuator commands to assert that they are all the correct signs

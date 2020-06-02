@@ -27,7 +27,7 @@ defmodule Estimation.Estimator do
         ins_watchdog_elapsed: 0,
         imu_watchdog_trigger: @imu_watchdog_trigger,
         ins_watchdog_trigger: @ins_watchdog_trigger,
-        body_rate: %{},
+        bodyrate: %{},
         attitude: %{},
         velocity: %{},
         position: %{}
@@ -37,10 +37,10 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.Operator.start_link(%{name: __MODULE__})
-    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_body_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    ins_loop_timer =nil# Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
     imu_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
     ins_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
@@ -56,18 +56,18 @@ defmodule Estimation.Estimator do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_calculated, :attitude_body_rate}, pv_value_map}, state) do
+  def handle_cast({{:pv_calculated, :attitude_bodyrate}, pv_value_map}, state) do
     # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     attitude = Map.get(pv_value_map, :attitude)
-    body_rate = Map.get(pv_value_map, :body_rate)
-    {attitude, body_rate, new_watchdog_elapsed} =
-    if (attitude == nil) or (body_rate==nil) do
-      {state.attitude, state.body_rate, state.imu_watchdog_elapsed}
+    bodyrate = Map.get(pv_value_map, :bodyrate)
+    {attitude, bodyrate, new_watchdog_elapsed} =
+    if (attitude == nil) or (bodyrate==nil) do
+      {state.attitude, state.bodyrate, state.imu_watchdog_elapsed}
     else
       new_watchdog_time = max(state.imu_watchdog_elapsed - 1.1*state.imu_loop_interval_ms, 0)
-      {attitude, body_rate, new_watchdog_time}
+      {attitude, bodyrate, new_watchdog_time}
     end
-    state = %{state | attitude: attitude, body_rate: body_rate, imu_watchdog_elapsed: new_watchdog_elapsed}
+    state = %{state | attitude: attitude, bodyrate: bodyrate, imu_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 
@@ -91,12 +91,12 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_info(:imu_loop, state) do
     attitude = state.attitude
-    body_rate = state.body_rate
-    unless (Enum.empty?(attitude) or Enum.empty?(body_rate)) do
+    bodyrate = state.bodyrate
+    unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
-        {{:pv_values, :attitude_body_rate}, %{attitude: state.attitude, body_rate: state.body_rate}, state.imu_loop_interval_ms/1000},
-        {:pv_values, :attitude_body_rate},
+        {{:pv_values, :attitude_bodyrate}, %{attitude: state.attitude, bodyrate: state.bodyrate}, state.imu_loop_interval_ms/1000},
+        {:pv_values, :attitude_bodyrate},
         self())
     end
     {:noreply, state}
@@ -121,22 +121,16 @@ defmodule Estimation.Estimator do
     position = state.position
     velocity = state.velocity
     attitude = state.attitude
-    body_rate = state.body_rate
-    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(body_rate)) do
-      speed = Common.Utils.Math.hypot(velocity.north, velocity.east)
-      course =
-      if (speed < 2) do
-        attitude.yaw
-      else
-        :math.atan2(velocity.east, velocity.north)
-      end
+    bodyrate = state.bodyrate
+    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
+      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, 2, attitude.yaw)
       calculated = %{
         speed: speed,
         course: course
       }
       Comms.Operator.send_global_msg_to_group(
         __MODULE__,
-        {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, body_rate: state.body_rate, calculated: calculated}},
+        {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, bodyrate: state.bodyrate, calculated: calculated}},
         :pv_estimate,
         self())
     end

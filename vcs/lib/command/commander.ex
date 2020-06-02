@@ -40,7 +40,7 @@ defmodule Command.Commander do
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
-    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.rx_output_classification, state.rx_output_time_validity_ms, state.pv_values)
+    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.rx_output_classification, state.rx_output_time_validity_ms)
     {:noreply, state}
   end
 
@@ -49,12 +49,12 @@ defmodule Command.Commander do
     # Logger.debug("position: #{inspect(pv_values.position)}")
     # Logger.debug("velocity: #{inspect(pv_values.velocity)}")
     # Logger.debug("attitude: #{inspect(pv_values.attitude)}")
-    # Logger.debug("bodyrate: #{inspect(pv_values.body_rate)}")
+    # Logger.debug("bodyrate: #{inspect(pv_values.bodyrate)}")
     {:noreply, %{state | pv_values: pv_values}}
   end
 
-  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), list(), integer(), map()) :: atom()
-  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module,classification, time_validity_ms, pv_values) do
+  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), list(), integer()) :: atom()
+  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module,classification, time_validity_ms) do
     armed_state_float = Enum.at(rx_output, @rx_armed_state_channel)
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_float = Enum.at(rx_output, @transmit_channel)
@@ -73,7 +73,7 @@ defmodule Command.Commander do
       cmds = Enum.reduce(channel_map, %{}, fn (channel_tuple, acc) ->
         channel_index = elem(channel_tuple, 0)
         channel = elem(channel_tuple, 1)
-        absolute_or_relative = elem(channel_tuple, 2)
+        # absolute_or_relative = elem(channel_tuple, 2)
         min_value = elem(channel_tuple, 3)
         max_value = elem(channel_tuple, 4)
         mid_value = (min_value + max_value)/2
@@ -81,27 +81,31 @@ defmodule Command.Commander do
         inverted_multiplier = elem(channel_tuple, 5)
         unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
         scaled_value = mid_value + unscaled_value*delta_value_each_side
-        output_value =
-          case absolute_or_relative do
-            :absolute -> scaled_value
-            :relative ->
-              current_value =
-                case channel do
-                  :course ->
-                    Map.get(pv_values,:calculated, %{})
-                    |> Map.get(:course, 0)
-                  :speed ->
-                    Map.get(pv_values,:calculated, %{})
-                    |> Map.get(:speed, 0)
-                  :altitude -> Map.get(pv_values, :position, %{})
-                  |> Map.get(:altitude, 0)
-                  _other -> 0
-                end
-              current_value + scaled_value
-          end
-        Map.put(acc, channel, output_value)
+        # output_value =
+        #   case absolute_or_relative do
+        #     :absolute -> scaled_value
+        #     :relative ->
+        #       current_value =
+        #         case channel do
+        #           :course ->
+        #             Map.get(pv_values,:calculated, %{})
+        #             |> Map.get(:course, 0)
+        #           :speed ->
+        #             Map.get(pv_values,:calculated, %{})
+        #             |> Map.get(:speed, 0)
+        #           :altitude -> Map.get(pv_values, :position, %{})
+        #           |> Map.get(:altitude, 0)
+        #           _other -> 0
+        #         end
+        #       current_value + scaled_value
+        #   end
+        Map.put(acc, channel, scaled_value)
       end)
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},classification, time_validity_ms, cmds}, {:goals, control_state}, self())
+      if (control_state == 3) do
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
+      else
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},classification, time_validity_ms, cmds}, {:goals, control_state}, self())
+      end
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
     end
   end

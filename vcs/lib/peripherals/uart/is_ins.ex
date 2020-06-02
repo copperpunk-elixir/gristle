@@ -21,7 +21,7 @@ defmodule Peripherals.Uart.IsIns do
         port: Map.get(config, :port, @default_port),
         baud: Map.get(config, :baud, @default_baud),
         attitude: %{roll: 0,pitch: 0,yaw: 0},
-        body_rate: %{roll: 0, pitch: 0, yaw: 0},
+        bodyrate: %{roll: 0, pitch: 0, yaw: 0},
         gps_time: 0,
         position: %{latitude: 0, longitude: 0, altitude: 0},
         position_ned: %{north: 0, east: 0, down: 0},
@@ -108,7 +108,7 @@ defmodule Peripherals.Uart.IsIns do
   defp parse_pimu(payload) do
     %{
       attitude: %{roll: String.to_float(Enum.at(payload, 3)), pitch: String.to_float(Enum.at(payload, 2)), yaw: String.to_float(Enum.at(payload, 4))},
-      body_rate: %{roll: String.to_float(Enum.at(payload, 9)), pitch: String.to_float(Enum.at(payload, 8)), yaw: String.to_float(Enum.at(payload, 10))}
+      bodyrate: %{roll: String.to_float(Enum.at(payload, 9)), pitch: String.to_float(Enum.at(payload, 8)), yaw: String.to_float(Enum.at(payload, 10))}
     }
   end
 

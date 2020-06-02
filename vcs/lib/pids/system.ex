@@ -69,25 +69,36 @@ defmodule Pids.System do
     # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->
+        # Logger.warn("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # pv_cmd_map will always contain course
+        course_cmd_constrained = Common.Utils.turn_left_or_right_for_correction(pv_cmd_map.course - pv_value_map.course)
+        pv_cmd_map = Map.put(pv_cmd_map, :course, course_cmd_constrained)
+        pv_value_map = Map.put(pv_value_map, :course, 0)
+
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, dt, state.pv_output_pids)
+
         # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
       2 ->
         # Logger.warn("PID Level 2")
+        # Logger.warn("pv_cmd_map/att: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # pv_cmd_map will always contain yaw, and it was always be a relative command
+        # Therefore set the pv_value yaw to 0
+        pv_value_map = put_in(pv_value_map, [:attitude, :yaw], 0)
         level_1_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude, dt, state.pv_output_pids)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
-        # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.body_rate)}")
-        pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
+        # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
+        pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)
         pv_1_cmd_map = Map.put(pv_1_cmd_map, :thrust, level_2_thrust_cmd)
-        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
+        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.bodyrate, dt, state.pv_output_pids)
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       1 ->
         # Logger.warn("PID Level 1")
-        pv_value_map = put_in(pv_value_map,[:body_rate, :thrust], 0)
-        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.body_rate, dt, state.pv_output_pids)
+        pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
+        actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.bodyrate, dt, state.pv_output_pids)
         # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
       0 ->
@@ -102,7 +113,7 @@ defmodule Pids.System do
       # If a command does not yet exist, then do not ignore it. Rather pass the pv_value as the cmd
       # i.e., the correction=0
       pv_cmd = Map.get(pv_cmd_map, pv_name, pv_value)
-      # Logger.warn("pv_cmd: #{pv_name}/#{pv_cmd}")
+      # Logger.warn("pv_cmd/value: #{pv_name}:#{pv_cmd}/#{pv_value}")
       pv_output_map = Map.get(pv_output_pids, pv_name, %{})
       unless Enum.empty?(pv_output_map) do
         Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->

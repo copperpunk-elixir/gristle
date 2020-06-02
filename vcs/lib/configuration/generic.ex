@@ -5,9 +5,9 @@ defmodule Configuration.Generic do
   def get_estimator_config() do
     %{estimator:
       %{
-        imu_loop_interval_ms: 50,
+        imu_loop_interval_ms: 200,
         imu_loop_timeout_ms: 1000,
-        ins_loop_interval_ms: 100,
+        ins_loop_interval_ms: 200,
         ins_loop_timeout_ms: 2000,
         telemetry_loop_interval_ms: 200,
       }}
@@ -49,8 +49,8 @@ defmodule Configuration.Generic do
     time_validity_all = %{
       {:hb, :node} => 500,
       :actuator_cmds => 200,
-      :pv_cmds => 200,
-      :rx_output => 100
+      :pv_cmds => 300,
+      :rx_output => 300
     }
 
     classification =
