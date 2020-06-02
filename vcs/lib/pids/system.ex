@@ -81,7 +81,7 @@ defmodule Pids.System do
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
       2 ->
         # Logger.warn("PID Level 2")
-        # Logger.warn("pv_cmd_map/att: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # Logger.warn("pv_cmd_map/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
         # pv_cmd_map will always contain yaw, and it was always be a relative command
         # Therefore set the pv_value yaw to 0
         pv_value_map = put_in(pv_value_map, [:attitude, :yaw], 0)

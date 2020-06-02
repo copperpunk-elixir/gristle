@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Car.Pids do
       steering: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
-      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.01},
+      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
       thrust: %{output_min: -1, output_max: 1, output_neutral: 0}
     }
 
@@ -14,7 +14,7 @@ defmodule Configuration.Vehicle.Car.Pids do
       thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
       course: %{yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
-      speed: %{thrust: Map.merge(%{kp: 1.0, weight: 0.9}, constraints.thrust)}
+      speed: %{thrust: Map.merge(%{kp: 0.1, weight: 1.0}, constraints.thrust)}
     }
 
     %{

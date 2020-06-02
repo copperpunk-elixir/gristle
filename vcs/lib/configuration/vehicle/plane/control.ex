@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Plane.Control do
     %{
       controller: %{
         vehicle_type: :Plane,
-        process_variable_cmd_loop_interval_ms: 20
+        process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       }
     }
   end

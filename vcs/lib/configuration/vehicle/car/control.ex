@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Car.Control do
     %{
       controller: %{
         vehicle_type: :Car,
-        process_variable_cmd_loop_interval_ms: 200
+        process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       }
     }
   end

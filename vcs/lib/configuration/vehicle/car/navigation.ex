@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Car.Navigation do
     %{
       navigator: %{
         vehicle_type: :Car,
-        navigator_loop_interval_ms: 200,
+        navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
         default_pv_cmds_level: 3
       }
     }

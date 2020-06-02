@@ -2,20 +2,14 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :Car
+    vehicle_type = :Plane
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     # ----- BEGIN Swarm setup -----
-    cluster_config = %{
-      heartbeat: %{
-        heartbeat_loop_interval_ms: 100,
-        node: 0,
-        ward: 0
-      }
-    }
+    cluster_config = Configuration.Generic.get_cluster_config(0,0)
     Cluster.System.start_link(cluster_config)
     # ----- END Swarm setup -----
 
@@ -69,7 +63,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(%{name: op_name})
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(250000)
+    Process.sleep(2500)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}

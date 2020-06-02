@@ -164,11 +164,11 @@ defmodule Common.Utils do
   end
 
   @spec constrain_angle_to_compass(number()) :: number()
-  def constrain_angle_to_compass(yaw) do
+  def constrain_angle_to_compass(angle) do
     cond do
-      yaw < 0 -> yaw + 2.0*:math.pi()
-      yaw > 2.0*:math.pi() -> yaw - 2.0*:math.pi()
-      true -> yaw
+      angle < 0 -> angle + 2.0*:math.pi()
+      angle > 2.0*:math.pi() -> angle - 2.0*:math.pi()
+      true -> angle
     end
   end
 end

@@ -23,8 +23,9 @@ defmodule Command.Commander do
         vehicle_module: vehicle_module,
         rx_output_classification: rx_output_classification,
         rx_output_time_validity_ms: rx_output_time_validity_ms,
-        commands: %{
-        },
+        control_state: -1,
+        reference_cmds: %{},
+        rx_output_time_prev: 0,
         pv_values: %{}
      }}
   end
@@ -34,14 +35,17 @@ defmodule Command.Commander do
     Comms.Operator.start_link(%{name: __MODULE__})
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
-    {:noreply, state}
+    rx_output_time_prev = :erlang.monotonic_time(:millisecond)
+    {:noreply, %{state | rx_output_time_prev: rx_output_time_prev}}
   end
 
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
-    convert_rx_output_to_cmds_and_publish(channel_output, state.vehicle_module, state.rx_output_classification, state.rx_output_time_validity_ms)
-    {:noreply, state}
+    current_time = :erlang.monotonic_time(:millisecond)
+    dt = (current_time - state.rx_output_time_prev)/1000.0
+    {reference_cmds, control_state} = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
+    {:noreply, %{state | rx_output_time_prev: current_time, reference_cmds: reference_cmds, control_state: control_state}}
   end
 
   @impl GenServer
@@ -53,8 +57,8 @@ defmodule Command.Commander do
     {:noreply, %{state | pv_values: pv_values}}
   end
 
-  @spec convert_rx_output_to_cmds_and_publish(list(), atom(), list(), integer()) :: atom()
-  defp convert_rx_output_to_cmds_and_publish(rx_output, vehicle_module,classification, time_validity_ms) do
+  @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
+  defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     armed_state_float = Enum.at(rx_output, @rx_armed_state_channel)
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_float = Enum.at(rx_output, @transmit_channel)
@@ -69,11 +73,22 @@ defmodule Command.Commander do
             true -> 1
           end
       end
-      channel_map = apply(vehicle_module, :get_rx_output_channel_map, [control_state])
-      cmds = Enum.reduce(channel_map, %{}, fn (channel_tuple, acc) ->
+      reference_cmds =
+      if (control_state != state.control_state) do
+        Logger.info("latch cs")
+        latch_commands(control_state, state.pv_values)
+      else
+        state.reference_cmds
+      end
+      # unless Enum.empty?(reference_cmds) do
+      #   Logger.warn("ref cmds: #{inspect(reference_cmds)}")
+      # end
+
+      channel_map = apply(state.vehicle_module, :get_rx_output_channel_map, [control_state])
+      {cmds, reference_cmds} = Enum.reduce(channel_map, {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
         channel_index = elem(channel_tuple, 0)
         channel = elem(channel_tuple, 1)
-        # absolute_or_relative = elem(channel_tuple, 2)
+        absolute_or_relative = elem(channel_tuple, 2)
         min_value = elem(channel_tuple, 3)
         max_value = elem(channel_tuple, 4)
         mid_value = (min_value + max_value)/2
@@ -81,32 +96,56 @@ defmodule Command.Commander do
         inverted_multiplier = elem(channel_tuple, 5)
         unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
         scaled_value = mid_value + unscaled_value*delta_value_each_side
-        # output_value =
-        #   case absolute_or_relative do
-        #     :absolute -> scaled_value
-        #     :relative ->
-        #       current_value =
-        #         case channel do
-        #           :course ->
-        #             Map.get(pv_values,:calculated, %{})
-        #             |> Map.get(:course, 0)
-        #           :speed ->
-        #             Map.get(pv_values,:calculated, %{})
-        #             |> Map.get(:speed, 0)
-        #           :altitude -> Map.get(pv_values, :position, %{})
-        #           |> Map.get(:altitude, 0)
-        #           _other -> 0
-        #         end
-        #       current_value + scaled_value
-        #   end
-        Map.put(acc, channel, scaled_value)
+        output_value =
+          case absolute_or_relative do
+            :absolute -> scaled_value
+            :relative ->
+              value_to_add = scaled_value*dt
+              case channel do
+                :yaw ->
+                  reference_cmds.yaw + value_to_add
+                  |> Common.Utils.Math.constrain(min_value, max_value)
+                  # |> Common.Utils.constrain_angle_to_compass()
+                :course ->
+                  reference_cmds.course + value_to_add
+                  |> Common.Utils.constrain_angle_to_compass()
+                :speed -> reference_cmds.speed + value_to_add
+                :altitude -> reference_cmds.altitude - value_to_add # down-stick should be positive altitude
+                _other -> value_to_add
+              end
+          end
+        {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
       end)
-      if (control_state == 3) do
-        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
-      else
-        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state},classification, time_validity_ms, cmds}, {:goals, control_state}, self())
-      end
+      # if (control_state == 3) do
+      #   Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
+      # else
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.rx_output_classification, state.rx_output_time_validity_ms, cmds}, {:goals, control_state}, self())
+      # end
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
+      {reference_cmds, control_state}
+    else
+      {%{}, state.control_state}
+    end
+  end
+
+  @spec latch_commands(integer(), map()) :: map()
+  def latch_commands(new_control_state, pv_values) do
+    case new_control_state do
+      2 ->
+        yaw = Map.get(pv_values, :attitude, %{})
+        |> Map.get(:yaw, 0)
+        %{yaw: 0}
+      3 ->
+        course = Map.get(pv_values,:calculated, %{})
+        |> Map.get(:course, 0)
+        speed =
+          Map.get(pv_values,:calculated, %{})
+          |> Map.get(:speed, 0)
+        altitude = Map.get(pv_values, :position, %{})
+        |> Map.get(:altitude, 0)
+        %{speed: speed, course: course, altitude: altitude}
+      _other ->
+        %{}
     end
   end
 end
