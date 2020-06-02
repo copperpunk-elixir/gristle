@@ -3,7 +3,7 @@ defmodule Display.Scenic.LoadGcsTest do
   require Logger
 
   setup do
-    vehicle_type = :Car
+    vehicle_type = :Plane
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)

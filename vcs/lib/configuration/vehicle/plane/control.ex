@@ -5,14 +5,15 @@ defmodule Configuration.Vehicle.Plane.Control do
     %{
       controller: %{
         vehicle_type: :Plane,
-        process_variable_cmd_loop_interval_ms: 20
+        process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       }
     }
   end
 
-  def get_auto_pv_value_map(pv_value_map) do
-    course = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
-    speed = Common.Utils.Math.hypot(pv_value_map.velocity.north, pv_value_map.velocity.east)
+  def get_auto_pv_value_map(pv_value_map, yaw) do
+    # course = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
+    # speed = Common.Utils.Math.hypot(pv_value_map.velocity.north, pv_value_map.velocity.east)
+    {speed, course} = Common.Utils.get_speed_course_for_velocity(pv_value_map.velocity.north, pv_value_map.velocity.east, 2, yaw)
     altitude = pv_value_map.position.altitude
     %{course: course, speed: speed, altitude: altitude}
   end

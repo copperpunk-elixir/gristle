@@ -139,4 +139,36 @@ defmodule Common.Utils do
   def eftb(number, num_decimals) do
     :erlang.float_to_binary(number, [decimals: num_decimals])
   end
+
+  # Convert North/East velocity to Speed/Course
+  @spec get_speed_course_for_velocity(number(), number(), number(), number()) :: float()
+  def get_speed_course_for_velocity(v_north, v_east, min_speed_for_course, yaw) do
+    speed = Common.Utils.Math.hypot(v_north, v_east)
+    course =
+    if speed >= min_speed_for_course do
+      :math.atan2(v_east, v_north)
+    else
+      yaw
+    end
+    {speed, course}
+  end
+
+  # Turn correctly left or right using delta Yaw/Course
+  @spec turn_left_or_right_for_correction(number()) :: number()
+  def turn_left_or_right_for_correction(correction) do
+    cond do
+      correction < -:math.pi() -> correction + 2.0*:math.pi()
+      correction > :math.pi() -> correction - 2.0*:math.pi()
+      true -> correction
+    end
+  end
+
+  @spec constrain_angle_to_compass(number()) :: number()
+  def constrain_angle_to_compass(angle) do
+    cond do
+      angle < 0.0 -> angle + 2.0*:math.pi()
+      angle > 2.0*:math.pi() -> angle - 2.0*:math.pi()
+      true -> angle
+    end
+  end
 end

@@ -6,7 +6,8 @@ defmodule Configuration.Vehicle.Plane.Command do
       commander: %{vehicle_type: :Plane},
       frsky_rx: %{
         device_description: "Feather M0",
-        publish_rx_output_loop_interval_ms: 20}
+        publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+      }
     }
   end
 

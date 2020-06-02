@@ -2,30 +2,23 @@ defmodule Cluster.Heartbeat do
   use GenServer
   require Logger
 
-  @default_heartbeat_status_loop_interval_ms 100
-  @default_send_heartbeat_loop_interval_ms 100
   @node_sorter {:hb, :node}
 
   def start_link(config \\ %{}) do
     Logger.debug("Start HB")
     {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config)
-    begin()
-    start_heartbeat_loops()
+    GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
-    node = Map.get(config, :node, 0)
-    ward = Map.get(config, :ward, 0)
     {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     {:ok, %{
-        node: node,
-        hb_map: %{node: node, ward: ward},
-        heartbeat_status_loop_interval_ms: Map.get(config, :heartbeat_status_loop_interval_ms, @default_heartbeat_status_loop_interval_ms),
-        heartbeat_status_loop_timer: nil,
-        send_heartbeat_loop_interval_ms: Map.get(config, :send_heartbeat_loop_interval_ms, @default_send_heartbeat_loop_interval_ms),
-        send_heartbeat_loop_timer: nil,
+        node: config.node,
+        hb_map: %{node: config.node, ward: config.ward},
+        heartbeat_loop_interval_ms: config.heartbeat_loop_interval_ms,
+        heartbeat_loop_timer: nil,
         heartbeat_time_validity_ms: heartbeat_time_validity_ms,
         cluster_status: 0,
         all_nodes: %{}
@@ -34,18 +27,15 @@ defmodule Cluster.Heartbeat do
 
   def handle_cast(:begin , state) do
     Process.sleep(100)
-    # sorter_config = %{
-    #   name: @node_sorter,
-    #   value_type: :map
-    # }
     Comms.Operator.start_link(%{name: __MODULE__})
     Comms.Operator.join_group(__MODULE__, @node_sorter, self())
-    # MessageSorter.System.start_sorter(sorter_config)
-    {:noreply, state}
+    heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
+    {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
   end
 
 
   def handle_cast({:add_heartbeat, heartbeat_map, time_validity_ms}, state) do
+    Logger.info("add heartbeat: #{inspect(heartbeat_map)}")
     MessageSorter.Sorter.add_message(@node_sorter, [heartbeat_map.node], time_validity_ms, heartbeat_map)
     {:noreply, state}
   end
@@ -55,18 +45,10 @@ defmodule Cluster.Heartbeat do
     {:noreply, state}
   end
 
-  def handle_cast(:start_heartbeat_loops, state) do
-    heartbeat_status_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_status_loop_interval_ms, :calc_heartbeat_status)
-    send_heartbeat_loop_timer = Common.Utils.start_loop(self(), state.send_heartbeat_loop_interval_ms, :send_heartbeat)
-    {:noreply, %{state | heartbeat_status_loop_timer: heartbeat_status_loop_timer, send_heartbeat_loop_timer: send_heartbeat_loop_timer}}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_heartbeat_loops, state) do
-    heartbeat_status_loop_timer = Common.Utils.stop_loop(state.heartbeat_status_loop_timer)
-    send_heartbeat_loop_timer = Common.Utils.stop_loop(state.send_heartbeat_loop_timer)
-    {:noreply, %{state | heartbeat_status_loop_timer: heartbeat_status_loop_timer, send_heartbeat_loop_timer: send_heartbeat_loop_timer}}
-  end
+  # def handle_cast(:start_heartbeat_loop, state) do
+  #   heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
+  #   {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
+  # end
 
   def handle_cast(msg, state) do
     Logger.warn("msg: #{inspect(msg)}")
@@ -86,20 +68,13 @@ defmodule Cluster.Heartbeat do
   end
 
   @impl GenServer
-  def handle_info(:calc_heartbeat_status, state) do
+  def handle_info(:heartbeat_loop, state) do
+    MessageSorter.Sorter.add_message(@node_sorter, [state.node], state.heartbeat_time_validity_ms, state.hb_map)
     # Get Heartbeat status
     all_nodes = unpack_heartbeats()
-    # Logger.debug("All node heartbeats: #{inspect(all_nodes)}")
     all_nodes = update_ward_status(all_nodes)
     cluster_status = get_cluster_status(all_nodes)
-    # Logger.debug("cluster status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
-  end
-
-  @impl GenServer
-  def handle_info(:send_heartbeat, state) do
-    MessageSorter.Sorter.add_message(@node_sorter, [state.node], state.heartbeat_time_validity_ms, state.hb_map)
-    {:noreply, state}
   end
 
   def unpack_heartbeats() do
@@ -158,13 +133,5 @@ defmodule Cluster.Heartbeat do
 
   def remove_all_heartbeats(process) do
     GenServer.cast(process, :remove_all_heartbeats)
-  end
-
-  defp begin() do
-    GenServer.cast(__MODULE__, :begin)
-  end
-
-  defp start_heartbeat_loops() do
-    GenServer.cast(__MODULE__, :start_heartbeat_loops)
   end
 end

@@ -1,16 +1,38 @@
 defmodule Configuration.Generic do
   require Logger
 
+
+  @spec get_loop_interval_ms(atom()) :: integer()
+  def get_loop_interval_ms(loop_type) do
+    case loop_type do
+      :fast -> 50
+      :medium -> 100
+      :slow -> 200
+    end
+  end
+
   @spec get_estimator_config() :: map()
   def get_estimator_config() do
     %{estimator:
       %{
-        imu_loop_interval_ms: 50,
+        imu_loop_interval_ms: get_loop_interval_ms(:fast),
         imu_loop_timeout_ms: 1000,
-        ins_loop_interval_ms: 100,
+        ins_loop_interval_ms: get_loop_interval_ms(:fast),
         ins_loop_timeout_ms: 2000,
-        telemetry_loop_interval_ms: 200,
+        telemetry_loop_interval_ms: get_loop_interval_ms(:slow),
       }}
+  end
+
+  @spec get_cluster_config(integer(), integer()) :: map()
+  def get_cluster_config(node, ward) do
+    %{
+      heartbeat: %{
+        heartbeat_loop_interval_ms: get_loop_interval_ms(:medium),
+        node: node,
+        ward: ward
+      }
+    }
+
   end
 
   @spec get_sorter_configs() :: list()
@@ -49,8 +71,8 @@ defmodule Configuration.Generic do
     time_validity_all = %{
       {:hb, :node} => 500,
       :actuator_cmds => 200,
-      :pv_cmds => 200,
-      :rx_output => 100
+      :pv_cmds => 300,
+      :rx_output => 300
     }
 
     classification =

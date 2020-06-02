@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Plane.Navigation do
     %{
       navigator: %{
         vehicle_type: :Plane,
-        navigator_loop_interval_ms: 20,
+        navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
         default_pv_cmds_level: 3
       }
     }
@@ -14,6 +14,18 @@ defmodule Configuration.Vehicle.Plane.Navigation do
   @spec get_goals_sorter_configs() :: list()
   def get_goals_sorter_configs() do
     [
+      %{
+        name: {:goals, -1},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        value_type: :map
+      },
+      %{
+        name: {:goals, 0},
+        default_message_behavior: :default_value,
+        default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
+        value_type: :map
+      },
       %{
         name: {:goals, 1},
         default_message_behavior: :default_value,

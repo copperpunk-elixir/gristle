@@ -3,7 +3,6 @@ defmodule Display.Scenic.Gcs.Car do
   require Logger
 
   import Scenic.Primitives
-  import Scenic.Components
   # @body_offset 80
   @font_size 24
   @degrees "°"
@@ -12,10 +11,10 @@ defmodule Display.Scenic.Gcs.Car do
   @mps "m/s"
   @pct "%"
 
-  @offset_x 0
+  # @offset_x 0
   # @width 300
-  @height 50
-  @labels {"", "", ""}
+  # @height 50
+  # @labels {"", "", ""}
   @rect_border 6
 
   @moduledoc """
@@ -27,7 +26,7 @@ defmodule Display.Scenic.Gcs.Car do
   # ============================================================================
   def init(_, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
-    {:ok, %Scenic.ViewPort.Status{size: {vp_width, _}}} =
+    {:ok, %Scenic.ViewPort.Status{size: {_vp_width, _}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
 
@@ -58,8 +57,9 @@ defmodule Display.Scenic.Gcs.Car do
   # receive PV updates from the vehicle
   def handle_cast({:pv_estimate, pv_value_map}, graph) do
     position =pv_value_map.position
-    velocity = pv_value_map.velocity
+    # velocity = pv_value_map.velocity
     attitude = pv_value_map.attitude
+    calculated_values = pv_value_map.calculated
 
     roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
     pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
@@ -70,18 +70,11 @@ defmodule Display.Scenic.Gcs.Car do
     alt = Common.Utils.eftb(position.altitude,2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
-    # course = :math.atan2(velocity.east, velocity.north)
-    speed_value = Common.Utils.Math.hypot(velocity.north, velocity.east)
-    speed = Common.Utils.eftb(speed_value,1)
+    speed = Common.Utils.eftb(calculated_values.speed,1)
 
-    course =
-    if speed_value > 2.0 do
-      :math.atan2(velocity.east, velocity.north)
-      |> Common.Utils.Math.rad2deg()
+    course=
+      Common.Utils.Math.rad2deg(calculated_values.course)
       |> Common.Utils.eftb(1)
-    else
-      yaw
-    end
 
     graph = Scenic.Graph.modify(graph, :lat, &text(&1, lat <> @degrees))
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
@@ -115,7 +108,7 @@ defmodule Display.Scenic.Gcs.Car do
           graph
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
           |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
-        other -> graph
+        _other -> graph
       end
 
     graph = Enum.reduce(1..4, graph, fn (goal_level, acc) ->

@@ -47,7 +47,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_3_cmds)
     # MessageSorter.Sorter.add_message({:pv_cmds, :course}, msg_class, msg_time_ms, pv_cmd.course)
     # MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
-    Process.sleep(50)
+    Process.sleep(150)
     course_cmd = Control.Controller.get_pv_cmd(:course)
     assert_in_delta(course_cmd, pv_3_cmds.course, max_cmd_delta)
     # Send PV value
@@ -56,11 +56,11 @@ defmodule Control.SendLevelIIICorrectionTest do
     vx = speed*:math.cos(course)
     vy = speed*:math.sin(course)
     pv_velocity_pos = %{velocity: %{north: vx, east: vy, down: 0}, position: %{latitude: 5, longitude: 10, altitude: 10}}
-    pv_att_att_rate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, body_rate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
+    pv_att_att_rate = %{attitude: %{roll: 0, pitch: 0, yaw: 0}, bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0}}
     dt = 0.05
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_velocity}, pv_velocity_pos, dt}, {:pv_values, :position_velocity}, self())
     Process.sleep(50)
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_body_rate}, pv_att_att_rate, dt}, {:pv_values, :attitude_body_rate}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_bodyrate}, pv_att_att_rate, dt}, {:pv_values, :attitude_bodyrate}, self())
     Process.sleep(100)
 
     # Now check PVII commands. Assert that they are all the correct signs

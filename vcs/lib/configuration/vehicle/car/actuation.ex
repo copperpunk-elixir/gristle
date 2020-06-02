@@ -40,7 +40,7 @@ defmodule Configuration.Vehicle.Car.Actuation do
 
     #return config
     %{
-      actuator_loop_interval_ms: 20,
+      actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       actuators: actuators
     }
   end

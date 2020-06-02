@@ -30,7 +30,7 @@ defmodule Peripherals.Uart.VnIns do
         baud: Map.get(config, :baud, @default_baud),
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
-          body_rate: %{roll: 0, pitch: 0, yaw: 0},
+          bodyrate: %{roll: 0, pitch: 0, yaw: 0},
           body_accel: %{x: 0, y: 0, z: 0},
           gps_time: 0,
           position: %{latitude: 0, longitude: 0, altitude: 0},
@@ -88,8 +88,8 @@ defmodule Peripherals.Uart.VnIns do
   end
 
   defp publish_ins_data(ins_data) do
-    attitude_body_rate_value_map = %{attitude: ins_data.attitude, body_rate: ins_data.body_rate}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_body_rate}, attitude_body_rate_value_map}, {:pv_calculated, :attitude_body_rate}, self())
+    attitude_bodyrate_value_map = %{attitude: ins_data.attitude, bodyrate: ins_data.bodyrate}
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
     position_velocity_value_map = %{position: ins_data.position, velocity: ins_data.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
   end
@@ -268,7 +268,7 @@ defmodule Peripherals.Uart.VnIns do
       {ins.attitude, buffer}
     end
 
-    {body_rate, buffer} = if(angular_rate_bit==1) do
+    {bodyrate, buffer} = if(angular_rate_bit==1) do
       {roll_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
       {pitch_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
       {yaw_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
@@ -281,7 +281,7 @@ defmodule Peripherals.Uart.VnIns do
             yawrate: yaw_rate_rad
       }, buffer}
     else
-      {ins.body_rate, buffer}
+      {ins.bodyrate, buffer}
     end
 
     {position, buffer} = if(position_bit == 1) do
@@ -365,7 +365,7 @@ defmodule Peripherals.Uart.VnIns do
       {ins.gps_status, buffer}
     end
 
-    %{gps_time: gps_time, attitude: attitude, body_rate: body_rate, body_accel: body_accel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
+    %{gps_time: gps_time, attitude: attitude, bodyrate: bodyrate, body_accel: body_accel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
   end
 
   def list_to_int(x_list, bytes) do
