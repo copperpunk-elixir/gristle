@@ -1,14 +1,14 @@
 defmodule MessageSorter.System do
-  # use DynamicSupervisor
   use Supervisor
   require Logger
 
   def start_link(vehicle_type) do
     Logger.debug("Start MessageSorter Supervisor")
+    Comms.ProcessRegistry.start_link()
     Common.Utils.start_link_redudant(Supervisor, __MODULE__, vehicle_type, __MODULE__)
   end
 
-  @impl true
+  @impl Supervisor
   def init(vehicle_type) do
     children = get_all_children(vehicle_type)
     Supervisor.init(children, strategy: :one_for_one)
