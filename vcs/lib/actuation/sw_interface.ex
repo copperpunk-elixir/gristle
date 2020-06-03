@@ -50,10 +50,10 @@ defmodule Actuation.SwInterface do
     {:noreply, state}
   end
 
-  def get_output_for_actuator_name(actuator_name) do
-    actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
-    Map.get(actuator_output_map, actuator_name, nil)
-  end
+  # def get_output_for_actuator_name(actuator_name) do
+  #   actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
+  #   Map.get(actuator_output_map, actuator_name, nil)
+  # end
 
   # defp start_message_sorters() do
   #   GenServer.cast(__MODULE__, :start_message_sorters)

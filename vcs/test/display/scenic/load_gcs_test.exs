@@ -25,6 +25,6 @@ defmodule Display.Scenic.LoadGcsTest do
   test "load gcs", context do
     vehicle_type = context[:vehicle_type]
     Display.Scenic.System.start_link(%{vehicle_type: vehicle_type})
-    Process.sleep(10000)
+    Process.sleep(1000000)
   end
 end

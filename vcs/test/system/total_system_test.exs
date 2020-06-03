@@ -2,7 +2,7 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :Car
+    vehicle_type = :FourWheelRobot
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()
@@ -41,6 +41,9 @@ defmodule System.TotalSystemTest do
     command_config = apply(Module.concat(vehicle_config_module, Command), :get_config, [])
     Command.System.start_link(command_config)
     # ----- END Command setup -----
+    # ----- BEGIN Display setup -----
+    Display.Scenic.System.start_link(%{vehicle_type: :Car})
+    # ----- END Display setup -----
 
     config = %{
       cluster_config: cluster_config,
@@ -49,7 +52,6 @@ defmodule System.TotalSystemTest do
       control_config: control_config,
       estimation_config: estimation_config,
       # navigation_config: navigation_config
-
     }
 
     {:ok, [
@@ -63,7 +65,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(%{name: op_name})
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(2500)
+    Process.sleep(250000)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}

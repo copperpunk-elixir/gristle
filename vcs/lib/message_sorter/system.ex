@@ -10,14 +10,13 @@ defmodule MessageSorter.System do
 
   @impl true
   def init(vehicle_type) do
-    vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type])
-    children = get_all_children(vehicle_module)
+    children = get_all_children(vehicle_type)
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def get_all_children(vehicle_module) do
+  def get_all_children(vehicle_type) do
     generic_sorters = Configuration.Generic.get_sorter_configs()
-    vehicle_sorters = apply(vehicle_module, :get_sorter_configs, [])
+    vehicle_sorters = Configuration.Vehicle.get_sorter_configs(vehicle_type)
     sorter_configs = generic_sorters ++ vehicle_sorters
     Enum.reduce(sorter_configs, [], fn (config, acc) ->
       [Supervisor.child_spec({MessageSorter.Sorter, config}, id: config.name)] ++ acc
