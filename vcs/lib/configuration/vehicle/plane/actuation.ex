@@ -11,7 +11,12 @@ defmodule Configuration.Vehicle.Plane.Actuation do
   @spec get_hw_config() :: map()
   def get_hw_config() do
     %{
-      interface_driver_name: :pololu
+      interface_driver_name: :pololu,
+      driver_config: %{
+        baud: 115_200,
+        write_timeout: 10,
+        read_timeout: 10
+      }
     }
   end
 

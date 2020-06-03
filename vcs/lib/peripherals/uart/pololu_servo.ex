@@ -2,16 +2,14 @@ defmodule Peripherals.Uart.PololuServo do
   require Bitwise
   require Logger
 
-  @default_baud 115_200
-  @default_write_timeout 10
-  @default_read_timeout 10
-
-  defstruct [interface_ref: nil, baud: nil]
+  defstruct [interface_ref: nil, baud: nil, write_timeout: 0, read_timeout: 0]
 
   def new_device(config) do
-    baud = Map.get(config, :baud, @default_baud)
+    baud = config.baud
+    write_timeout = config.write_timeout
+    read_timeout = config.read_timeout
     {:ok, interface_ref} = Circuits.UART.start_link()
-    %Peripherals.Uart.PololuServo{interface_ref: interface_ref, baud: baud}
+    %Peripherals.Uart.PololuServo{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
   end
 
   def open_port(device) do
@@ -46,7 +44,7 @@ defmodule Peripherals.Uart.PololuServo do
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
     message = get_message_for_channel_and_output_ms(channel, output_ms)
-    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), @default_write_timeout)
+    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
   end
 
   def get_message_for_channel_and_output_ms(channel, output_ms) do
@@ -60,8 +58,8 @@ defmodule Peripherals.Uart.PololuServo do
   def get_output_for_channel_number(device, channel) do
     packet = [0x90, channel]
     message = packet ++ [get_checksum_for_packet(packet)]
-    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), @default_write_timeout)
-    response = read_to_list(device.interface_ref, @default_read_timeout)
+    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
+    response = read_to_list(device.interface_ref, device.read_timeout)
     if length(response) == 2 do
       (Bitwise.<<<(Enum.at(response, 1),8) |> Bitwise.bor(Enum.at(response, 0))) / 4
     else
