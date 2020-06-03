@@ -58,11 +58,11 @@ defmodule Configuration.Generic do
     Logger.warn("sender: #{inspect(sender)}")
     classification_all = %{
       :actuator_cmds => %{
-        Pids.System => [0,1],
+        Pids.Moderator => [0,1],
         Navigation.Navigator => [0,2]
       },
       :pv_cmds => %{
-        Pids.System => [0,1],
+        Pids.Moderator => [0,1],
         Navigation.Navigator => [0,2]
       },
       :rx_output => %{
