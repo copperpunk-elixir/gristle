@@ -15,6 +15,7 @@ defmodule Navigation.Navigator do
   def init(config) do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Vehicle, vehicle_type])
+    {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
@@ -22,6 +23,8 @@ defmodule Navigation.Navigator do
         default_pv_cmds_level: Map.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
         navigator_loop_timer: nil,
         navigator_loop_interval_ms: config.navigator_loop_interval_ms,
+        pv_cmds_msg_classification: pv_cmds_msg_classification,
+        pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
         position_velocity: %{position: %{latitude: 0, longitude: 0, altitude: 0}, velocity: %{north: 0, east: 0, down: 0}},
      }}
   end
@@ -48,7 +51,7 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({{:goals, level},classification, time_validity_ms, goals_map}, state) do
-    Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
+    # Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
     MessageSorter.Sorter.add_message({:goals, level}, classification, time_validity_ms, goals_map)
     {:noreply, state}
   end
@@ -74,6 +77,11 @@ defmodule Navigation.Navigator do
     end
     MessageSorter.Sorter.add_message(:control_state, [0,1], 2*state.navigator_loop_interval_ms, control_state)
     MessageSorter.Sorter.add_message({:pv_cmds, control_state}, [0,1], 2*state.navigator_loop_interval_ms, pv_cmds)
+    # MessageSorter.Sorter.add_message(
+    #   {:pv_cmds, control_state},
+    #   state.pv_cmds_msg_classification,
+    #   state.pv_cmds_msg_time_validity_ms,
+    #   pv_cmds)
     {:noreply, state}
   end
 end

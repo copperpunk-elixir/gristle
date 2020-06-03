@@ -88,7 +88,7 @@ defmodule Pids.System do
         level_1_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude, dt, state.pv_output_pids)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
-        # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
+        Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
         pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)

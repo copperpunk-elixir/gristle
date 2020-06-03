@@ -12,8 +12,7 @@ defmodule MessageSorter.StartAllMessageSortersTest do
 
   test "Start all message sorters" do
     vehicle_type = :Plane
-    vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type])
-    all_configs = MessageSorter.System.get_all_children(vehicle_module)
+    all_configs = MessageSorter.System.get_all_children(vehicle_type)
     # IO.inspect(all_configs)
     # Enum.each(all_configs, fn {module, config} ->
     #   Logger.info("module/config: #{module}/#{inspect(config)}")
