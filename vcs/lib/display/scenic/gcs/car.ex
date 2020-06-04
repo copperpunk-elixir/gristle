@@ -89,31 +89,37 @@ defmodule Display.Scenic.Gcs.Car do
 
   def handle_cast({{:tx_goals, level}, cmds}, graph) do
     graph =
-      case level do
-        1 ->
+      cond do
+      level <=1 ->
           yawrate = Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yawrate),0)
           thrust = Common.Utils.eftb(cmds.thrust*100,0)
           graph
           |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @dps))
           |> Scenic.Graph.modify(:thrust_1_cmd, &text(&1,thrust <> @pct))
-        2 ->
+      level == 2 ->
           yaw= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yaw),0)
           thrust = Common.Utils.eftb(cmds.thrust*100,0)
           graph
           |> Scenic.Graph.modify(:yaw_cmd, &text(&1,yaw<> @degrees))
           |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
-        3 ->
+      level == 3 ->
           speed= Common.Utils.eftb(cmds.speed,1)
           course= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course),0)
           graph
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
           |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
-        _other -> graph
+      true -> graph
       end
 
-    graph = Enum.reduce(1..4, graph, fn (goal_level, acc) ->
+    graph = Enum.reduce(4..-1, graph, fn (goal_level, acc) ->
       if goal_level == level do
-        Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :green}))
+        {stroke_color, display_level} =
+          case level do
+            -1 -> {:red, 1}
+            0 -> {:yellow, 1}
+            _other -> {:green, goal_level}
+          end
+        Scenic.Graph.modify(acc, {:goals, display_level}, &update_opts(&1, stroke: {@rect_border, stroke_color}))
       else
         Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :white}))
       end
