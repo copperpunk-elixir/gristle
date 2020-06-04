@@ -16,16 +16,16 @@ defmodule Configuration.Vehicle.Car.Command do
         {0, :yawrate, :absolute, output_limits.yawrate.min, output_limits.yawrate.max, 1}
       ],
       1 => [
-        {2,:thrust, :absolute, output_limits.thrust.min, output_limits.thrust.max, 1},
+        {2,:thrust, :absolute, 0, output_limits.thrust.max, 1},
         {0,:yawrate, :absolute, output_limits.yawrate.min, output_limits.yawrate.max, 1}
       ],
       2 => [
-        {2,:thrust, :absolute, output_limits.thrust.min, output_limits.thrust.max, 1},
+        {2,:thrust, :absolute, 0, output_limits.thrust.max, 1},
         {0,:yaw, :relative, output_limits.yawrate.min, output_limits.yawrate.max, 1}
       ],
       3 => [
         {0, :course, :relative, output_limits.course.min, output_limits.course.max, 1},
-        {2,:speed, :relative, output_limits.speed.min, output_limits.speed.max, 1}
+        {2,:speed, :absolute, 0, 10, 1}
       ]
     }
   end

@@ -3,7 +3,7 @@ defmodule Display.Scenic.LoadGcsTest do
   require Logger
 
   setup do
-    vehicle_type = :FourWheelRobot
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
