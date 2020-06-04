@@ -16,7 +16,7 @@ defmodule Comms.TestMemberAllGroups do
         pv_values_pid_system: %{},
         pv_calculated: %{},
         pv_cmds: %{},
-        goals: %{}
+        goals: %{},
      }}
   end
 
@@ -105,5 +105,4 @@ defmodule Comms.TestMemberAllGroups do
   def get_goals(level) do
     GenServer.call(__MODULE__, {:get_goals, level})
   end
-
 end

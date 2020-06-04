@@ -31,7 +31,6 @@ defmodule Vcs.MixProject do
   def application do
     [
       # mod: {Vcs.Application, []},
-      applications: [:gen_state_machine],
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -55,8 +54,9 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi3a, "~> 1.10", runtime: false, targets: :rpi3a},
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
       # Package dependencies
+      {:vintage_net_wifi, "~> 0.7.0"},
+      {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.3"},
-      {:gen_state_machine, "~> 2.0"},
       #Scenic dependencies
       {:scenic, "~> 0.10"},
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
