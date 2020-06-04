@@ -15,7 +15,8 @@ defmodule Comms.TestMemberAllGroups do
         pv_values_estimator: %{},
         pv_values_pid_system: %{},
         pv_calculated: %{},
-        pv_cmds: %{}
+        pv_cmds: %{},
+        goals: %{}
      }}
   end
 
@@ -28,6 +29,7 @@ defmodule Comms.TestMemberAllGroups do
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
+    Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())
     {:noreply, state}
   end
 
@@ -69,9 +71,20 @@ defmodule Comms.TestMemberAllGroups do
   end
 
   @impl GenServer
+  def handle_cast({{:goals, level},_class, _time, goals}, state) do
+    state_goals = Map.put(state.goals, level, goals)
+    {:noreply, %{state | goals: state_goals}}
+  end
+
+  @impl GenServer
   def handle_call({:get_value, key}, _from, state) do
     Logger.debug("get value for key: #{inspect(key)}")
     {:reply, get_in(state, key), state}
+  end
+
+  @impl GenServer
+  def handle_call({:get_goals, level}, _from, state) do
+    {:reply, Map.get(state.goals, level), state}
   end
 
   def get_value(key) do
@@ -87,8 +100,10 @@ defmodule Comms.TestMemberAllGroups do
           Map.put(pvs_to_update, :attitude, pv_map.attitude)
           |> Map.put(:bodyrate, pv_map.bodyrate)
       end
+  end
 
-
+  def get_goals(level) do
+    GenServer.call(__MODULE__, {:get_goals, level})
   end
 
 end

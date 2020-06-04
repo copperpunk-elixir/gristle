@@ -2,15 +2,14 @@ defmodule Pids.LevelIITest do
   use ExUnit.Case
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
 
     {:ok, [
-        config: %{
           pid_config: pid_config
-        }
       ]}
   end
 
@@ -20,10 +19,9 @@ defmodule Pids.LevelIITest do
     op_name = :batch_test
     {:ok, _} = Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     dt = 0.05 # Not really used for now
-    config = %{}
-    config = Map.merge(context[:config], config)
+    pid_config = context[:pid_config]
     # Setup parameters
-    pids = config.pid_config.pids
+    pids = pid_config.pids
     roll_pid = pids.roll
     rollrate_pid = pids.rollrate
     Process.sleep(200)

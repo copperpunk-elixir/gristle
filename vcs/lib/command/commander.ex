@@ -18,6 +18,7 @@ defmodule Command.Commander do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {rx_output_classification, rx_output_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :rx_output)
+    rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
@@ -26,7 +27,8 @@ defmodule Command.Commander do
         control_state: -1,
         reference_cmds: %{},
         rx_output_time_prev: 0,
-        pv_values: %{}
+        pv_values: %{},
+        rx_output_channel_map: rx_output_channel_map
      }}
   end
 
@@ -81,8 +83,8 @@ defmodule Command.Commander do
         state.reference_cmds
       end
 
-      channel_map = apply(state.vehicle_module, :get_rx_output_channel_map, [control_state])
-      {cmds, reference_cmds} = Enum.reduce(channel_map, {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
+      # channel_map = apply(state.vehicle_module, :get_rx_output_channel_map, [control_state])
+      {cmds, reference_cmds} = Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
         channel_index = elem(channel_tuple, 0)
         channel = elem(channel_tuple, 1)
         absolute_or_relative = elem(channel_tuple, 2)

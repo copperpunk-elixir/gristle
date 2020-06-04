@@ -3,19 +3,20 @@ defmodule Navigation.ProcessGoalsMessageTest do
   require Logger
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    MessageSorter.System.start_link(:Plane)
+    MessageSorter.System.start_link(vehicle_type)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
-    {:ok, []}
+    nav_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    Navigation.System.start_link(nav_config)
+    Process.sleep(400)
+    {:ok, [vehicle_type: vehicle_type, nav_config: nav_config]}
   end
 
-  test "Check Goals message sorter for content" do
-    vehicle_type = :Plane
-    control_module =Module.concat([Configuration.Vehicle, vehicle_type, Navigation])
-    nav_config = apply(control_module, :get_config, [])
-    Navigation.System.start_link(nav_config)
-    Process.sleep(500)
+  test "Check Goals message sorter for content", context do
+    vehicle_type = context[:vehicle_type]
+    nav_config= context[:nav_config]
     # Fake goals_output
     control_state_cmd = 2
     classification = [1, __MODULE__]
