@@ -53,6 +53,17 @@ defmodule Configuration.Generic do
     ]
   end
 
+  @spec get_display_config(atom()) :: map()
+  def get_display_config(vehicle_type) do
+    display_vehicle_type =
+      case vehicle_type do
+        :Car -> :Car
+        :FourWheelRobot -> :Car
+        :Plane -> :Plane
+      end
+    %{vehicle_type: display_vehicle_type}
+  end
+
   @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
     Logger.warn("sender: #{inspect(sender)}")

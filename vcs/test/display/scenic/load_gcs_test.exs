@@ -24,7 +24,8 @@ defmodule Display.Scenic.LoadGcsTest do
 
   test "load gcs", context do
     vehicle_type = context[:vehicle_type]
-    Display.Scenic.System.start_link(%{vehicle_type: vehicle_type})
+    config = Configuration.Generic.get_display_config(vehicle_type)
+    Display.Scenic.System.start_link(config)
     Process.sleep(4000)
   end
 end

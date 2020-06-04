@@ -42,7 +42,8 @@ defmodule System.TotalSystemTest do
     Command.System.start_link(command_config)
     # ----- END Command setup -----
     # ----- BEGIN Display setup -----
-    Display.Scenic.System.start_link(%{vehicle_type: :Car})
+    display_config = Configuration.Generic.get_display_config(vehicle_type)
+    Display.Scenic.System.start_link(display_config)
     # ----- END Display setup -----
 
     config = %{
@@ -73,8 +74,8 @@ defmodule System.TotalSystemTest do
     # Actuators should be at neutral value
     # aileron_neutral = config.pid_config.pids.rollrate.aileron.output_neutral
     # elevator_neutral = config.pid_config.pids.pitchrate.elevator.output_neutral
-    steering_neutral = config.pid_config.pids.yawrate.steering.output_neutral
-    throttle_neutral = config.pid_config.pids.thrust.throttle.output_neutral
+    # steering_neutral = config.pid_config.pids.yawrate.steering.output_neutral
+    # throttle_neutral = config.pid_config.pids.thrust.throttle.output_neutral
     # assert Actuation.SwInterface.get_output_for_actuator_name(:aileron) == aileron_neutral
     # assert Actuation.SwInterface.get_output_for_actuator_name(:elevator) == elevator_neutral
     # assert Actuation.SwInterface.get_output_for_actuator_name(:rudder) == rudder_neutral

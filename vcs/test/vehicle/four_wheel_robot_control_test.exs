@@ -86,6 +86,7 @@ defmodule Vehicle.FourWheelRobotControlTest do
     # Half throttle (for reference in the next test)
     MessageSorter.Sorter.add_message({:pv_cmds, 1},pv_msg_class, 2000, %{thrust: 0.5, yawrate: 0.0} )
     Process.sleep(150)
+    Logger.warn("half throttle")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_values, :attitude_bodyrate}, pv_att_att_rate, dt}, {:pv_values, :attitude_bodyrate}, self())
     Process.sleep(150)
     actuator_cmds_half_throttle = MessageSorter.Sorter.get_value(:actuator_cmds)
