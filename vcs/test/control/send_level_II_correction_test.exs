@@ -3,11 +3,14 @@ defmodule Control.SendLevelIICorrectionTest do
   require Logger
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
+    MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
-    MessageSorter.System.start_link(:Plane)
+    config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
+    Control.System.start_link(config)
     {:ok, [config: pid_config]}
   end
 
@@ -18,22 +21,12 @@ defmodule Control.SendLevelIICorrectionTest do
     elevator_neutral = pid_config.pids.pitchrate.elevator.output_neutral
     rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
 
-    # MessageSorter.System.start_link()
-    # actuator_sorter_config = %{
-    #   name: :actuator_cmds,
-    #   default_message_behavior: :default_value,
-    #   default_value: %{aileron: aileron_neutral, elevator: elevator_neutral, rudder: rudder_neutral},
-    #   value_type: :map
-    # }
-    # MessageSorter.System.start_sorter(actuator_sorter_config)
     Logger.info("SendLevelIICorrectionTest")
     op_name = :levelII
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     max_cmd_delta = 0.001
     Logger.info("Start Control Loop")
-    config = Configuration.Vehicle.Plane.Control.get_config()
-    Control.System.start_link(config)
-    Process.sleep(2000)
+    Process.sleep(200)
     # Verify that none of the PVs in PVII have a command
     assert Pids.Pid.get_output(:rollrate, :aileron) == pid_config.pids.rollrate.aileron.output_neutral
     assert Pids.Pid.get_output(:pitchrate, :elevator) == pid_config.pids.pitchrate.elevator.output_neutral

@@ -3,8 +3,7 @@ defmodule Display.Scenic.LoadGcsTest do
   require Logger
 
   setup do
-    vehicle_type = :Plane
-    vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    vehicle_type = :FourWheelRobot
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
@@ -17,15 +16,16 @@ defmodule Display.Scenic.LoadGcsTest do
     #     device_description: "Arduino Micro",
     #     publish_rx_output_loop_interval_ms: 100}
     # }
-    command_config = apply(Module.concat(vehicle_config_module, Command), :get_config, [])
+    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
     Command.System.start_link(command_config)
+    config = Configuration.Generic.get_display_config(vehicle_type)
+    Display.Scenic.System.start_link(config)
+
     {:ok, [vehicle_type: vehicle_type ]}
   end
 
   test "load gcs", context do
     vehicle_type = context[:vehicle_type]
-    config = Configuration.Generic.get_display_config(vehicle_type)
-    Display.Scenic.System.start_link(config)
     Process.sleep(4000)
   end
 end

@@ -7,14 +7,8 @@ defmodule Cluster.HealthyClusterTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
-    config = %{
-      heartbeat: %{
-        heartbeat_loop_interval_ms: 100,
-        node: 0,
-        ward: 1
-      }
-    }
-    Cluster.System.start_link(config)
+    cluster_config = Configuration.Generic.get_cluster_config(0,1)
+    Cluster.System.start_link(cluster_config)
     {:ok, []}
   end
 

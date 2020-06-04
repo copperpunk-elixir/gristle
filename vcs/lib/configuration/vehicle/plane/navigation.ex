@@ -1,16 +1,6 @@
 defmodule Configuration.Vehicle.Plane.Navigation do
   require Logger
 
-  def get_config() do
-    %{
-      navigator: %{
-        vehicle_type: :Plane,
-        navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
-        default_pv_cmds_level: 3
-      }
-    }
-  end
-
   @spec get_goals_sorter_configs() :: list()
   def get_goals_sorter_configs() do
     [

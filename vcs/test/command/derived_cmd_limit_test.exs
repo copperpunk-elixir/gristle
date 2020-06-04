@@ -14,17 +14,17 @@ defmodule Command.DerivedCmdLimitTest do
     Process.sleep(300)
     {:ok, [vehicle_type: vehicle_type]}
   end
-  test "Get Commander output limits from PID limits" do
-    Logger.info("Put TX into Control State 1")
-    Logger.info("Put yaw to max limit")
-    Process.sleep(3000)
-    Comms.TestMemberAllGroups.start_link()
-    Process.sleep(500)
-    goals = Comms.TestMemberAllGroups.get_goals(1)
-    Logger.info("goals: #{inspect(goals)}")
-    Process.sleep(100)
-    assert goals.yawrate == Enum.at(Map.get(Configuration.Vehicle.Car.Command.get_rx_output_channel_map,1),1) |> elem(4)
-  end
+  # test "Get Commander output limits from PID limits" do
+  #   Logger.info("Put TX into Control State 1")
+  #   Logger.info("Put yaw to max limit")
+  #   Process.sleep(1000)
+  #   Comms.TestMemberAllGroups.start_link()
+  #   Process.sleep(500)
+  #   goals = Comms.TestMemberAllGroups.get_goals(1)
+  #   Logger.info("goals: #{inspect(goals)}")
+  #   Process.sleep(100)
+  #   assert goals.yawrate == Enum.at(Map.get(Configuration.Vehicle.Car.Command.get_rx_output_channel_map(),1),1) |> elem(4)
+  # end
 end
 
 

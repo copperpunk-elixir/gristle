@@ -50,7 +50,7 @@ defmodule Configuration.Vehicle do
       Control ->
         %{
           controller: %{
-            vehicle_type: :Car,
+            vehicle_type: vehicle_type,
             process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
           }}
       Navigation ->
@@ -64,6 +64,18 @@ defmodule Configuration.Vehicle do
     end
   end
 
+  @spec get_command_output_limits(atom(), list()) :: tuple()
+  def get_command_output_limits(vehicle_type, channels) do
+    vehicle_module =
+      Module.concat(Configuration.Vehicle, vehicle_type)
+      |> Module.concat(Pids)
 
+    Enum.reduce(channels, %{}, fn (channel, acc) ->
+      constraints =
+        apply(vehicle_module, :get_constraints, [])
+        |> Map.get(channel)
+      Map.put(acc, channel, %{min: constraints.output_min, max: constraints.output_max})
+    end)
+  end
 end
 

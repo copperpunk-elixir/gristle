@@ -2,11 +2,12 @@ defmodule Pids.LevelIIITest do
   use ExUnit.Case
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
-    MessageSorter.System.start_link(:Plane)
+    MessageSorter.System.start_link(vehicle_type)
     # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :roll}, default_message_behavior: :default_value, default_value: 0})
     # MessageSorter.System.start_sorter(%{name: {:pv_cmds, :yaw}, default_message_behavior: :default_value, default_value: 0})
 
@@ -21,10 +22,9 @@ defmodule Pids.LevelIIITest do
     IO.puts("LevelIIITest")
     max_rate_delta = 0.001
     op_name = :batch_test
-    {:ok, _} = Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     dt = 0.05
-    config = %{}
-    config = Map.merge(context[:config], config)
+    config = context[:config]
     Process.sleep(200)
     # Setup parameters
     pids = config.pid_config.pids

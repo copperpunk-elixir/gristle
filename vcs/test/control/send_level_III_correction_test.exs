@@ -3,11 +3,14 @@ defmodule Control.SendLevelIIICorrectionTest do
   require Logger
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
+    MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
-    MessageSorter.System.start_link(:Plane)
+    config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
+    Control.System.start_link(config)
     {:ok, [config: pid_config]}
   end
 
@@ -16,14 +19,11 @@ defmodule Control.SendLevelIIICorrectionTest do
     aileron_neutral = pid_config.pids.rollrate.aileron.output_neutral
     elevator_neutral = pid_config.pids.pitchrate.elevator.output_neutral
     rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
-
     IO.puts("SendLevelIIICorrectionTest")
     op_name = :levelIII
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     max_cmd_delta = 0.001
     IO.puts("Start Control Loop")
-    config = Configuration.Vehicle.Plane.Control.get_config()
-    Control.System.start_link(config)
     Process.sleep(200)
     # Verify that none of the PVs in PVII have a command
     pv_1_cmds = MessageSorter.Sorter.get_value({:pv_cmds, 1})

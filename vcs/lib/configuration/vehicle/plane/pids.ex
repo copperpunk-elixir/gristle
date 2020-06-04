@@ -1,22 +1,7 @@
 defmodule Configuration.Vehicle.Plane.Pids do
   @spec get_config() :: map()
   def get_config() do
-    constraints = %{
-      aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
-      rollrate: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
-      pitchrate: %{output_min: -0.4, output_max: 0.4, output_neutral: 0},
-      yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
-      roll: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
-      pitch: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
-      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
-      thrust: %{output_min: -1, output_max: 1, output_neutral: 0},
-      course: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
-      speed: %{output_min: -2, output_max: 2, output_neutral: 0},
-      altitude: %{output_min: -5, output_max: 5, output_neutral: 0},
-    }
+    constraints = get_constraints()
 
     pids = %{
       rollrate: %{aileron: Map.merge(%{kp: 1.0}, constraints.aileron)},
@@ -40,6 +25,26 @@ defmodule Configuration.Vehicle.Plane.Pids do
       pids: pids,
       actuator_cmds_msg_classification: [0,1],
       pv_cmds_msg_classification: [0,1]
+    }
+  end
+
+  @spec get_constraints() :: map()
+  def get_constraints() do
+    %{
+      aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
+      rollrate: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
+      pitchrate: %{output_min: -0.4, output_max: 0.4, output_neutral: 0},
+      yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
+      roll: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
+      pitch: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
+      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
+      thrust: %{output_min: 0, output_max: 1, output_neutral: 0},
+      course: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
+      speed: %{output_min: -2, output_max: 2, output_neutral: 0},
+      altitude: %{output_min: -5, output_max: 5, output_neutral: 0},
     }
   end
 end

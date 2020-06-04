@@ -66,7 +66,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(250000)
+    Process.sleep(2500)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}

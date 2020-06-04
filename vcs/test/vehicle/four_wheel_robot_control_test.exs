@@ -4,24 +4,23 @@ defmodule Vehicle.FourWheelRobotControlTest do
 
   setup do
     vehicle_type = :FourWheelRobot
-    vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     # ----- BEGIN Actuation setup -----
 
-    actuation_config = apply(Module.concat(vehicle_config_module, Actuation), :get_config, [])
+    actuation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Actuation)
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
 
     # ----- BEGIN PID setup -----
-    pid_config = apply(Module.concat(vehicle_config_module, Pids), :get_config, [])
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
     # ----- END PID setup -----
 
     # ----- BEGIN Control setup -----
-    control_config = apply(Module.concat(vehicle_config_module, Control), :get_config, [])
+    control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
     Control.System.start_link(control_config)
     # ----- END Control setup -----
     config = %{
