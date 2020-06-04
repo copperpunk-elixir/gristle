@@ -12,7 +12,10 @@ defmodule Configuration.Vehicle.Plane.Pids do
       roll: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
       pitch: %{output_min: -0.2, output_max: 0.2, output_neutral: 0},
       yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
-      thrust: %{output_min: -1, output_max: 1, output_neutral: 0}
+      thrust: %{output_min: -1, output_max: 1, output_neutral: 0},
+      course: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
+      speed: %{output_min: -2, output_max: 2, output_neutral: 0},
+      altitude: %{output_min: -5, output_max: 5, output_neutral: 0},
     }
 
     pids = %{
@@ -30,6 +33,8 @@ defmodule Configuration.Vehicle.Plane.Pids do
       altitude: %{thrust: Map.merge(%{kp: 0.05, weight: 0.0}, constraints.thrust),
                   pitch: Map.merge(%{kp: 1.0, weight: 1.0}, constraints.pitch)},
     }
+
+    pids = Configuration.Vehicle.add_pid_input_constraints(pids, constraints)
 
     %{
       pids: pids,

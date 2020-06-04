@@ -21,6 +21,8 @@ defmodule Pids.Pid do
         ff_poly_degree: length(ff_poly)-1,
         output_min: config.output_min,
         output_max: config.output_max,
+        correction_min: config.input_min,
+        correction_max: config.input_max,
         output_neutral: config.output_neutral,
         pv_integrator: 0,
         pv_correction_prev: 0,
@@ -33,6 +35,7 @@ defmodule Pids.Pid do
   def handle_call({:update, pv_cmd, pv_value, dt}, _from, state) do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
     correction = pv_cmd - pv_value
+    |> Common.Utils.Math.constrain(state.correction_min, state.correction_max)
     pv_integrator = state.pv_integrator + correction*dt
     cmd_p = state.kp*correction
     cmd_i = state.ki*pv_integrator
@@ -49,9 +52,15 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def handle_call({:get_output, weight}, _from, state) do
-    Logger.debug("get output #{state.process_variable}/#{state.control_variable}: #{state.output}")
+    # Logger.debug("get output #{state.process_variable}/#{state.control_variable}: #{state.output}")
     {:reply, state.output*weight, state}
   end
+
+  @impl GenServer
+  def handle_call(:get_config, _from, state) do
+    {:reply, state, state}
+  end
+
 
   def calculate_feed_forward(correction, ff_poly, ff_poly_deg) do
     Enum.reduce(ff_poly_deg..0, 0, fn (degree, acc) ->
@@ -73,5 +82,9 @@ defmodule Pids.Pid do
 
   def via_tuple({process_variable, control_variable}) do
     via_tuple(process_variable, control_variable)
+  end
+
+  def get_config(process_variable_name, output_variable_name) do
+    GenServer.call(via_tuple(process_variable_name, output_variable_name), :get_config)
   end
 end

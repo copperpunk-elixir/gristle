@@ -4,7 +4,7 @@ defmodule Configuration.MessageSorterTest do
 
 
   test "Message Sorter classfication and time_validity" do
-    {pid_act_class, pid_act_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(Pids.System, :actuator_cmds)
+    {pid_act_class, pid_act_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(Pids.Moderator, :actuator_cmds)
     assert pid_act_class == [0,1]
     assert pid_act_time_ms == 200
 

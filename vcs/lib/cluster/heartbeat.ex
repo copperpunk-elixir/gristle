@@ -45,11 +45,6 @@ defmodule Cluster.Heartbeat do
     {:noreply, state}
   end
 
-  # def handle_cast(:start_heartbeat_loop, state) do
-  #   heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
-  #   {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
-  # end
-
   def handle_cast(msg, state) do
     Logger.warn("msg: #{inspect(msg)}")
     {:noreply, state}
@@ -100,22 +95,22 @@ defmodule Cluster.Heartbeat do
 
   def get_cluster_status(all_nodes) do
     # Create list of unhealthy nodes. A healthy cluster will have an empty list
-    case Enum.empty?(all_nodes) do
-      true -> 0
-      false ->
-        node_unhealthy_list =
-          Enum.reduce(all_nodes,[], fn {_node_name, node}, acc ->
-            if node.status == 0 do
-              [node | acc]
-            else
-              acc
-            end
-          end)
-        if Enum.empty?(node_unhealthy_list) do
-          1
-        else
-          0
-        end
+    if Enum.empty?(all_nodes) do
+      0
+    else
+      node_unhealthy_list =
+        Enum.reduce(all_nodes,[], fn {_node_name, node}, acc ->
+          if node.status == 0 do
+            [node | acc]
+          else
+            acc
+          end
+        end)
+      if Enum.empty?(node_unhealthy_list) do
+        1
+      else
+        0
+      end
     end
   end
 

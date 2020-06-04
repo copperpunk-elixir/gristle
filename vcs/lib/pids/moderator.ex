@@ -75,7 +75,7 @@ defmodule Pids.Moderator do
         level_1_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude, dt, state.pv_output_pids)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
-        Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
+        # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
         pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)
@@ -105,7 +105,7 @@ defmodule Pids.Moderator do
       unless Enum.empty?(pv_output_map) do
         Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
           # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
-          output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
+          output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, -dt)
           total_output = output*weight + Map.get(acc, output_variable_name, 0)
           # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
           Map.put(acc, output_variable_name, total_output)
