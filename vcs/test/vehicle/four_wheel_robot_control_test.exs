@@ -10,7 +10,7 @@ defmodule Vehicle.FourWheelRobotControlTest do
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     # ----- BEGIN Actuation setup -----
-    
+
     actuation_config = apply(Module.concat(vehicle_config_module, Actuation), :get_config, [])
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
@@ -40,7 +40,7 @@ defmodule Vehicle.FourWheelRobotControlTest do
     {cs_msg_class, cs_msg_time} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(Navigation.Navigator, :control_state)
     Logger.info("pv class/time: #{inspect(pv_msg_class)}/#{pv_msg_time}")
     Logger.info("Drive Forward Test")
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     Process.sleep(300)
     neutral = 0.5
     actuator_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)

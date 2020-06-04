@@ -28,7 +28,7 @@ defmodule Control.SendLevelIICorrectionTest do
     # MessageSorter.System.start_sorter(actuator_sorter_config)
     Logger.info("SendLevelIICorrectionTest")
     op_name = :levelII
-    Comms.Operator.start_link(%{name: op_name})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     max_cmd_delta = 0.001
     Logger.info("Start Control Loop")
     config = Configuration.Vehicle.Plane.Control.get_config()

@@ -21,7 +21,7 @@ defmodule Pids.LevelIIITest do
     IO.puts("LevelIIITest")
     max_rate_delta = 0.001
     op_name = :batch_test
-    {:ok, _} = Comms.Operator.start_link(%{name: op_name})
+    {:ok, _} = Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     dt = 0.05
     config = %{}
     config = Map.merge(context[:config], config)
@@ -31,7 +31,7 @@ defmodule Pids.LevelIIITest do
     course_pid = pids.course
 
     # ----- BEGIN COURSE-to-ROLL/YAW RUDDER TEST -----
-    # Update course, which affects both roll and yaw 
+    # Update course, which affects both roll and yaw
     pv_cmd_map = %{course: 0.3}
     pv_value_map = %{course: -0.2}
     course_corr= pv_cmd_map.course - pv_value_map.course

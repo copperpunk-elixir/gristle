@@ -25,26 +25,29 @@ defmodule Cluster.Heartbeat do
      }}
   end
 
+  @impl GenServer
   def handle_cast(:begin , state) do
     Process.sleep(100)
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     Comms.Operator.join_group(__MODULE__, @node_sorter, self())
     heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
     {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
   end
 
-
+  @impl GenServer
   def handle_cast({:add_heartbeat, heartbeat_map, time_validity_ms}, state) do
     Logger.info("add heartbeat: #{inspect(heartbeat_map)}")
     MessageSorter.Sorter.add_message(@node_sorter, [heartbeat_map.node], time_validity_ms, heartbeat_map)
     {:noreply, state}
   end
 
+  @impl GenServer
   def handle_cast(:remove_all_heartbeats, state) do
     MessageSorter.Sorter.remove_all_messages(@node_sorter)
     {:noreply, state}
   end
 
+  @impl GenServer
   def handle_cast(msg, state) do
     Logger.warn("msg: #{inspect(msg)}")
     {:noreply, state}

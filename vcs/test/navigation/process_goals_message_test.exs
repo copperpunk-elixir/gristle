@@ -6,7 +6,7 @@ defmodule Navigation.ProcessGoalsMessageTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     {:ok, []}
   end
 

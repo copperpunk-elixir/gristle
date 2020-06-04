@@ -6,7 +6,7 @@ defmodule Pids.BoundedCorrectionTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     pid_config = Configuration.Vehicle.Plane.Pids.get_config()
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     {:ok, [
         config: pid_config
       ]}
@@ -20,7 +20,7 @@ defmodule Pids.BoundedCorrectionTest do
     pv_cmd_map = %{rollrate: -0.2}
     pv_value_map = %{bodyrate: %{rollrate: 0}}
     rollrate_corr = Common.Utils.Math.constrain(pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate, config.pids.rollrate.aileron.input_min, config.pids.rollrate.aileron.input_max)
-    Logger.debug("corr actual/used: #{pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate}/#{rollrate_corr}") 
+    Logger.debug("corr actual/used: #{pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate}/#{rollrate_corr}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,0.05},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)

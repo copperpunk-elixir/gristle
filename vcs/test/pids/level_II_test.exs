@@ -18,7 +18,7 @@ defmodule Pids.LevelIITest do
     IO.puts("LevelIITest")
     max_rate_delta = 0.001
     op_name = :batch_test
-    {:ok, _} = Comms.Operator.start_link(%{name: op_name})
+    {:ok, _} = Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     dt = 0.05 # Not really used for now
     config = %{}
     config = Map.merge(context[:config], config)

@@ -14,7 +14,7 @@ defmodule System.TotalSystemTest do
     # ----- END Swarm setup -----
 
     # ----- BEGIN Actuation setup -----
- 
+
     actuation_config = apply(Module.concat(vehicle_config_module, Actuation), :get_config, [])
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
@@ -63,7 +63,7 @@ defmodule System.TotalSystemTest do
   test "Total System Test", context do
     IO.puts("Start Total System Test")
     op_name = :total_system_test
-    Comms.Operator.start_link(%{name: op_name})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config = context[:config]
     # IO.inspect(config)
     Process.sleep(2500)

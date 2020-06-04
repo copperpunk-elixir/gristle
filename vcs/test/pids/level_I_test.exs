@@ -21,7 +21,7 @@ defmodule Pids.LevelITest do
   test "update PID and check output", context do
     max_delta = 0.001
     op_name = :start_pid_test
-    Comms.Operator.start_link(%{name: op_name})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config =context[:config]
     Pids.System.start_link(config)
     Process.sleep(300)

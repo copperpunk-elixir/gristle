@@ -32,7 +32,7 @@ defmodule Actuation.HwInterfacePololuTest do
   test "Start HWInterface without Pololu plugged in" do
     config = Configuration.Vehicle.Plane.Actuation.get_config()
     Actuation.HwInterface.start_link(config.hw_interface)
-    Process.sleep(10000)
+    Process.sleep(1000)
     aileron = config.sw_interface.actuators.aileron
     Actuation.HwInterface.set_output_for_actuator(aileron, aileron.cmd_limit_min)
     assert Actuation.HwInterface.get_output_for_actuator(aileron) == aileron.min_pw_ms

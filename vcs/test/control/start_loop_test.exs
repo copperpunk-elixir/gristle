@@ -4,7 +4,7 @@ defmodule Control.StartLoopTest do
   setup do
     # Comms.ProcessRegistry.start_link()
     # Process.sleep(50)
-    # Comms.Operator.start_link(%{name: :start_loop_test})
+    # Comms.Operator.start_link(:start_loop_test)
     # MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end

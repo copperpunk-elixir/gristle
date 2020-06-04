@@ -7,7 +7,7 @@ defmodule Display.Scenic.LoadGcsTest do
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     # Need estimation and command
     config = Configuration.Generic.get_estimator_config()
     Estimation.System.start_link(config)

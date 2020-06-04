@@ -32,7 +32,7 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     rx_output_time_prev = :erlang.monotonic_time(:millisecond)
@@ -129,8 +129,8 @@ defmodule Command.Commander do
   def latch_commands(new_control_state, pv_values) do
     case new_control_state do
       2 ->
-        yaw = Map.get(pv_values, :attitude, %{})
-        |> Map.get(:yaw, 0)
+        # yaw = Map.get(pv_values, :attitude, %{})
+        # |> Map.get(:yaw, 0)
         %{yaw: 0}
       3 ->
         course = Map.get(pv_values,:calculated, %{})

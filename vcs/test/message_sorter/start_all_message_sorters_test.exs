@@ -5,7 +5,7 @@ defmodule MessageSorter.StartAllMessageSortersTest do
   setup do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end

@@ -31,7 +31,7 @@ defmodule Pids.Moderator do
 
   @impl GenServer
   def handle_cast(:join_pv_cmds_values_groups, state) do
-    Comms.Operator.start_link(%{name: __MODULE__})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     Enum.each(0..3, fn level ->
       Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, level}, self())
     end)

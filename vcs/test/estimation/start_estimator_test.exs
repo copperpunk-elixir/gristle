@@ -16,7 +16,7 @@ defmodule Estimation.StartEstimatorTest do
   #   pv_calculated_att_bodyrate_group = {:pv_calculated, :attitude_bodyrate}
   #   IO.puts("StartEstimatorTest")
   #   op_name = :estimator_test
-  #   Comms.Operator.start_link(%{name: op_name})
+  #   Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
   #   new_att_bodyrate = %{attitude: %{roll: 2.5, pitch: -3, yaw: 130}, bodyrate: %{rollrate: 20, pitchrate: 0, yawrate: -23.54}}
   #   new_pos_vel = %{position: %{x: 1, y: 2, z: 3}, velocity: %{x: -1, y: -2, z: -3}}
   #   Process.sleep(110)

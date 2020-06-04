@@ -19,7 +19,7 @@ defmodule Control.SendLevelIIICorrectionTest do
 
     IO.puts("SendLevelIIICorrectionTest")
     op_name = :levelIII
-    Comms.Operator.start_link(%{name: op_name})
+    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     max_cmd_delta = 0.001
     IO.puts("Start Control Loop")
     config = Configuration.Vehicle.Plane.Control.get_config()
