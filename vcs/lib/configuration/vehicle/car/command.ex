@@ -1,42 +1,45 @@
 defmodule Configuration.Vehicle.Car.Command do
   require Logger
 
-  def get_config() do
+  @spec get_rx_output_channel_map() :: map()
+  def get_rx_output_channel_map() do
+    # channel, absolute/relative, min, max
+    {thrust_min, thrust_max} = get_output_limits(:thrust)
+    {yawrate_min, yawrate_max} = get_output_limits(:yawrate)
+    {course_min, course_max} = get_output_limits(:course)
+    {speed_min, speed_max} = get_output_limits(:speed)
     %{
-      commander: %{vehicle_type: :Car},
-      frsky_rx: %{
-        device_description: "Feather M0",
-        publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
-      }
+      -1 => [
+        {2, :thrust, :absolute, 0, 0, 0},
+        {0, :yawrate, :absolute, 0, 0, 0}
+      ],
+      0 => [
+        {2, :thrust, :absolute, 0, 0,0},
+        {0, :yawrate, :absolute, yawrate_min, yawrate_max, 1}
+      ],
+      1 => [
+        {2,:thrust, :absolute, thrust_min, thrust_max, 1},
+        {0,:yawrate, :absolute, yawrate_min, yawrate_max, 1}
+      ],
+      2 => [
+        {2,:thrust, :absolute, thrust_min, thrust_max, 1},
+        {0,:yaw, :relative, yawrate_min, yawrate_max, 1}
+      ],
+      3 => [
+        {0, :course, :relative, course_min, course_max, 1},
+        {2,:speed, :relative, speed_min, speed_max, 1}
+      ]
     }
   end
 
-  @spec get_rx_output_channel_map(:integer) :: list()
-  def get_rx_output_channel_map(control_state) do
-    # channel, absolute/relative, min, max
-    case control_state do
-      -1 -> [
-        {2, :thrust, :absolute, 0, 0, 0},
-        {0, :yawrate, :absolute, 0, 0, 0}
-      ]
-      0 -> [
-        {2, :thrust, :absolute, 0, 0,0},
-        {0, :yawrate, :absolute, -0.52, 0.52, 1}
-      ]
-      1 -> [
-        {2,:thrust, :absolute, 0, 1, 1},
-        {0,:yawrate, :absolute, -0.52, 0.52, 1}
-      ]
-      2 -> [
-        {2,:thrust, :absolute, 0, 1, 1},
-        {0,:yaw, :relative, -0.52, 0.52, 1}
-      ]
-      3 -> [
-        {0, :course, :relative, -0.52, 0.52, 1},
-        {2,:speed, :absolute, 0, 10, 1}
-      ]
-    end
+  @spec get_output_limits(atom()) :: tuple()
+  def get_output_limits(channel) do
+    constraints =
+      Configuration.Vehicle.Car.Pids.get_constraints()
+      |> Map.get(channel)
+    {constraints.output_min, constraints.output_max}
   end
+
 
 
 end

@@ -1,15 +1,6 @@
 defmodule Configuration.Vehicle.Car.Control do
   require Logger
 
-  def get_config() do
-    %{
-      controller: %{
-        vehicle_type: :Car,
-        process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
-      }
-    }
-  end
-
   def get_auto_pv_value_map(pv_value_map, yaw) do
     {speed, course} = Common.Utils.get_speed_course_for_velocity(pv_value_map.velocity.north, pv_value_map.velocity.east, 2, yaw)
     %{course: course, speed: speed}

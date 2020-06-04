@@ -15,17 +15,17 @@ defmodule System.TotalSystemTest do
 
     # ----- BEGIN Actuation setup -----
 
-    actuation_config = apply(Module.concat(vehicle_config_module, Actuation), :get_config, [])
+    actuation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Actuation)
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
 
     # ----- BEGIN PID setup -----
-    pid_config = apply(Module.concat(vehicle_config_module, Pids), :get_config, [])
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     Pids.System.start_link(pid_config)
     # ----- END PID setup -----
 
     # ----- BEGIN Control setup -----
-    control_config = apply(Module.concat(vehicle_config_module, Control), :get_config, [])
+    control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
     Control.System.start_link(control_config)
     # ----- END Control setup -----
 
@@ -34,11 +34,11 @@ defmodule System.TotalSystemTest do
     Estimation.System.start_link(estimation_config)
     # ----- END Estimation setup -----
     # ----- BEGIN Navigation setup -----
-    navigation_config = apply(Module.concat(vehicle_config_module, Navigation), :get_config, [])
+    navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
     Navigation.System.start_link(navigation_config)
     # ----- END Navigation setup -----
     # ----- BEGIN Command setup -----
-    command_config = apply(Module.concat(vehicle_config_module, Command), :get_config, [])
+    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
     Command.System.start_link(command_config)
     # ----- END Command setup -----
     # ----- BEGIN Display setup -----
@@ -66,7 +66,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(2500)
+    Process.sleep(250000)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}

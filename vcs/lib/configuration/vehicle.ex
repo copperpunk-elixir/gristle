@@ -33,5 +33,37 @@ defmodule Configuration.Vehicle do
     end)
   end
 
+  @spec get_config_for_vehicle_and_module(atom(), atom()) :: map()
+  def get_config_for_vehicle_and_module(vehicle_type, module) do
+    config_module =
+      Module.concat(Configuration.Vehicle, vehicle_type)
+      |> Module.concat(module)
+    case module do
+      Actuation -> apply(config_module, :get_config, [])
+      Command ->
+        %{
+          commander: %{vehicle_type: vehicle_type},
+          frsky_rx: %{
+            device_description: "Feather M0",
+            publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+          }}
+      Control ->
+        %{
+          controller: %{
+            vehicle_type: :Car,
+            process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+          }}
+      Navigation ->
+        %{
+          navigator: %{
+            vehicle_type: vehicle_type,
+            navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
+            default_pv_cmds_level: 3
+          }}
+      Pids -> apply(config_module, :get_config, [])
+    end
+  end
+
+
 end
 

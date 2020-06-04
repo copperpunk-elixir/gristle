@@ -7,6 +7,11 @@ defmodule Command.GetGoalsFromRxTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
+    navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    Navigation.System.start_link(navigation_config)
+    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    Command.System.start_link(command_config)
+
     {:ok, [vehicle_type: vehicle_type]}
   end
 
@@ -31,17 +36,6 @@ defmodule Command.GetGoalsFromRxTest do
   # end
 
   test "Show Car Cmds sent out as Goals", context do
-    vehicle_type = context[:vehicle_type]
-    navigator_config = %{vehicle_type: vehicle_type, navigator_loop_interval_ms: 100}
-    Navigation.System.start_link(%{navigator: navigator_config})
-
-    command_config = %{
-      commander: %{vehicle_type: vehicle_type},
-      frsky_rx: %{
-        device_description: "Feather M0",
-        publish_rx_output_loop_interval_ms: 100}
-    }
-    Command.System.start_link(command_config)
     Process.sleep(4000)
   end
 end
