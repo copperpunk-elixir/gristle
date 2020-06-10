@@ -37,8 +37,8 @@ defmodule Configuration.Vehicle.FourWheelRobot.Pids do
       rear_right: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.5},
       rear_left: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.5},
       front_left: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.5},
-      yawrate: %{output_min: -1.5, output_max: 1.5, output_neutral: 0},
-      yaw: %{output_min: -0.2, output_max: 0.2, output_neutral: 0.0},
+      yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
+      yaw: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       thrust: %{output_min: -1, output_max: 1, output_neutral: 0},
       course: %{output_min: -0.5, output_max: 0.5, output_neutral: 0},
       speed: %{output_min: -2, output_max: 2, output_neutral: 0}

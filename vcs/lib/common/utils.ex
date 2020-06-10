@@ -137,7 +137,7 @@ defmodule Common.Utils do
   # Erlang float_to_binary shorthand
   @spec eftb(float(), integer()) :: binary()
   def eftb(number, num_decimals) do
-    :erlang.float_to_binary(number, [decimals: num_decimals])
+    :erlang.float_to_binary(number/1, [decimals: num_decimals])
   end
 
   # Convert North/East velocity to Speed/Course
