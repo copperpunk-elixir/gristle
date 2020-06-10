@@ -6,7 +6,7 @@ defmodule MessageSorter.Sorter do
 
   def start_link(config) do
     Logger.debug("Start MessageSorter: #{inspect(config.name)}")
-    Common.Utils.start_link_redudant(GenServer, __MODULE__, config, via_tuple(config.name))
+    Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config.name))
     # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
   end
 

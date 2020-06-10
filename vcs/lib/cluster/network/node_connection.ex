@@ -16,34 +16,34 @@ defmodule Cluster.Network.NodeConnection do
     Node.set_cookie(cookie)
   end
 
-  @spec open_socket_active(integer()) :: any()
-  def open_socket_active(port) do
-    Logger.debug("open socken on port #{port}")
-    {:ok, socket} = :gen_udp.open(port, [broadcast: true, active: true])
-    Logger.debug(inspect(socket))
-    socket
-  end
+  # @spec open_socket_active(integer()) :: any()
+  # def open_socket_active(port) do
+  #   Logger.debug("open socken on port #{port}")
+  #   {:ok, socket} = :gen_udp.open(port, [broadcast: true, active: true])
+  #   Logger.debug(inspect(socket))
+  #   socket
+  # end
 
   @spec broadcast_node(any(), tuple(), binary(), integer()) :: atom()
-  def broadcast_node(socket, ip_address, node_name_with_domain, port) do
+  def broadcast_node(socket, ip_address, node_name_with_domain, dest_port) do
     Logger.debug("Broadcast")
     Logger.debug("host: #{inspect(ip_address)}")
     broadcast_address = {elem(ip_address,0), elem(ip_address,1), 7, 255}
       # put_elem(ip_address,3,255)
     Logger.debug("address: #{inspect(broadcast_address)}")
-    :gen_udp.send(socket, broadcast_address, port, "connect:" <> node_name_with_domain)
+    :gen_udp.send(socket, broadcast_address, dest_port, "connect:" <> node_name_with_domain)
   end
 
   @spec process_udp_message(any(), tuple(), integer(), binary(), tuple(), integer()) :: binary()
-  def process_udp_message(socket, source_ip, port, msg, dest_ip, dest_port) do
-    Logger.debug("msg rx with socket #{inspect(socket)} from #{inspect(source_ip)} on port #{port}: #{msg}")
+  def process_udp_message(socket, src_ip, src_port, msg, dest_ip, dest_port) do
+    Logger.debug("msg rx with socket #{inspect(socket)} from #{inspect(src_ip)} on port #{src_port}: #{msg}")
     msg = to_string(msg)
     if (String.contains?(msg,":")) do
       [msg_type, node] = String.split(msg,":")
       case msg_type do
         "connect" ->
           Logger.warn("node #{node} wants to connect")
-          if (source_ip != dest_ip) or (port != dest_port) do
+          if (src_ip != dest_ip) or (src_port != dest_port) do
             Logger.debug("Connect to node #{node}")
             Node.connect(String.to_atom(node))
             node

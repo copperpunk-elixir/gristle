@@ -1,7 +1,7 @@
 defmodule Common.Utils do
   require Logger
 
-  def start_link_redudant(parent_module, module, config, name \\ nil) do
+  def start_link_redundant(parent_module, module, config, name \\ nil) do
     name =
       case name do
         nil -> module

@@ -5,7 +5,7 @@ defmodule Pids.System do
   def start_link(config) do
     Logger.debug("Pids Supervisor start_link()")
     Comms.ProcessRegistry.start_link()
-    Common.Utils.start_link_redudant(Supervisor, __MODULE__, config, __MODULE__)
+    Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 
   @impl Supervisor

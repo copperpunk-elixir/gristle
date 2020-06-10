@@ -3,7 +3,7 @@ defmodule Comms.ProcessRegistry do
 
   def start_link do
     Logger.debug("Start ProcessRegistry")
-    Common.Utils.start_link_redudant(Registry, Registry, [keys: :unique, name: __MODULE__])
+    Common.Utils.start_link_redundant(Registry, Registry, [keys: :unique, name: __MODULE__])
     case Registry.start_link(keys: :unique, name: __MODULE__) do
       {:ok, pid} ->
         Logger.debug("Registry successfully started")
