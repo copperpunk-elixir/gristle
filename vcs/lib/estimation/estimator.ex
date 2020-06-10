@@ -6,7 +6,7 @@ defmodule Estimation.Estimator do
 
   def start_link(config) do
     Logger.debug("Start Estimation.Estimator")
-    {:ok, process_id} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
+    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
   end

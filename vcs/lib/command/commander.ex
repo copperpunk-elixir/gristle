@@ -8,7 +8,7 @@ defmodule Command.Commander do
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
-    {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config, __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end

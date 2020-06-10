@@ -3,7 +3,7 @@ defmodule Comms.TestMemberAllGroups do
   require Logger
 
   def start_link() do
-    {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, nil, __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     GenServer.cast(__MODULE__, :join_all_groups)
     {:ok, pid}
@@ -16,7 +16,7 @@ defmodule Comms.TestMemberAllGroups do
         pv_values_pid_system: %{},
         pv_calculated: %{},
         pv_cmds: %{},
-        goals: %{}
+        goals: %{},
      }}
   end
 
@@ -105,5 +105,4 @@ defmodule Comms.TestMemberAllGroups do
   def get_goals(level) do
     GenServer.call(__MODULE__, {:get_goals, level})
   end
-
 end

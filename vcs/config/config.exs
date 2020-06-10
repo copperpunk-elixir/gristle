@@ -31,7 +31,6 @@ config :logger, :console,
   level: :debug,
   metadata: []
 
-
 if Mix.target() != :host do
   import_config "target.exs"
 end

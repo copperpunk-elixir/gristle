@@ -4,9 +4,9 @@ defmodule Cluster.Heartbeat do
 
   @node_sorter {:hb, :node}
 
-  def start_link(config \\ %{}) do
+  def start_link(config) do
     Logger.debug("Start HB")
-    {:ok, pid} = Common.Utils.start_link_redudant(GenServer, __MODULE__, config)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
