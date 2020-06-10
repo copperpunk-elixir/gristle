@@ -104,12 +104,16 @@ defmodule Command.Commander do
                 :yaw ->
                   reference_cmds.yaw + value_to_add
                   |> Common.Utils.Math.constrain(min_value, max_value)
-                  # |> Common.Utils.constrain_angle_to_compass()
                 :course ->
                   reference_cmds.course + value_to_add
                   |> Common.Utils.constrain_angle_to_compass()
-                :speed -> reference_cmds.speed + value_to_add
-                :altitude -> reference_cmds.altitude - value_to_add # down-stick should be positive altitude
+                :speed ->
+                  reference_cmds.speed + value_to_add
+                  |> Common.Utils.Math.constrain(min_value, max_value)
+                :altitude ->
+                  Logger.info("alt: #{inspect(reference_cmds)}")
+                  reference_cmds.altitude + value_to_add 
+                  |> Common.Utils.Math.constrain(0, 1000)
                 _other -> value_to_add
               end
           end

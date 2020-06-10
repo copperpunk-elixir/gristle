@@ -2,7 +2,7 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :FourWheelRobot
+    vehicle_type = :Car
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()
@@ -66,7 +66,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(2500)
+    Process.sleep(250000)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}
