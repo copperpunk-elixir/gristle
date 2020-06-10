@@ -30,7 +30,7 @@ defmodule Vcs.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      # mod: {Vcs.Application, []},
+      mod: {Common.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

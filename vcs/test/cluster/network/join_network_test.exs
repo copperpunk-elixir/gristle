@@ -16,6 +16,6 @@ defmodule Cluster.Network.JoinNetworkTest do
     # Verify that the Nodes connect to each other succesfully.
     ip_address = Cluster.Network.get_ip_address()
     assert ip_address == {192,168,4,32}
-    Process.sleep(50000)
+    Process.sleep(5000)
   end
 end

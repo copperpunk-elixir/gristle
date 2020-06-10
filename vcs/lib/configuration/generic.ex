@@ -83,7 +83,8 @@ defmodule Configuration.Generic do
         default_message_behavior: :default_value,
         default_value: 0,
         value_type: :number
-      }
+      },
+
     ]
   end
 
@@ -133,4 +134,5 @@ defmodule Configuration.Generic do
     Logger.warn("class/time: #{inspect(classification)}/#{time_validity}")
     {classification, time_validity}
   end
-end
+
+ end

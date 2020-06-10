@@ -2,7 +2,7 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :Car
+    vehicle_type = :Plane
     vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
 
     Comms.ProcessRegistry.start_link()
@@ -14,8 +14,7 @@ defmodule System.TotalSystemTest do
     # ----- END Swarm setup -----
 
     # ----- BEGIN Actuation setup -----
-
-    actuation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Actuation)
+    actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, :all)
     Actuation.System.start_link(actuation_config)
     # ----- END Actuation setup -----
 
@@ -66,7 +65,7 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     config = context[:config]
     # IO.inspect(config)
-    Process.sleep(250000)
+    Process.sleep(2500)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}
     pv_calculated_pos_vel_group = {:pv_calculated, :position_velocity}

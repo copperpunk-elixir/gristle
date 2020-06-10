@@ -78,6 +78,30 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
+  @spec mount_usb_drive(binary()) :: binary()
+  def mount_usb_drive(path) do
+    System.cmd("mount", ["/dev/sda1", path])
+    path
+  end
+
+  @spec get_filename_with_extension(binary(), binary()) :: binary()
+  def get_filename_with_extension(path, extension) do
+    {:ok, files} = :file.list_dir(path)
+    filename = Enum.reduce(files,nil, fn (file, acc) ->
+      file = to_string(file)
+      if (String.contains?(file,extension)) do
+        [filename] = String.split(file,extension,[trim: true])
+        filename
+      else
+        acc
+      end
+    end)
+    if (filename == nil) do
+      raise "Filename is note available"
+    end
+    filename
+  end
+
   def assert_valid_config(config, config_type) do
     {verify_fn, default_value} =
       case config_type do

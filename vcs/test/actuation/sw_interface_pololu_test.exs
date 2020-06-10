@@ -23,7 +23,7 @@ defmodule Actuation.SwInterfacePololuTest do
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(200)
     actuator_name= :aileron
-    config = apply(Module.concat(vehicle_module, Actuation), :get_config, [])
+    config = Configuration.Vehicle.get_actuation_config(vehicle_type, :all)
     actuators = config.sw_interface.actuators
     Logger.info("Connect servo to channel 0 if real actuation is desired")
     Actuation.System.start_link(config)
