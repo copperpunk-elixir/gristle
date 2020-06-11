@@ -25,6 +25,7 @@ defmodule Command.Commander do
         rx_output_classification: rx_output_classification,
         rx_output_time_validity_ms: rx_output_time_validity_ms,
         control_state: -1,
+        transmit_cmds: false,
         reference_cmds: %{},
         rx_output_time_prev: 0,
         pv_values: %{},
@@ -46,8 +47,8 @@ defmodule Command.Commander do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
     current_time = :erlang.monotonic_time(:millisecond)
     dt = (current_time - state.rx_output_time_prev)/1000.0
-    {reference_cmds, control_state} = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
-    {:noreply, %{state | rx_output_time_prev: current_time, reference_cmds: reference_cmds, control_state: control_state}}
+    {reference_cmds, control_state, transmit_cmds} = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
+    {:noreply, %{state | rx_output_time_prev: current_time, reference_cmds: reference_cmds, control_state: control_state, transmit_cmds: transmit_cmds}}
   end
 
   @impl GenServer
@@ -63,8 +64,13 @@ defmodule Command.Commander do
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     armed_state_float = Enum.at(rx_output, @rx_armed_state_channel)
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
-    transmit_float = Enum.at(rx_output, @transmit_channel)
-    if (transmit_float > 0) do
+    transmit_cmds =
+    if (Enum.at(rx_output, @transmit_channel) > 0) do
+      true
+    else
+      false
+    end
+    if (transmit_cmds == true) do
       control_state = cond do
         (armed_state_float < -0.5) -> -1
         (armed_state_float < 0.5) -> 0
@@ -76,7 +82,7 @@ defmodule Command.Commander do
           end
       end
       reference_cmds =
-      if (control_state != state.control_state) do
+      if (control_state != state.control_state) or (state.transmit_cmds == false) do
         Logger.info("latch cs")
         latch_commands(control_state, state.pv_values)
       else
@@ -111,7 +117,6 @@ defmodule Command.Commander do
                   reference_cmds.speed + value_to_add
                   |> Common.Utils.Math.constrain(min_value, max_value)
                 :altitude ->
-                  Logger.info("alt: #{inspect(reference_cmds)}")
                   reference_cmds.altitude + value_to_add 
                   |> Common.Utils.Math.constrain(0, 1000)
                 _other -> value_to_add
@@ -125,9 +130,9 @@ defmodule Command.Commander do
         Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.rx_output_classification, state.rx_output_time_validity_ms, cmds}, {:goals, control_state}, self())
       # end
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
-      {reference_cmds, control_state}
+      {reference_cmds, control_state, transmit_cmds}
     else
-      {%{}, state.control_state}
+      {%{}, state.control_state, transmit_cmds}
     end
   end
 
