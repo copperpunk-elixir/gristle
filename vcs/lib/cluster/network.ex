@@ -29,16 +29,26 @@ defmodule Cluster.Network do
   def handle_cast(:begin , state) do
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
-    if (state.is_embedded) do
-      # We must first connect to the network
-      GenServer.cast(__MODULE__, :connect_to_network)
-    else
-      GenServer.cast(__MODULE__, :start_node_and_broadcast)
-    end
+    GenServer.cast(__MODULE__, :connect_to_network)
     {:noreply, state}
   end
 
-    @impl GenServer
+  @impl GenServer
+  def handle_cast(:connect_to_network, state) do
+    connection_status = VintageNet.get(["interface", state.interface, "lower_up"])
+    case connection_status do
+      false ->
+        Logger.warn("No network connection. Retrying in 1 second.")
+        Process.sleep(1000)
+        GenServer.cast(__MODULE__, :connect_to_network)
+      true ->
+        Logger.warn("Network connected.")
+        GenServer.cast(__MODULE__, :start_node_and_broadcast)
+        Common.Application.start_remaining_processes()
+    end
+  end
+
+  @impl GenServer
   def handle_cast(:start_node_and_broadcast, state) do
     ip_address_temp = get_ip_address(state.interface)
     Logger.debug("IPaddress: #{inspect(ip_address_temp)}")

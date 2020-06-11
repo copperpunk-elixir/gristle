@@ -7,6 +7,7 @@ defmodule Cluster.System do
     Supervisor.start_link(
       [
         {Cluster.Heartbeat, config.heartbeat},
+        {Cluster.Network, config.network}
       ],
       strategy: :one_for_one
     )

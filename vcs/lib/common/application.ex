@@ -6,8 +6,12 @@ defmodule Common.Application do
     Logger.debug("Start Application")
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    Cluster
+    cluster_config = %{}
+    Cluster.System.start_link(cluster_config)
+  end
 
+  @spec start_remaining_processes() :: atom()
+  def start_remaining_processes() do
     path = "/mnt"
     Common.Utils.mount_usb_drive(path)
     vehicle_type = Common.Utils.get_filename_with_extension(path, ".vehicle") |> String.to_atom()

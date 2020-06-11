@@ -11,11 +11,17 @@ defmodule Cluster.Network.JoinNetworkTest do
     {:ok, []}
   end
 
-  test "Get IP address" do
-    # This is a visual test. It requires to instances of a terminal.
-    # Verify that the Nodes connect to each other succesfully.
-    ip_address = Cluster.Network.get_ip_address()
-    assert ip_address == {192,168,4,32}
-    Process.sleep(5000)
+  test "Connect to network" do
+    interface = "wlp0s20f3"
+    connection_status = VintageNet.get(["interface", interface, "lower_up"])
+    assert connection_status == true
   end
+
+  # test "Get IP address" do
+  #   # This is a visual test. It requires to instances of a terminal.
+  #   # Verify that the Nodes connect to each other succesfully.
+  #   ip_address = Cluster.Network.get_ip_address()
+  #   assert ip_address == {192,168,4,32}
+  #   Process.sleep(5000)
+  # end
 end
