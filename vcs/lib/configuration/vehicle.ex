@@ -160,6 +160,8 @@ defmodule Configuration.Vehicle do
       :rear_right -> 0.5
       :rear_left -> 0.5
       :front_left -> 0.5
+      :left_direction -> 0.5
+      :right_direction -> 0.5
       :throttle -> 0.0
     end
   end
@@ -167,7 +169,7 @@ defmodule Configuration.Vehicle do
   @spec get_all_actuator_names_for_vehicle(atom()) :: list()
   def get_all_actuator_names_for_vehicle(vehicle_type) do
     case vehicle_type do
-      :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left]
+      :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
       :Car -> [:steering, :throttle]
       :Plane -> [:aileron,  :elevator, :throttle, :rudder]
     end
@@ -184,10 +186,10 @@ defmodule Configuration.Vehicle do
       :steering -> [:steering, :throttle]
       :throttle -> [:throttle, :steering]
 
-      :front_right -> [:front_right, :rear_right]
-      :rear_right -> [:rear_right, :rear_left]
-      :rear_left -> [:rear_left, :front_left]
-      :front_left -> [:front_left, :front_right]
+      :front_right -> [:front_right, :rear_right, :right_direction]
+      :rear_right -> [:rear_right, :right_direction, :rear_left, :left_direction]
+      :rear_left -> [:rear_left, :front_left, :left_direction]
+      :front_left -> [:front_left, :left_direction, :front_right, :right_direction]
     end
   end
 end

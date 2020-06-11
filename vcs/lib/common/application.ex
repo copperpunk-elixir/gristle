@@ -6,6 +6,7 @@ defmodule Common.Application do
     Logger.debug("Start Application")
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
+    Cluster
 
     path = "/mnt"
     Common.Utils.mount_usb_drive(path)

@@ -1,23 +1,21 @@
 defmodule Pids.LevelITest do
   use ExUnit.Case
-
+  require Logger
   setup do
-    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
-    Pids.System.start_link(pid_config)
-    {:ok, [
-        pid_config: pid_config
-      ]}
+    {:ok, []}
   end
 
   # test "start PID server", context do
   #   assert process_id == GenServer.whereis(Pids.System)
   # end
 
-  test "update PID and check output", context do
-    pid_config =context[:pid_config]
+  test "update PID and check output" do
+    vehicle_type = :Plane
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
+    Pids.System.start_link(pid_config)
+
     max_delta = 0.001
     op_name = :start_pid_test
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
@@ -51,4 +49,5 @@ defmodule Pids.LevelITest do
     # rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     # assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
   end
+
 end
