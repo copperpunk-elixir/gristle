@@ -78,14 +78,21 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
-  @spec mount_usb_drive(binary()) :: binary()
-  def mount_usb_drive(path) do
+  @spec get_mount_path() :: binary()
+  def get_mount_path() do
+    "/mnt"
+  end
+
+  @spec mount_usb_drive() :: binary()
+  def mount_usb_drive() do
+    path = get_mount_path()
     System.cmd("mount", ["/dev/sda1", path])
     path
   end
 
-  @spec get_filename_with_extension(binary(), binary()) :: binary()
-  def get_filename_with_extension(path, extension) do
+  @spec get_filename_with_extension(binary()) :: binary()
+  def get_filename_with_extension(extension) do
+    path = get_mount_path()
     {:ok, files} = :file.list_dir(path)
     filename = Enum.reduce(files,nil, fn (file, acc) ->
       file = to_string(file)
@@ -100,6 +107,16 @@ defmodule Common.Utils do
       raise "Filename is note available"
     end
     filename
+  end
+
+  @spec get_vehicle_type() :: atom()
+  def get_vehicle_type() do
+    get_filename_with_extension(".vehicle") |> String.to_atom()
+  end
+
+  @spec get_node_type() :: atom()
+  def get_node_type() do
+    get_filename_with_extension(".node") |> String.to_atom()
   end
 
   def assert_valid_config(config, config_type) do
