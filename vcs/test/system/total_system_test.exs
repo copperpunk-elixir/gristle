@@ -2,60 +2,61 @@ defmodule System.TotalSystemTest do
   use ExUnit.Case
 
   setup do
-    vehicle_type = :Plane
-    vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
-
-    Comms.ProcessRegistry.start_link()
-    Process.sleep(100)
-    MessageSorter.System.start_link(vehicle_type)
+    # vehicle_type = :Plane
+    # vehicle_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    vehicle_type = Common.Utils.get_vehicle_type()
+    Common.Application.start(nil,nil)
+    # Comms.ProcessRegistry.start_link()
+    # Process.sleep(100)
+    # MessageSorter.System.start_link(vehicle_type)
     # ----- BEGIN Swarm setup -----
-    cluster_config = Configuration.Generic.get_cluster_config(0,0)
-    Cluster.System.start_link(cluster_config)
+    # cluster_config = Configuration.Generic.get_cluster_config()
+    # Cluster.System.start_link(cluster_config)
     # ----- END Swarm setup -----
 
     # ----- BEGIN Actuation setup -----
-    actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, :all)
-    Actuation.System.start_link(actuation_config)
-    # ----- END Actuation setup -----
+    # actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, :all)
+    # Actuation.System.start_link(actuation_config)
+    # # ----- END Actuation setup -----
 
-    # ----- BEGIN PID setup -----
-    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
-    Pids.System.start_link(pid_config)
-    # ----- END PID setup -----
+    # # ----- BEGIN PID setup -----
+    # pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
+    # Pids.System.start_link(pid_config)
+    # # ----- END PID setup -----
 
-    # ----- BEGIN Control setup -----
-    control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
-    Control.System.start_link(control_config)
-    # ----- END Control setup -----
+    # # ----- BEGIN Control setup -----
+    # control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
+    # Control.System.start_link(control_config)
+    # # ----- END Control setup -----
 
-    # ----- BEGIN Estimation setup -----
-    estimation_config = Configuration.Generic.get_estimator_config()
-    Estimation.System.start_link(estimation_config)
-    # ----- END Estimation setup -----
-    # ----- BEGIN Navigation setup -----
-    navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
-    Navigation.System.start_link(navigation_config)
-    # ----- END Navigation setup -----
-    # ----- BEGIN Command setup -----
-    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
-    Command.System.start_link(command_config)
+    # # ----- BEGIN Estimation setup -----
+    # estimation_config = Configuration.Generic.get_estimator_config()
+    # Estimation.System.start_link(estimation_config)
+    # # ----- END Estimation setup -----
+    # # ----- BEGIN Navigation setup -----
+    # navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    # Navigation.System.start_link(navigation_config)
+    # # ----- END Navigation setup -----
+    # # ----- BEGIN Command setup -----
+    # command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    # Command.System.start_link(command_config)
     # ----- END Command setup -----
     # ----- BEGIN Display setup -----
     display_config = Configuration.Generic.get_display_config(vehicle_type)
     Display.Scenic.System.start_link(display_config)
     # ----- END Display setup -----
 
-    config = %{
-      cluster_config: cluster_config,
-      actuation_config: actuation_config,
-      pid_config: pid_config,
-      control_config: control_config,
-      estimation_config: estimation_config,
-      # navigation_config: navigation_config
-    }
+    # config = %{
+    #   cluster_config: cluster_config,
+    #   actuation_config: actuation_config,
+    #   pid_config: pid_config,
+    #   control_config: control_config,
+    #   estimation_config: estimation_config,
+    #   # navigation_config: navigation_config
+    # }
 
     {:ok, [
-        config: config
+        # config: config
       ]}
   end
 
@@ -63,7 +64,7 @@ defmodule System.TotalSystemTest do
     IO.puts("Start Total System Test")
     op_name = :total_system_test
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
-    config = context[:config]
+    # config = context[:config]
     # IO.inspect(config)
     Process.sleep(2500)
     assert true

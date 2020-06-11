@@ -179,6 +179,7 @@ defmodule Configuration.Vehicle do
   def get_actuator_names(vehicle_type, node_type) do
     case node_type do
       :all -> get_all_actuator_names_for_vehicle(vehicle_type)
+
       :wing -> [:aileron, :throttle]
       :fuselang -> [:throtle, :elevator, :rudder]
       :tail -> [:elevator, :rudder, :aileron]
@@ -190,6 +191,25 @@ defmodule Configuration.Vehicle do
       :rear_right -> [:rear_right, :right_direction, :rear_left, :left_direction]
       :rear_left -> [:rear_left, :front_left, :left_direction]
       :front_left -> [:front_left, :left_direction, :front_right, :right_direction]
+    end
+  end
+
+  @spec get_node_and_ward(atom()) :: tuple()
+  def get_node_and_ward(node_type) do
+    case node_type do
+      :all -> {0,0}
+
+      :wing -> {0,1}
+      :fuselang -> {1,2}
+      :tail -> {2,0}
+
+      :steering -> {0,1}
+      :throttle -> {1,0}
+
+      :front_right -> {0,1}
+      :rear_right -> {1,2}
+      :rear_left -> {2,3}
+      :front_left -> {3,0}
     end
   end
 end

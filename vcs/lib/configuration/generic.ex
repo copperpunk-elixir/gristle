@@ -1,6 +1,50 @@
 defmodule Configuration.Generic do
   require Logger
 
+  @spec get_loop_interval_ms(atom()) :: integer()
+  def get_loop_interval_ms(loop_type) do
+    case loop_type do
+      :fast -> 50
+      :medium -> 100
+      :slow -> 200
+    end
+  end
+
+  @spec get_estimator_config() :: map()
+  def get_estimator_config() do
+    %{estimator: %{
+         imu_loop_interval_ms: get_loop_interval_ms(:fast),
+         imu_loop_timeout_ms: 1000,
+         ins_loop_interval_ms: get_loop_interval_ms(:fast),
+         ins_loop_timeout_ms: 2000,
+         telemetry_loop_interval_ms: get_loop_interval_ms(:slow),
+      }}
+  end
+
+  @spec get_cluster_config() :: map()
+  def get_cluster_config() do
+    %{
+      heartbeat: get_heartbeat_config(),
+      network: get_network_config()
+    }
+  end
+
+  @spec get_heartbeat_config() :: map()
+  def get_heartbeat_config do
+    node_type = Common.Utils.get_node_type()
+    {node, ward} = Configuration.Vehicle.get_node_and_ward(node_type)
+    get_heartbeat_config(node, ward)
+  end
+
+  @spec get_heartbeat_config(integer(), integer()) :: map()
+  def get_heartbeat_config(node, ward) do
+    %{
+      heartbeat_loop_interval_ms: get_loop_interval_ms(:medium),
+      node: node,
+      ward: ward
+    }
+  end
+
   @spec get_network_config() :: map()
   def get_network_config() do
     {:ok, computer_name} = :inet.gethostname()
@@ -27,38 +71,6 @@ defmodule Configuration.Generic do
   @spec get_cookie() :: atom()
   def get_cookie() do
     :guestoftheday
-  end
-
-  @spec get_loop_interval_ms(atom()) :: integer()
-  def get_loop_interval_ms(loop_type) do
-    case loop_type do
-      :fast -> 50
-      :medium -> 100
-      :slow -> 200
-    end
-  end
-
-  @spec get_estimator_config() :: map()
-  def get_estimator_config() do
-    %{estimator:
-      %{
-        imu_loop_interval_ms: get_loop_interval_ms(:fast),
-        imu_loop_timeout_ms: 1000,
-        ins_loop_interval_ms: get_loop_interval_ms(:fast),
-        ins_loop_timeout_ms: 2000,
-        telemetry_loop_interval_ms: get_loop_interval_ms(:slow),
-      }}
-  end
-
-  @spec get_cluster_config(integer(), integer()) :: map()
-  def get_cluster_config(node, ward) do
-    %{
-      heartbeat: %{
-        heartbeat_loop_interval_ms: get_loop_interval_ms(:medium),
-        node: node,
-        ward: ward
-      }
-    }
   end
 
   @spec get_operator_config(atom()) :: map()

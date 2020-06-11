@@ -3,6 +3,6 @@ defmodule System.StartApplicationTest do
 
   test "Start Application" do
     Common.Application.start(nil,nil)
-    Process.sleep(100000)
+    Process.sleep(1000)
   end
 end

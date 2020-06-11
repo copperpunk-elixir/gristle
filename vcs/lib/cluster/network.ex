@@ -46,6 +46,7 @@ defmodule Cluster.Network do
         GenServer.cast(__MODULE__, :start_node_and_broadcast)
         Common.Application.start_remaining_processes()
     end
+    {:noreply, state}
   end
 
   @impl GenServer
