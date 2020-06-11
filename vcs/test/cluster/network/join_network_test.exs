@@ -14,6 +14,10 @@ defmodule Cluster.Network.JoinNetworkTest do
   test "Connect to network" do
     interface = "wlp0s20f3"
     connection_status = VintageNet.get(["interface", interface, "lower_up"])
+    if connection_status == false do
+      Process.sleep(10000)
+    end
+    connection_status = VintageNet.get(["interface", interface, "lower_up"])
     assert connection_status == true
   end
 

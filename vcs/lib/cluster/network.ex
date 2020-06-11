@@ -21,7 +21,6 @@ defmodule Cluster.Network do
         broadcast_ip_loop_interval_ms: config.broadcast_ip_loop_interval_ms,
         broadcast_ip_loop_timer: nil,
         interface: config.interface,
-        is_embedded: config.is_embedded
      }}
   end
 

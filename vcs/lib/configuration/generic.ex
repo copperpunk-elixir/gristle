@@ -47,25 +47,27 @@ defmodule Configuration.Generic do
 
   @spec get_network_config() :: map()
   def get_network_config() do
-    {:ok, computer_name} = :inet.gethostname()
-    computer_name = to_string(computer_name)
-
-    {interface, embedded} =
-      cond do
-      String.contains?(computer_name, "system76") -> {"wlp0s20f3", false}
-      String.contains?(computer_name, "nerves") -> {"wlan0", true}
-      String.contains?(computer_name, "pi") -> {"wlan0", true}
-      true -> raise "Unknown Computer Type: #{computer_name}"
-    end
-
     %{
-      is_embedded: embedded,
-      interface: interface,
+      interface: get_interface(),
       broadcast_ip_loop_interval_ms: 1000,
       cookie: get_cookie(),
       src_port: 8780,
       dest_port: 8780
     }
+  end
+
+  @spec get_interface() :: binary()
+  def get_interface() do
+    {:ok, computer_name} = :inet.gethostname()
+    computer_name = to_string(computer_name)
+
+    interface =
+      cond do
+      String.contains?(computer_name, "system76") -> "wlp0s20f3"
+      String.contains?(computer_name, "nerves") -> "wlan0"
+      String.contains?(computer_name, "pi") -> "wlan0"
+      true -> raise "Unknown Computer Type: #{computer_name}"
+    end
   end
 
   @spec get_cookie() :: atom()

@@ -66,6 +66,11 @@ defmodule System.TotalSystemTest do
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
     # config = context[:config]
     # IO.inspect(config)
+    interface = Configuration.Generic.get_interface()
+    connection_status = VintageNet.get(["interface", interface, "lower_up"])
+    if connection_status == false do
+      Process.sleep(10000)
+    end
     Process.sleep(2500)
     assert true
     pv_values_pos_vel_group = {:pv_values, :position_velocity}

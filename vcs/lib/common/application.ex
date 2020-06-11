@@ -6,17 +6,18 @@ defmodule Common.Application do
     Logger.debug("Start Application")
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
+    Common.Utils.mount_usb_drive()
+    vehicle_type = Common.Utils.get_vehicle_type()
+    MessageSorter.System.start_link(vehicle_type)
     cluster_config = Configuration.Generic.get_cluster_config()
     Cluster.System.start_link(cluster_config)
   end
 
   @spec start_remaining_processes() :: atom()
   def start_remaining_processes() do
-    Common.Utils.mount_usb_drive()
     vehicle_type = Common.Utils.get_vehicle_type()
     node_type = Common.Utils.get_node_type()
 
-    MessageSorter.System.start_link(vehicle_type)
     case node_type do
       :gcs -> start_gcs(vehicle_type)
       _other -> start_vehicle(vehicle_type, node_type)
@@ -27,7 +28,6 @@ defmodule Common.Application do
   def start_vehicle(vehicle_type, node_type) do
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
     actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, node_type)
-    Logger.info("#{inspect(actuation_config)}")
     pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
     estimation_config = Configuration.Generic.get_estimator_config()
