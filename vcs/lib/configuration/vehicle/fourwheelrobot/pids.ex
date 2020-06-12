@@ -5,20 +5,20 @@ defmodule Configuration.Vehicle.FourWheelRobot.Pids do
 
     pids = %{
       yawrate: %{
-        front_right: Map.merge(%{kp: -0.5, weight: 0.25}, constraints.front_right),
-        rear_right: Map.merge(%{kp: -0.5, weight: 0.25}, constraints.rear_right),
-        rear_left: Map.merge(%{kp: 0.5, weight: 0.25}, constraints.rear_left),
-        front_left: Map.merge(%{kp: 0.5, weight: 0.25}, constraints.front_left),
-        left_direction: Map.merge(%{kp: 0.5, weight: 0.5}, constraints.left_direction),
-        right_direction: Map.merge(%{kp: -0.5, weight: 0.5}, constraints.right_direction)
+        front_right: Map.merge(%{kp: -1.0, weight: 0.25}, constraints.front_right),
+        rear_right: Map.merge(%{kp: -1.0, weight: 0.25}, constraints.rear_right),
+        rear_left: Map.merge(%{kp: 1.0, weight: 0.25}, constraints.rear_left),
+        front_left: Map.merge(%{kp: 1.0, weight: 0.25}, constraints.front_left),
+        left_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.left_direction),
+        right_direction: Map.merge(%{kp: -1.0, weight: 0.5}, constraints.right_direction)
       },
       thrust: %{
-        front_right: Map.merge(%{kp: 0.5, weight: 0.75}, constraints.front_right),
-        rear_right: Map.merge(%{kp: 0.5, weight: 0.75}, constraints.rear_right),
-        rear_left: Map.merge(%{kp: 0.5, weight: 0.75}, constraints.rear_left),
-        front_left: Map.merge(%{kp: 0.5, weight: 0.75}, constraints.front_left),
-        left_direction: Map.merge(%{kp: 0.5, weight: 0.5}, constraints.left_direction),
-        right_direction: Map.merge(%{kp: 0.5, weight: 0.5}, constraints.right_direction)
+        front_right: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.front_right),
+        rear_right: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.rear_right),
+        rear_left: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.rear_left),
+        front_left: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.front_left),
+        left_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.left_direction),
+        right_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.right_direction)
       },
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
       course: %{yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},

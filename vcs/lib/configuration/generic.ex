@@ -61,8 +61,7 @@ defmodule Configuration.Generic do
     {:ok, computer_name} = :inet.gethostname()
     computer_name = to_string(computer_name)
 
-    interface =
-      cond do
+    cond do
       String.contains?(computer_name, "system76") -> "wlp0s20f3"
       String.contains?(computer_name, "nerves") -> "wlan0"
       String.contains?(computer_name, "pi") -> "wlan0"
