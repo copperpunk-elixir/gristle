@@ -35,15 +35,14 @@ defmodule Cluster.Network do
   @impl GenServer
   def handle_cast(:connect_to_network, state) do
     connection_status = VintageNet.get(["interface", state.interface, "lower_up"])
-    case connection_status do
-      false ->
-        Logger.warn("No network connection. Retrying in 1 second.")
-        Process.sleep(1000)
-        GenServer.cast(__MODULE__, :connect_to_network)
-      true ->
-        Logger.warn("Network connected.")
-        GenServer.cast(__MODULE__, :start_node_and_broadcast)
-        Common.Application.start_remaining_processes()
+    if connection_status == true do
+      Logger.warn("Network connected.")
+      GenServer.cast(__MODULE__, :start_node_and_broadcast)
+      Common.Application.start_remaining_processes()
+    else
+      Logger.warn("No network connection. Retrying in 1 second.")
+      Process.sleep(1000)
+      GenServer.cast(__MODULE__, :connect_to_network)
     end
     {:noreply, state}
   end

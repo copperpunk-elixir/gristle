@@ -43,7 +43,7 @@ defmodule Actuation.SwInterface do
       output = Map.fetch!(actuator_output_map, actuator_name)
       # output = get_output_for_actuator_name(actuator_name)
       # if (actuator_name == :steering) do
-      Logger.debug("move_actuator #{actuator_name} to #{Common.Utils.eftb(output, 3)}")
+      # Logger.debug("move_actuator #{actuator_name} to #{Common.Utils.eftb(output, 3)}")
       # end
       Actuation.HwInterface.set_output_for_actuator(actuator, output)
     end)

@@ -54,6 +54,7 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
       # Package dependencies
       {:vintage_net_wifi, "~> 0.7.0"},
+      {:vintage_net_ethernet, "~> 0.7.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.3"},
       #Scenic dependencies

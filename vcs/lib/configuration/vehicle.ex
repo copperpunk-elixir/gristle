@@ -123,8 +123,8 @@ defmodule Configuration.Vehicle do
       Map.put(acc, Enum.at(actuator_names, index), %{
             channel_number: Enum.at(channels, index),
             reversed: false,
-            min_pw_ms: 1100,
-            max_pw_ms: 1900,
+            min_pw_ms: 64,
+            max_pw_ms: 4080,
             cmd_limit_min: 0.0,
             cmd_limit_max: 1.0,
             failsafe_cmd: Enum.at(failsafes, index)
@@ -197,6 +197,7 @@ defmodule Configuration.Vehicle do
   @spec get_node_and_ward(atom()) :: tuple()
   def get_node_and_ward(node_type) do
     case node_type do
+      :gcs -> {-1,-1}
       :all -> {0,0}
 
       :wing -> {0,1}

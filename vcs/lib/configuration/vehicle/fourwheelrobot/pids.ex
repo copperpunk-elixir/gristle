@@ -5,20 +5,20 @@ defmodule Configuration.Vehicle.FourWheelRobot.Pids do
 
     pids = %{
       yawrate: %{
-        front_right: Map.merge(%{kp: -1.0, weight: 0.25}, constraints.front_right),
-        rear_right: Map.merge(%{kp: -1.0, weight: 0.25}, constraints.rear_right),
-        rear_left: Map.merge(%{kp: 1.0, weight: 0.25}, constraints.rear_left),
-        front_left: Map.merge(%{kp: 1.0, weight: 0.25}, constraints.front_left),
-        left_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.left_direction),
-        right_direction: Map.merge(%{kp: -1.0, weight: 0.5}, constraints.right_direction)
+        front_right: Map.merge(%{kp: -3.0, weight: 0.25}, constraints.front_right),
+        rear_right: Map.merge(%{kp: -3.0, weight: 0.25}, constraints.rear_right),
+        rear_left: Map.merge(%{kp: 3.0, weight: 0.25}, constraints.rear_left),
+        front_left: Map.merge(%{kp: 3.0, weight: 0.25}, constraints.front_left),
+        left_direction: Map.merge(%{kp: 0.0, weight: 0.5}, constraints.left_direction),
+        right_direction: Map.merge(%{kp: 0.0, weight: 0.5}, constraints.right_direction)
       },
       thrust: %{
         front_right: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.front_right),
         rear_right: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.rear_right),
         rear_left: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.rear_left),
         front_left: Map.merge(%{kp: 1.0, weight: 0.75}, constraints.front_left),
-        left_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.left_direction),
-        right_direction: Map.merge(%{kp: 1.0, weight: 0.5}, constraints.right_direction)
+        left_direction: Map.merge(%{kp: 0.0, weight: 0.5}, constraints.left_direction),
+        right_direction: Map.merge(%{kp: 0.0, weight: 0.5}, constraints.right_direction)
       },
       yaw: %{yawrate: Map.merge(%{kp: 3.0}, constraints.yawrate)},
       course: %{yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
@@ -41,8 +41,8 @@ defmodule Configuration.Vehicle.FourWheelRobot.Pids do
       rear_right: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.0},
       rear_left: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.0},
       front_left: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.0},
-      left_direction: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.5},
-      right_direction: %{output_min: 0.0, output_max: 1.0, output_neutral: 0.5},
+      left_direction: %{output_min: 1.0, output_max: 0.6, output_neutral: 1.0},
+      right_direction: %{output_min: 0.0, output_max: 0.4, output_neutral: 0.0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yaw: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       thrust: %{output_min: -1, output_max: 1, output_neutral: 0},
