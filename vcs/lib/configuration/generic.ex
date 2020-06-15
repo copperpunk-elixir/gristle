@@ -112,6 +112,21 @@ defmodule Configuration.Generic do
     %{vehicle_type: display_vehicle_type}
   end
 
+  @spec get_simulation_xplane_receive_config() :: map()
+  def get_simulation_xplane_receive_config() do
+    %{
+      port: 49002
+    }
+  end
+
+  @spec get_simulation_xplane_send_config(atom()) :: map()
+  def get_simulation_xplane_send_config(vehicle_type) do
+    %{
+      vehicle_type: vehicle_type,
+      port: 49003
+    }
+  end
+
   @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
     Logger.warn("sender: #{inspect(sender)}")

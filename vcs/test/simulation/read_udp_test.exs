@@ -7,17 +7,14 @@ defmodule Pids.BoundedCorrectionTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Estimation.System.start_link(Configuration.Generic.get_estimator_config())
+    Display.Scenic.System.start_link(Configuration.Generic.get_display_config(vehicle_type))
     {:ok, []}
   end
 
   test "Read UDP", context do
     Logger.info("Read UDP test")
-    xplane_config = %{port: 49000}
-    Simulation.Xplane.start_link(xplane_config)
-    Process.sleep(200)
-
-    sim_output = Simulation.Xplane.get_output()
-    assert Enum.empty?(sim_output) == false
-
+    Simulation.XplaneReceive.start_link(Configuration.Generic.get_simulation_xplane_receive_config())
+    Process.sleep(200000)
   end
 end
