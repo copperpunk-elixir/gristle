@@ -4,7 +4,7 @@ defmodule Simulation.XplaneReceive do
   use GenServer
 
   @deg2rad 0.017453293
-  @rad2deg 57.295779513
+  # @rad2deg 57.295779513
 
 
   def start_link(config) do
@@ -35,7 +35,7 @@ defmodule Simulation.XplaneReceive do
   end
 
   @impl GenServer
-  def handle_info({:udp, socket, src_ip, src_port, msg}, state) do
+  def handle_info({:udp, _socket, _src_ip, _src_port, msg}, state) do
     # Logger.info("received data from #{inspect(src_ip)} on port #{src_port} with length #{length(msg)}")
     state = parse_data_buffer(msg, state)
     state =
@@ -74,7 +74,7 @@ defmodule Simulation.XplaneReceive do
             roll_rate_rad = list_to_int(roll_rate_rad_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             pitch_rate_rad = list_to_int(pitch_rate_rad_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             yaw_rate_rad = list_to_int(yaw_rate_rad_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            Logger.debug("body: #{eftb(roll_rate_rad*@rad2deg,1)}/#{eftb(pitch_rate_rad*@rad2deg,1)}/#{eftb(yaw_rate_rad*@rad2deg,1)}")
+            # Logger.debug("body: #{eftb(roll_rate_rad*@rad2deg,1)}/#{eftb(pitch_rate_rad*@rad2deg,1)}/#{eftb(yaw_rate_rad*@rad2deg,1)}")
             %{state | bodyrate: %{rollrate: roll_rate_rad, pitchrate: pitch_rate_rad, yawrate: yaw_rate_rad}}
           17 ->
             {pitch_deg_uint32, buffer} = Enum.split(buffer, 4)
@@ -83,7 +83,7 @@ defmodule Simulation.XplaneReceive do
             yaw_deg = list_to_int(yaw_deg_uint32, 4) |> Common.Utils.Math.fp_from_uint(32)
             pitch_deg = list_to_int(pitch_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             roll_deg = list_to_int(roll_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            Logger.debug("rpy: #{eftb(roll_deg,1)}/#{eftb(pitch_deg, 1)}/#{eftb(yaw_deg, 1)}")
+            # Logger.debug("rpy: #{eftb(roll_deg,1)}/#{eftb(pitch_deg, 1)}/#{eftb(yaw_deg, 1)}")
             %{state | attitude: %{roll: roll_deg*@deg2rad, pitch: pitch_deg*@deg2rad, yaw: yaw_deg*@deg2rad}}
           20 ->
             {latitude_deg_uint32, buffer} = Enum.split(buffer, 4)
@@ -92,7 +92,7 @@ defmodule Simulation.XplaneReceive do
             latitude_deg = list_to_int(latitude_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             longitude_deg = list_to_int(longitude_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             altitude_m = list_to_int(altitude_m_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_m, 1)}")
+            # Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_m, 1)}")
             %{state | position: %{latitude: latitude_deg*@deg2rad, longitude: longitude_deg*@deg2rad, altitude: altitude_m}}
           21 ->
             buffer = Enum.drop(buffer, 12)
@@ -102,7 +102,7 @@ defmodule Simulation.XplaneReceive do
             vel_north_mps = -(list_to_int(vel_south_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32))
             vel_east_mps = list_to_int(vel_east_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             vel_down_mps = -(list_to_int(vel_up_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32))
-            Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
+            # Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
             %{state | velocity: %{north: vel_north_mps, east: vel_east_mps, down: vel_down_mps}}
           _other ->
             Logger.debug("unknown type")
@@ -136,8 +136,8 @@ defmodule Simulation.XplaneReceive do
     end)
   end
 
-  defp eftb(num, dec) do
-    Common.Utils.eftb(num,dec)
-  end
+  # defp eftb(num, dec) do
+  #   Common.Utils.eftb(num,dec)
+  # end
 
 end

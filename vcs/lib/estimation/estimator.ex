@@ -57,7 +57,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :attitude_bodyrate}, pv_value_map}, state) do
-    Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
+    # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     attitude = Map.get(pv_value_map, :attitude)
     bodyrate = Map.get(pv_value_map, :bodyrate)
     {attitude, bodyrate, new_watchdog_elapsed} =

@@ -112,6 +112,14 @@ defmodule Configuration.Generic do
     %{vehicle_type: display_vehicle_type}
   end
 
+  @spec get_simulation_config(atom()) :: map()
+  def get_simulation_config(vehicle_type) do
+    %{
+      receive: get_simulation_xplane_receive_config(),
+      send: get_simulation_xplane_send_config(vehicle_type)
+    }
+  end
+
   @spec get_simulation_xplane_receive_config() :: map()
   def get_simulation_xplane_receive_config() do
     %{

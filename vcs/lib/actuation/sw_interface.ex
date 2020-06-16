@@ -12,10 +12,16 @@ defmodule Actuation.SwInterface do
 
   @impl GenServer
   def init(config) do
+    output_module =
+      case config.node_type do
+        :sim -> Simulation.XplaneSend
+        _other -> Actuation.HwInterface
+      end
     {:ok, %{
         actuators: Map.get(config, :actuators),
         actuator_timer: nil,
-        actuator_loop_interval_ms: Map.get(config, :actuator_loop_interval_ms, 0)
+        actuator_loop_interval_ms: Map.get(config, :actuator_loop_interval_ms, 0),
+        output_module: output_module
      }}
   end
 
@@ -45,8 +51,10 @@ defmodule Actuation.SwInterface do
       # if (actuator_name == :steering) do
       # Logger.debug("move_actuator #{actuator_name} to #{Common.Utils.eftb(output, 3)}")
       # end
-      Actuation.HwInterface.set_output_for_actuator(actuator, output)
+      # Actuation.HwInterface.set_output_for_actuator(actuator, output)
+      apply(state.output_module, :set_output_for_actuator, [actuator,actuator_name, output])
     end)
+    apply(state.output_module, :update_actuators,[])
     {:noreply, state}
   end
 

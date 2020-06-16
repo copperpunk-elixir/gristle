@@ -55,7 +55,7 @@ defmodule Actuation.HwInterface do
     {:reply, output, state}
   end
 
-  def set_output_for_actuator(actuator, output) do
+  def set_output_for_actuator(actuator,_actuator_name, output) do
     GenServer.cast(__MODULE__, {:set_actuator_output, actuator, output})
   end
 
@@ -69,6 +69,10 @@ defmodule Actuation.HwInterface do
 
   def get_failsafe_pw_for_actuator(actuator) do
     actuator.failsafe_cmd*(actuator.max_pw_ms - actuator.min_pw_ms) + actuator.min_pw_ms
+  end
+
+  def update_actuators() do
+    # This is defined only to allow for an abstraction in Actuation.SwInterface
   end
 
   defp open_interface_connection(interface_module, interface_ref, connection_count, connection_count_max) do
