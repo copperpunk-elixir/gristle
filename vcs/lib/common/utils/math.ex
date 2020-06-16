@@ -66,7 +66,65 @@ defmodule Common.Utils.Math do
 
     # Logger.debug("value: #{value}")
     value
+  end
 
+  @log2 0.69314718056
+  @spec uint_from_fp(float(), integer) :: integer()
+  def uint_from_fp(x, bits) do
+    # abs_x = abs(x)
+    # int_x = floor(abs_x)
+    # dec_x = abs_x-int_x
+    # dec_x = Enum.reduce()
+    # significand = :erlang.integer_to_list(int_x, 2)
+    # exp = length(significand)-1 + 127
+    # exponent = :erlang.integer_to_list(exp, 2)
+    # Logger.debug("exponent: #{exponent}")
+    if x == 0 do
+      <<0,0,0,0>>
+    else
+      abs_x = abs(x)
+      exponent = floor(:math.log(abs_x)/@log2)
+      biased_exponent = exponent + 127
+      exponent_bin = :erlang.integer_to_binary(biased_exponent,2)
+      # add leading zeros if necessary
+      num_zeros = 8 - String.length(exponent_bin)
+      exponent_bin =
+      if (num_zeros > 0) do
+        Enum.reduce(1..num_zeros, exponent_bin, fn (_x,acc) ->
+          "0" <> acc
+        end)
+      else
+        exponent_bin
+      end
+      exp_mult = :math.pow(2,exponent)
+      # Logger.info("exp/exp_mult: #{exponent}/#{exp_mult}")
+      {mantissa, mantissa_string} =
+        Enum.reduce(1..23, {1,""}, fn (ctr, {mantissa, mantissa_string}) ->
+          mantissa_temp = mantissa + 1.0/Bitwise.<<<(1,ctr)
+          # Logger.info("ctr/mtemp/mult: #{ctr}/#{mantissa_temp}/#{mantissa_temp*exp_mult}")
+          if mantissa_temp*exp_mult <= abs_x do
+            {mantissa_temp, mantissa_string <> "1"}
+          else
+            {mantissa, mantissa_string <> "0"}
+          end
+        end)
+      number =
+      if x >= 0 do
+        "0"
+      else
+        "1"
+      end
+      number = number <> exponent_bin <> mantissa_string
+      # Logger.debug("exponent: #{exponent_bin}")
+      # Logger.debug("mantissa: #{mantissa}")
+      # Logger.debug("mantissa str: #{mantissa_string}")
+      # Logger.debug("number: #{number}")
+      num_int = :erlang.binary_to_integer(number,2)
+      # Logger.info("num_int: #{num_int}")
+      <<num_int :: little-unsigned-32>>
+
+    end
+    # Logger.debug("[#{a},#{b},#{c},#{d}]")
   end
 
   def twos_comp_16(x) do

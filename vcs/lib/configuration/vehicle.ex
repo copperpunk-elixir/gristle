@@ -109,15 +109,15 @@ defmodule Configuration.Vehicle do
     }
 
     actuator_names = get_actuator_names(vehicle_type, node_type)
-    sw_config = get_actuation_sw_config(actuator_names)
+    sw_config = get_actuation_sw_config(actuator_names, node_type)
     %{
       hw_interface: hw_config,
       sw_interface: sw_config
     }
   end
 
-  @spec get_actuation_sw_config(atom()) :: map()
-  def get_actuation_sw_config(actuator_names) do
+  @spec get_actuation_sw_config(list(), atom()) :: map()
+  def get_actuation_sw_config(actuator_names, node_type) do
     {channels, failsafes} = get_channels_failsafes(actuator_names)
     actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
       Map.put(acc, Enum.at(actuator_names, index), %{
@@ -134,7 +134,8 @@ defmodule Configuration.Vehicle do
     #return config
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
-      actuators: actuators
+      actuators: actuators,
+      node_type: node_type
     }
   end
 
@@ -179,6 +180,7 @@ defmodule Configuration.Vehicle do
   def get_actuator_names(vehicle_type, node_type) do
     case node_type do
       :all -> get_all_actuator_names_for_vehicle(vehicle_type)
+      :sim -> get_all_actuator_names_for_vehicle(vehicle_type)
 
       :wing -> [:aileron, :throttle]
       :fuselang -> [:throtle, :elevator, :rudder]
@@ -199,6 +201,7 @@ defmodule Configuration.Vehicle do
     case node_type do
       :gcs -> {-1,-1}
       :all -> {0,0}
+      :sim -> {0,0}
 
       :wing -> {0,1}
       :fuselang -> {1,2}

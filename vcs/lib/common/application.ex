@@ -20,6 +20,7 @@ defmodule Common.Application do
 
     case node_type do
       :gcs -> start_gcs(vehicle_type)
+      :sim -> start_simulation(vehicle_type)
       _other -> start_vehicle(vehicle_type, node_type)
     end
   end
@@ -47,6 +48,30 @@ defmodule Common.Application do
     # command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
     display_config = Configuration.Generic.get_display_config(vehicle_type)
     # Command.System.start_link(command_config)
+    Display.Scenic.System.start_link(display_config)
+  end
+
+
+  @spec start_simulation(atom()) ::atom()
+  def start_simulation(vehicle_type) do
+    Logger.info("vehicle/node: #{vehicle_type}/sim")
+    actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, :sim)
+    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
+    control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
+    estimation_config = Configuration.Generic.get_estimator_config()
+    navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    simulation_config = Configuration.Generic.get_simulation_config(vehicle_type)
+    display_config = Configuration.Generic.get_display_config(vehicle_type)
+
+
+    Actuation.System.start_link(actuation_config)
+    Pids.System.start_link(pid_config)
+    Control.System.start_link(control_config)
+    Estimation.System.start_link(estimation_config)
+    Navigation.System.start_link(navigation_config)
+    Command.System.start_link(command_config)
+    Simulation.System.start_link(simulation_config)
     Display.Scenic.System.start_link(display_config)
   end
 end

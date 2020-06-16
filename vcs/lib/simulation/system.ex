@@ -1,4 +1,4 @@
-defmodule Estimation.System do
+defmodule Simulation.System do
   require Logger
 
   def start_link(config) do
@@ -6,8 +6,8 @@ defmodule Estimation.System do
     Comms.ProcessRegistry.start_link()
     Supervisor.start_link(
       [
-        {Estimation.Estimator, config.estimator},
-        {Peripherals.Uart.VnIns, %{}}
+        {Simulation.XplaneReceive, config.receive},
+        {Simulation.XplaneSend, config.send}
       ],
       strategy: :one_for_one
     )
