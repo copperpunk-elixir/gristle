@@ -2,11 +2,30 @@ defmodule Common.Utils.Math do
   require Bitwise
   require Logger
 
+  @spec constrain(number(), number(), number()) :: number()
   def constrain(x, min_value, max_value) do
     case x do
       _ when x > max_value -> max_value
       _ when x < min_value -> min_value
       x -> x
+    end
+  end
+
+@spec in_range?(number(), number(), number()) :: boolean()
+  def in_range?(x, min_value, max_value) do
+    cond do
+      x > max_value -> false
+      x < min_value -> false
+      true -> true
+    end
+  end
+
+  @spec constrain?(number(), number(), number()) :: tuple()
+  def constrain?(x, min_value, max_value) do
+    case x do
+      _ when x > max_value -> {max_value, true}
+      _ when x < min_value -> {min_value, true}
+      x -> {x, false}
     end
   end
 
