@@ -10,17 +10,6 @@ defmodule Configuration.Generic do
     end
   end
 
-  @spec get_estimator_config() :: map()
-  def get_estimator_config() do
-    %{estimator: %{
-         imu_loop_interval_ms: get_loop_interval_ms(:fast),
-         imu_loop_timeout_ms: 1000,
-         ins_loop_interval_ms: get_loop_interval_ms(:fast),
-         ins_loop_timeout_ms: 2000,
-         telemetry_loop_interval_ms: get_loop_interval_ms(:slow),
-      }}
-  end
-
   @spec get_cluster_config() :: map()
   def get_cluster_config() do
     %{
