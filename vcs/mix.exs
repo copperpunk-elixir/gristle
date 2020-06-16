@@ -23,14 +23,14 @@ defmodule Vcs.MixProject do
   # Starting nerves_bootstrap adds the required aliases to Mix.Project.config()
   # Aliases are only added if MIX_TARGET is set.
   def bootstrap(args) do
-    Application.start(:nerves_bootstrap)
+    # Application.start(:nerves_bootstrap)
     Mix.Task.run("loadconfig", args)
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {Common.Application, []},
+      # mod: {Common.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

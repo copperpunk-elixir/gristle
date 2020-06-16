@@ -7,7 +7,7 @@ defmodule Estimation.System do
     Supervisor.start_link(
       [
         {Estimation.Estimator, config.estimator},
-        # {Peripherals.Uart.VnIns, %{}}
+        {Peripherals.Uart.VnIns, %{}}
       ],
       strategy: :one_for_one
     )
