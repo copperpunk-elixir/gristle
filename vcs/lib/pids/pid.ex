@@ -34,18 +34,36 @@ defmodule Pids.Pid do
   @impl GenServer
   def handle_call({:update, pv_cmd, pv_value, dt}, _from, state) do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
-    correction = pv_cmd - pv_value
-    |> Common.Utils.Math.constrain(state.correction_min, state.correction_max)
-    pv_integrator = state.pv_integrator + correction*dt
+    delta_output_min = state.output_min - state.output_neutral
+    delta_output_max = state.output_max - state.output_neutral
+    {correction, out_of_range} = Common.Utils.Math.constrain?(pv_cmd - pv_value, state.correction_min, state.correction_max)
+    pv_integrator =
+      unless out_of_range do
+      state.pv_integrator + correction*dt
+    else
+      0.0
+    end
     cmd_p = state.kp*correction
+    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
+
     cmd_i = state.ki*pv_integrator
-    delta_output = cmd_p + cmd_i
+    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
+
+    cmd_d = -state.kd*(correction - state.pv_correction_prev)
+    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
+    delta_output = cmd_p + cmd_i + cmd_d
     feed_forward = calculate_feed_forward(correction, state.ff_poly, state.ff_poly_degree)
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output
-    # Logger.debug("corr/dt/p/i/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{output}")
+    Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
     pv_correction_prev = correction
+    pv_integrator =
+    if (state.ki != 0) do
+      cmd_i / state.ki
+    else
+      0.0
+    end
     # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
     {:reply,output, %{state | output: output, feed_forward_prev: feed_forward, pv_correction_prev: pv_correction_prev, pv_integrator: pv_integrator}}
   end
