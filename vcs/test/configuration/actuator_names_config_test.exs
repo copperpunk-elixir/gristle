@@ -5,7 +5,7 @@ defmodule Configuration.ActuatorNamesConfigTest do
 
   test "Get Actuator config for actuators" do
     actuator_names = [:aileron, :elevator, :rudder, :throttle]
-    actuation_sw_config = Configuration.Vehicle.get_actuation_sw_config(actuator_names)
+    actuation_sw_config = Configuration.Vehicle.get_actuation_sw_config(actuator_names, :all)
     assert actuation_sw_config.actuators.aileron.channel_number == 0
     assert actuation_sw_config.actuators.elevator.channel_number == 1
     assert actuation_sw_config.actuators.rudder.channel_number == 2

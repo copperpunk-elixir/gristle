@@ -4,7 +4,7 @@ defmodule Estimation.StartEstimatorTest do
   setup do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    config = Configuration.Generic.get_estimator_config()
+    config = Configuration.Vehicle.get_estimation_config(:all)
     Estimation.System.start_link(config)
     MessageSorter.System.start_link(:Plane)
     Comms.TestMemberAllGroups.start_link()

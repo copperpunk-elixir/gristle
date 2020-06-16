@@ -31,9 +31,9 @@ defmodule Common.Application do
     actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, node_type)
     pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
-    estimation_config = Configuration.Generic.get_estimator_config()
+    estimation_config = Configuration.Vehicle.get_estimation_config(node_type)
     navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
-    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    command_config = Configuration.Vehicle.get_command_config(vehicle_type, node_type)
 
     Actuation.System.start_link(actuation_config)
     Pids.System.start_link(pid_config)
@@ -54,13 +54,14 @@ defmodule Common.Application do
 
   @spec start_simulation(atom()) ::atom()
   def start_simulation(vehicle_type) do
-    Logger.info("vehicle/node: #{vehicle_type}/sim")
-    actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, :sim)
+    node_type = :sim
+    Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
+    actuation_config = Configuration.Vehicle.get_actuation_config(vehicle_type, node_type)
     pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
     control_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
-    estimation_config = Configuration.Generic.get_estimator_config()
+    estimation_config = Configuration.Generic.get_estimation_config(node_type)
     navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
-    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    command_config = Configuration.Vehicle.get_command_config(vehicle_type, node_type)
     simulation_config = Configuration.Generic.get_simulation_config(vehicle_type)
     display_config = Configuration.Generic.get_display_config(vehicle_type)
 

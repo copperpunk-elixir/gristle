@@ -40,13 +40,6 @@ defmodule Configuration.Vehicle do
       Module.concat(Configuration.Vehicle, vehicle_type)
       |> Module.concat(module)
     case module do
-      Command ->
-        %{
-          commander: %{vehicle_type: vehicle_type},
-          frsky_rx: %{
-            device_description: "Feather M0",
-            publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
-          }}
       Control ->
         %{
           controller: %{
@@ -119,12 +112,13 @@ defmodule Configuration.Vehicle do
   @spec get_actuation_sw_config(list(), atom()) :: map()
   def get_actuation_sw_config(actuator_names, node_type) do
     {channels, failsafes} = get_channels_failsafes(actuator_names)
+    {min_pw_ms, max_pw_ms} = get_min_max_pw(node_type)
     actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
       Map.put(acc, Enum.at(actuator_names, index), %{
             channel_number: Enum.at(channels, index),
             reversed: false,
-            min_pw_ms: 64,
-            max_pw_ms: 4080,
+            min_pw_ms: min_pw_ms,
+            max_pw_ms: max_pw_ms,
             cmd_limit_min: 0.0,
             cmd_limit_max: 1.0,
             failsafe_cmd: Enum.at(failsafes, index)
@@ -137,6 +131,17 @@ defmodule Configuration.Vehicle do
       actuators: actuators,
       node_type: node_type
     }
+  end
+
+  @spec get_min_max_pw(atom()) :: tuple()
+  def get_min_max_pw(node_type) do
+    case node_type do
+      :front_right -> {64, 4080}
+      :rear_right -> {64, 4080}
+      :rear_left  -> {64, 4080}
+      :front_left -> {64, 4080}
+      _other -> {1100, 1900}
+    end
   end
 
   @spec get_channels_failsafes(list()) :: tuple()
@@ -183,7 +188,7 @@ defmodule Configuration.Vehicle do
       :sim -> get_all_actuator_names_for_vehicle(vehicle_type)
 
       :wing -> [:aileron, :throttle]
-      :fuselang -> [:throtle, :elevator, :rudder]
+      :fuselage -> [:throtle, :elevator, :rudder]
       :tail -> [:elevator, :rudder, :aileron]
 
       :steering -> [:steering, :throttle]
@@ -204,7 +209,7 @@ defmodule Configuration.Vehicle do
       :sim -> {0,0}
 
       :wing -> {0,1}
-      :fuselang -> {1,2}
+      :fuselage -> {1,2}
       :tail -> {2,0}
 
       :steering -> {0,1}
@@ -214,6 +219,48 @@ defmodule Configuration.Vehicle do
       :rear_right -> {1,2}
       :rear_left -> {2,3}
       :front_left -> {3,0}
+    end
+  end
+
+  @spec get_estimation_config(atom()) :: map()
+  def get_estimation_config(node_type) do
+    %{
+      estimator: %{
+         imu_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+         imu_loop_timeout_ms: 1000,
+         ins_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+         ins_loop_timeout_ms: 2000,
+         telemetry_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+      },
+      children: get_estimation_children(node_type)
+    }
+  end
+
+  @spec get_estimation_children(atom()) :: list()
+  def get_estimation_children(node_type) do
+    case node_type do
+      :all -> [{Peripherals.Uart.VnIns, %{}}]
+      _other -> []
+    end
+  end
+
+  @spec get_command_config(atom(), atom()) :: map()
+  def get_command_config(vehicle_type, node_type) do
+    %{
+      commander: %{vehicle_type: vehicle_type},
+      children: get_command_children(node_type)
+    }
+  end
+
+  @spec get_command_children(atom()) :: map()
+  def get_command_children(node_type) do
+    case node_type do
+      :all ->
+        [{Peripherals.Uart.FrskyRx, %{
+             device_description: "Feather M0",
+             publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+          }}]
+      _other -> []
     end
   end
 end

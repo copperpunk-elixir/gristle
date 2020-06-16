@@ -34,7 +34,7 @@ defmodule Actuation.HwInterfacePololuTest do
     Actuation.HwInterface.start_link(config.hw_interface)
     Process.sleep(1000)
     aileron = config.sw_interface.actuators.aileron
-    Actuation.HwInterface.set_output_for_actuator(aileron, aileron.cmd_limit_min)
+    Actuation.HwInterface.set_output_for_actuator(aileron,nil, aileron.cmd_limit_min)
     assert Actuation.HwInterface.get_output_for_actuator(aileron) == aileron.min_pw_ms
   end
 end
