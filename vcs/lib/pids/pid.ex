@@ -36,7 +36,8 @@ defmodule Pids.Pid do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
     delta_output_min = state.output_min - state.output_neutral
     delta_output_max = state.output_max - state.output_neutral
-    {correction, out_of_range} = Common.Utils.Math.constrain?(pv_cmd - pv_value, state.correction_min, state.correction_max)
+    correction_raw = pv_cmd - pv_value
+    {correction, out_of_range} = Common.Utils.Math.constrain?(correction_raw, state.correction_min, state.correction_max)
     pv_integrator =
       unless out_of_range do
       state.pv_integrator + correction*dt
@@ -49,15 +50,23 @@ defmodule Pids.Pid do
     cmd_i = state.ki*pv_integrator
     |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
 
-    cmd_d = -state.kd*(correction - state.pv_correction_prev)
-    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
+    cmd_d =
+    if dt != 0 do
+      -state.kd*(correction_raw - state.pv_correction_prev)/dt
+      |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
+    else
+      0.0
+    end
     delta_output = cmd_p + cmd_i + cmd_d
     feed_forward = calculate_feed_forward(correction, state.ff_poly, state.ff_poly_degree)
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output
-    Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
+    # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-    pv_correction_prev = correction
+    # if state.process_variable == :speed do
+    #   Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(output, 3)}")
+    # end
+    pv_correction_prev = correction_raw
     pv_integrator =
     if (state.ki != 0) do
       cmd_i / state.ki

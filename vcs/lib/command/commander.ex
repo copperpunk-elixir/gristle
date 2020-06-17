@@ -117,8 +117,8 @@ defmodule Command.Commander do
                   reference_cmds.speed + value_to_add
                   |> Common.Utils.Math.constrain(min_value, max_value)
                 :altitude ->
-                  reference_cmds.altitude + value_to_add 
-                  |> Common.Utils.Math.constrain(0, 1000)
+                  reference_cmds.altitude + value_to_add
+                  |> Common.Utils.Math.constrain(0, 10000)
                 _other -> value_to_add
               end
           end

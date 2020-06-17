@@ -33,7 +33,7 @@ defmodule Configuration.Vehicle.Plane.Command do
       3 => [
         {0, :course, :relative, output_limits.course.min, output_limits.course.max, 1},
         {1, :altitude, :relative, output_limits.altitude.min, output_limits.altitude.max, -1},
-        {2, :speed, :absolute, 0, 10, 1}
+        {2, :speed, :absolute, 0, 100, 1}
       ]
     }
   end

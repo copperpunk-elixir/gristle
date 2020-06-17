@@ -2,7 +2,7 @@ defmodule Simulation.System do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Estimation Supervisor start_link()")
+    Logger.info("Simulation Supervisor start_link()")
     Comms.ProcessRegistry.start_link()
     Supervisor.start_link(
       [

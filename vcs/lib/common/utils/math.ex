@@ -89,7 +89,7 @@ defmodule Common.Utils.Math do
 
   @log2 0.69314718056
   @spec uint_from_fp(float(), integer) :: integer()
-  def uint_from_fp(x, bits) do
+  def uint_from_fp(x, _bits) do
     # abs_x = abs(x)
     # int_x = floor(abs_x)
     # dec_x = abs_x-int_x
@@ -117,7 +117,7 @@ defmodule Common.Utils.Math do
       end
       exp_mult = :math.pow(2,exponent)
       # Logger.info("exp/exp_mult: #{exponent}/#{exp_mult}")
-      {mantissa, mantissa_string} =
+      {_mantissa, mantissa_string} =
         Enum.reduce(1..23, {1,""}, fn (ctr, {mantissa, mantissa_string}) ->
           mantissa_temp = mantissa + 1.0/Bitwise.<<<(1,ctr)
           # Logger.info("ctr/mtemp/mult: #{ctr}/#{mantissa_temp}/#{mantissa_temp*exp_mult}")

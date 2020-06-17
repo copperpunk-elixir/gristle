@@ -6,7 +6,9 @@ defmodule Display.Scenic.Gcs.Plane do
   # @body_offset 80
   @font_size 24
   @degrees "°"
+  @radians "rads"
   @dps "°/s"
+  @radpersec "rps"
   @meters "m"
   @mps "m/s"
   @pct "%"
@@ -91,14 +93,14 @@ defmodule Display.Scenic.Gcs.Plane do
     graph =
       cond do
       level <=1 ->
-          rollrate = Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.rollrate),0)
-          pitchrate = Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.pitchrate),0)
-          yawrate = Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yawrate),0)
+          rollrate = Common.Utils.eftb(cmds.rollrate,3)
+          pitchrate = Common.Utils.eftb(cmds.pitchrate,3)
+          yawrate = Common.Utils.eftb(cmds.yawrate,3)
           thrust = Common.Utils.eftb(cmds.thrust*100,0)
           graph
-          |> Scenic.Graph.modify(:rollrate_cmd, &text(&1,rollrate <> @dps))
-          |> Scenic.Graph.modify(:pitchrate_cmd, &text(&1,pitchrate <> @dps))
-          |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @dps))
+          |> Scenic.Graph.modify(:rollrate_cmd, &text(&1,rollrate <> @radpersec))
+          |> Scenic.Graph.modify(:pitchrate_cmd, &text(&1,pitchrate <> @radpersec))
+          |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @radpersec))
           |> Scenic.Graph.modify(:thrust_1_cmd, &text(&1,thrust <> @pct))
       level == 2 ->
           roll= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.roll),0)
@@ -112,7 +114,7 @@ defmodule Display.Scenic.Gcs.Plane do
           |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
       level == 3 ->
           speed= Common.Utils.eftb(cmds.speed,1)
-          course= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course),0)
+          course= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course),1)
           altitude= Common.Utils.eftb(cmds.altitude,1)
           graph
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))

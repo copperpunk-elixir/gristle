@@ -104,6 +104,9 @@ defmodule Pids.Moderator do
       pv_output_map = Map.get(pv_output_pids, pv_name, %{})
       unless Enum.empty?(pv_output_map) do
         Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
+          # if pv_name == :roll do
+            # Logger.info("error: #{Common.Utils.eftb(pv_cmd - pv_value,3)}")
+          # end
           # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
           output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt)
           total_output = output*weight + Map.get(acc, output_variable_name, 0)

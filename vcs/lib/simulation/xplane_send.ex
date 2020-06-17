@@ -34,7 +34,7 @@ defmodule Simulation.XplaneSend do
     output =
       case actuator_name do
         :throttle -> output
-        cmd -> 2*(output - 0.5)
+        _cmd -> 2*(output - 0.5)
       end
     # Logger.info("actuator_name/output: #{actuator_name}/#{output}")
     {:noreply, %{state | commands: Map.put(state.commands, actuator_name, output)}}

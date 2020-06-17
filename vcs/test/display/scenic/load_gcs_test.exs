@@ -4,7 +4,7 @@ defmodule Display.Scenic.LoadGcsTest do
 
   setup do
     vehicle_type = :Plane
-    node_type = :gcs
+    node_type = :all
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
