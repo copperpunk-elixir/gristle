@@ -65,7 +65,10 @@ defmodule Display.Scenic.Gcs.Plane do
 
     roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
     pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
-    yaw = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.yaw),1)
+    yaw =
+      Common.Utils.constrain_angle_to_compass(attitude.yaw)
+      |> Common.Utils.Math.rad2deg()
+      |> Common.Utils.eftb(1)
 
     lat = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.latitude),5)
     lon = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.longitude),5)
@@ -75,8 +78,9 @@ defmodule Display.Scenic.Gcs.Plane do
     speed = Common.Utils.eftb(calculated_values.speed,1)
 
     course=
-      Common.Utils.Math.rad2deg(calculated_values.course)
-      |> Common.Utils.eftb(1)
+    Common.Utils.constrain_angle_to_compass(calculated_values.course)
+    |> Common.Utils.Math.rad2deg()
+    |> Common.Utils.eftb(1)
 
     graph = Scenic.Graph.modify(graph, :lat, &text(&1, lat <> @degrees))
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
