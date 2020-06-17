@@ -30,7 +30,8 @@ defmodule Actuation.HwInterfacePololuTest do
   # end
 
   test "Start HWInterface without Pololu plugged in" do
-    config = Configuration.Vehicle.get_actuation_config(:Plane, :all)
+    # config = Configuration.Vehicle.get_actuation_config(:Plane, :all)
+    config = Configuration.Module.get_config(Actuation, :Plane, :all)
     Actuation.HwInterface.start_link(config.hw_interface)
     Process.sleep(1000)
     aileron = config.sw_interface.actuators.aileron
