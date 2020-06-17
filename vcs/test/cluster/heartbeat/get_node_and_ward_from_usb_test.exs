@@ -6,8 +6,8 @@ defmodule Cluster.GetNodeAndWarnFromUsbTest do
   setup do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    MessageSorter.System.start_link(:FourWheelRobot)
-    cluster_config = Configuration.Generic.get_cluster_config()
+    MessageSorter.System.start_link(:Car)
+    cluster_config = Configuration.Module.Cluster.get_config(nil,nil)
     Cluster.System.start_link(cluster_config)
     {:ok, []}
   end

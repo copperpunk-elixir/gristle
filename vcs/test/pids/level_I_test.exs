@@ -40,7 +40,7 @@ defmodule Pids.LevelITest do
                  aileron: %{
                    kp: 1.0,
                    ki: 0.1,
-                   kd: 0.1,
+                   kd: 0.001,
                    output_min: 0,
                    output_neutral: 0.5,
                    output_max: 1.0,
@@ -67,7 +67,7 @@ defmodule Pids.LevelITest do
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
-      aileron_pid.kp*rollrate_corr + aileron_pid.ki*rollrate_corr*dt - aileron_pid.kd*(rollrate_corr - rollrate_corr_prev) + aileron_pid.output_neutral
+      aileron_pid.kp*rollrate_corr + aileron_pid.ki*rollrate_corr*dt - aileron_pid.kd*(rollrate_corr - rollrate_corr_prev)/dt + aileron_pid.output_neutral
       |> Common.Utils.Math.constrain(0, 1)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)
     rollrate_corr_prev = rollrate_corr
@@ -77,7 +77,7 @@ defmodule Pids.LevelITest do
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,dt},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     exp_rollrate_aileron_output =
-      aileron_pid.kp*rollrate_corr + aileron_pid.ki*(rollrate_corr + rollrate_corr_prev)*dt - aileron_pid.kd*(rollrate_corr - rollrate_corr_prev) + aileron_pid.output_neutral
+      aileron_pid.kp*rollrate_corr + aileron_pid.ki*(rollrate_corr + rollrate_corr_prev)*dt - aileron_pid.kd*(rollrate_corr - rollrate_corr_prev)/dt + aileron_pid.output_neutral
       |> Common.Utils.Math.constrain(0, 1)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     assert_in_delta(rollrate_aileron_output, exp_rollrate_aileron_output, max_delta)

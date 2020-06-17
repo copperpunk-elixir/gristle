@@ -7,7 +7,7 @@ defmodule Cluster.UnhealthyClusterTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
-    heartbeat_config = Configuration.Generic.get_heartbeat_config(0,1)
+    heartbeat_config = Configuration.Module.Cluster.get_heartbeat_config(0,1)
     Cluster.Heartbeat.start_link(heartbeat_config)
     {:ok, []}
   end

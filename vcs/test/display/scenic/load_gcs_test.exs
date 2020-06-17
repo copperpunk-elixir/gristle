@@ -9,7 +9,7 @@ defmodule Display.Scenic.LoadGcsTest do
     Process.sleep(100)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
     # Need estimation and command
-    config = Configuration.Vehicle.get_estimation_config(node_type)
+    config = Configuration.Module.get_config(Estimation, vehicle_type,node_type)
     Estimation.System.start_link(config)
     # command_config = %{
     #   commander: %{vehicle_type: vehicle_type},
@@ -17,9 +17,9 @@ defmodule Display.Scenic.LoadGcsTest do
     #     device_description: "Arduino Micro",
     #     publish_rx_output_loop_interval_ms: 100}
     # }
-    command_config = Configuration.Vehicle.get_command_config(vehicle_type, node_type)
+    command_config = Configuration.Module.get_config(Command, vehicle_type, node_type)
     Command.System.start_link(command_config)
-    config = Configuration.Generic.get_display_config(vehicle_type)
+    config = Configuration.Module.get_config(Display, vehicle_type, nil)
     Display.Scenic.System.start_link(config)
 
     {:ok, [vehicle_type: vehicle_type ]}

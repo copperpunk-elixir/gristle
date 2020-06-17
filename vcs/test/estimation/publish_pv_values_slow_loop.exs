@@ -6,10 +6,10 @@ defmodule Estimation.PublishPVValuesSlowLoop do
     Comms.ProcessRegistry.start_link()
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
-    config = Configuration.Generic.get_estimator_config()
+    config = Configuration.Module.get_config(Estimation, vehicle_type, :all)
     Estimation.System.start_link(config)
     Comms.TestMemberAllGroups.start_link()
-    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    command_config = Configuration.Module.get_config(Command,vehicle_type, nil)
     {:ok, []}
   end
 

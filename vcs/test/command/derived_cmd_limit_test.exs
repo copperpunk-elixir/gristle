@@ -7,9 +7,9 @@ defmodule Command.DerivedCmdLimitTest do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
-    navigation_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    navigation_config = Configuration.Module.get_config(Navigation, vehicle_type, nil)
     Navigation.System.start_link(navigation_config)
-    command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
+    command_config = Configuration.Module.get_config(Command, vehicle_type, nil)
     Command.System.start_link(command_config)
     Process.sleep(300)
     {:ok, [vehicle_type: vehicle_type]}

@@ -2,9 +2,9 @@ defmodule Actuation.System do
   require Logger
   use Supervisor
 
-  def start_link(vehicle_type, node_type) do
+  def start_link(config) do
     Logger.debug("Actuation Supervisor start_link()")
-    config = Configuration.Module.Actuation.get_config(vehicle_type, node_type)
+    # config = Configuration.Module.Actuation.get_config(vehicle_type, node_type)
     Comms.ProcessRegistry.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
