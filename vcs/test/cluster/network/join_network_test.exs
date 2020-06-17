@@ -5,7 +5,7 @@ defmodule Cluster.Network.JoinNetworkTest do
   setup do
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    network_config = Configuration.Generic.get_network_config()
+    network_config = Configuration.Module.Cluster.get_network_config()
     Cluster.Network.start_link(network_config)
     Process.sleep(100)
     {:ok, []}

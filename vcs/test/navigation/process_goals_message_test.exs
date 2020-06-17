@@ -8,7 +8,7 @@ defmodule Navigation.ProcessGoalsMessageTest do
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
-    nav_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Navigation)
+    nav_config = Configuration.Module.get_config(Navigation, vehicle_type, :all)
     Navigation.System.start_link(nav_config)
     Process.sleep(400)
     {:ok, [vehicle_type: vehicle_type, nav_config: nav_config]}

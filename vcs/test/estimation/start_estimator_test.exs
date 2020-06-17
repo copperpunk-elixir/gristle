@@ -2,11 +2,12 @@ defmodule Estimation.StartEstimatorTest do
   use ExUnit.Case
 
   setup do
+    vehicle_type = :Plane
     Comms.ProcessRegistry.start_link()
     Process.sleep(100)
-    config = Configuration.Vehicle.get_estimation_config(:all)
+    config = Configuration.Module.get_config(Estimation, vehicle_type, :all)
     Estimation.System.start_link(config)
-    MessageSorter.System.start_link(:Plane)
+    MessageSorter.System.start_link(vehicle_type)
     Comms.TestMemberAllGroups.start_link()
     {:ok, [config: config]}
   end

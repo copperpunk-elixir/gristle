@@ -11,7 +11,7 @@ defmodule Configuration.Vehicle.Car.Pids do
       speed: %{thrust: Map.merge(%{kp: 0.1, weight: 1.0}, constraints.thrust)}
     }
 
-    pids = Configuration.Vehicle.add_pid_input_constraints(pids, constraints)
+    pids = Configuration.Module.Pids.add_pid_input_constraints(pids, constraints)
 
     %{
       pids: pids,

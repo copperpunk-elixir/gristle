@@ -10,120 +10,6 @@ defmodule Configuration.Generic do
     end
   end
 
-  @spec get_cluster_config() :: map()
-  def get_cluster_config() do
-    %{
-      heartbeat: get_heartbeat_config(),
-      network: get_network_config()
-    }
-  end
-
-  @spec get_heartbeat_config() :: map()
-  def get_heartbeat_config do
-    node_type = Common.Utils.get_node_type()
-    {node, ward} = Configuration.Vehicle.get_node_and_ward(node_type)
-    get_heartbeat_config(node, ward)
-  end
-
-  @spec get_heartbeat_config(integer(), integer()) :: map()
-  def get_heartbeat_config(node, ward) do
-    %{
-      heartbeat_loop_interval_ms: get_loop_interval_ms(:medium),
-      node: node,
-      ward: ward
-    }
-  end
-
-  @spec get_network_config() :: map()
-  def get_network_config() do
-    %{
-      interface: get_interface(),
-      broadcast_ip_loop_interval_ms: 1000,
-      cookie: get_cookie(),
-      src_port: 8780,
-      dest_port: 8780
-    }
-  end
-
-  @spec get_interface() :: binary()
-  def get_interface() do
-    {:ok, computer_name} = :inet.gethostname()
-    computer_name = to_string(computer_name)
-
-    cond do
-      String.contains?(computer_name, "system76") -> "wlp0s20f3"
-      String.contains?(computer_name, "nerves") -> "wlan0"
-      String.contains?(computer_name, "pi") -> "wlan0"
-      true -> raise "Unknown Computer Type: #{computer_name}"
-    end
-  end
-
-  @spec get_cookie() :: atom()
-  def get_cookie() do
-    :guestoftheday
-  end
-
-  @spec get_operator_config(atom()) :: map()
-  def get_operator_config(name) do
-    %{
-      name: name,
-      refresh_groups_loop_interval_ms: 100
-    }
-  end
-
-  @spec get_sorter_configs() :: list()
-  def get_sorter_configs() do
-    [
-      %{
-        name: {:hb, :node},
-        default_message_behavior: :default_value,
-        default_value: :nil,
-        value_type: :map
-      },
-      %{
-        name: :estimator_health,
-        default_message_behavior: :default_value,
-        default_value: 0,
-        value_type: :number
-      },
-
-    ]
-  end
-
-  @spec get_display_config(atom()) :: map()
-  def get_display_config(vehicle_type) do
-    display_vehicle_type =
-      case vehicle_type do
-        :Car -> :Car
-        :FourWheelRobot -> :Car
-        :Plane -> :Plane
-      end
-    %{vehicle_type: display_vehicle_type}
-  end
-
-  @spec get_simulation_config(atom()) :: map()
-  def get_simulation_config(vehicle_type) do
-    %{
-      receive: get_simulation_xplane_receive_config(),
-      send: get_simulation_xplane_send_config(vehicle_type)
-    }
-  end
-
-  @spec get_simulation_xplane_receive_config() :: map()
-  def get_simulation_xplane_receive_config() do
-    %{
-      port: 49002
-    }
-  end
-
-  @spec get_simulation_xplane_send_config(atom()) :: map()
-  def get_simulation_xplane_send_config(vehicle_type) do
-    %{
-      vehicle_type: vehicle_type,
-      port: 49003
-    }
-  end
-
   @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
     Logger.warn("sender: #{inspect(sender)}")
@@ -160,4 +46,11 @@ defmodule Configuration.Generic do
     {classification, time_validity}
   end
 
- end
+  @spec get_operator_config(atom()) :: map()
+  def get_operator_config(name) do
+    %{
+      name: name,
+      refresh_groups_loop_interval_ms: 100
+    }
+  end
+end

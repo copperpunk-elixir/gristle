@@ -3,7 +3,7 @@ defmodule Configuration.Vehicle.Plane.Command do
 
   @spec get_rx_output_channel_map() :: list()
   def get_rx_output_channel_map() do
-    output_limits = Configuration.Vehicle.get_command_output_limits(:Plane, [:thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course, :speed, :altitude])
+    output_limits = Configuration.Module.Command.get_command_output_limits(:Plane, [:thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course, :speed, :altitude])
     # channel_number, channel, absolute/relative, min, max
     %{
       -1 => [

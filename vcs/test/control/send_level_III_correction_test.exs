@@ -7,9 +7,9 @@ defmodule Control.SendLevelIIICorrectionTest do
     Comms.ProcessRegistry.start_link()
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
-    pid_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Pids)
+    pid_config = Configuration.Module.get_config(Pids, vehicle_type, nil)
     Pids.System.start_link(pid_config)
-    config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Control)
+    config = Configuration.Module.get_config(Control, vehicle_type, nil)
     Control.System.start_link(config)
     {:ok, [config: pid_config]}
   end
