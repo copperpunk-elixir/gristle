@@ -27,7 +27,7 @@ defmodule Cluster.Network do
   @impl GenServer
   def handle_cast(:begin , state) do
     Process.sleep(100)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     GenServer.cast(__MODULE__, :connect_to_network)
     {:noreply, state}
   end

@@ -45,12 +45,4 @@ defmodule Configuration.Generic do
     Logger.warn("class/time: #{inspect(classification)}/#{time_validity}")
     {classification, time_validity}
   end
-
-  @spec get_operator_config(atom()) :: map()
-  def get_operator_config(name) do
-    %{
-      name: name,
-      refresh_groups_loop_interval_ms: 100
-    }
-  end
 end

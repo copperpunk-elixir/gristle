@@ -4,7 +4,7 @@ defmodule Comms.TestMemberAllGroups do
 
   def start_link() do
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     GenServer.cast(__MODULE__, :join_all_groups)
     {:ok, pid}
   end

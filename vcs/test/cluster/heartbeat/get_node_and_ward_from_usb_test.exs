@@ -4,7 +4,7 @@ defmodule Cluster.GetNodeAndWarnFromUsbTest do
   require Logger
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Car)
     cluster_config = Configuration.Module.Cluster.get_config(nil,nil)

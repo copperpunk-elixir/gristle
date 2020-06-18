@@ -2,7 +2,7 @@ defmodule Workshop.MessageQueueTest  do
   use ExUnit.Case
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
     {:ok, []}
@@ -13,8 +13,6 @@ defmodule Workshop.MessageQueueTest  do
     level_2_config = Enum.at(config, 1)
     sorter_name = {:pv_cmds, 2}
     # Start registry
-    Comms.ProcessRegistry.start_link()
-    Process.sleep(200)
     {current_cmds, current_cmd_status} = MessageSorter.Sorter.get_value_with_status(sorter_name)
     assert current_cmds.roll == level_2_config.default_value.roll
     assert current_cmds.pitch == level_2_config.default_value.pitch

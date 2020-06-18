@@ -3,7 +3,7 @@ defmodule Simulation.System do
 
   def start_link(config) do
     Logger.info("Simulation Supervisor start_link()")
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Supervisor.start_link(
       [
         {Simulation.XplaneReceive, config.receive},

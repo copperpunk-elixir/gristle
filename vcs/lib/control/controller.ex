@@ -27,7 +27,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     join_process_variable_groups()
     control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
     {:noreply, %{state | control_loop_timer: control_loop_timer}}

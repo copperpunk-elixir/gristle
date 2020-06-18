@@ -31,7 +31,7 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     # Start sorters
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, -1}, self())

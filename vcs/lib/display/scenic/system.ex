@@ -19,7 +19,7 @@ defmodule Display.Scenic.System do
         }
       ]
     }
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
 
     Supervisor.start_link(
       [

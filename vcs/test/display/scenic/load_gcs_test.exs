@@ -5,9 +5,9 @@ defmodule Display.Scenic.LoadGcsTest do
   setup do
     vehicle_type = :Plane
     node_type = :all
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     # Need estimation and command
     config = Configuration.Module.get_config(Estimation, vehicle_type,node_type)
     Estimation.System.start_link(config)
@@ -19,7 +19,7 @@ defmodule Display.Scenic.LoadGcsTest do
     # }
     command_config = Configuration.Module.get_config(Command, vehicle_type, node_type)
     Command.System.start_link(command_config)
-    config = Configuration.Module.get_config(Display, vehicle_type, nil)
+    config = Configuration.Module.get_config(Display.Scenic, vehicle_type, nil)
     Display.Scenic.System.start_link(config)
 
     {:ok, [vehicle_type: vehicle_type ]}

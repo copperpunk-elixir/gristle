@@ -4,7 +4,7 @@ defmodule Command.System do
 
   def start_link(config) do
     Logger.debug("Command Supervisor start_link()")
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 

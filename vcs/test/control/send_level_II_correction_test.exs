@@ -4,7 +4,7 @@ defmodule Control.SendLevelIICorrectionTest do
 
   setup do
     vehicle_type = :Plane
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
     pid_config = Configuration.Module.get_config(Pids, vehicle_type, nil)
@@ -23,7 +23,7 @@ defmodule Control.SendLevelIICorrectionTest do
 
     Logger.info("SendLevelIICorrectionTest")
     op_name = :levelII
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
+    Comms.System.start_operator(op_name)
     max_cmd_delta = 0.001
     Logger.info("Start Control Loop")
     Process.sleep(200)

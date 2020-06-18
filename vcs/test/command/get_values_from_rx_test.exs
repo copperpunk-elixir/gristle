@@ -5,7 +5,7 @@ defmodule Command.GetGoalsFromRxTest do
   setup do
     vehicle_type = :Car
     node_type = :all
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     navigation_config = Configuration.Module.get_config(Navigation, vehicle_type, node_type)

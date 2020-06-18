@@ -46,7 +46,7 @@ defmodule Display.Scenic.Gcs.Car do
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "yawrate"], ids: [:thrust_1_cmd, :yawrate_cmd], font_size: @font_size})
 
     # subscribe to the simulated temperature sensor
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
 
