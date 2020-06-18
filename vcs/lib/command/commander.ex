@@ -35,7 +35,7 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     rx_output_time_prev = :erlang.monotonic_time(:millisecond)

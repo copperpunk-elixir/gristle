@@ -3,7 +3,7 @@ defmodule Cluster.System do
 
   def start_link(config) do
     Logger.debug("Cluster Supervisor start_link()")
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Supervisor.start_link(
       [
         {Cluster.Heartbeat, config.heartbeat},

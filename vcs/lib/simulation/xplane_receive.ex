@@ -30,7 +30,7 @@ defmodule Simulation.XplaneReceive do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     {:ok, socket} = :gen_udp.open(state.port, [broadcast: false, active: true])
     {:noreply, %{state | socket: socket}}
   end

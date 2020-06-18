@@ -5,9 +5,9 @@ defmodule Simulation.ReadUdpTest do
   setup do
     vehicle_type = :Plane
     node_type = :all
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     Estimation.System.start_link(Configuration.Module.get_config(Estimation, vehicle_type, node_type))
     Display.Scenic.System.start_link(Configuration.Module.get_config(Display, vehicle_type, node_type))
     {:ok, []}

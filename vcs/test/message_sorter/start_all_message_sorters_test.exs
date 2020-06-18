@@ -3,9 +3,9 @@ defmodule MessageSorter.StartAllMessageSortersTest do
   require Logger
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     MessageSorter.System.start_link(:Plane)
     {:ok, []}
   end

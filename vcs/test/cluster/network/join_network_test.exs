@@ -3,7 +3,7 @@ defmodule Cluster.Network.JoinNetworkTest do
   require Logger
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     network_config = Configuration.Module.Cluster.get_network_config()
     Cluster.Network.start_link(network_config)

@@ -4,7 +4,7 @@ defmodule Cluster.HealthyClusterTest do
   require Logger
 
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(:Plane)
     heartbeat_config = Configuration.Module.Cluster.get_heartbeat_config(0,1)
@@ -14,7 +14,7 @@ defmodule Cluster.HealthyClusterTest do
 
   test "Create healthy cluster" do
     Logger.info("Create healthy cluster")
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     # hb_validity = Configuration.Generic.get_heartbeat_time_validity_ms()
     {hb_class, hb_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     Process.sleep(400)

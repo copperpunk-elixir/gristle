@@ -4,7 +4,7 @@ defmodule Command.DerivedCmdLimitTest do
 
   setup do
     vehicle_type = :Car
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     MessageSorter.System.start_link(vehicle_type)
     navigation_config = Configuration.Module.get_config(Navigation, vehicle_type, nil)

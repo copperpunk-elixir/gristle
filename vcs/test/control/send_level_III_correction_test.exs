@@ -4,7 +4,7 @@ defmodule Control.SendLevelIIICorrectionTest do
 
   setup do
     vehicle_type = :Plane
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
     pid_config = Configuration.Module.get_config(Pids, vehicle_type, nil)
@@ -21,7 +21,7 @@ defmodule Control.SendLevelIIICorrectionTest do
     rudder_neutral = pid_config.pids.yawrate.rudder.output_neutral
     IO.puts("SendLevelIIICorrectionTest")
     op_name = :levelIII
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
+    Comms.System.start_operator(op_name)
     max_cmd_delta = 0.001
     IO.puts("Start Control Loop")
     Process.sleep(200)

@@ -3,7 +3,7 @@ defmodule Estimation.PublishPVValuesSlowLoop do
 
   setup do
     vehicle_type = :Plane
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     MessageSorter.System.start_link(vehicle_type)
     Process.sleep(100)
     config = Configuration.Module.get_config(Estimation, vehicle_type, :all)

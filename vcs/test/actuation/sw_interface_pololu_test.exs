@@ -26,7 +26,7 @@ defmodule Actuation.SwInterfacePololuTest do
     config = Configuration.Module.get_config(Actuation,vehicle_type, :all)
     actuators = config.sw_interface.actuators
     Logger.info("Connect servo to channel 0 if real actuation is desired")
-    Actuation.System.start_link(vehicle_type, :all)
+    Actuation.System.start_link(config)
     Process.sleep(100)
     # Test actuator values
     actuator = Map.get(actuators, actuator_name)

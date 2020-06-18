@@ -14,7 +14,7 @@ defmodule System.TotalSystemTest do
   test "Total System Test" do
     IO.puts("Start Total System Test")
     op_name = :total_system_test
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
+    Comms.System.start_operator(op_name)
     interface = Configuration.Module.Cluster.get_interface()
     connection_status = VintageNet.get(["interface", interface, "lower_up"])
     if connection_status == false do

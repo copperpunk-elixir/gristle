@@ -28,7 +28,7 @@ defmodule Cluster.Heartbeat do
   @impl GenServer
   def handle_cast(:begin , state) do
     Process.sleep(100)
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(__MODULE__))
+    Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, @node_sorter, self())
     heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
     {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}

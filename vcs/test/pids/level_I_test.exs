@@ -2,7 +2,7 @@ defmodule Pids.LevelITest do
   use ExUnit.Case
   require Logger
   setup do
-    Comms.ProcessRegistry.start_link()
+    Comms.System.start_link()
     Process.sleep(100)
     {:ok, []}
   end
@@ -56,7 +56,7 @@ defmodule Pids.LevelITest do
     max_delta = 0.00001
     op_name = :start_pid_test
     aileron_pid = pid_config.pids.rollrate.aileron
-    Comms.Operator.start_link(Configuration.Generic.get_operator_config(op_name))
+    Comms.System.start_operator(op_name)
     Process.sleep(300)
     pv_cmd_map = %{rollrate: 0.4}
     pv_value_map = %{bodyrate: %{rollrate: 0}}
