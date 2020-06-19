@@ -1,4 +1,5 @@
 defmodule Display.Scenic.System do
+  use Supervisor
   require Logger
   def start_link(config) do
     Logger.debug("Display Supervisor start_link()")
@@ -10,7 +11,7 @@ defmodule Display.Scenic.System do
       |> Module.concat(config.vehicle_type)
 
     gcs_config = %{
-      name: :gcs
+      name: :gcs,
       size: {800, 600},
       default_scene: {gcs_scene, nil},
       drivers: [
@@ -26,26 +27,34 @@ defmodule Display.Scenic.System do
     planner_scene = Module.concat(display_module, Planner)
 
     planner_config = %{
-      name: :planner
+      name: :planner,
       size: {800, 600},
       default_scene: {planner_scene, nil},
       drivers: [
         %{
           module: Scenic.Driver.Glfw,
           name: :glfw,
-          opts: [resizeable: false, title: "scenic_example_app"]
+          opts: [resizeable: false, title: "planner"]
         }
       ]
     }
 
     Comms.System.start_link()
 
-    Supervisor.start_link(
-      [
-        {Scenic, viewports: [gcs_config]},
+    viewports = [
+      # gcs_config,
+      planner_config
+    ]
+    config = %{
+      viewports: viewports
+    }
 
-      ],
-      strategy: :one_for_one
-    )
+    Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
+
+  def init(config) do
+    children = [Supervisor.child_spec({Scenic, viewports: config.viewports}, id: :scenic_app)]
+    Supervisor.init(children, strategy: :one_for_one)
+  end
+
 end
