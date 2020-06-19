@@ -25,16 +25,16 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     speed = 10
     alt = 100
     lat1 = 45.00#Common.Utils.Math.deg2rad(45.00)
-    lon1 = -120.0#Common.Utils.Math.deg2rad(-120.0)
+    lon1 = -120.01414#Common.Utils.Math.deg2rad(-120.0)
     # North
-    lat2 = 45.01#Common.Utils.Math.deg2rad(45.01)
-    lon2 = -120.0#Common.Utils.Math.deg2rad(-120.0)
+    lat2 = 45.02#Common.Utils.Math.deg2rad(45.01)
+    lon2 = -120.01414#Common.Utils.Math.deg2rad(-120.0)
     # East
-    lat3 = 45.01#Common.Utils.Math.deg2rad(45.01)
-    lon3 = -119.99#Common.Utils.Math.deg2rad(-119.99)
+    lat3 = 45.02#Common.Utils.Math.deg2rad(45.01)
+    lon3 = -120.0#Common.Utils.Math.deg2rad(-119.99)
     # South
     lat4 = 45.0#Common.Utils.Math.deg2rad(45.00)
-    lon4 = -119.99#Common.Utils.Math.deg2rad(-119.99)
+    lon4 = -120.0#Common.Utils.Math.deg2rad(-119.99)
 
 
     wp1 = Navigation.Waypoint.new_waypoint(lat1, lon1, speed, 0, alt, "wp1")
@@ -50,14 +50,14 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     attitude = %{yaw: 0.75}
 
 
-    bounding_box = Display.Scenic.Planner.calculate_lat_lon_bounding_box(mission, position, true)
-    Logger.debug("bounding box: #{inspect(bounding_box)}")
-    {min_lat, max_lat, min_lon, max_lon} = bounding_box
-    assert min_lat = lat1
-    assert max_lon = lon2
+    # bounding_box = Display.Scenic.Planner.calculate_lat_lon_bounding_box(mission, position, true)
+    # Logger.debug("bounding box: #{inspect(bounding_box)}")
+    # {min_lat, max_lat, min_lon, max_lon} = bounding_box
+    # assert min_lat = lat1
+    # assert max_lon = lon2
 
-    origin = Display.Scenic.Planner.calculate_origin_and_pixel_ratio(bounding_box, 800, 600)
-    Logger.debug("origin lat/lon: #{origin.lat}/#{origin.lon}")
+    # origin = Display.Scenic.Planner.calculate_origin_and_pixel_ratio(bounding_box, 800, 600)
+    # Logger.debug("origin lat/lon: #{origin.lat}/#{origin.lon}")
     Comms.Operator.send_global_msg_to_group(
       __MODULE__,
       {:add_mission, mission},

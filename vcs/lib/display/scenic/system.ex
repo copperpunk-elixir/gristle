@@ -28,7 +28,7 @@ defmodule Display.Scenic.System do
 
     planner_config = %{
       name: :planner,
-      size: {800, 600},
+      size: {600, 600},
       default_scene: {planner_scene, nil},
       drivers: [
         %{
