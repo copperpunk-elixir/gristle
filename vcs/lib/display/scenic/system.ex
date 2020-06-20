@@ -17,7 +17,7 @@ defmodule Display.Scenic.System do
       drivers: [
         %{
           module: Scenic.Driver.Glfw,
-          name: :glfw,
+          name: :gcs_driver,
           opts: [resizeable: false, title: "gcs"]
         }
       ]
@@ -33,7 +33,7 @@ defmodule Display.Scenic.System do
       drivers: [
         %{
           module: Scenic.Driver.Glfw,
-          name: :glfw,
+          name: :planner_driver,
           opts: [resizeable: false, title: "planner"]
         }
       ]
@@ -42,7 +42,7 @@ defmodule Display.Scenic.System do
     Comms.System.start_link()
 
     viewports = [
-      # gcs_config,
+      gcs_config,
       planner_config
     ]
     config = %{

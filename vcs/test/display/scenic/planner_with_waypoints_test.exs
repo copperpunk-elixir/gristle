@@ -24,17 +24,17 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     # Create mission
     speed = 10
     alt = 100
-    lat1 = 45.00#Common.Utils.Math.deg2rad(45.00)
-    lon1 = -120.01414#Common.Utils.Math.deg2rad(-120.0)
+    lat1 = Common.Utils.Math.deg2rad(47.53)
+    lon1 = Common.Utils.Math.deg2rad(-122.32)
     # North
-    lat2 = 45.02#Common.Utils.Math.deg2rad(45.01)
-    lon2 = -120.01414#Common.Utils.Math.deg2rad(-120.0)
+    lat2 = Common.Utils.Math.deg2rad(47.54)
+    lon2 = Common.Utils.Math.deg2rad(-120.29)
     # East
-    lat3 = 45.02#Common.Utils.Math.deg2rad(45.01)
-    lon3 = -120.0#Common.Utils.Math.deg2rad(-119.99)
+    lat3 = Common.Utils.Math.deg2rad(47.54)
+    lon3 = Common.Utils.Math.deg2rad(-120.29)
     # South
-    lat4 = 45.0#Common.Utils.Math.deg2rad(45.00)
-    lon4 = -120.0#Common.Utils.Math.deg2rad(-119.99)
+    lat4 = Common.Utils.Math.deg2rad(47.53)
+    lon4 = Common.Utils.Math.deg2rad(-120.32)
 
 
     wp1 = Navigation.Waypoint.new_waypoint(lat1, lon1, speed, 0, alt, "wp1")
@@ -46,8 +46,8 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     mission = Navigation.Mission.new_mission("box", [wp1, wp2,wp3,wp4])
 
     calculated = %{speed: 1.0, course: 0.0}
-    position = %{latitude: 45.002, longitude: -120.0, altitude: 0}
-    attitude = %{yaw: 0.75}
+    position = %{latitude: Common.Utils.Math.deg2rad(45.002), longitude: Common.Utils.Math.deg2rad(-120.005), altitude: 0}
+    attitude = %{yaw: 0.0}
 
 
     # bounding_box = Display.Scenic.Planner.calculate_lat_lon_bounding_box(mission, position, true)
@@ -65,11 +65,11 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
       self())
 
 
-    # Comms.Operator.send_global_msg_to_group(
-    #   __MODULE__,
-    #   {:pv_estimate, %{position: position, attitude: attitude, calculated: calculated}},
-    #   :pv_estimate,
-    #   self())
+    Comms.Operator.send_global_msg_to_group(
+      __MODULE__,
+      {:pv_estimate, %{position: position, attitude: attitude, calculated: calculated}},
+      :pv_estimate,
+      self())
 
     vehicle_type = context[:vehicle_type]
     Process.sleep(400000)
