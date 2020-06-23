@@ -209,8 +209,14 @@ defmodule Common.Utils do
   def constrain_angle_to_compass(angle) do
     cond do
       angle < 0.0 -> angle + 2.0*:math.pi()
-      angle > 2.0*:math.pi() -> angle - 2.0*:math.pi()
+      angle >= 2.0*:math.pi() -> angle - 2.0*:math.pi()
       true -> angle
     end
+  end
+
+  @spec angle_between_points(struct(), struct()) :: float()
+  def angle_between_points(lla_1, lla_2) do
+    {dx, dy} = Common.Utils.Location.dx_dy_between_points(lla_1, lla_2)
+    constrain_angle_to_compass(:math.atan2(dy, dx))
   end
 end
