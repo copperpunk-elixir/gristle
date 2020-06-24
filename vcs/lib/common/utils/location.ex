@@ -60,6 +60,11 @@ defmodule Common.Utils.Location do
     {lat2, lon2}
   end
 
+  @spec lat_lon_from_point(map(), float(), float()) :: tuple()
+  def lat_lon_from_point(lat_lon_alt, dx, dy) do
+    lat_lon_from_point(lat_lon_alt.latitude, lat_lon_alt.longitude, dx, dy)
+  end
+
   @spec lat_lon_from_point(tuple(), tuple()) :: tuple()
   def lat_lon_from_point(origin, point) do
     {lat1, lon1} = origin

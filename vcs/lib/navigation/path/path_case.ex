@@ -11,8 +11,7 @@ defmodule Navigation.Path.PathCase do
     :c,
     :rho,
     :turn_direction,
-    :z,
-    :n,
+    :zi,
     :v_des
   ]
 

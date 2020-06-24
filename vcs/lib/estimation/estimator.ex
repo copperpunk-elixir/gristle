@@ -3,6 +3,7 @@ defmodule Estimation.Estimator do
   require Logger
   @imu_watchdog_trigger 250
   @ins_watchdog_trigger 2000
+  @min_speed_for_course 2
 
   def start_link(config) do
     Logger.debug("Start Estimation.Estimator")
@@ -27,6 +28,7 @@ defmodule Estimation.Estimator do
         ins_watchdog_elapsed: 0,
         imu_watchdog_trigger: @imu_watchdog_trigger,
         ins_watchdog_trigger: @ins_watchdog_trigger,
+        min_speed_for_course: @min_speed_for_course,
         bodyrate: %{},
         attitude: %{},
         velocity: %{},
@@ -82,6 +84,8 @@ defmodule Estimation.Estimator do
       {state.position, state.velocity, state.ins_watchdog_elapsed}
     else
       new_watchdog_time = max(state.ins_watchdog_elapsed - 1.1*state.ins_loop_interval_ms, 0)
+      # If the velocity is below a threshold, we use yaw instead
+      velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
       {position, velocity, new_watchdog_time}
     end
     state = %{state | position: position, velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
@@ -123,7 +127,7 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     bodyrate = state.bodyrate
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, 2, attitude.yaw)
+      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, @min_speed_for_course, attitude.yaw)
       calculated = %{
         speed: speed,
         course: course

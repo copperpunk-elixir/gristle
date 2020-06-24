@@ -16,4 +16,13 @@ defmodule Navigation.Path.Vector do
   def new(x, y) do
     new(x, y, 0)
   end
+
+  @spec reverse(struct()) :: struct()
+  def reverse(vector) do
+    %Navigation.Path.Vector{
+      x: -vector.x,
+      y: -vector.y,
+      z: -vector.z
+    }
+  end
 end

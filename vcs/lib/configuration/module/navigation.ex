@@ -12,10 +12,16 @@ defmodule Configuration.Module.Navigation do
         navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
         default_pv_cmds_level: 3
       },
-      path_manager: Map.merge(%{
-            vehicle_type: vehicle_type
-                              },
-        vehicle_limits)
+      path_manager: Map.merge(
+        %{
+          vehicle_type: vehicle_type,
+          path_follower: %{
+            k_path: 0.12,
+            k_orbit: 2.05,
+            chi_inf: 0.52
+          }
+        },
+        vehicle_limits),
     }
   end
 end

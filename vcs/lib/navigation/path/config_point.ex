@@ -23,7 +23,8 @@ defmodule Navigation.Path.ConfigPoint do
     :start_radius,
     :end_radius,
     # :is_defined,
-    :dubins
+    :dubins,
+    :goto_upon_completion
   ]
 
   # @spec new_config_point() :: struct()
@@ -44,9 +45,9 @@ defmodule Navigation.Path.ConfigPoint do
     }
   end
 
-  @spec print(struct()) :: struct()
-  def print(cp) do
-    # Logger.info(""
-  end
+  # @spec print(struct()) :: struct()
+  # def print(cp) do
+  #   # Logger.info(""
+  # end
 
 end

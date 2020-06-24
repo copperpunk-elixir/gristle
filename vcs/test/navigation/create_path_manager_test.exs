@@ -16,6 +16,7 @@ defmodule Navigation.ProcessGoalsMessageTest do
 
   test "Create Path Manager", context do
     max_pos_delta = 0.00001
+    max_vector_delta = 0.001
     path_manager_config = context[:config]
     turn_rate = path_manager_config.vehicle_turn_rate
     current_mission = Navigation.PathManager.get_mission()
@@ -55,5 +56,111 @@ defmodule Navigation.ProcessGoalsMessageTest do
     exp_dist = 180 + 180 + 90 + 80 + 9/4*2*cs1_rad*:math.pi
     assert_in_delta(Navigation.PathManager.get_current_path_distance(), exp_dist, 0.01)
 
+    # Config Point 1
+    dubins = Navigation.PathManager.get_dubins_for_cp(0)
+    [pc0, pc1, pc2, pc3, pc4] = dubins.path_cases
+    assert_in_delta(pc0.q.x, -1, max_vector_delta)
+    assert_in_delta(pc0.q.y, 0, max_vector_delta)
+    assert_in_delta(pc1.q.x, 1, max_vector_delta)
+    assert_in_delta(pc1.q.y, 0, max_vector_delta)
+    {rx, ry} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.r)
+    {zix, ziy} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.zi)
+    assert_in_delta(rx, 10, max_vector_delta)
+    assert_in_delta(ry, 10, max_vector_delta)
+    assert_in_delta(zix, 190, max_vector_delta)
+    assert_in_delta(ziy, 10, max_vector_delta)
+    assert_in_delta(pc3.q.x, 0, max_vector_delta)
+    assert_in_delta(pc3.q.y, -1, max_vector_delta)
+    assert_in_delta(pc4.q.x, 0, max_vector_delta)
+    assert_in_delta(pc4.q.y, 1, max_vector_delta)
+    # Config Point 3
+    dubins = Navigation.PathManager.get_dubins_for_cp(2)
+    [pc0, pc1, pc2, pc3, pc4] = dubins.path_cases
+    assert_in_delta(pc0.q.x, -1, max_vector_delta)
+    assert_in_delta(pc0.q.y, 0, max_vector_delta)
+    assert_in_delta(pc1.q.x, 1, max_vector_delta)
+    assert_in_delta(pc1.q.y, 0, max_vector_delta)
+    {rx, ry} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.r)
+    {zix, ziy} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.zi)
+    assert_in_delta(rx, 10, max_vector_delta)
+    assert_in_delta(ry, 50, max_vector_delta)
+    assert_in_delta(zix, 100, max_vector_delta)
+    assert_in_delta(ziy, 50, max_vector_delta)
+    assert_in_delta(pc3.q.x, 1, max_vector_delta)
+    assert_in_delta(pc3.q.y, 0, max_vector_delta)
+    assert_in_delta(pc4.q.x, -1, max_vector_delta)
+    assert_in_delta(pc4.q.y, 0, max_vector_delta)
+
+    # Config Point 4
+    dubins = Navigation.PathManager.get_dubins_for_cp(3)
+    [pc0, pc1, pc2, pc3, pc4] = dubins.path_cases
+    assert_in_delta(pc0.q.x, 0, max_vector_delta)
+    assert_in_delta(pc0.q.y, 1, max_vector_delta)
+    assert_in_delta(pc1.q.x, 0, max_vector_delta)
+    assert_in_delta(pc1.q.y, -1, max_vector_delta)
+    {rx, ry} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.r)
+    {zix, ziy} = Common.Utils.Location.dx_dy_between_points(wp1, pc2.zi)
+    assert_in_delta(rx, 90, max_vector_delta)
+    assert_in_delta(ry, 20, max_vector_delta)
+    assert_in_delta(zix, 90, max_vector_delta)
+    assert_in_delta(ziy, -60, max_vector_delta)
+    assert_in_delta(pc3.q.x, -1, max_vector_delta)
+    assert_in_delta(pc3.q.y, 0, max_vector_delta)
+    assert_in_delta(pc4.q.x, 1, max_vector_delta)
+    assert_in_delta(pc4.q.y, 0, max_vector_delta)
+
+    # Path completion for CP3 (index 2)
+    dubins = Navigation.PathManager.get_dubins_for_cp(2)
+    pcs = dubins.path_cases
+    cp = Enum.at(config_points, 2)
+    pci = 0
+    pc = Enum.at(pcs,pci)
+    # When we start, we can skip case 0
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,1,39)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    pc = Enum.at(pcs, pci)
+    assert pci==1
+    # At the same point, we should not advance to case 1
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    assert pci==1
+    # Move again, but not past the line
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,9,55)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    assert pci==1
+    # Cross the line
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,11,53)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    pc = Enum.at(pcs, pci)
+    assert pci==2
+    # Move short of the next line
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,99,53)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    assert pci==2
+    # Cross the line
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,101,53)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    pc = Enum.at(pcs, pci)
+    assert pci==3
+    # If somehow we moved backwards, confirm that we haven't advanved cases
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,98,53)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    assert pci==3
+    # Cross the line (which is the same on as for case 2)
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,102,33)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    pc = Enum.at(pcs, pci)
+    assert pci==4
+    # Complete the path
+    {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,97,30)
+    pos = Navigation.Path.LatLonAlt.new(lat, lon)
+    pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
+    assert pci==0
   end
 end

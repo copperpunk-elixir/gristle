@@ -61,10 +61,10 @@ defmodule Navigation.Path.Mission do
     {lat5, lon5} = Common.Utils.Location.lat_lon_from_point(lat1, lon1, 100, -70)
 
     wp1 = Navigation.Path.Waypoint.new_waypoint(lat1, lon1, speed, :math.pi/2, alt, "wp1")
-    wp2 = Navigation.Path.Waypoint.new_waypoint(lat2, lon2, speed, :math.pi/2, alt, "wp2")
+    wp2 = Navigation.Path.Waypoint.new_waypoint(lat2, lon2, speed, :math.pi/2, alt, "wp2",3)
     wp3 = Navigation.Path.Waypoint.new_waypoint(lat3, lon3, speed, :math.pi/2, alt, "wp3")
     wp4 = Navigation.Path.Waypoint.new_waypoint(lat4, lon4, speed, :math.pi, alt, "wp4")
-    wp5 = Navigation.Path.Waypoint.new_waypoint(lat5, lon5, speed, 0, alt, "wp5")
+    wp5 = Navigation.Path.Waypoint.new_waypoint(lat5, lon5, speed, 0, alt, "wp5", 0)
     Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5])
   end
 end
