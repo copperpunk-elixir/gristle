@@ -195,6 +195,16 @@ defmodule Common.Utils do
     {speed, course}
   end
 
+  @spec adjust_velocity_for_min_speed(map(), number(), number()) :: map()
+    def adjust_velocity_for_min_speed(velocity, min_speed_for_course, yaw) do
+    speed = Common.Utils.Math.hypot(velocity.north, velocity.east)
+    if (speed >= min_speed_for_course) do
+      velocity
+    else
+      %{velocity | north: speed*:math.cos(yaw), east: speed*:math.sin(yaw)}
+    end
+  end
+
   # Turn correctly left or right using delta Yaw/Course
   @spec turn_left_or_right_for_correction(number()) :: number()
   def turn_left_or_right_for_correction(correction) do
@@ -209,8 +219,14 @@ defmodule Common.Utils do
   def constrain_angle_to_compass(angle) do
     cond do
       angle < 0.0 -> angle + 2.0*:math.pi()
-      angle > 2.0*:math.pi() -> angle - 2.0*:math.pi()
+      angle >= 2.0*:math.pi() -> angle - 2.0*:math.pi()
       true -> angle
     end
+  end
+
+  @spec angle_between_points(struct(), struct()) :: float()
+  def angle_between_points(lla_1, lla_2) do
+    {dx, dy} = Common.Utils.Location.dx_dy_between_points(lla_1, lla_2)
+    constrain_angle_to_compass(:math.atan2(dy, dx))
   end
 end

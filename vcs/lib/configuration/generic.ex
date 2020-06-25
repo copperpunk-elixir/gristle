@@ -22,8 +22,9 @@ defmodule Configuration.Generic do
         Pids.Moderator => [0,1],
         Navigation.Navigator => [0,2]
       },
-      :rx_output => %{
-        Command.Commander => [0,1]
+      :goals => %{
+        Command.Commander => [0,1],
+        Navigation.PathManager => [0,2]
       },
       :control_state => %{
         Navigation.Navigator => [0,1]
@@ -34,7 +35,7 @@ defmodule Configuration.Generic do
       {:hb, :node} => 500,
       :actuator_cmds => 200,
       :pv_cmds => 300,
-      :rx_output => 300,
+      :goals => 300,
       :control_state => 200
     }
 

@@ -41,12 +41,13 @@ defmodule Display.Scenic.Planner do
     }
 
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, :add_mission, self())
+    Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     {:ok, state, push: graph}
   end
 
-  def handle_cast({:add_mission, mission}, state) do
+  def handle_cast({:load_mission, mission}, state) do
+    Logger.warn("planner load mission")
     Logger.info("state: #{inspect(state)}")
     vehicle_position =
       Map.get(state, :vehicle, %{})
@@ -171,7 +172,7 @@ defmodule Display.Scenic.Planner do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       {y_plot, x_plot} = Display.Scenic.PlannerOrigin.get_xy(origin, wp.latitude, wp.longitude)
       Logger.info("#{wp.name} xy: #{x_plot}/#{y_plot}")
-      circle(acc, 10, fill: :red, translate: {x_plot, 600-x_plot} )
+      circle(acc, 10, fill: :red, translate: {x_plot, 600-y_plot} )
       |> text(wp.name, translate: {x_plot, 600-y_plot})
     end)
   end

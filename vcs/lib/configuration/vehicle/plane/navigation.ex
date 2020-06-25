@@ -33,19 +33,27 @@ defmodule Configuration.Vehicle.Plane.Navigation do
         default_message_behavior: :default_value,
         default_value: %{course: 0, speed: 0, altitude: 0},
         value_type: :map
-      },
-      %{
-        name: {:goals, 4},
-        default_message_behavior: :default_value,
-        default_value: %{latitude: 0, longitude: 0, altitude: 0, course: 0, speed: 0},
-        value_type: :map
       }
+      # %{
+      #   name: {:goals, 4},
+      #   default_message_behavior: :default_value,
+      #   default_value: %{latitude: 0, longitude: 0, altitude: 0, course: 0, speed: 0},
+      #   value_type: :map
+      # }
     ]
   end
 
   @spec get_sorter_configs() :: list()
   def get_sorter_configs() do
     get_goals_sorter_configs()
+  end
+
+  @spec get_vehicle_limits() :: map()
+  def get_vehicle_limits() do
+    %{
+      vehicle_turn_rate: 0.08,
+      vehicle_loiter_speed: 2
+    }
   end
 
 end

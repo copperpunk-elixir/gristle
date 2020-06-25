@@ -6,7 +6,8 @@ defmodule Navigation.System do
     Comms.System.start_link()
     Supervisor.start_link(
       [
-        {Navigation.Navigator, config.navigator}
+        {Navigation.Navigator, config.navigator},
+        {Navigation.PathManager, config.path_manager}
       ],
       strategy: :one_for_one
     )

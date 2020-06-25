@@ -17,13 +17,13 @@ defmodule Command.Commander do
   def init(config) do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
-    {rx_output_classification, rx_output_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :rx_output)
+    {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
-        rx_output_classification: rx_output_classification,
-        rx_output_time_validity_ms: rx_output_time_validity_ms,
+        goals_classification: goals_classification,
+        goals_time_validity_ms: goals_time_validity_ms,
         control_state: -1,
         transmit_cmds: false,
         reference_cmds: %{},
@@ -127,7 +127,7 @@ defmodule Command.Commander do
       # if (control_state == 3) do
       #   Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
       # else
-        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.rx_output_classification, state.rx_output_time_validity_ms, cmds}, {:goals, control_state}, self())
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
       # end
       Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
       {reference_cmds, control_state, transmit_cmds}

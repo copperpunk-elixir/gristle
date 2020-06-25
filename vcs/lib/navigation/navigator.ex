@@ -39,7 +39,7 @@ defmodule Navigation.Navigator do
     Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 3}, self())
-    Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
+    # Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
     navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
     {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
   end
@@ -60,7 +60,7 @@ defmodule Navigation.Navigator do
   def handle_info(:navigator_loop, state) do
     # Start with Goals 4, move through goals 1
     # If there a no current commands, then take the command from default_pv_cmds_level
-    {pv_cmds, control_state} = Enum.reduce(4..-1, {%{}, nil}, fn (pv_cmd_level, acc) ->
+    {pv_cmds, control_state} = Enum.reduce(3..-1, {%{}, nil}, fn (pv_cmd_level, acc) ->
       {cmd_values, cmd_status} = MessageSorter.Sorter.get_value_with_status({:goals, pv_cmd_level})
       if (cmd_status == :current) do
         {cmd_values, pv_cmd_level}
@@ -70,6 +70,11 @@ defmodule Navigation.Navigator do
     end)
     {pv_cmds, control_state} =
     if Enum.empty?(pv_cmds) do
+      # If we are flying, send orbit command to Path Manager
+      # if true do
+      #   Logger.warn("We are flying and need an orbit. Send request to PathManager.")
+      #   Navigation.PathManager.begin_orbit()
+      # end
       control_state = state.default_pv_cmds_level
       {MessageSorter.Sorter.get_value({:goals, control_state}), control_state}
     else
