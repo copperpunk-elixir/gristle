@@ -24,10 +24,8 @@ defmodule Navigation.PathManager do
       vehicle_loiter_speed: config.vehicle_loiter_speed,
       goals_classification: goals_classification,
       goals_time_validity_ms: goals_time_validity_ms,
-      current_mission: nil,
       config_points: [],
-      current_cp: nil,
-      current_cp_index: -2,
+      current_cp_index: nil,
       current_path_case: nil,
       current_path_distance: 0,
       position: %{},
@@ -39,6 +37,8 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, :load_mission, self())
     {:noreply, state}
   end
 
@@ -49,9 +49,7 @@ defmodule Navigation.PathManager do
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
     state = %{
       state |
-      current_mission: mission,
       config_points: config_points,
-      current_cp: current_cp,
       current_cp_index: 0,
       current_path_case: current_path_case,
       current_path_distance: current_path_distance
@@ -60,57 +58,75 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({:move_vehicle, position_velocity}, state) do
-    Logger.info("move vehicle with: #{inspect(position_velocity)}")
+  def handle_cast({{:pv_values, position_velocity}, position_velocity, _dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
     temp_case_index =
-    if (state.current_path_case == nil) do
-      # Check for a path case - We might be following a line or orbiting
-      -1
-    else
-      check_for_path_case_completion(position_velocity.position, state.current_cp, state.current_path_case)
-    end
-    Logger.warn("temp_case_index: #{temp_case_index}")
-    {current_cp, current_path_case} =
+      case state.current_cp_index do
+        nil -> -1
+        index ->
+          Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
+          current_cp = Enum.at(state.config_points, index)
+          check_for_path_case_completion(position_velocity.position, current_cp, state.current_path_case)
+      end
+    {current_cp_index, current_path_case} =
       case temp_case_index do
         -1 ->
-          # Create an orbit path_case
-          Logger.error("Need to create an orbit path case here")
-          path_case = Navigation.Path.PathCase.new_orbit(0)
-          {nil, path_case}
+          # Logger.error("No config points. Follow path_case if it exists")
+          {nil, state.current_path_case}
         0 ->
           # if there is a goto, then go to it
-          current_cp =
-          if is_nil(state.current_cp.goto_upon_completion) do
-            Logger.warn("no goto, move to cp_indes: #{state.current_cp_index + 1}")
-            Enum.at(state.config_points, state.current_cp_index + 1)
-          else
-            Logger.warn("goto: #{state.current_cp.goto_upon_completion}")
-            Logger.warn("cps: #{length(state.config_points)}")
-            Enum.at(state.config_points, state.current_cp.goto_upon_completion)
+          current_cp = Enum.at(state.config_points, state.current_cp_index)
+          current_cp_index =
+            case current_cp.goto_upon_completion do
+              nil ->
+                Logger.warn("no goto, move to cp_index: #{state.current_cp_index + 1}")
+                cp_index = state.current_cp_index + 1
+                if cp_index > length(state.config_points), do: nil, else: cp_index
+              index ->
+                Logger.warn("goto: #{index}")
+                index
+            end
+          case current_cp_index do
+            nil -> {nil, nil}
+            index ->
+              path_case =
+                Enum.at(state.config_points, index)
+                |> Map.get(:dubins)
+                |> Map.get(:path_cases)
+                |> Enum.at(0)
+              {index, path_case}
           end
-          path_case =
-            Map.get(current_cp, :dubins, %{})
-            |> Map.get(:path_cases, [])
-            |> Enum.at(0)
-          {current_cp, path_case}
-        _other -> {state.current_cp, Enum.at(state.current_cp.dubins.path_cases, temp_case_index)}
+        index ->
+          current_cp = Enum.at(state.config_points, state.current_cp_index)
+          {state.current_cp_index, Enum.at(current_cp.dubins.path_cases, index)}
       end
-    Logger.warn("cp course: #{Common.Utils.Math.rad2deg(current_cp.course)}")
-    Logger.warn("cpc_i: #{current_path_case.case_index}")
-    course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
-    {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, current_path_case)
-    # Send goals to message sorter
-    MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
-    {:noreply, %{state | current_cp: current_cp, current_path_case: current_path_case}}
+
+    # If we have a path_case, then follow it
+    unless is_nil(current_path_case) do
+      Logger.info("cpc_i: #{current_path_case.case_index}")
+      course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, current_path_case)
+      # Send goals to message sorter
+      MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
+    # else
+      # Logger.warn("no path_case to use. Not sending goals commands.")
+    end
+    {:noreply, %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}}
   end
 
   @impl GenServer
-  def handle_call(:get_mission, _from, state) do
-    {:reply, state.current_mission, state}
+  def handle_cast(:begin_orbit, state) do
+    # Create orbit path case, and load it
+    path_case = nil
+    {:noreply, %{state | current_path_case: path_case}}
   end
+
+  # @impl GenServer
+  # def handle_call(:get_mission, _from, state) do
+  #   {:reply, state.current_mission, state}
+  # end
 
   @impl GenServer
   def handle_call(:get_config_points, _from, state) do
@@ -129,14 +145,29 @@ defmodule Navigation.PathManager do
     {:reply, dubins, state}
   end
 
-  @spec load_mission(struct()) :: atom()
-  def load_mission(mission) do
-    GenServer.cast(__MODULE__, {:load_mission, mission})
+  @spec load_mission(struct(), atom()) :: atom()
+  def load_mission(mission, module) do
+    Logger.info("load mission: #{inspect(mission.name)}")
+    Comms.Operator.send_global_msg_to_group(
+      module,
+      {:load_mission, mission},
+      :load_mission,
+      self())
+  end
+
+  @spec load_seatac() :: atom()
+  def load_seatac() do
+    load_mission(Navigation.Path.Mission.get_seatac_mission(), __MODULE__)
   end
 
   @spec move_vehicle(map()) :: atom()
   def move_vehicle(position_velocity) do
     GenServer.cast(__MODULE__, {:move_vehicle, position_velocity})
+  end
+
+  @spec begin_orbit() :: atom()
+  def begin_orbit() do
+    GenServer.cast(__MODULE__, :begin_orbit)
   end
 
   @spec get_mission() :: struct()
@@ -154,7 +185,7 @@ defmodule Navigation.PathManager do
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(current_path_case.zi, position)
     h = current_path_case.q.x*dx + current_path_case.q.y*dy
     h_pass = if (h>=0), do: true, else: false
-    Logger.info("h/h_pass: #{h}/#{h_pass}")
+    # Logger.info("h/h_pass: #{h}/#{h_pass}")
     case current_path_case.case_index do
       0 -> if (h_pass or (current_cp.dubins.skip_case_0 == true)), do: 1, else: 0
       1 -> if h_pass, do: 2, else: 1

@@ -51,7 +51,7 @@ defmodule Configuration.Vehicle.Plane.Navigation do
   @spec get_vehicle_limits() :: map()
   def get_vehicle_limits() do
     %{
-      vehicle_turn_rate: 0.2,
+      vehicle_turn_rate: 0.08,
       vehicle_loiter_speed: 2
     }
   end

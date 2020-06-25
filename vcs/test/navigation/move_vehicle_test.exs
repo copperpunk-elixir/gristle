@@ -22,9 +22,9 @@ defmodule Navigation.MoveVehicleTest do
 
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
-    Navigation.PathManager.load_mission(Navigation.Path.Mission.get_default_mission())
+    current_mission = Navigation.Path.Mission.get_default_mission()
+    Navigation.PathManager.load_mission(current_mission)
     Process.sleep(100)
-    current_mission = Navigation.PathManager.get_mission()
     config_points = Navigation.PathManager.get_config_points()
     wp1 = Enum.at(current_mission.waypoints,0)
 
@@ -139,6 +139,24 @@ defmodule Navigation.MoveVehicleTest do
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course - :math.pi/2),0, max_rad_delta)
-
+    # Perform the next CP
+    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 200, 21)
+    pos_vel = %{pos_vel | position: %{pos_vel.position | latitude: lat, longitude: lon}}
+    Navigation.PathManager.move_vehicle(pos_vel)
+    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 195, 25)
+    pos_vel = %{pos_vel | position: %{pos_vel.position | latitude: lat, longitude: lon}}
+    Navigation.PathManager.move_vehicle(pos_vel)
+    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 80, 30)
+    pos_vel = %{pos_vel | position: %{pos_vel.position | latitude: lat, longitude: lon}}
+    Navigation.PathManager.move_vehicle(pos_vel)
+    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 5, 30)
+    pos_vel = %{pos_vel | position: %{pos_vel.position | latitude: lat, longitude: lon}}
+    Navigation.PathManager.move_vehicle(pos_vel)
+    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 0, 40.00001)
+    pos_vel = %{pos_vel | position: %{pos_vel.position | latitude: lat, longitude: lon}}
+    Navigation.PathManager.move_vehicle(pos_vel)
+    Process.sleep(100)
+    cmds = MessageSorter.Sorter.get_value({:goals, 3})
+    assert Common.Utils.turn_left_or_right_for_correction(cmds.course - :math.pi/2) < 0
   end
 end

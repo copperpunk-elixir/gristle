@@ -70,6 +70,11 @@ defmodule Navigation.Navigator do
     end)
     {pv_cmds, control_state} =
     if Enum.empty?(pv_cmds) do
+      # If we are flying, send orbit command to Path Manager
+      # if true do
+      #   Logger.warn("We are flying and need an orbit. Send request to PathManager.")
+      #   Navigation.PathManager.begin_orbit()
+      # end
       control_state = state.default_pv_cmds_level
       {MessageSorter.Sorter.get_value({:goals, control_state}), control_state}
     else

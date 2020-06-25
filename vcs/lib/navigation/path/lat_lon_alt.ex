@@ -21,7 +21,7 @@ defmodule Navigation.Path.LatLonAlt do
   def print_deg(lla, level \\ :info) do
     lat_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.latitude), 5)
     lon_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.longitude), 5)
-    alt_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.altitude), 1)
+    alt_str = Common.Utils.eftb(lla.altitude, 1)
     print_str = "lat/lon/alt: #{lat_str}/#{lon_str}/#{alt_str}"
     case level do
       :info -> Logger.info(print_str)
