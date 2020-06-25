@@ -26,8 +26,9 @@ defmodule Display.Scenic.Planner do
   """
 
   # ============================================================================
-  def init(_, opts) do
+  def init(args, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
+    Logger.debug("args: #{inspect(args)}")
     {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
@@ -39,7 +40,7 @@ defmodule Display.Scenic.Planner do
       width: vp_width,
       height: vp_height,
     }
-
+    Logger.debug("width/height: #{vp_width}/#{vp_height}")
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
@@ -48,14 +49,15 @@ defmodule Display.Scenic.Planner do
 
   def handle_cast({:load_mission, mission}, state) do
     Logger.warn("planner load mission")
-    Logger.info("state: #{inspect(state)}")
     vehicle_position =
       Map.get(state, :vehicle, %{})
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height)
     Logger.debug("bounding box: #{inspect(bounding_box)}")
-    graph = draw_waypoints(state.graph, origin, mission.waypoints)
+    {config_points, current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
+    graph = draw_waypoints(state.graph, origin, state.height, mission.waypoints)
+    |> draw_path(origin, state.height, config_points)
     state = Map.put(state, :mission, mission)
     |> Map.put(:origin, origin)
     |> Map.put(:graph, graph)
@@ -127,36 +129,49 @@ defmodule Display.Scenic.Planner do
     else
       {min_lon, max_lon}
     end
-    {min_lat, max_lat, min_lon, max_lon}
+    # {min_lat, max_lat, min_lon, max_lon}
+    {Navigation.Path.LatLonAlt.new(min_lat, min_lon), Navigation.Path.LatLonAlt.new(max_lat, max_lon)}
   end
 
   @spec calculate_origin(tuple(), integer(), integer()) :: tuple()
   def calculate_origin(bounding_box, vp_width, vp_height) do
-    {min_lat, max_lat, min_lon, max_lon} = bounding_box
+    # {min_lat, max_lat, min_lon, max_lon} = bounding_box
+    {bottom_left, top_right} = bounding_box
+    Navigation.Path.LatLonAlt.print_deg(bottom_left)
+    Navigation.Path.LatLonAlt.print_deg(top_right)
     aspect_ratio = vp_width/vp_height
-    dx_dist_from_lat = max_lat-min_lat
-    dy_dist_from_lon = (max_lon-min_lon)/:math.sqrt(2)
-    gap_x = 1/dx_dist_from_lat
-    gap_y = aspect_ratio/dy_dist_from_lon
-    margin = 0.2
+    Logger.warn("ar: #{aspect_ratio}")
+    # dx_dist_from_lat = max_lat-min_lat
+    # dy_dist_from_lon = (max_lon-min_lon)/:math.sqrt(2)
+    {dx_dist, dy_dist} = Common.Utils.Location.dx_dy_between_points(bottom_left, top_right)
+    Logger.warn("dx_dist/dy_dist: #{dx_dist}/#{dy_dist}")
+    gap_x = 1/dx_dist
+    gap_y = aspect_ratio/dy_dist
+    Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
+    margin = 0.5
     {origin_lat, origin_lon, total_x, total_y} =
     if (gap_x < gap_y) do
-      total_dist_x = (1+2*margin)*dx_dist_from_lat
-      origin_x = min_lat - margin*dx_dist_from_lat
-      total_dist_y = aspect_ratio*total_dist_x*:math.sqrt(2)
-      margin_y = (total_dist_y - dy_dist_from_lon*:math.sqrt(2))/2
-      origin_y = min_lon - margin_y
-      {origin_x, origin_y, total_dist_x, total_dist_y}
+      total_dist_x = (1+2*margin)*dx_dist
+      total_dist_y = aspect_ratio*total_dist_x#*:math.sqrt(2)
+      margin_x = margin*dx_dist
+      margin_y = (total_dist_y - dy_dist)/2
+      {origin_lat, origin_lon} = Common.Utils.Location.lat_lon_from_point(bottom_left, -margin_x, -margin_y)
+      {top_corner_lat, top_corner_lon} = Common.Utils.Location.lat_lon_from_point(top_right, margin_x, margin_y)
+      {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
+      {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
     else
-      total_dist_y = (1+2*margin)*dy_dist_from_lon*:math.sqrt(2)
-      origin_y = min_lon - margin*dy_dist_from_lon*:math.sqrt(2)
+      margin_y = margin*dy_dist
+      total_dist_y = dy_dist + 2*margin##*:math.sqrt(2)
       total_dist_x = total_dist_y/aspect_ratio
-      margin_x = (total_dist_x - dx_dist_from_lat)/2
-      origin_x = min_lat - margin_x
-      {origin_x, origin_y, total_dist_x, total_dist_y}
+      margin_x = (total_dist_x - dx_dist)/2
+      {origin_lat, origin_lon} = Common.Utils.Location.lat_lon_from_point(bottom_left, -margin_x, -margin_y)
+      {top_corner_lat, top_corner_lon} = Common.Utils.Location.lat_lon_from_point(top_right, margin_x, margin_y)
+      {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
+      {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
     end
     dx_lat = vp_height/total_x
     dy_lon = vp_width/total_y
+    Logger.warn("dx_lat/dy_lon: #{dx_lat}/#{dy_lon}")
     Display.Scenic.PlannerOrigin.new_origin(origin_lat, origin_lon, dx_lat, dy_lon)
   end
 
@@ -167,13 +182,60 @@ defmodule Display.Scenic.Planner do
   #   bounding_box = {lat - dLat, lat + dLat, lon - dLon, lon + dLon}
   # end
 
-  @spec draw_waypoints(map(), struct(), list()) :: map()
-  def draw_waypoints(graph, origin, waypoints) do
+  @spec draw_waypoints(map(), struct(),float(), list()) :: map()
+  def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
-      {y_plot, x_plot} = Display.Scenic.PlannerOrigin.get_xy(origin, wp.latitude, wp.longitude)
-      Logger.info("#{wp.name} xy: #{x_plot}/#{y_plot}")
-      circle(acc, 10, fill: :red, translate: {x_plot, 600-y_plot} )
-      |> text(wp.name, translate: {x_plot, 600-y_plot})
+      wp_plot = get_translate(wp, origin, height)
+      Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
+      # Navigation.Path.LatLonAlt.print_deg(wp, :warn)
+      circle(acc, 10, fill: :blue, translate: wp_plot)
+      |> text(wp.name, translate: wp_plot)
+    end)
+  end
+
+  @spec draw_path(map(), struct(), float(), list()) :: map()
+  def draw_path(graph, origin, height, config_points) do
+    Enum.reduce(config_points, graph, fn(cp, acc) ->
+      #Arc
+      # Line
+      cs_arc_start_angle =  (Common.Utils.angle_between_points(cp.cs, cp.pos) - :math.pi/2) |> Common.Utils.constrain_angle_to_compass()
+      cs_arc_finish_angle = (Common.Utils.angle_between_points(cp.cs, cp.z1) - :math.pi/2) |> Common.Utils.constrain_angle_to_compass()
+      {cs_arc_start_angle, cs_arc_finish_angle} = correct_arc_angles(cs_arc_start_angle, cs_arc_finish_angle, cp.start_direction)
+      # if (cs_arc_finish_angle - cs_arc_start_angle < ) do
+      # end
+      ce_arc_start_angle =  Common.Utils.angle_between_points(cp.ce, cp.z2) - :math.pi/2 |> Common.Utils.constrain_angle_to_compass()
+      ce_arc_finish_angle = Common.Utils.angle_between_points(cp.ce, cp.z3) - :math.pi/2 |> Common.Utils.constrain_angle_to_compass()
+      {ce_arc_start_angle, ce_arc_finish_angle} = correct_arc_angles(ce_arc_start_angle, ce_arc_finish_angle, cp.end_direction)
+        # Common.Utils.constrain_angle_to_compass(:math.atan2(cp.q1.y, cp.q1.x) - cp.start_direction*:math.pi/2)
+      Logger.debug("q1: #{inspect(cp.q1)}")
+      Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(cs_arc_start_angle)}/#{Common.Utils.Math.rad2deg(cs_arc_finish_angle)}")
+      Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(ce_arc_start_angle)}/#{Common.Utils.Math.rad2deg(ce_arc_finish_angle)}")
+
+      radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.z1) |> Common.Utils.Math.hypot() |> round()
+      radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
+      Logger.debug("radius_cs: #{radius_cs}")
+      Logger.debug("radius_ce: #{radius_ce}")
+      line_start = get_translate(cp.z1, origin, height)
+      line_end = get_translate(cp.z2, origin, height)
+      cs = get_translate(cp.cs, origin, height)
+      ce = get_translate(cp.ce, origin, height)
+      z0 = get_translate(cp.pos, origin, height)
+      z1 = get_translate(cp.z1, origin, height)
+      z2 = get_translate(cp.z2, origin, height)
+      # z3 = get_translate(cp.ce, origin, height)
+      # Logger.debug("wp/z1/z2")
+      Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
+      Navigation.Path.LatLonAlt.print_deg(cp.z1)
+      Navigation.Path.LatLonAlt.print_deg(cp.z2)
+      line(acc, {line_start, line_end}, stroke: {4, :white})
+      |> circle(3, stroke: {2, :green}, translate: cs )
+      |> circle(5, stroke: {2, :red}, translate: ce )
+      # |> line({cs, z0}, stroke: {2, :green})
+      # |> line({cs, z1}, stroke: {2, :red})
+      # |> line({ce, z2}, stroke: {2, :green})
+      |> arc({radius_ce, cs_arc_start_angle, cs_arc_finish_angle}, stroke: {3, :green}, translate: cs )
+      |> arc({radius_cs, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {3, :red}, translate: ce )
+      #Arc
     end)
   end
 
@@ -182,6 +244,38 @@ defmodule Display.Scenic.Planner do
     {y_plot,x_plot} = Display.Scenic.PlannerOrigin.get_xy(origin, vehicle.position.latitude, vehicle.position.longitude)
     vehicle_size = ceil(vehicle.speed/10) + 10
     Display.Scenic.Gcs.Utils.draw_arrow(graph, x_plot, 600-y_plot, vehicle.yaw, vehicle_size, :vehicle)
+  end
+
+  @spec get_translate(struct(), tuple(), float()) :: tuple()
+  def get_translate(point, origin, vp_height) do
+    {y, x} = Display.Scenic.PlannerOrigin.get_xy(origin, point.latitude, point.longitude)
+    {x, vp_height - y}
+  end
+
+  @spec correct_arc_angles(float(), float(), integer()) :: tuple()
+  def correct_arc_angles(start, finish, direction) do
+    Logger.debug("start/finish initial: #{Common.Utils.Math.rad2deg(start)}/#{Common.Utils.Math.rad2deg(finish)}")
+    arc = Common.Utils.turn_left_or_right_for_correction(start - finish) |> abs()
+    if (arc < Common.Utils.Math.deg2rad(2)) do
+      {0,0}
+    else
+      if direction > 0 do
+        # Turning right
+        if(finish < start) do
+          {start, finish+2.0*:math.pi()}
+        else
+          {start, finish}
+        end
+      else
+        cs_start = finish
+        cs_finish = start
+        if (cs_finish < cs_start) do
+          {cs_start, cs_finish + 2.0*:math.pi()}
+        else
+          {cs_start, cs_finish}
+        end
+      end
+    end
   end
 
 end
