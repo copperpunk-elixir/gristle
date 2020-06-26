@@ -23,12 +23,8 @@ defmodule Display.Scenic.PlannerOrigin do
 
   @spec get_dx_dy(struct(), struct(), struct()) :: tuple()
   def get_dx_dy(origin, point1, point2) do
-    {dx,dy} = Common.Utils.Location.dx_dy_between_points(point1,point2)
-    dist = Common.Utils.Math.hypot(dx,dy)
-    Logger.info("po: dx/dy: #{dx}/#{dy}/#{dist}")
     x = (point2.latitude - point1.latitude)*origin.dx_lat
     y = (point2.longitude - point1.longitude)*origin.dy_lon
-    Logger.info("plannerorigin x/y: #{x}/#{y}")
     {x, y}
   end
 end

@@ -25,4 +25,9 @@ defmodule Navigation.Path.Vector do
       z: -vector.z
     }
   end
+
+  @spec to_string(struct()) :: binary()
+  def to_string(vector, num_digits \\ 3) do
+    "#{Common.Utils.eftb(vector.x, num_digits)}/#{Common.Utils.eftb(vector.y, num_digits)}/#{Common.Utils.eftb(vector.z, num_digits)}"
+  end
 end

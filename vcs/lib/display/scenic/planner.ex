@@ -18,6 +18,7 @@ defmodule Display.Scenic.Planner do
   # @height 50
   # @labels {"", "", ""}
   @rect_border 6
+  @primitive_id :mission_primitives
 
   @moduledoc """
   This version of `Sensor` illustrates using spec functions to
@@ -27,8 +28,6 @@ defmodule Display.Scenic.Planner do
 
   # ============================================================================
   def init(args, opts) do
-    Logger.debug("Sensor.init: #{inspect(opts)}")
-    Logger.debug("args: #{inspect(args)}")
     {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
@@ -40,7 +39,6 @@ defmodule Display.Scenic.Planner do
       width: vp_width,
       height: vp_height,
     }
-    Logger.debug("width/height: #{vp_width}/#{vp_height}")
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
@@ -54,10 +52,10 @@ defmodule Display.Scenic.Planner do
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height)
-    Logger.debug("bounding box: #{inspect(bounding_box)}")
     {config_points, current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
     graph =
-      Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
+      # Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
+      Scenic.Graph.delete(state.graph, @primitive_id)
       |> draw_waypoints(origin, state.height, mission.waypoints)
       |> draw_path(origin, state.height, config_points)
     state = Map.put(state, :mission, mission)
@@ -78,7 +76,7 @@ defmodule Display.Scenic.Planner do
     else
       state.origin
     end
-    graph = draw_vehicle(state.graph, origin, vehicle)
+    graph = draw_vehicle(state.graph, vehicle, origin, state.height)
     state =
       Map.put(state, :vehicle, vehicle)
       |> Map.put(:origin, origin)
@@ -142,18 +140,16 @@ defmodule Display.Scenic.Planner do
     Navigation.Path.LatLonAlt.print_deg(bottom_left)
     Navigation.Path.LatLonAlt.print_deg(top_right)
     aspect_ratio = vp_width/vp_height
-    Logger.warn("ar: #{aspect_ratio}")
     # dx_dist_from_lat = max_lat-min_lat
     # dy_dist_from_lon = (max_lon-min_lon)/:math.sqrt(2)
     {dx_dist, dy_dist} = Common.Utils.Location.dx_dy_between_points(bottom_left, top_right)
-    Logger.warn("dx_dist/dy_dist: #{dx_dist}/#{dy_dist}")
+    # Logger.warn("dx_dist/dy_dist: #{dx_dist}/#{dy_dist}")
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
-    Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 0.1
+    # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
+    margin = 0.3
     {origin_lat, origin_lon, total_x, total_y} =
     if (gap_x < gap_y) do
-      Logger.error("gap_x < gap_y")
       total_dist_x = (1+2*margin)*dx_dist
       total_dist_y = aspect_ratio*total_dist_x#*:math.sqrt(2)
       margin_x = margin*dx_dist
@@ -163,7 +159,6 @@ defmodule Display.Scenic.Planner do
       {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
       {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
     else
-      Logger.error("gap_x > gap_y")
       total_dist_y = (1 + 2*margin) * dy_dist##*:math.sqrt(2)
       total_dist_x = total_dist_y/aspect_ratio
       margin_y = margin*dy_dist
@@ -175,8 +170,8 @@ defmodule Display.Scenic.Planner do
     end
     dx_lat = vp_height/total_x
     dy_lon = vp_width/total_y
-    Logger.warn("dx_lat/dy_lon: #{dx_lat}/#{dy_lon}")
-    Logger.warn("dx/dy ratio: #{dx_lat/dy_lon}")
+    # Logger.warn("dx_lat/dy_lon: #{dx_lat}/#{dy_lon}")
+    # Logger.warn("dx/dy ratio: #{dx_lat/dy_lon}")
     Display.Scenic.PlannerOrigin.new_origin(origin_lat, origin_lon, dx_lat, dy_lon)
   end
 
@@ -193,8 +188,8 @@ defmodule Display.Scenic.Planner do
       wp_plot = get_translate(wp, origin, height)
       Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
       # Navigation.Path.LatLonAlt.print_deg(wp, :warn)
-      circle(acc, 10, fill: :blue, translate: wp_plot)
-      |> text(wp.name, translate: wp_plot)
+      circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
+      |> text(wp.name, translate: wp_plot, id: @primitive_id)
     end)
   end
 
@@ -213,47 +208,48 @@ defmodule Display.Scenic.Planner do
       ce_arc_finish_angle = Common.Utils.angle_between_points(cp.ce, cp.z3) - :math.pi/2 |> Common.Utils.constrain_angle_to_compass()
       {ce_arc_start_angle, ce_arc_finish_angle} = correct_arc_angles(ce_arc_start_angle, ce_arc_finish_angle, cp.end_direction)
         # Common.Utils.constrain_angle_to_compass(:math.atan2(cp.q1.y, cp.q1.x) - cp.start_direction*:math.pi/2)
-      Logger.debug("q1: #{inspect(cp.q1)}")
-      Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
-      Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
-      Logger.debug("cs/ce loc:")
-      Navigation.Path.LatLonAlt.print_deg(cp.cs)
-      Navigation.Path.LatLonAlt.print_deg(cp.ce)
+      # Logger.debug("q1: #{inspect(cp.q1)}")
+      # Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
+      # Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
+      # Logger.debug("cs/ce loc:")
+      # Navigation.Path.LatLonAlt.print_deg(cp.cs)
+      # Navigation.Path.LatLonAlt.print_deg(cp.ce)
       radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.pos) |> Common.Utils.Math.hypot() |> round()
       radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
-      Logger.debug("radius_cs: #{radius_cs}")
-      Logger.debug("radius_ce: #{radius_ce}")
+      # Logger.debug("radius_cs: #{radius_cs}")
+      # Logger.debug("radius_ce: #{radius_ce}")
       # course_line_end = Common.Utils.Location() get_translate()
       line_start = get_translate(cp.z1, origin, height)
       line_end = get_translate(cp.z2, origin, height)
       cs = get_translate(cp.cs, origin, height)
       ce = get_translate(cp.ce, origin, height)
-      z0 = get_translate(cp.pos, origin, height)
-      z1 = get_translate(cp.z1, origin, height)
-      z2 = get_translate(cp.z2, origin, height)
+      # z0 = get_translate(cp.pos, origin, height)
+      # z1 = get_translate(cp.z1, origin, height)
+      # z2 = get_translate(cp.z2, origin, height)
       # z3 = get_translate(cp.ce, origin, height)
       # Logger.debug("wp/z1/z2")
       # Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
       # Navigation.Path.LatLonAlt.print_deg(cp.z1)
       # Navigation.Path.LatLonAlt.print_deg(cp.z2)
-      line(acc, {line_start, line_end}, stroke: {line_width, :white})
+      line(acc, {line_start, line_end}, stroke: {line_width, :white}, id: @primitive_id)
       # |> line()
-      |> circle(3, stroke: {2, :green}, translate: cs )
-      |> circle(5, stroke: {2, :red}, translate: ce )
+      |> circle(3, stroke: {2, :green}, translate: cs , id: @primitive_id)
+      |> circle(5, stroke: {2, :red}, translate: ce , id: @primitive_id)
       # |> line({cs, z0}, stroke: {2, :green})
       # |> line({cs, z1}, stroke: {2, :red})
       # |> line({ce, z2}, stroke: {2, :green})
-      |> arc({radius_ce, cs_arc_start_angle, cs_arc_finish_angle}, stroke: {line_width, :green}, translate: cs )
-      |> arc({radius_cs, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {line_width, :red}, translate: ce )
+      |> arc({radius_cs, cs_arc_start_angle, cs_arc_finish_angle}, stroke: {line_width, :green}, translate: cs , id: @primitive_id)
+      |> arc({radius_ce, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {line_width, :red}, translate: ce , id: @primitive_id)
       #Arc
     end)
   end
 
-  @spec draw_vehicle(map(), struct(), map()) :: map()
-  def draw_vehicle(graph, origin, vehicle) do
+  @spec draw_vehicle(map(), struct(), struct(), float()) :: map()
+  def draw_vehicle(graph, vehicle, origin, vp_height) do
     {y_plot,x_plot} = Display.Scenic.PlannerOrigin.get_xy(origin, vehicle.position.latitude, vehicle.position.longitude)
+    # Logger.debug("xy_plot: #{x_plot}/#{y_plot}")
     vehicle_size = ceil(vehicle.speed/10) + 10
-    Display.Scenic.Gcs.Utils.draw_arrow(graph, x_plot, 600-y_plot, vehicle.yaw, vehicle_size, :vehicle)
+    Display.Scenic.Gcs.Utils.draw_arrow(graph, x_plot, vp_height-y_plot, vehicle.yaw, vehicle_size, :vehicle)
   end
 
   @spec get_translate(struct(), tuple(), float()) :: tuple()
@@ -264,7 +260,7 @@ defmodule Display.Scenic.Planner do
 
   @spec correct_arc_angles(float(), float(), integer()) :: tuple()
   def correct_arc_angles(start, finish, direction) do
-    Logger.debug("start/finish initial: #{Common.Utils.Math.rad2deg(start)}/#{Common.Utils.Math.rad2deg(finish)}")
+    # Logger.debug("start/finish initial: #{Common.Utils.Math.rad2deg(start)}/#{Common.Utils.Math.rad2deg(finish)}")
     arc = Common.Utils.turn_left_or_right_for_correction(start - finish) |> abs()
     if (arc < Common.Utils.Math.deg2rad(2)) do
       {0,0}

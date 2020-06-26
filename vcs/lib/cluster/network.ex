@@ -79,7 +79,7 @@ defmodule Cluster.Network do
 
   @impl GenServer
   def handle_info(:broadcast_ip_loop, state) do
-    Logger.info("node list: #{inspect(Node.list)}")
+    # Logger.info("node list: #{inspect(Node.list)}")
     broadcast_ip_loop_timer =
     if Node.list == [] and state.socket != nil do
       Cluster.Network.NodeConnection.broadcast_node(state.socket, state.ip_address, state.node_name_with_domain, state.dest_port)

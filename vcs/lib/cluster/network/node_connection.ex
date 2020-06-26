@@ -26,29 +26,29 @@ defmodule Cluster.Network.NodeConnection do
 
   @spec broadcast_node(any(), tuple(), binary(), integer()) :: atom()
   def broadcast_node(socket, ip_address, node_name_with_domain, dest_port) do
-    Logger.debug("Broadcast")
-    Logger.debug("host: #{inspect(ip_address)}")
+    # Logger.debug("Broadcast")
+    # Logger.debug("host: #{inspect(ip_address)}")
     broadcast_address = {elem(ip_address,0), elem(ip_address,1), 7, 255}
       # put_elem(ip_address,3,255)
-    Logger.debug("address: #{inspect(broadcast_address)}")
+    # Logger.debug("address: #{inspect(broadcast_address)}")
     :gen_udp.send(socket, broadcast_address, dest_port, "connect:" <> node_name_with_domain)
   end
 
   @spec process_udp_message(any(), tuple(), integer(), binary(), tuple(), integer()) :: binary()
   def process_udp_message(socket, src_ip, src_port, msg, dest_ip, dest_port) do
-    Logger.debug("msg rx with socket #{inspect(socket)} from #{inspect(src_ip)} on port #{src_port}: #{msg}")
+    # Logger.debug("msg rx with socket #{inspect(socket)} from #{inspect(src_ip)} on port #{src_port}: #{msg}")
     msg = to_string(msg)
     if (String.contains?(msg,":")) do
       [msg_type, node] = String.split(msg,":")
       case msg_type do
         "connect" ->
-          Logger.warn("node #{node} wants to connect")
+          # Logger.warn("node #{node} wants to connect")
           if (src_ip != dest_ip) or (src_port != dest_port) do
             Logger.debug("Connect to node #{node}")
             Node.connect(String.to_atom(node))
             node
           else
-            Logger.warn("This is us. Do not connect")
+            # Logger.warn("This is us. Do not connect")
             nil
           end
         _unknown ->
