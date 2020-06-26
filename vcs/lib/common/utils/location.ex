@@ -81,7 +81,7 @@ defmodule Common.Utils.Location do
   def lat_lon_from_point_with_distance(lat_lon_alt, distance, bearing) do
     dx = distance*:math.cos(bearing)
     dy = distance*:math.sin(bearing)
-    Logger.info("dx/dy: #{dx}/#{dy}")
+    # Logger.info("dx/dy: #{dx}/#{dy}")
     lat_lon_from_point(lat_lon_alt.latitude, lat_lon_alt.longitude, dx, dy)
   end
 

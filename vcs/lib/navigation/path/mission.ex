@@ -104,7 +104,7 @@ defmodule Navigation.Path.Mission do
         dist = :rand.uniform()*wp_dist_range + min_wp_dist
         bearing = :rand.uniform()*2*:math.pi
         course = :rand.uniform()*2*:math.pi
-        speed = :rand.uniform*(max_speed-min_speed) + min_speed
+        speed = min_speed#:rand.uniform*(max_speed-min_speed) + min_speed
         Navigation.Path.LatLonAlt.print_deg(last_wp)
         Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         {lat, lon} = Common.Utils.Location.lat_lon_from_point_with_distance(last_wp, dist, bearing)

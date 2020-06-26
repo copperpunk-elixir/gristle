@@ -266,6 +266,10 @@ defmodule Navigation.PathManager do
       theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
       Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
+      Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
+      Logger.debug("start/end center")
+      Navigation.Path.LatLonAlt.print_deg(cp.cs)
+      Navigation.Path.LatLonAlt.print_deg(cp.ce)
       cp = %{cp |
              start_radius: current_cp.start_radius,
              end_radius: next_cp.start_radius,

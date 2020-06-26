@@ -27,8 +27,9 @@ defmodule Navigation.DisplayDubinsPathTest do
 
     Enum.each(1..10000, fn _x ->
       loop = if (:rand.uniform(2) == 1), do: true, else: false
-      current_mission = Navigation.Path.Mission.get_random_mission(starting_wp, :rand.uniform(4) + 2, loop)
+      current_mission = Navigation.Path.Mission.get_random_mission(starting_wp, :rand.uniform(4)*0 + 4, false)
       Navigation.PathManager.load_mission(current_mission, __MODULE__)
+      Process.sleep(200)
       IO.gets "ready for next mission?"
     end)
     # config_points = Navigation.PathManager.get_config_points()

@@ -153,6 +153,7 @@ defmodule Display.Scenic.Planner do
     margin = 0.1
     {origin_lat, origin_lon, total_x, total_y} =
     if (gap_x < gap_y) do
+      Logger.error("gap_x < gap_y")
       total_dist_x = (1+2*margin)*dx_dist
       total_dist_y = aspect_ratio*total_dist_x#*:math.sqrt(2)
       margin_x = margin*dx_dist
@@ -162,9 +163,10 @@ defmodule Display.Scenic.Planner do
       {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
       {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
     else
-      margin_y = margin*dy_dist
-      total_dist_y = dy_dist + 2*margin##*:math.sqrt(2)
+      Logger.error("gap_x > gap_y")
+      total_dist_y = (1 + 2*margin) * dy_dist##*:math.sqrt(2)
       total_dist_x = total_dist_y/aspect_ratio
+      margin_y = margin*dy_dist
       margin_x = (total_dist_x - dx_dist)/2
       {origin_lat, origin_lon} = Common.Utils.Location.lat_lon_from_point(bottom_left, -margin_x, -margin_y)
       {top_corner_lat, top_corner_lon} = Common.Utils.Location.lat_lon_from_point(top_right, margin_x, margin_y)
@@ -174,6 +176,7 @@ defmodule Display.Scenic.Planner do
     dx_lat = vp_height/total_x
     dy_lon = vp_width/total_y
     Logger.warn("dx_lat/dy_lon: #{dx_lat}/#{dy_lon}")
+    Logger.warn("dx/dy ratio: #{dx_lat/dy_lon}")
     Display.Scenic.PlannerOrigin.new_origin(origin_lat, origin_lon, dx_lat, dy_lon)
   end
 
@@ -211,10 +214,12 @@ defmodule Display.Scenic.Planner do
       {ce_arc_start_angle, ce_arc_finish_angle} = correct_arc_angles(ce_arc_start_angle, ce_arc_finish_angle, cp.end_direction)
         # Common.Utils.constrain_angle_to_compass(:math.atan2(cp.q1.y, cp.q1.x) - cp.start_direction*:math.pi/2)
       Logger.debug("q1: #{inspect(cp.q1)}")
-      Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(cs_arc_start_angle)}/#{Common.Utils.Math.rad2deg(cs_arc_finish_angle)}")
-      Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(ce_arc_start_angle)}/#{Common.Utils.Math.rad2deg(ce_arc_finish_angle)}")
-
-      radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.z1) |> Common.Utils.Math.hypot() |> round()
+      Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
+      Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
+      Logger.debug("cs/ce loc:")
+      Navigation.Path.LatLonAlt.print_deg(cp.cs)
+      Navigation.Path.LatLonAlt.print_deg(cp.ce)
+      radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.pos) |> Common.Utils.Math.hypot() |> round()
       radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
       Logger.debug("radius_cs: #{radius_cs}")
       Logger.debug("radius_ce: #{radius_ce}")
@@ -228,9 +233,9 @@ defmodule Display.Scenic.Planner do
       z2 = get_translate(cp.z2, origin, height)
       # z3 = get_translate(cp.ce, origin, height)
       # Logger.debug("wp/z1/z2")
-      Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
-      Navigation.Path.LatLonAlt.print_deg(cp.z1)
-      Navigation.Path.LatLonAlt.print_deg(cp.z2)
+      # Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
+      # Navigation.Path.LatLonAlt.print_deg(cp.z1)
+      # Navigation.Path.LatLonAlt.print_deg(cp.z2)
       line(acc, {line_start, line_end}, stroke: {line_width, :white})
       # |> line()
       |> circle(3, stroke: {2, :green}, translate: cs )
