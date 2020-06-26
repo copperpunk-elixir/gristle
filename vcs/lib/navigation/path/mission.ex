@@ -85,5 +85,34 @@ defmodule Navigation.Path.Mission do
     Navigation.Path.Mission.new_mission("SeaTac", [wp1, wp2, wp3, wp4, wp5])
   end
 
-  # @spec get_random_mission(integer(), boolean()) :: struct()
+  @spec get_random_mission(struct(), integer(), boolean()) :: struct()
+  def get_random_mission(starting_lla, num_wps, loop) do
+    starting_course = :rand.uniform()*2*:math.pi
+    max_speed = 50
+    min_speed = 50
+    starting_speed = :rand.uniform*(max_speed-min_speed) + min_speed
+    starting_wp = Navigation.Path.Waypoint.new(
+      starting_lla.latitude,
+      starting_lla.longitude,
+      starting_speed, starting_course,
+      starting_lla.altitude,"wp1")
+    min_wp_dist = 5000
+    wp_dist_range = 10000
+    wps =
+      Enum.reduce(2..num_wps, [starting_wp], fn (index, acc) ->
+        last_wp = hd(acc)
+        dist = :rand.uniform()*wp_dist_range + min_wp_dist
+        bearing = :rand.uniform()*2*:math.pi
+        course = :rand.uniform()*2*:math.pi
+        speed = :rand.uniform*(max_speed-min_speed) + min_speed
+        Navigation.Path.LatLonAlt.print_deg(last_wp)
+        Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
+        {lat, lon} = Common.Utils.Location.lat_lon_from_point_with_distance(last_wp, dist, bearing)
+        new_wp = Navigation.Path.Waypoint.new(lat, lon, speed, course, starting_lla.altitude, "wp#{index}")
+        [new_wp | acc]
+      end)
+    wps = if loop, do: [starting_wp | wps], else: wps
+    wps = Enum.reverse(wps)
+    Navigation.Path.Mission.new_mission("random", wps)
+  end
 end

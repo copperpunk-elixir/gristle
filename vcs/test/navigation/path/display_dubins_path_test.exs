@@ -16,15 +16,21 @@ defmodule Navigation.DisplayDubinsPathTest do
     {:ok, [config: nav_config.path_manager]}
   end
 
-  test "Move Vehicle Test", context do
+  test "Display Dubins Test", context do
     max_pos_delta = 0.00001
     max_vector_delta = 0.001
     max_rad_delta = 0.0001
     path_manager_config = context[:config]
 
-    current_mission = Navigation.Path.Mission.get_seatac_mission()
-    Navigation.PathManager.load_mission(current_mission, __MODULE__)
-    Process.sleep(100)
+    seatac_mission = Navigation.Path.Mission.get_seatac_mission()
+    starting_wp = seatac_mission.waypoints |> Enum.at(0)
+
+    Enum.each(1..10000, fn _x ->
+      loop = if (:rand.uniform(2) == 1), do: true, else: false
+      current_mission = Navigation.Path.Mission.get_random_mission(starting_wp, :rand.uniform(4) + 2, loop)
+      Navigation.PathManager.load_mission(current_mission, __MODULE__)
+      IO.gets "ready for next mission?"
+    end)
     # config_points = Navigation.PathManager.get_config_points()
     # wp1 = Enum.at(current_mission.waypoints,0)
     # dubins = Navigation.PathManager.get_dubins_for_cp(0)

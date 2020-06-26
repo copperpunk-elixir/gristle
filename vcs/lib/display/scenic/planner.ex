@@ -56,8 +56,10 @@ defmodule Display.Scenic.Planner do
     origin = calculate_origin(bounding_box, state.width, state.height)
     Logger.debug("bounding box: #{inspect(bounding_box)}")
     {config_points, current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
-    graph = draw_waypoints(state.graph, origin, state.height, mission.waypoints)
-    |> draw_path(origin, state.height, config_points)
+    graph =
+      Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
+      |> draw_waypoints(origin, state.height, mission.waypoints)
+      |> draw_path(origin, state.height, config_points)
     state = Map.put(state, :mission, mission)
     |> Map.put(:origin, origin)
     |> Map.put(:graph, graph)
@@ -148,7 +150,7 @@ defmodule Display.Scenic.Planner do
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
     Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 0.5
+    margin = 0.1
     {origin_lat, origin_lon, total_x, total_y} =
     if (gap_x < gap_y) do
       total_dist_x = (1+2*margin)*dx_dist
@@ -195,6 +197,7 @@ defmodule Display.Scenic.Planner do
 
   @spec draw_path(map(), struct(), float(), list()) :: map()
   def draw_path(graph, origin, height, config_points) do
+    line_width = 5
     Enum.reduce(config_points, graph, fn(cp, acc) ->
       #Arc
       # Line
@@ -215,6 +218,7 @@ defmodule Display.Scenic.Planner do
       radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
       Logger.debug("radius_cs: #{radius_cs}")
       Logger.debug("radius_ce: #{radius_ce}")
+      # course_line_end = Common.Utils.Location() get_translate()
       line_start = get_translate(cp.z1, origin, height)
       line_end = get_translate(cp.z2, origin, height)
       cs = get_translate(cp.cs, origin, height)
@@ -227,14 +231,15 @@ defmodule Display.Scenic.Planner do
       Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
       Navigation.Path.LatLonAlt.print_deg(cp.z1)
       Navigation.Path.LatLonAlt.print_deg(cp.z2)
-      line(acc, {line_start, line_end}, stroke: {4, :white})
+      line(acc, {line_start, line_end}, stroke: {line_width, :white})
+      # |> line()
       |> circle(3, stroke: {2, :green}, translate: cs )
       |> circle(5, stroke: {2, :red}, translate: ce )
       # |> line({cs, z0}, stroke: {2, :green})
       # |> line({cs, z1}, stroke: {2, :red})
       # |> line({ce, z2}, stroke: {2, :green})
-      |> arc({radius_ce, cs_arc_start_angle, cs_arc_finish_angle}, stroke: {3, :green}, translate: cs )
-      |> arc({radius_cs, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {3, :red}, translate: ce )
+      |> arc({radius_ce, cs_arc_start_angle, cs_arc_finish_angle}, stroke: {line_width, :green}, translate: cs )
+      |> arc({radius_cs, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {line_width, :red}, translate: ce )
       #Arc
     end)
   end
