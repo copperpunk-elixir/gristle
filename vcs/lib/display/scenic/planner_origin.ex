@@ -20,4 +20,11 @@ defmodule Display.Scenic.PlannerOrigin do
     y = (lon - origin.lon)*origin.dy_lon
     {x, y}
   end
+
+  @spec get_dx_dy(struct(), struct(), struct()) :: tuple()
+  def get_dx_dy(origin, point1, point2) do
+    x = (point2.latitude - point1.latitude)*origin.dx_lat
+    y = (point2.longitude - point1.longitude)*origin.dy_lon
+    {x, y}
+  end
 end

@@ -58,7 +58,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, position_velocity}, position_velocity, _dt}, state) do
+  def handle_cast({{:pv_values, :position_velocity}, position_velocity, dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
@@ -66,7 +66,7 @@ defmodule Navigation.PathManager do
       case state.current_cp_index do
         nil -> -1
         index ->
-          Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
+          # Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
           current_cp = Enum.at(state.config_points, index)
           check_for_path_case_completion(position_velocity.position, current_cp, state.current_path_case)
       end
@@ -75,7 +75,8 @@ defmodule Navigation.PathManager do
         -1 ->
           # Logger.error("No config points. Follow path_case if it exists")
           {nil, state.current_path_case}
-        0 ->
+        5 ->
+          # Completed this control point
           # if there is a goto, then go to it
           current_cp = Enum.at(state.config_points, state.current_cp_index)
           current_cp_index =
@@ -83,7 +84,7 @@ defmodule Navigation.PathManager do
               nil ->
                 Logger.warn("no goto, move to cp_index: #{state.current_cp_index + 1}")
                 cp_index = state.current_cp_index + 1
-                if cp_index > length(state.config_points), do: nil, else: cp_index
+                if cp_index >= length(state.config_points), do: nil, else: cp_index
               index ->
                 Logger.warn("goto: #{index}")
                 index
@@ -105,9 +106,12 @@ defmodule Navigation.PathManager do
 
     # If we have a path_case, then follow it
     unless is_nil(current_path_case) do
-      Logger.info("cpc_i: #{current_path_case.case_index}")
+      # Logger.info("cpc_i: #{current_path_case.case_index}")
       course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
-      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, current_path_case)
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, dt, current_path_case)
+      Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
+      # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
+      # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
     # else
@@ -160,6 +164,11 @@ defmodule Navigation.PathManager do
     load_mission(Navigation.Path.Mission.get_seatac_mission(), __MODULE__)
   end
 
+  @spec load_random_seatac() :: atom()
+  def load_random_seatac() do
+    load_mission(Navigation.Path.Mission.get_random_seatac_mission(), __MODULE__)
+  end
+
   @spec move_vehicle(map()) :: atom()
   def move_vehicle(position_velocity) do
     GenServer.cast(__MODULE__, {:move_vehicle, position_velocity})
@@ -196,7 +205,7 @@ defmodule Navigation.PathManager do
           2
         end
       3 -> if h_pass, do: 4, else: 3
-      4 -> if h_pass, do: 0, else: 4
+      4 -> if h_pass, do: 5, else: 4
     end
   end
 
@@ -206,7 +215,7 @@ defmodule Navigation.PathManager do
     Logger.info("calculate new path with : #{num_wps} waypoints")
     wps_with_index = Enum.with_index(waypoints)
     Enum.reduce(wps_with_index, {[], 0}, fn ({wp, index }, {cp_list, total_path_distance}) ->
-      Logger.info("index/max_index: #{index}/#{num_wps-1}")
+      # Logger.info("index/max_index: #{index}/#{num_wps-1}")
       if (index < num_wps-1) do
         current_cp = Navigation.Path.ConfigPoint.new(wp, vehicle_turn_rate)
         next_wp = Enum.at(waypoints, index+1)
@@ -243,13 +252,13 @@ defmodule Navigation.PathManager do
           acc
         end
       end)
-    Logger.debug("best distance/index: #{best_path_distance}/#{best_path_index}")
-    case best_path_index do
-      0 -> Logger.info("RR")
-      1 -> Logger.info("RL")
-      2 -> Logger.info("LR")
-      3 -> Logger.info("LL")
-    end
+    # Logger.debug("best distance/index: #{best_path_distance}/#{best_path_index}")
+    # case best_path_index do
+    #   0 -> Logger.info("RR")
+    #   1 -> Logger.info("RL")
+    #   2 -> Logger.info("LR")
+    #   3 -> Logger.info("LL")
+    # end
     if best_path_index < 0 do
       Logger.error("No valid paths available")
       {nil, 0}
@@ -260,12 +269,16 @@ defmodule Navigation.PathManager do
       theta1 = Common.Utils.constrain_angle_to_compass(current_cp.course)
       theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_0 = can_skip_case(theta1, theta2, cp.start_direction)
-      Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
+      # Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
 
       theta1 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
-      Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
+      # Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
+      Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
+      # Logger.debug("start/end center")
+      # Navigation.Path.LatLonAlt.print_deg(cp.cs)
+      # Navigation.Path.LatLonAlt.print_deg(cp.ce)
       cp = %{cp |
              start_radius: current_cp.start_radius,
              end_radius: next_cp.start_radius,
@@ -390,9 +403,8 @@ defmodule Navigation.PathManager do
       s2 = radius1*Common.Utils.constrain_angle_to_compass(v2 - (cp1.course - @pi_2))
       s3 = radius2*Common.Utils.constrain_angle_to_compass((cp2.course - @pi_2) - v2)
       path_distance = s1 + s2 + s3
-      Logger.warn("RR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q_denom = s1
-      q1 = Navigation.Path.Vector.new(lsle_dx/q_denom, lsle_dy/q_denom, crs.altitude)
+      # Logger.warn("RR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
+      q1 = Navigation.Path.Vector.new(lsle_dx/s1, lsle_dy/s1, (line_end.altitude-line_start.altitude)/s1)
       %{cp1 |
         cs: crs,
         start_direction: 1,
@@ -424,7 +436,7 @@ defmodule Navigation.PathManager do
     if (xL >= (radius1+radius2)) do
       xL1 = xL*radius1/(radius1 + radius2)
       xL2 = xL*radius2/(radius1 + radius2)
-      straight1 = xL1*xL1 - radius1*radius2
+      straight1 = xL1*xL1 - radius1*radius1
       straight2 = xL2*xL2 - radius2*radius2
       v = Common.Utils.angle_between_points(crs, cle)
       # Logger.debug("v: #{v}")
@@ -434,8 +446,8 @@ defmodule Navigation.PathManager do
       s2 = radius1*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(v2) - Common.Utils.constrain_angle_to_compass(cp1.course - @pi_2))
       s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(v2 + :math.pi) - Common.Utils.constrain_angle_to_compass(cp2.course + @pi_2))
       path_distance = s1 + s2 + s3
-      Logger.warn("RL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), 0)
+      # Logger.warn("RL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
+      q1 = Navigation.Path.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), (cle.altitude-crs.altitude)/s1)
       {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, radius1, v2)
       {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, radius2, v2 + :math.pi)
       z1 = Navigation.Path.LatLonAlt.new(z1_lat, z1_lon, crs.altitude)
@@ -471,7 +483,7 @@ defmodule Navigation.PathManager do
     if (xL >= (radius1+radius2)) do
       xL1 = xL*radius1/(radius1 + radius2)
       xL2 = xL*radius2/(radius1 + radius2)
-      straight1 = xL1*xL1 - radius1*radius2
+      straight1 = xL1*xL1 - radius1*radius1
       straight2 = xL2*xL2 - radius2*radius2
       v = Common.Utils.angle_between_points(cls, cre)
       # Logger.debug("v: #{v}")
@@ -481,8 +493,8 @@ defmodule Navigation.PathManager do
       s2 = radius1*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(cp1.course + @pi_2) - Common.Utils.constrain_angle_to_compass(v + v2))
       s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(cp2.course - @pi_2) - Common.Utils.constrain_angle_to_compass(v + v2 - :math.pi))
       path_distance = s1 + s2 + s3
-      Logger.warn("LR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), 0)
+      # Logger.warn("LR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
+      q1 = Navigation.Path.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), (cre.altitude-cls.altitude)/s1)
       {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, radius1, v + v2)
       {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, radius2, v + v2 - :math.pi)
       z1 = Navigation.Path.LatLonAlt.new(z1_lat, z1_lon, cls.altitude)
@@ -549,9 +561,8 @@ defmodule Navigation.PathManager do
       s2 = radius1*Common.Utils.constrain_angle_to_compass((cp1.course - @pi_2)- v2)
       s3 = radius2*Common.Utils.constrain_angle_to_compass(v2 - (cp2.course - @pi_2))
       path_distance = s1 + s2 + s3
-      Logger.warn("LL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q_denom = s1
-      q1 = Navigation.Path.Vector.new(lsle_dx/q_denom, lsle_dy/q_denom, cls.altitude)
+      # Logger.warn("LL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
+      q1 = Navigation.Path.Vector.new(lsle_dx/s1, lsle_dy/s1, (cle.altitude - cls.altitude)/s1)
       %{cp1 |
         cs: cls,
         start_direction: -1,

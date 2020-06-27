@@ -44,6 +44,11 @@ defmodule Common.Utils.Location do
     # {distance * :math.cos(bearing), distance * :math.sin(bearing), distance}
   end
 
+  @spec dx_dy_between_points(float(), float(), float(), float()) :: tuple()
+  def dx_dy_between_points(lat1, lon1, lat2, lon2) do
+    dx_dy_between_points(Navigation.Path.LatLonAlt.new(lat1, lon1), Navigation.Path.LatLonAlt.new(lat2, lon2))
+  end
+
   @spec lat_lon_from_point(float(), float(), float(), float()) :: tuple()
   def lat_lon_from_point(lat1, lon1, dx, dy) do
     dlat = dx/@earth_radius_m

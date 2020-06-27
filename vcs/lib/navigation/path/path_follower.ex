@@ -12,12 +12,12 @@ defmodule Navigation.Path.PathFollower do
     %Navigation.Path.PathFollower{
       k_path: k_path,
       k_orbit: k_orbit,
-      chi_inf_over_two_pi: 0.5*chi_inf / :math.pi
+      chi_inf_over_two_pi: chi_inf / @two_pi
     }
   end
 
-  @spec follow(struct(), struct(), float(), struct()) :: map()
-  def follow(path_follower, position, course, path_case) do
+  @spec follow(struct(), struct(), float(), float(), struct()) :: map()
+  def follow(path_follower, position, course, dt, path_case) do
     if path_case.flag == Navigation.Path.PathCase.line_flag() do
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(path_case.r, position)
       q = path_case.q
@@ -25,7 +25,10 @@ defmodule Navigation.Path.PathFollower do
       si1 = dx + q.y*temp_vector
       si2 = dy - q.x*temp_vector
       altitude_cmd = path_case.r.altitude - (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))
-
+      # Logger.debug("q: #{Navigation.Path.Vector.to_string(q)}")
+      # Logger.debug("r.alt: #{path_case.r.altitude}")
+      # Logger.debug("si1/si2: #{si1}/#{si2}")
+      # Logger.debug("num/denom: #{q.z*Common.Utils.Math.hypot(si1, si2)}/#{Common.Utils.Math.hypot(q.x, q.y)}")
       chi_q = :math.atan2(q.y, q.x)
       chi_q = if ((chi_q - course) < -:math.pi), do: chi_q + @two_pi, else: chi_q
       chi_q = if ((chi_q - course) > :math.pi), do: chi_q - @two_pi, else: chi_q
@@ -35,7 +38,7 @@ defmodule Navigation.Path.PathFollower do
       e_py = -sin_chi_q*dx + cos_chi_q*dy
       course_cmd = chi_q - path_follower.chi_inf_over_two_pi*:math.atan(path_follower.k_path*e_py)
       |> Common.Utils.constrain_angle_to_compass()
-
+      Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
@@ -46,11 +49,20 @@ defmodule Navigation.Path.PathFollower do
       phi = if ((phi - course) < -:math.pi), do: phi + @two_pi, else: phi
       phi = if ((phi - course) > :math.pi), do: phi - @two_pi, else: phi
       course_cmd = phi + path_case.turn_direction*(@pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
+      |> add_orbit_feedforward(path_case.v_des, path_case.rho, dt, path_case.turn_direction)
       |> Common.Utils.constrain_angle_to_compass()
 
-      # e_py = orbit_d - path_case.rho
-
+      e_py = orbit_d - path_case.rho
+      # Logger.debug("e_py: #{Common.Utils.eftb(e_py,2)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     end
+  end
+
+  @spec add_orbit_feedforward(float(), float(), float(), float(), integer()) :: float()
+  def add_orbit_feedforward(course_cmd, speed, radius, dt, direction) do
+    dchi = direction*speed/radius*dt
+    # Logger.debug("speed/radius/dt: #{speed}/#{radius}/#{dt}")
+    # Logger.debug("course ff: #{Common.Utils.eftb_deg(dchi,1)}")
+    course_cmd + dchi
   end
 end

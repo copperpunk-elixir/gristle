@@ -29,9 +29,16 @@ defmodule Common.Utils.Math do
     end
   end
 
+  @spec hypot(float(), float()) :: float()
   def hypot(x, y) do
     :math.sqrt(x*x + y*y)
   end
+
+  @spec hypot(tuple()) :: float()
+  def hypot({x, y}) do
+    :math.sqrt(x*x + y*y)
+  end
+
 
   def cross_product(v1, v2) do
     elem(v1, 0)*elem(v2,1) - elem(v1,1)*elem(v2,0)

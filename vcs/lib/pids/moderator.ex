@@ -66,6 +66,7 @@ defmodule Pids.Moderator do
 
         # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
+        publish_cmds(pv_cmd_map, 3)
       2 ->
         # Logger.warn("PID Level 2")
         # Logger.warn("pv_cmd_map/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
@@ -82,12 +83,15 @@ defmodule Pids.Moderator do
         pv_1_cmd_map = Map.put(pv_1_cmd_map, :thrust, level_2_thrust_cmd)
         actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.bodyrate, dt, state.pv_output_pids)
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        publish_cmds(pv_cmd_map, 2)
+        publish_cmds(pv_1_cmd_map, 1)
       1 ->
         # Logger.warn("PID Level 1")
         pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.bodyrate, dt, state.pv_output_pids)
         # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
         send_cmds(actuator_output_map, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        publish_cmds(pv_cmd_map, 1)
       0 ->
         Logger.warn("PID level 0 - How did we get here?")
     end
@@ -121,5 +125,9 @@ defmodule Pids.Moderator do
 
   defp send_cmds(output_map, msg_class, msg_time_ms, cmd_type) do
     MessageSorter.Sorter.add_message(cmd_type, msg_class, msg_time_ms, output_map)
+  end
+
+  defp publish_cmds(cmds, level) do
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, level}, cmds}, :tx_goals, self())
   end
 end

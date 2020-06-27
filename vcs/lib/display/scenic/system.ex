@@ -28,7 +28,7 @@ defmodule Display.Scenic.System do
 
     planner_config = %{
       name: :planner,
-      size: {600, 600},
+      size: {2000, 1500},
       default_scene: {planner_scene, nil},
       drivers: [
         %{
@@ -42,7 +42,7 @@ defmodule Display.Scenic.System do
     Comms.System.start_link()
 
     viewports = [
-      # gcs_config,
+      gcs_config,
       planner_config
     ]
     config = %{

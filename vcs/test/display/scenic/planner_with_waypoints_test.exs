@@ -25,10 +25,10 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     speed = 10
     alt = 100
     lat1 = Common.Utils.Math.deg2rad(47.53)
-    lon1 = Common.Utils.Math.deg2rad(-120.32)
+    lon1 = Common.Utils.Math.deg2rad(-120.30414)
     # North
     lat2 = Common.Utils.Math.deg2rad(47.54)
-    lon2 = Common.Utils.Math.deg2rad(-120.32)
+    lon2 = Common.Utils.Math.deg2rad(-120.30414)
     # East
     lat3 = Common.Utils.Math.deg2rad(47.54)
     lon3 = Common.Utils.Math.deg2rad(-120.29)
@@ -43,7 +43,7 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     wp4 = Navigation.Path.Waypoint.new(lat4, lon4, speed, :math.pi, alt, "wp4")
 
 
-    mission = Navigation.Path.Mission.new_mission("box", [wp1, wp2,wp3,wp4])
+    mission = Navigation.Path.Mission.new_mission("box", [wp1, wp2,wp3,wp4, wp1])
 
     Navigation.PathManager.load_mission(mission, __MODULE__)
     calculated = %{speed: 1.0, course: 0.0}
