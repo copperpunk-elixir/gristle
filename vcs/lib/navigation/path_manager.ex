@@ -58,7 +58,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position_velocity, _dt}, state) do
+  def handle_cast({{:pv_values, :position_velocity}, position_velocity, dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
@@ -108,10 +108,10 @@ defmodule Navigation.PathManager do
     unless is_nil(current_path_case) do
       # Logger.info("cpc_i: #{current_path_case.case_index}")
       course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
-      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, current_path_case)
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, dt, current_path_case)
       Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
       # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
-
+      # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
     # else

@@ -147,7 +147,7 @@ defmodule Display.Scenic.Planner do
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
     # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 0.3
+    margin = 0.5
     {origin_lat, origin_lon, total_x, total_y} =
     if (gap_x < gap_y) do
       total_dist_x = (1+2*margin)*dx_dist

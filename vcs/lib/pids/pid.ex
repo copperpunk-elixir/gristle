@@ -17,6 +17,7 @@ defmodule Pids.Pid do
         kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
+        ki_mult: Map.get(config, :ki_mult, 1),
         ff_poly: ff_poly,
         ff_poly_degree: length(ff_poly)-1,
         output_min: config.output_min,
@@ -40,7 +41,8 @@ defmodule Pids.Pid do
     {correction, out_of_range} = Common.Utils.Math.constrain?(correction_raw, state.correction_min, state.correction_max)
     pv_integrator =
       unless out_of_range do
-      state.pv_integrator + correction*dt
+      pv_add = if (correction*state.output > 0), do: correction*dt, else: state.ki_mult*correction*dt
+      state.pv_integrator + pv_add
     else
       0.0
     end
@@ -63,9 +65,9 @@ defmodule Pids.Pid do
     output = state.output_neutral + feed_forward + delta_output
     # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-    # if state.process_variable == :course do
-      # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(output, 3)}")
-    # end
+    if state.process_variable == :course do
+      Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(output, 3)}")
+    end
     pv_correction_prev = correction_raw
     pv_integrator =
     if (state.ki != 0) do

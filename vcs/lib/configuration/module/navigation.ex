@@ -16,7 +16,7 @@ defmodule Configuration.Module.Navigation do
         %{
           vehicle_type: vehicle_type,
           path_follower: %{
-            k_path: 0.12,
+            k_path: 0.2,
             k_orbit: 3.5,
             chi_inf: 0.52
           }

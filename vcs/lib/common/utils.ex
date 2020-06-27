@@ -182,6 +182,16 @@ defmodule Common.Utils do
     :erlang.float_to_binary(number/1, [decimals: num_decimals])
   end
 
+  @spec eftb_deg(float(), integer()) ::binary()
+  def eftb_deg(number, num_decimals) do
+    :erlang.float_to_binary(Common.Utils.Math.rad2deg(number), [decimals: num_decimals])
+  end
+
+  @spec eftb_rad(float(), integer()) ::binary()
+  def eftb_rad(number, num_decimals) do
+    :erlang.float_to_binary(Common.Utils.Math.deg2rad(number), [decimals: num_decimals])
+  end
+
   # Convert North/East velocity to Speed/Course
   @spec get_speed_course_for_velocity(number(), number(), number(), number()) :: float()
   def get_speed_course_for_velocity(v_north, v_east, min_speed_for_course, yaw) do
