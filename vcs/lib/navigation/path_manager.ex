@@ -203,7 +203,7 @@ defmodule Navigation.PathManager do
     Logger.info("calculate new path with : #{num_wps} waypoints")
     wps_with_index = Enum.with_index(waypoints)
     Enum.reduce(wps_with_index, {[], 0}, fn ({wp, index }, {cp_list, total_path_distance}) ->
-      Logger.info("index/max_index: #{index}/#{num_wps-1}")
+      # Logger.info("index/max_index: #{index}/#{num_wps-1}")
       if (index < num_wps-1) do
         current_cp = Navigation.Dubins.ConfigPoint.new(wp, vehicle_turn_rate)
         next_wp = Enum.at(waypoints, index+1)

@@ -32,9 +32,7 @@ defmodule Common.Application do
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
-    # command_config = Configuration.Vehicle.get_config_for_vehicle_and_module(vehicle_type, Command)
     display_config = Configuration.Module.get_config(Display, vehicle_type, nil)
-    # Command.System.start_link(command_config)
     Display.Scenic.System.start_link(display_config)
   end
 

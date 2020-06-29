@@ -90,7 +90,7 @@ defmodule Navigation.Path.Mission do
     lat1 = Common.Utils.Math.deg2rad(47.440622)
     lon1 = Common.Utils.Math.deg2rad(-122.318562)
     lla = Navigation.Utils.LatLonAlt.new(lat1, lon1, alt)
-    num_wps = :rand.uniform(4)# + 4
+    num_wps = :rand.uniform(4) + 4
     loop = if (:rand.uniform(2) == 1), do: true, else: false
     get_random_mission(lla, num_wps, loop)
   end

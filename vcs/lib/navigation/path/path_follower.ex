@@ -35,7 +35,7 @@ defmodule Navigation.Path.PathFollower do
       e_py = -sin_chi_q*dx + cos_chi_q*dy
       course_cmd = chi_q - path_follower.chi_inf_over_two_pi*:math.atan(path_follower.k_path*e_py)
       |> Common.Utils.constrain_angle_to_compass()
-      Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
+      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
