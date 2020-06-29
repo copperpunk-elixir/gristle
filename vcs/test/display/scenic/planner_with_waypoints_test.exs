@@ -48,14 +48,15 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
     Navigation.PathManager.load_mission(mission, __MODULE__)
     calculated = %{speed: 1.0, course: 0.0}
     position = %{latitude: Common.Utils.Math.deg2rad(47.535), longitude: Common.Utils.Math.deg2rad(-120.30), altitude: 0}
-    attitude = %{yaw: 0.0}
+    attitude = %{roll: 0.0, pitch: 0.0, yaw: 0.0}
 
 
     bounding_box = Display.Scenic.Planner.calculate_lat_lon_bounding_box(mission, position, true)
     Logger.debug("bounding box: #{inspect(bounding_box)}")
-    {min_lat, max_lat, min_lon, max_lon} = bounding_box
-    assert min_lat = lat1
-    assert max_lon = lon2
+    {bottom_left, top_right} = bounding_box
+    assert bottom_left.latitude == lat1
+    assert top_right.longitude == lon3
+
 
     origin = Display.Scenic.Planner.calculate_origin(bounding_box, 800, 600)
     Logger.debug("origin lat/lon: #{origin.lat}/#{origin.lon}")
@@ -67,6 +68,6 @@ defmodule Display.Scenic.PlannerWithWaypointsTest do
       self())
 
     vehicle_type = context[:vehicle_type]
-    Process.sleep(400000)
+    Process.sleep(1000)
   end
 end

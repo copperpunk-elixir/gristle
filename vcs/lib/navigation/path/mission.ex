@@ -1,15 +1,14 @@
 defmodule Navigation.Path.Mission do
   require Logger
-  @enforce_keys [:name]
+  @enforce_keys [:name, :waypoints]
 
-  defstruct [:name, :waypoints, :origin]
+  defstruct [:name, :waypoints]
 
   @spec new_mission(binary(), list()) :: struct()
   def new_mission(name, waypoints \\ []) do
     %Navigation.Path.Mission{
       name: name,
       waypoints: waypoints,
-      origin: nil
     }
   end
 
@@ -50,7 +49,7 @@ defmodule Navigation.Path.Mission do
 
   @spec get_default_mission() :: struct()
   def get_default_mission() do
-    speed = 2
+    speed = 0.8
     alt = 100
     lat1 = Common.Utils.Math.deg2rad(45.00)
     lon1 = Common.Utils.Math.deg2rad(-120.0)
@@ -90,8 +89,8 @@ defmodule Navigation.Path.Mission do
     alt = 300
     lat1 = Common.Utils.Math.deg2rad(47.440622)
     lon1 = Common.Utils.Math.deg2rad(-122.318562)
-    lla = Navigation.Path.LatLonAlt.new(lat1, lon1, alt)
-    num_wps = :rand.uniform(4)# + 4
+    lla = Navigation.Utils.LatLonAlt.new(lat1, lon1, alt)
+    num_wps = :rand.uniform(4) + 4
     loop = if (:rand.uniform(2) == 1), do: true, else: false
     get_random_mission(lla, num_wps, loop)
   end
@@ -100,7 +99,7 @@ defmodule Navigation.Path.Mission do
   def get_random_mission(starting_lla, num_wps, loop) do
     starting_course = :rand.uniform()*2*:math.pi
     max_speed = 55
-    min_speed = 45
+    min_speed = 40
     starting_speed = :rand.uniform*(max_speed-min_speed) + min_speed
     starting_wp = Navigation.Path.Waypoint.new(
       starting_lla.latitude,
@@ -116,7 +115,7 @@ defmodule Navigation.Path.Mission do
         bearing = :rand.uniform()*2*:math.pi
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*(max_speed-min_speed) + min_speed
-        Navigation.Path.LatLonAlt.print_deg(last_wp)
+        Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
         Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         {lat, lon} = Common.Utils.Location.lat_lon_from_point_with_distance(last_wp, dist, bearing)
         new_wp = Navigation.Path.Waypoint.new(lat, lon, speed, course, starting_lla.altitude, "wp#{index}")

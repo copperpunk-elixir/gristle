@@ -1,11 +1,11 @@
-defmodule Navigation.Path.Vector do
+defmodule Navigation.Utils.Vector do
   require Logger
   @enforce_keys [:x, :y, :z]
   defstruct [:x, :y, :z]
 
   @spec new(float(), float(), float()) :: struct()
   def new(x, y, z) do
-    %Navigation.Path.Vector{
+    %Navigation.Utils.Vector{
       x: x,
       y: y,
       z: z
@@ -19,7 +19,7 @@ defmodule Navigation.Path.Vector do
 
   @spec reverse(struct()) :: struct()
   def reverse(vector) do
-    %Navigation.Path.Vector{
+    %Navigation.Utils.Vector{
       x: -vector.x,
       y: -vector.y,
       z: -vector.z

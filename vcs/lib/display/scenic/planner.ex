@@ -3,21 +3,7 @@ defmodule Display.Scenic.Planner do
   require Logger
 
   import Scenic.Primitives
-  # @body_offset 80
-  @font_size 24
-  @degrees "°"
-  @radians "rads"
-  @dps "°/s"
-  @radpersec "rps"
-  @meters "m"
-  @mps "m/s"
-  @pct "%"
 
-  # @offset_x 0
-  # @width 300
-  # @height 50
-  # @labels {"", "", ""}
-  @rect_border 6
   @primitive_id :mission_primitives
 
   @moduledoc """
@@ -27,7 +13,7 @@ defmodule Display.Scenic.Planner do
   """
 
   # ============================================================================
-  def init(args, opts) do
+  def init(_, opts) do
     {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
@@ -52,9 +38,8 @@ defmodule Display.Scenic.Planner do
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height)
-    {config_points, current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
+    {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
     graph =
-      # Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       Scenic.Graph.delete(state.graph, @primitive_id)
       |> draw_waypoints(origin, state.height, mission.waypoints)
       |> draw_path(origin, state.height, config_points)
@@ -130,15 +115,15 @@ defmodule Display.Scenic.Planner do
       {min_lon, max_lon}
     end
     # {min_lat, max_lat, min_lon, max_lon}
-    {Navigation.Path.LatLonAlt.new(min_lat, min_lon), Navigation.Path.LatLonAlt.new(max_lat, max_lon)}
+    {Navigation.Utils.LatLonAlt.new(min_lat, min_lon), Navigation.Utils.LatLonAlt.new(max_lat, max_lon)}
   end
 
   @spec calculate_origin(tuple(), integer(), integer()) :: tuple()
   def calculate_origin(bounding_box, vp_width, vp_height) do
     # {min_lat, max_lat, min_lon, max_lon} = bounding_box
     {bottom_left, top_right} = bounding_box
-    Navigation.Path.LatLonAlt.print_deg(bottom_left)
-    Navigation.Path.LatLonAlt.print_deg(top_right)
+    Logger.info("bottom left: #{Navigation.Utils.LatLonAlt.to_string(bottom_left)}")
+    Logger.info("top right: #{Navigation.Utils.LatLonAlt.to_string(top_right)}")
     aspect_ratio = vp_width/vp_height
     # dx_dist_from_lat = max_lat-min_lat
     # dy_dist_from_lon = (max_lon-min_lon)/:math.sqrt(2)
@@ -186,8 +171,8 @@ defmodule Display.Scenic.Planner do
   def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       wp_plot = get_translate(wp, origin, height)
-      Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
-      # Navigation.Path.LatLonAlt.print_deg(wp, :warn)
+      # Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
+      # Navigation.Utils.LatLonAlt.print_deg(wp, :warn)
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
       |> text(wp.name, translate: wp_plot, id: @primitive_id)
     end)
@@ -212,8 +197,8 @@ defmodule Display.Scenic.Planner do
       # Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
       # Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
       # Logger.debug("cs/ce loc:")
-      # Navigation.Path.LatLonAlt.print_deg(cp.cs)
-      # Navigation.Path.LatLonAlt.print_deg(cp.ce)
+      # Navigation.Utils.LatLonAlt.print_deg(cp.cs)
+      # Navigation.Utils.LatLonAlt.print_deg(cp.ce)
       radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.pos) |> Common.Utils.Math.hypot() |> round()
       radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
       # Logger.debug("radius_cs: #{radius_cs}")
@@ -228,9 +213,9 @@ defmodule Display.Scenic.Planner do
       # z2 = get_translate(cp.z2, origin, height)
       # z3 = get_translate(cp.ce, origin, height)
       # Logger.debug("wp/z1/z2")
-      # Navigation.Path.LatLonAlt.print_deg(cp.pos, :debug)
-      # Navigation.Path.LatLonAlt.print_deg(cp.z1)
-      # Navigation.Path.LatLonAlt.print_deg(cp.z2)
+      # Navigation.Utils.LatLonAlt.print_deg(cp.pos, :debug)
+      # Navigation.Utils.LatLonAlt.print_deg(cp.z1)
+      # Navigation.Utils.LatLonAlt.print_deg(cp.z2)
       line(acc, {line_start, line_end}, stroke: {line_width, :white}, id: @primitive_id)
       # |> line()
       |> circle(3, stroke: {2, :green}, translate: cs , id: @primitive_id)

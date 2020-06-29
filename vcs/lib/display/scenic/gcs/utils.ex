@@ -104,20 +104,15 @@ defmodule Display.Scenic.Gcs.Utils do
     )
   end
 
-  @two_thirds_pi 2.094395102
-  @interior_angle 2.284520706
+  @interior_angle 2.677945 #= :math.pi/2 + :math.atan(ratio)
+  @ratio_sq 4
   @spec draw_arrow(map(), float(), float(), float(), float(), atom(), boolean(), atom()) :: Scenic.Graph.t()
   def draw_arrow(graph, x, y, heading, size, id, is_new \\ false,fill \\ :yellow) do
     # Center of triangle at X/Y
-    ratio = 2
-    head_size = size
-    tail_size = :math.sqrt(head_size*head_size*(1 + ratio*ratio))
-    interior_angle = :math.pi/2 + :math.atan(ratio)
-    # Logger.info("head/tail/interior: #{head_size}/#{tail_size}/#{interior_angle}")
-    head = {x + head_size*:math.sin(heading), y - head_size*:math.cos(heading)}
-    tail_1 ={x + tail_size*:math.sin(heading + interior_angle), y - tail_size*:math.cos(heading + interior_angle)}
-    tail_2 ={x + tail_size*:math.sin(heading - interior_angle), y - tail_size*:math.cos(heading - interior_angle)}
-    # Logger.debug("p1/p2/p3: #{inspect(head)}/#{inspect(tail_1)}/#{inspect(tail_2)}")
+    tail_size = :math.sqrt(size*size*(1 + @ratio_sq))
+    head = {x + size*:math.sin(heading), y - size*:math.cos(heading)}
+    tail_1 ={x + tail_size*:math.sin(heading + @interior_angle), y - tail_size*:math.cos(heading + @interior_angle)}
+    tail_2 ={x + tail_size*:math.sin(heading - @interior_angle), y - tail_size*:math.cos(heading - @interior_angle)}
     if (is_new) do
       triangle(graph, {head, tail_1, tail_2}, fill: fill, id: id)
     else

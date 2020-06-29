@@ -1,4 +1,4 @@
-defmodule Navigation.Path.PathCase do
+defmodule Navigation.Dubins.PathCase do
   require Logger
 
   @line_flag 1
@@ -17,7 +17,7 @@ defmodule Navigation.Path.PathCase do
 
   @spec new_line(integer()) :: struct()
   def new_line(case_index) do
-    %Navigation.Path.PathCase{
+    %Navigation.Dubins.PathCase{
       flag: @line_flag,
       case_index: case_index
     }
@@ -25,7 +25,7 @@ defmodule Navigation.Path.PathCase do
 
   @spec new_orbit(integer()) :: struct()
   def new_orbit(case_index) do
-    %Navigation.Path.PathCase{
+    %Navigation.Dubins.PathCase{
       flag: @orbit_flag,
       case_index: case_index
     }

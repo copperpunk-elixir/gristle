@@ -1,11 +1,11 @@
-defmodule Navigation.Path.LatLonAlt do
+defmodule Navigation.Utils.LatLonAlt do
   require Logger
   @enforce_keys [:latitude, :longitude, :altitude]
   defstruct [:latitude, :longitude, :altitude]
 
   @spec new(float(), float(), float()) :: struct()
   def new(lat, lon, alt) do
-    %Navigation.Path.LatLonAlt{
+    %Navigation.Utils.LatLonAlt{
       latitude: lat,
       longitude: lon,
       altitude: alt
@@ -17,16 +17,11 @@ defmodule Navigation.Path.LatLonAlt do
     new(lat, lon, 0)
   end
 
-  @spec print_deg(struct()) :: atom()
-  def print_deg(lla, level \\ :info) do
+  @spec to_string(struct()) :: binary()
+  def to_string(lla) do
     lat_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.latitude), 5)
     lon_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.longitude), 5)
     alt_str = Common.Utils.eftb(lla.altitude, 1)
-    print_str = "lat/lon/alt: #{lat_str}/#{lon_str}/#{alt_str}"
-    case level do
-      :info -> Logger.info(print_str)
-      :debug -> Logger.debug(print_str)
-      :warn -> Logger.warn(print_str)
-    end
+    "lat/lon/alt: #{lat_str}/#{lon_str}/#{alt_str}"
   end
 end

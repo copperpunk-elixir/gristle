@@ -109,13 +109,11 @@ defmodule Navigation.PathManager do
       # Logger.info("cpc_i: #{current_path_case.case_index}")
       course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
       {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, dt, current_path_case)
-      Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
+      # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
       # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
       # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
-    # else
-      # Logger.warn("no path_case to use. Not sending goals commands.")
     end
     {:noreply, %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}}
   end
@@ -126,11 +124,6 @@ defmodule Navigation.PathManager do
     path_case = nil
     {:noreply, %{state | current_path_case: path_case}}
   end
-
-  # @impl GenServer
-  # def handle_call(:get_mission, _from, state) do
-  #   {:reply, state.current_mission, state}
-  # end
 
   @impl GenServer
   def handle_call(:get_config_points, _from, state) do
@@ -179,11 +172,6 @@ defmodule Navigation.PathManager do
     GenServer.cast(__MODULE__, :begin_orbit)
   end
 
-  @spec get_mission() :: struct()
-  def get_mission() do
-    GenServer.call(__MODULE__, :get_mission)
-  end
-
   @spec get_dubins_for_cp(integer()) :: struct()
   def get_dubins_for_cp(cp_index) do
     GenServer.call(__MODULE__, {:get_dubins, cp_index})
@@ -217,9 +205,9 @@ defmodule Navigation.PathManager do
     Enum.reduce(wps_with_index, {[], 0}, fn ({wp, index }, {cp_list, total_path_distance}) ->
       # Logger.info("index/max_index: #{index}/#{num_wps-1}")
       if (index < num_wps-1) do
-        current_cp = Navigation.Path.ConfigPoint.new(wp, vehicle_turn_rate)
+        current_cp = Navigation.Dubins.ConfigPoint.new(wp, vehicle_turn_rate)
         next_wp = Enum.at(waypoints, index+1)
-        next_cp = Navigation.Path.ConfigPoint.new(next_wp, vehicle_turn_rate)
+        next_cp = Navigation.Dubins.ConfigPoint.new(next_wp, vehicle_turn_rate)
         current_cp = %{current_cp | end_speed: next_cp.start_speed, goto_upon_completion: next_wp.goto}
         {current_cp, best_path_distance} = find_shortest_path_between_config_points(current_cp, next_cp)
         # Logger.info("inspect()")
@@ -252,19 +240,12 @@ defmodule Navigation.PathManager do
           acc
         end
       end)
-    # Logger.debug("best distance/index: #{best_path_distance}/#{best_path_index}")
-    # case best_path_index do
-    #   0 -> Logger.info("RR")
-    #   1 -> Logger.info("RL")
-    #   2 -> Logger.info("LR")
-    #   3 -> Logger.info("LL")
-    # end
     if best_path_index < 0 do
       Logger.error("No valid paths available")
       {nil, 0}
     else
       cp = Enum.at(path_config_points, best_path_index)
-      q3 = Navigation.Path.Vector.new(:math.cos(next_cp.course), :math.sin(next_cp.course), 0)
+      q3 = Navigation.Utils.Vector.new(:math.cos(next_cp.course), :math.sin(next_cp.course), 0)
 
       theta1 = Common.Utils.constrain_angle_to_compass(current_cp.course)
       theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
@@ -275,10 +256,7 @@ defmodule Navigation.PathManager do
       theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
       # Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
-      Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
-      # Logger.debug("start/end center")
-      # Navigation.Path.LatLonAlt.print_deg(cp.cs)
-      # Navigation.Path.LatLonAlt.print_deg(cp.ce)
+      # Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
       cp = %{cp |
              start_radius: current_cp.start_radius,
              end_radius: next_cp.start_radius,
@@ -292,14 +270,14 @@ defmodule Navigation.PathManager do
 
   @spec set_dubins_parameters(struct()) :: struct()
   def set_dubins_parameters(cp) do
-    path_case_0 = Navigation.Path.PathCase.new_orbit(0)
+    path_case_0 = Navigation.Dubins.PathCase.new_orbit(0)
     path_case_0 = %{
       path_case_0 |
       v_des: cp.start_speed,
       c: cp.cs,
       rho: cp.start_radius,
       turn_direction: cp.start_direction,
-      q: Navigation.Path.Vector.reverse(cp.q1),
+      q: Navigation.Utils.Vector.reverse(cp.q1),
       zi: cp.z1
     }
 
@@ -309,7 +287,7 @@ defmodule Navigation.PathManager do
       q: cp.q1
     }
 
-    path_case_2 = Navigation.Path.PathCase.new_line(2)
+    path_case_2 = Navigation.Dubins.PathCase.new_line(2)
     path_case_2 = %{
       path_case_2 |
       v_des: cp.end_speed,
@@ -318,14 +296,14 @@ defmodule Navigation.PathManager do
       zi: cp.z2
     }
 
-    path_case_3 = Navigation.Path.PathCase.new_orbit(3)
+    path_case_3 = Navigation.Dubins.PathCase.new_orbit(3)
     path_case_3 = %{
       path_case_3 |
       v_des: cp.end_speed,
       c: cp.ce,
       rho: cp.end_radius,
       turn_direction: cp.end_direction,
-      q: Navigation.Path.Vector.reverse(cp.q3),
+      q: Navigation.Utils.Vector.reverse(cp.q3),
       zi: cp.z3
     }
 
@@ -364,8 +342,8 @@ defmodule Navigation.PathManager do
     {crs_lat, crs_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
     # Right End
     {cre_lat, cre_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
-    crs = Navigation.Path.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
-    cre = Navigation.Path.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
+    crs = Navigation.Utils.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
+    cre = Navigation.Utils.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(crs, cre)
     ell = Common.Utils.Math.hypot(dx, dy)
@@ -380,8 +358,8 @@ defmodule Navigation.PathManager do
       alpha = gamma - beta
       {a3_lat, a3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, radius1, alpha)
       {a4_lat, a4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, radius2, alpha)
-      a3 = Navigation.Path.LatLonAlt.new(a3_lat, a3_lon, crs.altitude)
-      a4 = Navigation.Path.LatLonAlt.new(a4_lat, a4_lon, cre.altitude)
+      a3 = Navigation.Utils.LatLonAlt.new(a3_lat, a3_lon, crs.altitude)
+      a4 = Navigation.Utils.LatLonAlt.new(a4_lat, a4_lon, cre.altitude)
       cs_to_p3 = Common.Utils.Location.dx_dy_between_points(crs, a3)
       p3_to_p4 = Common.Utils.Location.dx_dy_between_points(a3, a4)
       cross_a = Common.Utils.Math.cross_product(p3_to_p4, cs_to_p3)
@@ -393,8 +371,8 @@ defmodule Navigation.PathManager do
       else
         {b3_lat, b3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, -radius1, alpha)
         {b4_lat, b4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, -radius2, alpha)
-        line_start = Navigation.Path.LatLonAlt.new(b3_lat, b3_lon, crs.altitude)
-        line_end = Navigation.Path.LatLonAlt.new(b4_lat, b4_lon, cre.altitude)
+        line_start = Navigation.Utils.LatLonAlt.new(b3_lat, b3_lon, crs.altitude)
+        line_end = Navigation.Utils.LatLonAlt.new(b4_lat, b4_lon, cre.altitude)
         {line_start, line_end, :math.pi() + alpha}
       end
 
@@ -404,7 +382,7 @@ defmodule Navigation.PathManager do
       s3 = radius2*Common.Utils.constrain_angle_to_compass((cp2.course - @pi_2) - v2)
       path_distance = s1 + s2 + s3
       # Logger.warn("RR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(lsle_dx/s1, lsle_dy/s1, (line_end.altitude-line_start.altitude)/s1)
+      q1 = Navigation.Utils.Vector.new(lsle_dx/s1, lsle_dy/s1, (line_end.altitude-line_start.altitude)/s1)
       %{cp1 |
         cs: crs,
         start_direction: 1,
@@ -416,7 +394,7 @@ defmodule Navigation.PathManager do
         path_distance: path_distance
       }
     else
-      %Navigation.Path.ConfigPoint{path_distance: 1_000_000}
+      %Navigation.Dubins.ConfigPoint{path_distance: 1_000_000}
     end
   end
 
@@ -428,8 +406,8 @@ defmodule Navigation.PathManager do
     {crs_lat, crs_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
     # Left End
     {cle_lat, cle_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
-    crs = Navigation.Path.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
-    cle = Navigation.Path.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
+    crs = Navigation.Utils.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
+    cle = Navigation.Utils.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(crs, cle)
     xL = Common.Utils.Math.hypot(dx, dy)
@@ -447,11 +425,11 @@ defmodule Navigation.PathManager do
       s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(v2 + :math.pi) - Common.Utils.constrain_angle_to_compass(cp2.course + @pi_2))
       path_distance = s1 + s2 + s3
       # Logger.warn("RL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), (cle.altitude-crs.altitude)/s1)
+      q1 = Navigation.Utils.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), (cle.altitude-crs.altitude)/s1)
       {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, radius1, v2)
       {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, radius2, v2 + :math.pi)
-      z1 = Navigation.Path.LatLonAlt.new(z1_lat, z1_lon, crs.altitude)
-      z2 = Navigation.Path.LatLonAlt.new(z2_lat, z2_lon, cle.altitude)
+      z1 = Navigation.Utils.LatLonAlt.new(z1_lat, z1_lon, crs.altitude)
+      z2 = Navigation.Utils.LatLonAlt.new(z2_lat, z2_lon, cle.altitude)
       %{cp1 |
         cs: crs,
         start_direction: 1,
@@ -463,7 +441,7 @@ defmodule Navigation.PathManager do
         path_distance: path_distance
       }
     else
-      %Navigation.Path.ConfigPoint{path_distance: 1_000_000}
+      %Navigation.Dubins.ConfigPoint{path_distance: 1_000_000}
     end
   end
 
@@ -475,8 +453,8 @@ defmodule Navigation.PathManager do
     {cls_lat, cls_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
     # Right End
     {cre_lat, cre_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
-    cls = Navigation.Path.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
-    cre = Navigation.Path.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
+    cls = Navigation.Utils.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
+    cre = Navigation.Utils.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(cls, cre)
     xL = Common.Utils.Math.hypot(dx, dy)
@@ -494,11 +472,11 @@ defmodule Navigation.PathManager do
       s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(cp2.course - @pi_2) - Common.Utils.constrain_angle_to_compass(v + v2 - :math.pi))
       path_distance = s1 + s2 + s3
       # Logger.warn("LR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), (cre.altitude-cls.altitude)/s1)
+      q1 = Navigation.Utils.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), (cre.altitude-cls.altitude)/s1)
       {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, radius1, v + v2)
       {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, radius2, v + v2 - :math.pi)
-      z1 = Navigation.Path.LatLonAlt.new(z1_lat, z1_lon, cls.altitude)
-      z2 = Navigation.Path.LatLonAlt.new(z2_lat, z2_lon, cre.altitude)
+      z1 = Navigation.Utils.LatLonAlt.new(z1_lat, z1_lon, cls.altitude)
+      z2 = Navigation.Utils.LatLonAlt.new(z2_lat, z2_lon, cre.altitude)
       %{cp1 |
         cs: cls,
         start_direction: -1,
@@ -510,7 +488,7 @@ defmodule Navigation.PathManager do
         path_distance: path_distance
       }
     else
-      %Navigation.Path.ConfigPoint{path_distance: 1_000_000}
+      %Navigation.Dubins.ConfigPoint{path_distance: 1_000_000}
     end
   end
 
@@ -522,8 +500,8 @@ defmodule Navigation.PathManager do
     {cls_lat, cls_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
     # Left End
     {cle_lat, cle_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
-    cls = Navigation.Path.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
-    cle = Navigation.Path.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
+    cls = Navigation.Utils.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
+    cle = Navigation.Utils.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(cls, cle)
     ell = Common.Utils.Math.hypot(dx, dy)
@@ -535,11 +513,11 @@ defmodule Navigation.PathManager do
         -:math.atan(dx/dy)
       end
       beta = :math.asin((radius2-radius1)/ell)
-      alpha = gamma - beta
+      alpha = gamma + beta
       {a3_lat, a3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, radius1, alpha)
       {a4_lat, a4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, radius2, alpha)
-      a3 = Navigation.Path.LatLonAlt.new(a3_lat, a3_lon, cls.altitude)
-      a4 = Navigation.Path.LatLonAlt.new(a4_lat, a4_lon, cle.altitude)
+      a3 = Navigation.Utils.LatLonAlt.new(a3_lat, a3_lon, cls.altitude)
+      a4 = Navigation.Utils.LatLonAlt.new(a4_lat, a4_lon, cle.altitude)
       cs_to_p3 = Common.Utils.Location.dx_dy_between_points(cls, a3)
       p3_to_p4 = Common.Utils.Location.dx_dy_between_points(a3, a4)
       cross_a = Common.Utils.Math.cross_product(p3_to_p4, cs_to_p3)
@@ -551,8 +529,8 @@ defmodule Navigation.PathManager do
       else
         {b3_lat, b3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, -radius1, alpha)
         {b4_lat, b4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, -radius2, alpha)
-        line_start = Navigation.Path.LatLonAlt.new(b3_lat, b3_lon, cls.altitude)
-        line_end = Navigation.Path.LatLonAlt.new(b4_lat, b4_lon, cle.altitude)
+        line_start = Navigation.Utils.LatLonAlt.new(b3_lat, b3_lon, cls.altitude)
+        line_end = Navigation.Utils.LatLonAlt.new(b4_lat, b4_lon, cle.altitude)
         {line_start, line_end, alpha}
       end
 
@@ -562,7 +540,7 @@ defmodule Navigation.PathManager do
       s3 = radius2*Common.Utils.constrain_angle_to_compass(v2 - (cp2.course - @pi_2))
       path_distance = s1 + s2 + s3
       # Logger.warn("LL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
-      q1 = Navigation.Path.Vector.new(lsle_dx/s1, lsle_dy/s1, (cle.altitude - cls.altitude)/s1)
+      q1 = Navigation.Utils.Vector.new(lsle_dx/s1, lsle_dy/s1, (cle.altitude - cls.altitude)/s1)
       %{cp1 |
         cs: cls,
         start_direction: -1,
@@ -574,7 +552,7 @@ defmodule Navigation.PathManager do
         path_distance: path_distance
       }
     else
-      %Navigation.Path.ConfigPoint{path_distance: 1_000_000}
+      %Navigation.Dubins.ConfigPoint{path_distance: 1_000_000}
     end
   end
 
@@ -595,5 +573,3 @@ defmodule Navigation.PathManager do
   end
 
 end
-
-
