@@ -34,59 +34,59 @@ defmodule Navigation.Path.CreatePathFollowerTest do
     # Starting at wp1
     Navigation.Path.PathFollower.follow(pf, wp1, :math.pi/2, 0, pc)
     # Move in the positive Y direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 0, 2)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), -0.1 + :math.pi/2, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 0, 2)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, -0.1 + :math.pi/2, 0, pc)
     assert course < :math.pi/2
     # Move in the positive X direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 2, 0)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), 0.1 + :math.pi/2, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 2, 0)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, 0.1 + :math.pi/2, 0, pc)
     assert course > :math.pi/2
 
     # Check Line segment
     # Start at the beginning of the line
     pci = 2
     pc = Enum.at(pcs, pci)
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 10, 10)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 10, 10)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(course - 0), max_rad_delta)
     # Move in positive Y direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 10, 10.2)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 10, 10.2)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - 0) < 0
     # Move in negative Y direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 10, 9.8)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 10, 9.8)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - 0) > 0
 
    # Check Next orbit
     # Start at the end of the line
     pci = 3
     pc = Enum.at(pcs, pci)
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 190, 10)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 190, 10)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(course - 0), max_rad_delta)
     # Move in positive Y direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 190, 10.2)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 190, 10.2)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - 0) < 0
     # Move in negative Y direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 190, 9.8)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 190, 9.8)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - 0) > 0
     # Check Next orbit
     pci = 4
     pc = Enum.at(pcs, pci)
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 197.0707, 12.928932)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 197.0707, 12.928932)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(course - :math.pi/4), max_rad_delta)
     # Move in positive X direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 202, 18)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 202, 18)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - :math.pi/2) > 0
 
     # Move in negative X direction
-    {lat,lon} = Common.Utils.Location.lat_lon_from_point(wp1, 198, 18)
-    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, Navigation.Utils.LatLonAlt.new(lat,lon), :math.pi/4, 0, pc)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 198, 18)
+    {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, :math.pi/4, 0, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course - :math.pi/2) < 0
   end
 end

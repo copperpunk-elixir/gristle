@@ -1,19 +1,46 @@
 defmodule Navigation.Path.Waypoint do
   require Logger
   @enforce_keys [:latitude, :longitude, :speed, :course, :altitude]
-  defstruct [:name, :latitude, :longitude, :speed, :course, :altitude, :goto, :dubins]
+  defstruct [:name, :latitude, :longitude, :speed, :course, :altitude, :type, :goto, :dubins]
 
-  @spec new(float(), float(), number(), number(), number(), binary(), integer()) :: struct()
-  def new(latitude, longitude, speed, course, altitude, name \\ "", goto \\ nil) do
+  @flight_type :flight
+  @ground_type :ground
+  @landing_type :landing
+
+  @spec new(float(), float(), number(), number(), number(), atom(), binary(), integer()) :: struct()
+  def new(latitude, longitude, altitude, speed, course, type, name \\ "", goto \\ nil) do
     %Navigation.Path.Waypoint{
       name: name,
       latitude: latitude,
       longitude: longitude,
+      altitude: altitude,
       speed: speed,
       course: course,
-      altitude: altitude,
+      type: type,
       goto: goto,
       dubins: nil
     }
   end
+
+  @spec new_from_lla(struct(), number, number, atom(), binary(), integer()) ::struct()
+  def new_from_lla(lla, speed, course, type, name \\ "", goto \\ nil) do
+    new(lla.latitude, lla.longitude, lla.altitude, speed, course, type, name, goto)
+  end
+
+  @spec new_flight(struct(), number, number, binary(), integer()) ::struct()
+  def new_flight(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @flight_type, name, goto)
+  end
+
+  @spec new_ground(struct(), number, number, binary(), integer()) ::struct()
+  def new_ground(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @ground_type, name, goto)
+  end
+
+  @spec new_landing(struct(), number, number, binary(), integer()) ::struct()
+  def new_landing(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @landing_type, name, goto)
+  end
+
+
 end

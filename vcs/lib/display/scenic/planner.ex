@@ -133,31 +133,31 @@ defmodule Display.Scenic.Planner do
     gap_y = aspect_ratio/dy_dist
     # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
     margin = 0.5
-    {origin_lat, origin_lon, total_x, total_y} =
+    {origin, total_x, total_y} =
     if (gap_x < gap_y) do
       total_dist_x = (1+2*margin)*dx_dist
       total_dist_y = aspect_ratio*total_dist_x#*:math.sqrt(2)
       margin_x = margin*dx_dist
       margin_y = (total_dist_y - dy_dist)/2
-      {origin_lat, origin_lon} = Common.Utils.Location.lat_lon_from_point(bottom_left, -margin_x, -margin_y)
-      {top_corner_lat, top_corner_lon} = Common.Utils.Location.lat_lon_from_point(top_right, margin_x, margin_y)
-      {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
-      {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
+      origin = Common.Utils.Location.lla_from_point(bottom_left, -margin_x, -margin_y)
+      top_corner = Common.Utils.Location.lla_from_point(top_right, margin_x, margin_y)
+      {total_dist_lat, total_dist_lon} = {top_corner.latitude-origin.latitude, top_corner.longitude-origin.longitude}
+      {origin, total_dist_lat, total_dist_lon}
     else
       total_dist_y = (1 + 2*margin) * dy_dist##*:math.sqrt(2)
       total_dist_x = total_dist_y/aspect_ratio
       margin_y = margin*dy_dist
       margin_x = (total_dist_x - dx_dist)/2
-      {origin_lat, origin_lon} = Common.Utils.Location.lat_lon_from_point(bottom_left, -margin_x, -margin_y)
-      {top_corner_lat, top_corner_lon} = Common.Utils.Location.lat_lon_from_point(top_right, margin_x, margin_y)
-      {total_dist_lat, total_dist_lon} = {top_corner_lat-origin_lat, top_corner_lon-origin_lon}
-      {origin_lat, origin_lon, total_dist_lat, total_dist_lon}
+      origin = Common.Utils.Location.lla_from_point(bottom_left, -margin_x, -margin_y)
+      top_corner = Common.Utils.Location.lla_from_point(top_right, margin_x, margin_y)
+      {total_dist_lat, total_dist_lon} = {top_corner.latitude-origin.latitude, top_corner.longitude-origin.longitude}
+      {origin, total_dist_lat, total_dist_lon}
     end
     dx_lat = vp_height/total_x
     dy_lon = vp_width/total_y
     # Logger.warn("dx_lat/dy_lon: #{dx_lat}/#{dy_lon}")
     # Logger.warn("dx/dy ratio: #{dx_lat/dy_lon}")
-    Display.Scenic.PlannerOrigin.new_origin(origin_lat, origin_lon, dx_lat, dy_lon)
+    Display.Scenic.PlannerOrigin.new_origin(origin.latitude, origin.longitude, dx_lat, dy_lon)
   end
 
   # @spec get_origin_without_mission(float(), float()) :: struct()

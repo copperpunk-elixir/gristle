@@ -8,13 +8,11 @@ defmodule Navigation.Waypoint.CreateWaypointTest do
     speed = 10
     course = 0
     alt = 100
-    lat1 = Common.Utils.Math.deg2rad(45.00)
-    lon1 = Common.Utils.Math.deg2rad(-120.0)
+    latlon1 = Navigation.Utils.LatLonAlt.new_deg(45.0, -120.0, alt)
     # North
-    lat2 = Common.Utils.Math.deg2rad(45.01)
-    lon2 = Common.Utils.Math.deg2rad(-120.0)
-    wp1 = Navigation.Path.Waypoint.new(lat1, lon1, speed, course, alt)
-    wp2 = Navigation.Path.Waypoint.new(lat2, lon2, speed, course, alt)
+    latlon2 = Navigation.Utils.LatLonAlt.new_deg(45.01, -120.0, alt)
+    wp1 = Navigation.Path.Waypoint.new_flight(latlon1, speed, course)
+    wp2 = Navigation.Path.Waypoint.new_flight(latlon2, speed, course)
    {dx, dy} = Common.Utils.Location.dx_dy_between_points(wp1, wp2)
    # Logger.debug("dx/dy: #{dx}/#{dy}")
    assert_in_delta(dx, 1112, dist_range)

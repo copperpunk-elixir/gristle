@@ -339,11 +339,9 @@ defmodule Navigation.PathManager do
     radius1 = cp1.start_radius
     radius2 = cp2.start_radius
     # Right Start
-    {crs_lat, crs_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
+    crs = Common.Utils.Location.lla_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
     # Right End
-    {cre_lat, cre_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
-    crs = Navigation.Utils.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
-    cre = Navigation.Utils.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
+    cre = Common.Utils.Location.lla_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(crs, cre)
     ell = Common.Utils.Math.hypot(dx, dy)
@@ -356,10 +354,8 @@ defmodule Navigation.PathManager do
       end
       beta = :math.asin((radius2-radius1)/ell)
       alpha = gamma - beta
-      {a3_lat, a3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, radius1, alpha)
-      {a4_lat, a4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, radius2, alpha)
-      a3 = Navigation.Utils.LatLonAlt.new(a3_lat, a3_lon, crs.altitude)
-      a4 = Navigation.Utils.LatLonAlt.new(a4_lat, a4_lon, cre.altitude)
+      a3 = Common.Utils.Location.lla_from_point_with_distance(crs, radius1, alpha)
+      a4 = Common.Utils.Location.lla_from_point_with_distance(cre, radius2, alpha)
       cs_to_p3 = Common.Utils.Location.dx_dy_between_points(crs, a3)
       p3_to_p4 = Common.Utils.Location.dx_dy_between_points(a3, a4)
       cross_a = Common.Utils.Math.cross_product(p3_to_p4, cs_to_p3)
@@ -369,10 +365,8 @@ defmodule Navigation.PathManager do
         line_end = a4
         {line_start, line_end, alpha}
       else
-        {b3_lat, b3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, -radius1, alpha)
-        {b4_lat, b4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, -radius2, alpha)
-        line_start = Navigation.Utils.LatLonAlt.new(b3_lat, b3_lon, crs.altitude)
-        line_end = Navigation.Utils.LatLonAlt.new(b4_lat, b4_lon, cre.altitude)
+        line_start = Common.Utils.Location.lla_from_point_with_distance(crs, -radius1, alpha)
+        line_end = Common.Utils.Location.lla_from_point_with_distance(cre, -radius2, alpha)
         {line_start, line_end, :math.pi() + alpha}
       end
 
@@ -403,11 +397,9 @@ defmodule Navigation.PathManager do
     radius1 = cp1.start_radius
     radius2 = cp2.start_radius
   # Right Start
-    {crs_lat, crs_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
+    crs = Common.Utils.Location.lla_from_point_with_distance(cp1.pos, radius1, cp1.course + @pi_2)
     # Left End
-    {cle_lat, cle_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
-    crs = Navigation.Utils.LatLonAlt.new(crs_lat, crs_lon, cp1.pos.altitude)
-    cle = Navigation.Utils.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
+    cle= Common.Utils.Location.lla_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(crs, cle)
     xL = Common.Utils.Math.hypot(dx, dy)
@@ -426,10 +418,8 @@ defmodule Navigation.PathManager do
       path_distance = s1 + s2 + s3
       # Logger.warn("RL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), (cle.altitude-crs.altitude)/s1)
-      {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(crs, radius1, v2)
-      {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, radius2, v2 + :math.pi)
-      z1 = Navigation.Utils.LatLonAlt.new(z1_lat, z1_lon, crs.altitude)
-      z2 = Navigation.Utils.LatLonAlt.new(z2_lat, z2_lon, cle.altitude)
+      z1 = Common.Utils.Location.lla_from_point_with_distance(crs, radius1, v2)
+      z2 = Common.Utils.Location.lla_from_point_with_distance(cle, radius2, v2 + :math.pi)
       %{cp1 |
         cs: crs,
         start_direction: 1,
@@ -450,11 +440,9 @@ defmodule Navigation.PathManager do
     radius1 = cp1.start_radius
     radius2 = cp2.start_radius
     # Left Start
-    {cls_lat, cls_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
+    cls = Common.Utils.Location.lla_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
     # Right End
-    {cre_lat, cre_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
-    cls = Navigation.Utils.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
-    cre = Navigation.Utils.LatLonAlt.new(cre_lat, cre_lon, cp2.pos.altitude)
+    cre = Common.Utils.Location.lla_from_point_with_distance(cp2.pos, radius2, cp2.course + @pi_2)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(cls, cre)
     xL = Common.Utils.Math.hypot(dx, dy)
@@ -473,10 +461,8 @@ defmodule Navigation.PathManager do
       path_distance = s1 + s2 + s3
       # Logger.warn("LR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), (cre.altitude-cls.altitude)/s1)
-      {z1_lat, z1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, radius1, v + v2)
-      {z2_lat, z2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cre, radius2, v + v2 - :math.pi)
-      z1 = Navigation.Utils.LatLonAlt.new(z1_lat, z1_lon, cls.altitude)
-      z2 = Navigation.Utils.LatLonAlt.new(z2_lat, z2_lon, cre.altitude)
+      z1 = Common.Utils.Location.lla_from_point_with_distance(cls, radius1, v + v2)
+      z2 = Common.Utils.Location.lla_from_point_with_distance(cre, radius2, v + v2 - :math.pi)
       %{cp1 |
         cs: cls,
         start_direction: -1,
@@ -497,11 +483,9 @@ defmodule Navigation.PathManager do
     radius1 = cp1.start_radius
     radius2 = cp2.start_radius
     # Left Start
-    {cls_lat, cls_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
+    cls = Common.Utils.Location.lla_from_point_with_distance(cp1.pos, radius1, cp1.course - @pi_2)
     # Left End
-    {cle_lat, cle_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
-    cls = Navigation.Utils.LatLonAlt.new(cls_lat, cls_lon, cp1.pos.altitude)
-    cle = Navigation.Utils.LatLonAlt.new(cle_lat, cle_lon, cp2.pos.altitude)
+    cle = Common.Utils.Location.lla_from_point_with_distance(cp2.pos, radius2, cp2.course - @pi_2)
 
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(cls, cle)
     ell = Common.Utils.Math.hypot(dx, dy)
@@ -514,10 +498,8 @@ defmodule Navigation.PathManager do
       end
       beta = :math.asin((radius2-radius1)/ell)
       alpha = gamma + beta
-      {a3_lat, a3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, radius1, alpha)
-      {a4_lat, a4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, radius2, alpha)
-      a3 = Navigation.Utils.LatLonAlt.new(a3_lat, a3_lon, cls.altitude)
-      a4 = Navigation.Utils.LatLonAlt.new(a4_lat, a4_lon, cle.altitude)
+      a3 = Common.Utils.Location.lla_from_point_with_distance(cls, radius1, alpha)
+      a4 = Common.Utils.Location.lla_from_point_with_distance(cle, radius2, alpha)
       cs_to_p3 = Common.Utils.Location.dx_dy_between_points(cls, a3)
       p3_to_p4 = Common.Utils.Location.dx_dy_between_points(a3, a4)
       cross_a = Common.Utils.Math.cross_product(p3_to_p4, cs_to_p3)
@@ -527,10 +509,8 @@ defmodule Navigation.PathManager do
         line_end = a4
         {line_start, line_end, :math.pi + alpha}
       else
-        {b3_lat, b3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cls, -radius1, alpha)
-        {b4_lat, b4_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(cle, -radius2, alpha)
-        line_start = Navigation.Utils.LatLonAlt.new(b3_lat, b3_lon, cls.altitude)
-        line_end = Navigation.Utils.LatLonAlt.new(b4_lat, b4_lon, cle.altitude)
+        line_start = Common.Utils.Location.lla_from_point_with_distance(cls, -radius1, alpha)
+        line_end = Common.Utils.Location.lla_from_point_with_distance(cle, -radius2, alpha)
         {line_start, line_end, alpha}
       end
 

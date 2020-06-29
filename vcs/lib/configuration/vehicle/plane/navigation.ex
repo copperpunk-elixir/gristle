@@ -52,7 +52,9 @@ defmodule Configuration.Vehicle.Plane.Navigation do
   def get_vehicle_limits() do
     %{
       vehicle_turn_rate: 0.08,
-      vehicle_loiter_speed: 2
+      vehicle_loiter_speed: 2,
+      takeoff_speed: 45,
+      climb_speed: 50,
     }
   end
 
