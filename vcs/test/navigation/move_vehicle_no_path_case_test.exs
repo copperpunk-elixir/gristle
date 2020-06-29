@@ -17,15 +17,12 @@ defmodule Navigation.MoveVehicleNoPathCaseTest do
     {:ok, []}
   end
 
-  test "Move Vehicle Test", context do
-    max_pos_delta = 0.00001
-    max_vector_delta = 0.001
-    max_rad_delta = 0.0001
+  test "Move Vehicle Test" do
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
     # navigation_config = context[:config]
     current_mission = Navigation.Path.Mission.get_default_mission()
-    Navigation.PathManager.load_mission(current_mission)
+    Navigation.PathManager.load_mission(current_mission, __MODULE__)
 
     Process.sleep(500)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
