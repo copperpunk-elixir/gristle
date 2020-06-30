@@ -42,5 +42,20 @@ defmodule Navigation.Path.Waypoint do
     new_from_lla(lla, speed, course, @landing_type, name, goto)
   end
 
+  @spec flight_type() :: atom()
+  def flight_type() do
+    @flight_type
+  end
+
+  @spec ground_type() :: atom()
+  def ground_type() do
+    @ground_type
+  end
+
+  @spec landing_type() :: atom()
+  def landing_type() do
+    @landing_type
+  end
+
 
 end

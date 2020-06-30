@@ -31,6 +31,7 @@ defmodule Configuration.Module.Command do
       |> Module.concat(Pids)
 
     Enum.reduce(channels, %{}, fn (channel, acc) ->
+      IO.puts("channel: #{channel}")
       constraints =
         apply(vehicle_module, :get_constraints, [])
         |> Map.get(channel)

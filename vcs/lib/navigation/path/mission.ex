@@ -99,13 +99,16 @@ defmodule Navigation.Path.Mission do
 
   @spec get_random_ground_mission(struct()) :: struct()
   def get_random_ground_mission(starting_position) do
-    start_position = get_seatac_location(0)
-    takeoff = Common.Utils.Location.lla_from_point(start_position,300, 0)
+    start_position = get_seatac_location(133.3)
+    takeoff = Common.Utils.Location.lla_from_point(start_position,1500, 0)
+    |> Map.put(:altitude, 233.3)
     speed = 45
     course = 0
-    wp1 = Navigation.Path.Waypoint.new_ground(start_position, speed, course)
-    wp2 = Navigation.Path.Waypoint.new_ground(takeoff, speed, course)
-    Navigation.Path.Mission.new_mission("ground",[wp1, wp1])
+    wp1 = Navigation.Path.Waypoint.new_ground(start_position, speed, course, "wp1")
+    wp2 = Navigation.Path.Waypoint.new_ground(takeoff, speed, course, "wp2")
+    Logger.debug("wp1: #{inspect(wp1)}")
+    Logger.debug("wp2: #{inspect(wp2)}")
+    Navigation.Path.Mission.new_mission("ground",[wp1, wp2])
   end
 
   @spec get_random_mission(struct(), integer(), boolean()) :: struct()

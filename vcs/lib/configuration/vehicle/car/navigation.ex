@@ -52,7 +52,12 @@ defmodule Configuration.Vehicle.Car.Navigation do
   def get_vehicle_limits() do
     %{
       vehicle_turn_rate: 0.2,
-      vehicle_loiter_speed: 5
+      vehicle_loiter_speed: 5,
+      takeoff_speed: 45,
+      climb_speed: 50,
+      vehicle_agl_ground_threshold: 1.0,
+      vehicle_pitch_for_climbout: 0.1745,
+      vehicle_max_ground_speed: 30
     }
   end
 

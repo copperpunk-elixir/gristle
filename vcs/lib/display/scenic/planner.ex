@@ -171,8 +171,8 @@ defmodule Display.Scenic.Planner do
   def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       wp_plot = get_translate(wp, origin, height)
-      # Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
-      # Navigation.Utils.LatLonAlt.print_deg(wp, :warn)
+      Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
+      Logger.info(Navigation.Utils.LatLonAlt.to_string(wp))
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
       |> text(wp.name, translate: wp_plot, id: @primitive_id)
     end)

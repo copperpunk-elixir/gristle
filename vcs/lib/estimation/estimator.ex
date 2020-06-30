@@ -88,7 +88,7 @@ defmodule Estimation.Estimator do
       velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
       {position, velocity, new_watchdog_time}
     end
-    state = %{state | position: position, velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
+    state = %{state | position: Map.put(position, :agl, position.altitude-133.0), velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 

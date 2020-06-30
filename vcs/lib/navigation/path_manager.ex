@@ -22,6 +22,9 @@ defmodule Navigation.PathManager do
       vehicle_module: vehicle_module,
       vehicle_turn_rate: config.vehicle_turn_rate,
       vehicle_loiter_speed: config.vehicle_loiter_speed,
+      vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
+      vehicle_max_ground_speed: config.vehicle_max_ground_speed,
+      vehicle_pitch_for_climbout: config.vehicle_pitch_for_climbout,
       goals_classification: goals_classification,
       goals_time_validity_ms: goals_time_validity_ms,
       config_points: [],
@@ -66,7 +69,7 @@ defmodule Navigation.PathManager do
       case state.current_cp_index do
         nil -> -1
         index ->
-          # Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
+          Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
           current_cp = Enum.at(state.config_points, index)
           check_for_path_case_completion(position_velocity.position, current_cp, state.current_path_case)
       end
@@ -109,11 +112,35 @@ defmodule Navigation.PathManager do
       # Logger.info("cpc_i: #{current_path_case.case_index}")
       course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
       {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, dt, current_path_case)
+      goals = %{speed: speed_cmd, altitude: altitude_cmd}
+      goals =
+      if (current_path_case.type == Navigation.Path.Waypoint.ground_type()) do
+        Logger.debug("Ground type")
+        goals =
+        if (position_velocity.position.agl < state.vehicle_agl_ground_threshold) do
+          Logger.debug("still on the ground")
+          Map.put(goals, :course_ground, course_cmd)
+        else
+          Logger.debug("above AGL threshold")
+          Map.put(goals, :course_flight, course_cmd)
+        end
+
+        speed = Common.Utils.Math.hypot(position_velocity.velocity.east, position_velocity.velocity.north)
+        if (speed < state.vehicle_max_ground_speed) do
+            Logger.debug("Below max ground speed")
+            Map.put(goals, :altitude, position_velocity.position.altitude)
+        else
+          Logger.debug("above max ground speed")
+          goals
+        end
+      else
+        Map.put(goals, :course_flight, course_cmd)
+      end
       # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
       # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
       # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
       # Send goals to message sorter
-      MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, %{speed: speed_cmd, course: course_cmd, altitude: altitude_cmd})
+      MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
     end
     {:noreply, %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}}
   end
@@ -160,6 +187,11 @@ defmodule Navigation.PathManager do
   @spec load_random_seatac() :: atom()
   def load_random_seatac() do
     load_mission(Navigation.Path.Mission.get_random_seatac_mission(), __MODULE__)
+  end
+
+  @spec load_random_ground() :: atom()
+  def load_random_ground() do
+    load_mission(Navigation.Path.Mission.get_random_ground_mission(nil), __MODULE__)
   end
 
   @spec move_vehicle(map()) :: atom()
@@ -270,7 +302,7 @@ defmodule Navigation.PathManager do
 
   @spec set_dubins_parameters(struct()) :: struct()
   def set_dubins_parameters(cp) do
-    path_case_0 = Navigation.Dubins.PathCase.new_orbit(0)
+    path_case_0 = Navigation.Dubins.PathCase.new_orbit(0, cp.type)
     path_case_0 = %{
       path_case_0 |
       v_des: cp.start_speed,
@@ -287,7 +319,7 @@ defmodule Navigation.PathManager do
       q: cp.q1
     }
 
-    path_case_2 = Navigation.Dubins.PathCase.new_line(2)
+    path_case_2 = Navigation.Dubins.PathCase.new_line(2, cp.type)
     path_case_2 = %{
       path_case_2 |
       v_des: cp.end_speed,
@@ -296,7 +328,7 @@ defmodule Navigation.PathManager do
       zi: cp.z2
     }
 
-    path_case_3 = Navigation.Dubins.PathCase.new_orbit(3)
+    path_case_3 = Navigation.Dubins.PathCase.new_orbit(3, cp.type)
     path_case_3 = %{
       path_case_3 |
       v_des: cp.end_speed,

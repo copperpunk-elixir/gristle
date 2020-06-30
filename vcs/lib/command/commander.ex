@@ -35,6 +35,7 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast(:begin, state) do
+    Logger.warn("bgsafjasdlfasufghpsgu")
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
@@ -110,8 +111,11 @@ defmodule Command.Commander do
                 :yaw ->
                   reference_cmds.yaw + value_to_add
                   |> Common.Utils.Math.constrain(min_value, max_value)
-                :course ->
-                  reference_cmds.course + value_to_add
+                :course_flight ->
+                  reference_cmds.course_flight + value_to_add
+                  |> Common.Utils.constrain_angle_to_compass()
+                :course_ground ->
+                  reference_cmds.course_ground + value_to_add
                   |> Common.Utils.constrain_angle_to_compass()
                 :speed ->
                   reference_cmds.speed + value_to_add

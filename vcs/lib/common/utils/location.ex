@@ -40,7 +40,7 @@ defmodule Common.Utils.Location do
     end
     dlon = (dy/@earth_radius_m) / q
     lon2 = lon1 + dlon
-    {lat2, lon2}
+    # {lat2, lon2}
     Navigation.Utils.LatLonAlt.new(lat2, lon2, origin.altitude)
   end
 

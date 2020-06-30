@@ -4,6 +4,7 @@ defmodule Navigation.Dubins.PathCase do
   @line_flag 1
   @orbit_flag 2
   defstruct [
+    :type,
     :flag,
     :case_index,
     :r,
@@ -15,19 +16,21 @@ defmodule Navigation.Dubins.PathCase do
     :v_des
   ]
 
-  @spec new_line(integer()) :: struct()
-  def new_line(case_index) do
+  @spec new_line(integer(), atom()) :: struct()
+  def new_line(case_index, type) do
     %Navigation.Dubins.PathCase{
       flag: @line_flag,
-      case_index: case_index
+      case_index: case_index,
+      type: type
     }
   end
 
-  @spec new_orbit(integer()) :: struct()
-  def new_orbit(case_index) do
+  @spec new_orbit(integer(), atom()) :: struct()
+  def new_orbit(case_index, type) do
     %Navigation.Dubins.PathCase{
       flag: @orbit_flag,
-      case_index: case_index
+      case_index: case_index,
+      type: type
     }
   end
 

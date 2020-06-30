@@ -41,15 +41,15 @@ defmodule Control.SendLevelIIICorrectionTest do
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :yaw}), 0, max_cmd_delta)
     # assert_in_delta(MessageSorter.Sorter.get_value({:pv_cmds, :thrust}), 0, max_cmd_delta)
     # Send PVIII command
-    pv_3_cmds = %{course: :math.pi()/180*10, speed: 10, altitude: 5}
+    pv_3_cmds = %{course_flight: :math.pi()/180*10, speed: 10, altitude: 5}
     msg_class = [2,5]
     msg_time_ms = 500
     MessageSorter.Sorter.add_message({:pv_cmds, 3}, msg_class, msg_time_ms, pv_3_cmds)
     # MessageSorter.Sorter.add_message({:pv_cmds, :course}, msg_class, msg_time_ms, pv_cmd.course)
     # MessageSorter.Sorter.add_message({:pv_cmds, :speed}, msg_class, msg_time_ms, pv_cmd.speed)
     Process.sleep(150)
-    course_cmd = Control.Controller.get_pv_cmd(:course)
-    assert_in_delta(course_cmd, pv_3_cmds.course, max_cmd_delta)
+    course_cmd = Control.Controller.get_pv_cmd(:course_flight)
+    assert_in_delta(course_cmd, pv_3_cmds.course_flight, max_cmd_delta)
     # Send PV value
     course = :math.pi()/180*20
     speed = 5

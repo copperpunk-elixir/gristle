@@ -31,7 +31,7 @@ defmodule Configuration.Vehicle.Plane.Navigation do
       %{
         name: {:goals, 3},
         default_message_behavior: :default_value,
-        default_value: %{course: 0, speed: 0, altitude: 0},
+        default_value: %{course_flight: 0, speed: 0, altitude: 0},
         value_type: :map
       }
       # %{
@@ -55,6 +55,9 @@ defmodule Configuration.Vehicle.Plane.Navigation do
       vehicle_loiter_speed: 2,
       takeoff_speed: 45,
       climb_speed: 50,
+      vehicle_agl_ground_threshold: 1.0,
+      vehicle_pitch_for_climbout: 0.1745,
+      vehicle_max_ground_speed: 30
     }
   end
 
