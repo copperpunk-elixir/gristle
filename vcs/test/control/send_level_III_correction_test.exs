@@ -53,11 +53,13 @@ defmodule Control.SendLevelIIICorrectionTest do
     # Send PV value
     course = :math.pi()/180*20
     speed = 5
+    airspeed = 5
     position = %{latitude: 5, longitude: 10, altitude: 10}
+    velocity = %{speed: speed, course: course, airspeed: airspeed}
     attitude = %{roll: 0, pitch: 0, yaw: 0}
     bodyrate = %{rollrate: 0, pitchrate: 0, yawrate: 0}
     dt = 0.05
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_speed_course}, position, speed, course, dt}, {:pv_values, :position_speed_course}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :position_velocity}, position, velocity, dt}, {:pv_values, :position_velocity}, self())
     Process.sleep(50)
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, dt}, {:pv_values, :attitude_bodyrate}, self())
     Process.sleep(100)

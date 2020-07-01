@@ -10,16 +10,13 @@ defmodule Pids.Pid do
   @impl GenServer
   def init(config) do
     {process_variable, control_variable} = Map.get(config, :name)
-    ff_poly = Map.get(config, :ff_poly, [0])
     {:ok, %{
         process_variable: process_variable,
         control_variable: control_variable,
         kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
-        ki_mult: Map.get(config, :ki_mult, 1),
-        ff_poly: ff_poly,
-        ff_poly_degree: length(ff_poly)-1,
+        ff: Map.get(config, :ff, nil),
         output_min: config.output_min,
         output_max: config.output_max,
         correction_min: config.input_min,
@@ -33,7 +30,7 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
-  def handle_call({:update, pv_cmd, pv_value, dt}, _from, state) do
+  def handle_call({:update, pv_cmd, pv_value, airspeed, dt}, _from, state) do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
     delta_output_min = state.output_min - state.output_neutral
     delta_output_max = state.output_max - state.output_neutral
@@ -41,7 +38,7 @@ defmodule Pids.Pid do
     {correction, out_of_range} = Common.Utils.Math.constrain?(correction_raw, state.correction_min, state.correction_max)
     pv_integrator =
       unless out_of_range do
-      pv_add = if (correction*state.output > 0), do: correction*dt, else: state.ki_mult*correction*dt
+      pv_add = correction*dt
       state.pv_integrator + pv_add
     else
       0.0
@@ -60,7 +57,12 @@ defmodule Pids.Pid do
       0.0
     end
     delta_output = cmd_p + cmd_i + cmd_d
-    feed_forward = calculate_feed_forward(correction, state.ff_poly, state.ff_poly_degree)
+    feed_forward =
+      case Map.get(state, :ff) do
+        nil -> 0
+        f -> f.(pv_value+correction, pv_value, airspeed)
+      end
+    # fscalculate_feed_forward(correction, state.ff_poly, state.ff_poly_degree)
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output
     # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
@@ -97,8 +99,8 @@ defmodule Pids.Pid do
     end)
   end
 
-  def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, dt) do
-    GenServer.call(via_tuple(pv_name, output_variable_name), {:update, pv_cmd, pv_value, dt})
+  def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt) do
+    GenServer.call(via_tuple(pv_name, output_variable_name), {:update, pv_cmd, pv_value, airspeed, dt})
   end
 
   def get_output(process_variable, control_variable, weight\\1) do

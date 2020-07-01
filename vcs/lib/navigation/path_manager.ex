@@ -37,7 +37,7 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_speed_course}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     {:noreply, state}
   end
@@ -58,10 +58,13 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_speed_course}, position, speed, course, dt}, state) do
+  def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
+    speed = velocity.speed
+    course = velocity.course
+    airspeed = velocity.airspeed
     temp_case_index =
       case state.current_cp_index do
         nil -> -1

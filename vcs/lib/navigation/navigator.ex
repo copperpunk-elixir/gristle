@@ -32,7 +32,6 @@ defmodule Navigation.Navigator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     # Start sorters
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, -1}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 0}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())

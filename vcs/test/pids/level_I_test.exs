@@ -60,10 +60,11 @@ defmodule Pids.LevelITest do
     Process.sleep(300)
     pv_cmd_map = %{rollrate: 0.4}
     pv_value_map = %{bodyrate: %{rollrate: 0}}
+    airspeed = 10
     dt = 0.05
     rollrate_corr = Common.Utils.Math.constrain(pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate, aileron_pid.input_min, aileron_pid.input_max)
     rollrate_corr_prev = 0
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,dt},{:pv_cmds_values, 1}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,airspeed,dt},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)
     exp_rollrate_aileron_output =
@@ -74,7 +75,7 @@ defmodule Pids.LevelITest do
     # Another cycle
     pv_value_map = %{bodyrate: %{rollrate: 0}}
     rollrate_corr = Common.Utils.Math.constrain(pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate, aileron_pid.input_min, aileron_pid.input_max)
-    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,dt},{:pv_cmds_values, 1}, self())
+    Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,airspeed,dt},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     exp_rollrate_aileron_output =
       aileron_pid.kp*rollrate_corr + aileron_pid.ki*(rollrate_corr + rollrate_corr_prev)*dt - aileron_pid.kd*(rollrate_corr - rollrate_corr_prev)/dt + aileron_pid.output_neutral

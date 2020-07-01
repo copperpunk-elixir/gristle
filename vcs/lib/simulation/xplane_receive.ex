@@ -5,6 +5,7 @@ defmodule Simulation.XplaneReceive do
 
   @deg2rad 0.017453293
   @ft2m 0.3048
+  @knots2mps 0.51444444
   # @rad2deg 57.295779513
 
 
@@ -25,6 +26,7 @@ defmodule Simulation.XplaneReceive do
         position: %{},
         velocity: %{},
         agl: 0,
+        airspeed: 0,
         new_simulation_data_to_publish: false
      }}
   end
@@ -69,6 +71,10 @@ defmodule Simulation.XplaneReceive do
     if (length(buffer) >= 32) do
       state =
         case message_type do
+          3 ->
+            {indicated_airspeed_knots_uint32, _buffer} = Enum.split(buffer, 4)
+            indicated_airspeed_knots = list_to_int(indicated_airspeed_knots_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+            %{state | airspeed: indicated_airspeed_knots*@knots2mps}
           16 ->
             {pitch_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
             {roll_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
@@ -132,6 +138,7 @@ defmodule Simulation.XplaneReceive do
     position_velocity_value_map = %{position: state.position, velocity: state.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
   end
 
   @spec list_to_int(list(), integer()) :: integer()
