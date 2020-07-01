@@ -25,7 +25,6 @@ defmodule Navigation.Navigator do
         navigator_loop_interval_ms: config.navigator_loop_interval_ms,
         pv_cmds_msg_classification: pv_cmds_msg_classification,
         pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
-        position_velocity: %{position: %{latitude: 0, longitude: 0, altitude: 0}, velocity: %{north: 0, east: 0, down: 0}},
      }}
   end
 
@@ -42,11 +41,6 @@ defmodule Navigation.Navigator do
     # Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
     navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
     {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
-  end
-
-  @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position_velocity, _dt}, state) do
-    {:noreply, %{state | position_velocity: position_velocity}}
   end
 
   @impl GenServer

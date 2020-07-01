@@ -96,7 +96,7 @@ defmodule Simulation.XplaneReceive do
             longitude_deg = list_to_int(longitude_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             altitude_ft = list_to_int(altitude_ft_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             agl_ft = list_to_int(agl_ft_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_ft, 1)}/#{eftb(agl_ft,1)}")
+            # Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_ft, 1)}/#{eftb(agl_ft,1)}")
             %{state | position: %{latitude: latitude_deg*@deg2rad, longitude: longitude_deg*@deg2rad, altitude: altitude_ft*@ft2m}, agl: agl_ft*@ft2m}
           21 ->
             buffer = Enum.drop(buffer, 12)
@@ -141,8 +141,8 @@ defmodule Simulation.XplaneReceive do
     end)
   end
 
-  defp eftb(num, dec) do
-    Common.Utils.eftb(num,dec)
-  end
+  # defp eftb(num, dec) do
+  #   Common.Utils.eftb(num,dec)
+  # end
 
 end

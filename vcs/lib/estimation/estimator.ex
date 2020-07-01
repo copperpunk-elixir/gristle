@@ -34,7 +34,8 @@ defmodule Estimation.Estimator do
         min_speed_for_course: @min_speed_for_course,
         bodyrate: %{},
         attitude: %{},
-        velocity: %{},
+        speed: 0,
+        course: 0,
         position: %{},
         agl: 0
      }}
@@ -84,16 +85,17 @@ defmodule Estimation.Estimator do
     # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     position = Map.get(pv_value_map, :position)
     velocity = Map.get(pv_value_map, :velocity)
-    {position, velocity, new_watchdog_elapsed} =
+    {position, speed, course, new_watchdog_elapsed} =
     if (position == nil) or (velocity==nil) do
-      {state.position, state.velocity, state.ins_watchdog_elapsed}
+      {state.position, state.speed, state.course, state.ins_watchdog_elapsed}
     else
       new_watchdog_time = max(state.ins_watchdog_elapsed - 1.1*state.ins_loop_interval_ms, 0)
       # If the velocity is below a threshold, we use yaw instead
-      velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
-      {position, velocity, new_watchdog_time}
+      # velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
+      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
+      {position, speed, course, new_watchdog_time}
     end
-    state = %{state | position: position, velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
+    state = %{state | position: position, speed: speed, course: course, ins_watchdog_elapsed: new_watchdog_elapsed}
     {:noreply, state}
   end
 
@@ -111,7 +113,7 @@ defmodule Estimation.Estimator do
     unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
-        {{:pv_values, :attitude_bodyrate}, %{attitude: attitude, bodyrate: bodyrate}, state.imu_loop_interval_ms/1000},
+        {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
         {:pv_values, :attitude_bodyrate},
         self())
     end
@@ -120,13 +122,13 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:ins_loop, state) do
-    position = Map.put(state.position, :agl, state.agl)
-    velocity = state.velocity
-    unless (Enum.empty?(position) or Enum.empty?(velocity)) do
+    position = state.position
+    unless Enum.empty?(position) do
+      position = Map.put(position, :agl, state.agl)
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
-        {{:pv_values, :position_velocity}, %{position: position, velocity: velocity}, state.ins_loop_interval_ms/1000},
-        {:pv_values, :position_velocity},
+        {{:pv_values, :position_speed_course}, position, state.speed, state.course, state.ins_loop_interval_ms/1000},
+        {:pv_values, :position_speed_course},
         self())
     end
     {:noreply, state}
@@ -135,18 +137,12 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_info(:telemetry_loop, state) do
     position = state.position
-    velocity = state.velocity
     attitude = state.attitude
     bodyrate = state.bodyrate
-    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, @min_speed_for_course, attitude.yaw)
-      calculated = %{
-        speed: speed,
-        course: course
-      }
+    unless (Enum.empty?(position) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
       Comms.Operator.send_global_msg_to_group(
         __MODULE__,
-        {:pv_estimate, %{position: state.position, velocity: state.velocity, attitude: state.attitude, bodyrate: state.bodyrate, calculated: calculated}},
+        {:pv_estimate, %{position: position, speed: state.speed, course: state.course, attitude: attitude, bodyrate: bodyrate}},
         :pv_estimate,
         self())
     end

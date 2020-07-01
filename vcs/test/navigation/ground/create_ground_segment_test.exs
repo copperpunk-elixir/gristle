@@ -2,7 +2,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
   use ExUnit.Case
   require Logger
 
-  @pos_vel_group {:pv_values, :position_velocity}
+  @psc_group {:pv_values, :position_speed_course}
 
   setup do
     vehicle_type = :Plane
@@ -34,8 +34,10 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     config_points = Navigation.PathManager.get_config_points()
     # Move to start_location
     Logger.info("move to start location")
-    pos_vel = %{position: Map.put(start_position, :agl, 0), velocity: %{north: 1.0, east: 0, down: 0}}
-    Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos_vel, 0}, @pos_vel_group, self())
+    pos = Map.put(start_position, :agl, 0)
+    speed = 1.0
+    course = 0.0
+    Comms.Operator.send_local_msg_to_group(__MODULE__,{@psc_group, pos, speed, course, 0}, @psc_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     assert cmds.altitude == 0
@@ -46,8 +48,9 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Logger.info("move to 150m North")
     new_position = Common.Utils.Location.lla_from_point(start_position,300,0)
     |> Map.put(:agl, 0.3)
-    pos_vel = %{position: new_position, velocity: %{north: 25.0, east: 0, down: 0}}
-    Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos_vel, 0}, @pos_vel_group, self())
+    pos = new_position
+    speed = 25.0
+    Comms.Operator.send_local_msg_to_group(__MODULE__,{@psc_group, pos, speed, course, 0}, @psc_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
@@ -55,8 +58,9 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     # Speed up
     Logger.info("same position but with 35m/s speed")
-    pos_vel = %{position: new_position, velocity: %{north: 35.0, east: 0, down: 0}}
-    Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos_vel, 0}, @pos_vel_group, self())
+    pos = new_position
+    speed = 35.0
+    Comms.Operator.send_local_msg_to_group(__MODULE__,{@psc_group, pos, speed, course, 0}, @psc_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
@@ -67,8 +71,9 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Logger.info("climb above AGL threshold")
     new_position = Common.Utils.Location.lla_from_point(start_position,500,0)
     |> Map.put(:agl, 5.3)
-    pos_vel = %{position: new_position, velocity: %{north: 37.0, east: 0, down: 0}}
-    Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos_vel, 0}, @pos_vel_group, self())
+    pos = new_position
+    speed = 37.0
+    Comms.Operator.send_local_msg_to_group(__MODULE__,{@psc_group, pos, speed, course, 0}, @psc_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")

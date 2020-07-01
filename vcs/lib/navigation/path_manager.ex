@@ -30,8 +30,6 @@ defmodule Navigation.PathManager do
       current_cp_index: nil,
       current_path_case: nil,
       current_path_distance: 0,
-      position: %{},
-      velocity: %{},
       path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf)
      }}
   end
@@ -39,7 +37,7 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_speed_course}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     {:noreply, state}
   end
@@ -60,8 +58,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position_velocity, dt}, state) do
-    Logger.debug("agl: #{position_velocity.position.agl}")
+  def handle_cast({{:pv_values, :position_speed_course}, position, speed, course, dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
@@ -71,7 +68,7 @@ defmodule Navigation.PathManager do
         index ->
           # Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
           current_cp = Enum.at(state.config_points, index)
-          check_for_path_case_completion(position_velocity.position, current_cp, state.current_path_case)
+          check_for_path_case_completion(position, current_cp, state.current_path_case)
       end
     {current_cp_index, current_path_case} =
       case temp_case_index do
@@ -110,27 +107,20 @@ defmodule Navigation.PathManager do
     # If we have a path_case, then follow it
     unless is_nil(current_path_case) do
       # Logger.info("cpc_i: #{current_path_case.case_index}")
-      course = :math.atan2(position_velocity.velocity.east, position_velocity.velocity.north) |> Common.Utils.constrain_angle_to_compass()
-      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position_velocity.position, course, dt, current_path_case)
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, dt, current_path_case)
       goals = %{speed: speed_cmd, altitude: altitude_cmd}
       goals =
       if (current_path_case.type == Navigation.Path.Waypoint.ground_type()) do
-        Logger.debug("Ground type")
         goals =
-        if (position_velocity.position.agl < state.vehicle_agl_ground_threshold) do
-          Logger.debug("still on the ground")
+        if (position.agl < state.vehicle_agl_ground_threshold) do
           Map.put(goals, :course_ground, course_cmd)
         else
-          Logger.debug("above AGL threshold")
           Map.put(goals, :course_flight, course_cmd)
         end
 
-        speed = Common.Utils.Math.hypot(position_velocity.velocity.east, position_velocity.velocity.north)
         if (speed < state.vehicle_max_ground_speed) do
-            Logger.debug("Below max ground speed")
-            Map.put(goals, :altitude, position_velocity.position.altitude)
+          Map.put(goals, :altitude, position.altitude)
         else
-          Logger.debug("above max ground speed")
           goals
         end
       else
@@ -197,12 +187,6 @@ defmodule Navigation.PathManager do
   @spec load_random_takeoff() :: atom()
   def load_random_takeoff() do
     load_mission(Navigation.Path.Mission.get_random_takeoff_mission(), __MODULE__)
-  end
-
-
-  @spec move_vehicle(map()) :: atom()
-  def move_vehicle(position_velocity) do
-    GenServer.cast(__MODULE__, {:move_vehicle, position_velocity})
   end
 
   @spec begin_orbit() :: atom()

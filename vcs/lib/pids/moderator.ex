@@ -73,7 +73,6 @@ defmodule Pids.Moderator do
         # Logger.warn("pitch_cmd: #{pitch_cmd}")
         # pv_cmd_map = Map.put(pv_cmd_map, :course, course_cmd_constrained)
         # pv_value_map = Map.put(pv_value_map, :course, 0)
-
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, dt, state.pv_output_pids)
         # If we are below climbout altitude, we should be holding a fixed pitch value
         # level_2_output_map =
