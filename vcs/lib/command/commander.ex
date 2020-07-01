@@ -35,7 +35,6 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Logger.warn("bgsafjasdlfasufghpsgu")
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
@@ -45,7 +44,7 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
-    # Logger.debug("rx_output: #{inspect(channel_output)}")
+    Logger.debug("rx_output: #{inspect(channel_output)}")
     current_time = :erlang.monotonic_time(:millisecond)
     dt = (current_time - state.rx_output_time_prev)/1000.0
     {reference_cmds, control_state, transmit_cmds} = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
@@ -155,7 +154,7 @@ defmodule Command.Commander do
           |> Map.get(:speed, 0)
         altitude = Map.get(pv_values, :position, %{})
         |> Map.get(:altitude, 0)
-        %{speed: speed, course: course, altitude: altitude}
+        %{speed: speed, course_flight: course, altitude: altitude}
       _other ->
         %{}
     end

@@ -51,7 +51,7 @@ defmodule Display.Scenic.Gcs.Plane do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
-
+    Comms.Operator.join_group(__MODULE__, :control_state, self())
     {:ok, graph, push: graph}
   end
 
@@ -130,11 +130,14 @@ defmodule Display.Scenic.Gcs.Plane do
           |> Scenic.Graph.modify(:altitude_cmd, &text(&1,altitude <> @meters))
       true -> graph
       end
+    {:noreply, graph, push: graph}
+  end
 
-    graph = Enum.reduce(4..-1, graph, fn (goal_level, acc) ->
-      if goal_level == level do
+  def handle_cast({:control_state, control_state}, graph) do
+    graph = Enum.reduce(3..-1, graph, fn (goal_level, acc) ->
+      if goal_level == control_state do
         {stroke_color, display_level} =
-          case level do
+          case goal_level do
             -1 -> {:red, 1}
             0 -> {:yellow, 1}
             _other -> {:green, goal_level}
