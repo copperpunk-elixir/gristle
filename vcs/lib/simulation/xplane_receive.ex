@@ -24,6 +24,7 @@ defmodule Simulation.XplaneReceive do
         bodyrate: %{},
         position: %{},
         velocity: %{},
+        agl: 0,
         new_simulation_data_to_publish: false
      }}
   end
@@ -89,12 +90,14 @@ defmodule Simulation.XplaneReceive do
           20 ->
             {latitude_deg_uint32, buffer} = Enum.split(buffer, 4)
             {longitude_deg_uint32, buffer} = Enum.split(buffer, 4)
-            {altitude_m_uint32, _buffer} = Enum.split(buffer, 4)
+            {altitude_ft_uint32, buffer} = Enum.split(buffer, 4)
+            {agl_ft_uint32, _buffer} = Enum.split(buffer, 4)
             latitude_deg = list_to_int(latitude_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             longitude_deg = list_to_int(longitude_deg_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            altitude_ft = list_to_int(altitude_m_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-            # Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_m, 1)}")
-            %{state | position: %{latitude: latitude_deg*@deg2rad, longitude: longitude_deg*@deg2rad, altitude: altitude_ft*@ft2m}}
+            altitude_ft = list_to_int(altitude_ft_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+            agl_ft = list_to_int(agl_ft_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+            Logger.debug("lat/lon/alt: #{eftb(latitude_deg,7)}/#{eftb(longitude_deg, 7)}/#{eftb(altitude_ft, 1)}/#{eftb(agl_ft,1)}")
+            %{state | position: %{latitude: latitude_deg*@deg2rad, longitude: longitude_deg*@deg2rad, altitude: altitude_ft*@ft2m}, agl: agl_ft*@ft2m}
           21 ->
             buffer = Enum.drop(buffer, 12)
             {vel_east_mps_uint32, buffer} = Enum.split(buffer, 4)
@@ -128,6 +131,7 @@ defmodule Simulation.XplaneReceive do
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
     position_velocity_value_map = %{position: state.position, velocity: state.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
   end
 
   @spec list_to_int(list(), integer()) :: integer()
@@ -137,8 +141,8 @@ defmodule Simulation.XplaneReceive do
     end)
   end
 
-  # defp eftb(num, dec) do
-  #   Common.Utils.eftb(num,dec)
-  # end
+  defp eftb(num, dec) do
+    Common.Utils.eftb(num,dec)
+  end
 
 end

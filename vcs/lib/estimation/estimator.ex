@@ -3,6 +3,7 @@ defmodule Estimation.Estimator do
   require Logger
   @imu_watchdog_trigger 250
   @ins_watchdog_trigger 2000
+  @agl_watchdog_trigger 2000
   @min_speed_for_course 2
 
   def start_link(config) do
@@ -26,13 +27,16 @@ defmodule Estimation.Estimator do
         estimator_health: :unknown,
         imu_watchdog_elapsed: 0,
         ins_watchdog_elapsed: 0,
+        agl_watchdog_elapsed: 0,
         imu_watchdog_trigger: @imu_watchdog_trigger,
         ins_watchdog_trigger: @ins_watchdog_trigger,
+        agl_watchdog_trigger: @agl_watchdog_trigger,
         min_speed_for_course: @min_speed_for_course,
         bodyrate: %{},
         attitude: %{},
         velocity: %{},
-        position: %{}
+        position: %{},
+        agl: 0
      }}
   end
 
@@ -41,6 +45,7 @@ defmodule Estimation.Estimator do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :agl}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
@@ -88,7 +93,14 @@ defmodule Estimation.Estimator do
       velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
       {position, velocity, new_watchdog_time}
     end
-    state = %{state | position: Map.put(position, :agl, position.altitude-133.0), velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
+    state = %{state | position: position, velocity: velocity, ins_watchdog_elapsed: new_watchdog_elapsed}
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({{:pv_calculated, :agl}, agl}, state) do
+    new_watchdog_time = max(state.ins_watchdog_elapsed - 1.1*state.ins_loop_interval_ms, 0)
+    state = %{state | agl_watchdog_elapsed: new_watchdog_time, agl: agl}
     {:noreply, state}
   end
 
@@ -99,7 +111,7 @@ defmodule Estimation.Estimator do
     unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
-        {{:pv_values, :attitude_bodyrate}, %{attitude: state.attitude, bodyrate: state.bodyrate}, state.imu_loop_interval_ms/1000},
+        {{:pv_values, :attitude_bodyrate}, %{attitude: attitude, bodyrate: bodyrate}, state.imu_loop_interval_ms/1000},
         {:pv_values, :attitude_bodyrate},
         self())
     end
@@ -108,12 +120,12 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:ins_loop, state) do
-    position = state.position
+    position = Map.put(state.position, :agl, state.agl)
     velocity = state.velocity
     unless (Enum.empty?(position) or Enum.empty?(velocity)) do
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
-        {{:pv_values, :position_velocity}, %{position: state.position, velocity: state.velocity}, state.ins_loop_interval_ms/1000},
+        {{:pv_values, :position_velocity}, %{position: position, velocity: velocity}, state.ins_loop_interval_ms/1000},
         {:pv_values, :position_velocity},
         self())
     end

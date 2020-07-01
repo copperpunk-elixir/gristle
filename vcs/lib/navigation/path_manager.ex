@@ -61,6 +61,7 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, position_velocity, dt}, state) do
+    Logger.debug("agl: #{position_velocity.position.agl}")
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
