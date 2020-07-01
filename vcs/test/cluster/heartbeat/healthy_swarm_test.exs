@@ -1,4 +1,5 @@
 defmodule Cluster.HealthyClusterTest do
+  alias Cluster.Heartbeat, as: Hb
   use ExUnit.Case
   require Logger
 

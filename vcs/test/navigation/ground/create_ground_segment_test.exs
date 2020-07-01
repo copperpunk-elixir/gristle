@@ -28,7 +28,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Logger.info("goals 3: #{inspect(cmds)}")
     # navigation_config = context[:config]
     start_position = Navigation.Path.Mission.get_seatac_location()
-    ground_mission = Navigation.Path.Mission.get_random_ground_mission(start_position)
+    ground_mission = Navigation.Path.Mission.get_random_ground_mission()
     Navigation.PathManager.load_mission(ground_mission, __MODULE__)
     Process.sleep(1000)
     config_points = Navigation.PathManager.get_config_points()
@@ -40,7 +40,6 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     assert cmds.altitude == 0
     assert_in_delta(cmds.course_ground,0, max_rad_delta)
-    assert cmds.pitch == 0
     assert Enum.at(config_points,0).type == Navigation.Path.Waypoint.ground_type()
     Logger.info("goals 3: #{inspect(cmds)}")
     # Move halfway down the runway, with speed
@@ -52,9 +51,8 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
-    assert_in_delta(cmds.altitude, 20, max_pos_delta)
+    assert_in_delta(cmds.altitude, 0, max_pos_delta)
     assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
-    assert cmds.pitch == 0
     # Speed up
     Logger.info("same position but with 35m/s speed")
     pos_vel = %{position: new_position, velocity: %{north: 35.0, east: 0, down: 0}}
@@ -68,7 +66,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     # Climb above AGL threshold up
     Logger.info("climb above AGL threshold")
     new_position = Common.Utils.Location.lla_from_point(start_position,500,0)
-    |> Map.put(:agl, 2.3)
+    |> Map.put(:agl, 5.3)
     pos_vel = %{position: new_position, velocity: %{north: 37.0, east: 0, down: 0}}
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos_vel, 0}, @pos_vel_group, self())
     Process.sleep(100)
