@@ -52,7 +52,7 @@ defmodule Display.Scenic.Planner do
   def handle_cast({:pv_estimate, pv_value_map}, state) do
     position = pv_value_map.position
     yaw = pv_value_map.attitude.yaw
-    speed = pv_value_map.speed
+    speed = pv_value_map.velocity.speed
     vehicle = %{position: position, yaw: yaw, speed: speed}
     origin =
     if Map.get(state, :origin) == nil do

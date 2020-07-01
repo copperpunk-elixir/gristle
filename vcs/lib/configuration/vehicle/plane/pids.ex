@@ -1,4 +1,6 @@
 defmodule Configuration.Vehicle.Plane.Pids do
+  require Logger
+
   @spec get_config() :: map()
   def get_config() do
     constraints = get_constraints()
@@ -11,7 +13,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
       roll: %{rollrate: Map.merge(%{kp: 5.0, kd: 0.025}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 5.0, kd: 0.025}, constraints.pitchrate)},
       yaw: %{yawrate: Map.merge(%{kp: 5.0, kd: 0.000}, constraints.yawrate)},
-      course_flight: %{roll: Map.merge(%{kp: 2.5, ki: 0.2, kd: 0*0.02, ki_mult: 3.0}, constraints.roll),
+      course_flight: %{roll: Map.merge(%{kp: 0*2.0, ki: 0.0, kd: 0*0.02, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll),
                        yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
       course_ground: %{roll: Map.merge(%{kp: 0.0}, constraints.roll),
                        yaw: Map.merge(%{kp: 1.0, ki: 0.1}, constraints.yaw)},
@@ -47,5 +49,21 @@ defmodule Configuration.Vehicle.Plane.Pids do
       speed: %{output_min: -100, output_max: 100, output_neutral: 0},
       altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
     }
+  end
+
+  @spec get_feed_forward(atom(), atom()) :: function()
+  def get_feed_forward(pv, cv) do
+    case pv do
+      :course_flight ->
+        case cv do
+          :roll ->
+            fn (cmd, _value, airspeed) ->
+              # Logger.debug("ff cmd/as/output: #{Common.Utils.Math.rad2deg(cmd)}/#{airspeed}/#{Common.Utils.Math.rad2deg(:math.atan(cmd*airspeed/Common.Constants.gravity()))}")
+              :math.atan(0.5*cmd*airspeed/Common.Constants.gravity())
+            end
+          :other -> nil
+        end
+      _other -> nil
+    end
   end
 end

@@ -59,7 +59,7 @@ defmodule Display.Scenic.Gcs.Plane do
   # receive PV updates from the vehicle
   def handle_cast({:pv_estimate, pv_value_map}, graph) do
     position =pv_value_map.position
-    # velocity = pv_value_map.velocity
+    velocity = pv_value_map.velocity
     attitude = pv_value_map.attitude
 
     roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
@@ -74,10 +74,10 @@ defmodule Display.Scenic.Gcs.Plane do
     alt = Common.Utils.eftb(position.altitude,2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
-    speed = Common.Utils.eftb(pv_value_map.speed,1)
+    speed = Common.Utils.eftb(velocity.speed,1)
 
     course=
-    Common.Utils.constrain_angle_to_compass(pv_value_map.course)
+    Common.Utils.constrain_angle_to_compass(velocity.course)
     |> Common.Utils.Math.rad2deg()
     |> Common.Utils.eftb(1)
 
