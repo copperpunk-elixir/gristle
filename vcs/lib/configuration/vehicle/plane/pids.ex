@@ -14,7 +14,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
       course_flight: %{roll: Map.merge(%{kp: 2.5, ki: 0.2, kd: 0*0.02, ki_mult: 3.0}, constraints.roll),
                        yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
       course_ground: %{roll: Map.merge(%{kp: 0.0}, constraints.roll),
-                       yaw: Map.merge(%{kp: 1.0}, constraints.yaw)},
+                       yaw: Map.merge(%{kp: 1.0, ki: 0.1}, constraints.yaw)},
       speed: %{thrust: Map.merge(%{kp: 0.15, ki: 0.01, weight: 1.0}, constraints.thrust)},
       altitude: %{pitch: Map.merge(%{kp: 0.015, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
     }

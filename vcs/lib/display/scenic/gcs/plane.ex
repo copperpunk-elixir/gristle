@@ -118,7 +118,12 @@ defmodule Display.Scenic.Gcs.Plane do
           |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
       level == 3 ->
           speed= Common.Utils.eftb(cmds.speed,1)
-          course= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course),1)
+        course=
+        if (Map.has_key?(cmds, :course_flight)) do
+          Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course_flight),1)
+        else
+          Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course_ground),1)
+        end
           altitude= Common.Utils.eftb(cmds.altitude,1)
           graph
           |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))

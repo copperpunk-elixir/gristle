@@ -56,7 +56,7 @@ defmodule Pids.Moderator do
     # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->
-        Logger.warn("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # Logger.warn("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
         # pv_cmd_map will always contain course
 
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight

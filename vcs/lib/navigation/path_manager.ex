@@ -24,7 +24,6 @@ defmodule Navigation.PathManager do
       vehicle_loiter_speed: config.vehicle_loiter_speed,
       vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
       vehicle_max_ground_speed: config.vehicle_max_ground_speed,
-      vehicle_pitch_for_climbout: config.vehicle_pitch_for_climbout,
       goals_classification: goals_classification,
       goals_time_validity_ms: goals_time_validity_ms,
       config_points: [],
@@ -69,7 +68,7 @@ defmodule Navigation.PathManager do
       case state.current_cp_index do
         nil -> -1
         index ->
-          Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
+          # Logger.info("cp_index/path_case_index: #{index}/#{state.current_path_case.case_index}")
           current_cp = Enum.at(state.config_points, index)
           check_for_path_case_completion(position_velocity.position, current_cp, state.current_path_case)
       end
@@ -191,8 +190,14 @@ defmodule Navigation.PathManager do
 
   @spec load_random_ground() :: atom()
   def load_random_ground() do
-    load_mission(Navigation.Path.Mission.get_random_ground_mission(nil), __MODULE__)
+    load_mission(Navigation.Path.Mission.get_random_ground_mission(), __MODULE__)
   end
+
+  @spec load_random_takeoff() :: atom()
+  def load_random_takeoff() do
+    load_mission(Navigation.Path.Mission.get_random_takeoff_mission(), __MODULE__)
+  end
+
 
   @spec move_vehicle(map()) :: atom()
   def move_vehicle(position_velocity) do
