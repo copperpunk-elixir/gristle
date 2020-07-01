@@ -66,7 +66,7 @@ defmodule Navigation.Path.Mission do
 
   @spec get_seatac_location() :: struct()
   def get_seatac_location() do
-    get_seatac_location(0)
+    get_seatac_location(133.3)
   end
 
   @spec get_seatac_location(number()) :: struct()
@@ -99,9 +99,9 @@ defmodule Navigation.Path.Mission do
     get_random_mission(start_position, starting_speed, starting_course, num_wps, loop)
   end
 
-  @spec get_random_ground_mission() :: struct()
-  def get_random_ground_mission() do
-    start_position = get_seatac_location(133.3)
+  @spec get_ground_mission() :: struct()
+  def get_ground_mission() do
+    start_position = get_seatac_location()
     takeoff = Common.Utils.Location.lla_from_point(start_position,1500, 0)
     |> Map.put(:altitude, 233.3)
     speed = 45
@@ -113,6 +113,24 @@ defmodule Navigation.Path.Mission do
     Navigation.Path.Mission.new_mission("ground",[wp1, wp2])
   end
 
+  @spec get_landing_mission() :: struct()
+  def get_landing_mission() do
+    start_position = get_seatac_location(233.3)
+    touchdown = Common.Utils.Location.lla_from_point(start_position, 1000, 0)
+    |> Map.put(:altitude, 133.3)
+    stop = Common.Utils.Location.lla_from_point(touchdown, 200, 0)
+    approach_speed = 45
+    touchdown_speed = 35
+    course = 0
+    wp1 = Navigation.Path.Waypoint.new_landing(start_position, approach_speed, course, "wp1")
+    wp2 = Navigation.Path.Waypoint.new_landing(touchdown, touchdown_speed, course, "wp2")
+    wp3 = Navigation.Path.Waypoint.new_landing(stop, 0, course, "wp3")
+    Logger.debug("wp1: #{inspect(wp1)}")
+    Logger.debug("wp2: #{inspect(wp2)}")
+    Logger.debug("wp3: #{inspect(wp2)}")
+    Navigation.Path.Mission.new_mission("landing",[wp1, wp2, wp3])
+  end
+
   @spec get_random_takeoff_mission() :: struct()
   def get_random_takeoff_mission() do
     start_position = get_seatac_location(133.3)
@@ -122,15 +140,16 @@ defmodule Navigation.Path.Mission do
     course = 0
     wp1 = Navigation.Path.Waypoint.new_ground(start_position, speed, course, "start")
     wp2 = Navigation.Path.Waypoint.new_ground(takeoff, speed, course, "climbout")
+    takeoff_wps = [wp1, wp2]
     Logger.debug("start: #{inspect(wp1)}")
     Logger.debug("climbout: #{inspect(wp2)}")
-    flight_wps = get_random_waypoints(wp2, speed, course, 4, true)
-    wps = [wp1, wp2] ++ flight_wps
+    flight_wps = get_random_waypoints(wp2, speed, course, 4, true, length(takeoff_wps))
+    wps = takeoff_wps ++ flight_wps
     Navigation.Path.Mission.new_mission("takeoff",wps)
   end
 
   @spec get_random_waypoints(struct(), float(), float(), integer(), boolean()) :: struct()
-  def get_random_waypoints(starting_lla, starting_speed, starting_course, num_wps, loop) do
+  def get_random_waypoints(starting_lla, starting_speed, starting_course, num_wps, loop \\ false, starting_wp_index \\ 0) do
     max_speed = 55
     min_speed = 40
     min_alt = 300
@@ -155,7 +174,7 @@ defmodule Navigation.Path.Mission do
       end)
     wps =
     if loop do
-      last_wp = %{starting_wp | goto: 0}
+      last_wp = %{starting_wp | goto: starting_wp_index}
       [last_wp | wps]
     else
       wps

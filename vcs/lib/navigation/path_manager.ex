@@ -65,6 +65,67 @@ defmodule Navigation.PathManager do
     speed = velocity.speed
     course = velocity.course
     airspeed = velocity.airspeed
+    current_case_index = if is_nil(state.current_path_case), do: -1, else: state.current_path_case.case_index
+    state = move_vehicle(position, state, current_case_index)
+    current_path_case = state.current_path_case
+    # If we have a path_case, then follow it
+    unless is_nil(current_path_case) do
+      # Logger.info("cpc_i: #{current_path_case.case_index}")
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, dt, current_path_case)
+      goals = %{speed: speed_cmd, altitude: altitude_cmd}
+      path_case_type = current_path_case.type
+      goals =
+      if (path_case_type == Navigation.Path.Waypoint.ground_type()) or (path_case_type == Navigation.Path.Waypoint.landing_type()) do
+        goals =
+        if (position.agl < state.vehicle_agl_ground_threshold) do
+          Map.put(goals, :course_ground, course_cmd)
+        else
+          Map.put(goals, :course_flight, course_cmd)
+        end
+
+        if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_max_ground_speed) do
+          Map.put(goals, :altitude, position.altitude)
+        else
+          goals
+        end
+      else
+        Map.put(goals, :course_flight, course_cmd)
+      end
+      # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
+      # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
+      # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
+      # Send goals to message sorter
+      MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
+    end
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast(:begin_orbit, state) do
+    # Create orbit path case, and load it
+    path_case = nil
+    {:noreply, %{state | current_path_case: path_case}}
+  end
+
+  @impl GenServer
+  def handle_call(:get_config_points, _from, state) do
+    {:reply, state.config_points, state}
+  end
+
+  @impl GenServer
+  def handle_call(:get_current_path_distance, _from, state) do
+    {:reply, state.current_path_distance, state}
+  end
+
+  @impl GenServer
+  def handle_call({:get_dubins, cp_index},_from, state) do
+    cp = Enum.at(state.config_points, cp_index, %{})
+    dubins = Map.get(cp, :dubins)
+    {:reply, dubins, state}
+  end
+
+  @spec move_vehicle(map(), map(), integer()) :: map()
+  def move_vehicle(position, state, path_case_index_prev) do
     temp_case_index =
       case state.current_cp_index do
         nil -> -1
@@ -95,72 +156,23 @@ defmodule Navigation.PathManager do
           case current_cp_index do
             nil -> {nil, nil}
             index ->
-              path_case =
-                Enum.at(state.config_points, index)
-                |> Map.get(:dubins)
-                |> Map.get(:path_cases)
-                |> Enum.at(0)
+              new_dubins = Enum.at(state.config_points, index) |> Map.get(:dubins)
+              path_case_index = if (new_dubins.skip_case_0 == true), do: 1, else: 0
+              path_case = Enum.at(new_dubins.path_cases, path_case_index)
               {index, path_case}
           end
         index ->
           current_cp = Enum.at(state.config_points, state.current_cp_index)
           {state.current_cp_index, Enum.at(current_cp.dubins.path_cases, index)}
       end
-
-    # If we have a path_case, then follow it
-    unless is_nil(current_path_case) do
-      # Logger.info("cpc_i: #{current_path_case.case_index}")
-      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, dt, current_path_case)
-      goals = %{speed: speed_cmd, altitude: altitude_cmd}
-      goals =
-      if (current_path_case.type == Navigation.Path.Waypoint.ground_type()) do
-        goals =
-        if (position.agl < state.vehicle_agl_ground_threshold) do
-          Map.put(goals, :course_ground, course_cmd)
-        else
-          Map.put(goals, :course_flight, course_cmd)
-        end
-
-        if (speed < state.vehicle_max_ground_speed) do
-          Map.put(goals, :altitude, position.altitude)
-        else
-          goals
-        end
-      else
-        Map.put(goals, :course_flight, course_cmd)
-      end
-      # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
-      # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
-      # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
-      # Send goals to message sorter
-      MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
+    state = %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}
+    if (temp_case_index != path_case_index_prev) do
+      move_vehicle(position, state, temp_case_index)
+    else
+      state
     end
-    {:noreply, %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}}
   end
 
-  @impl GenServer
-  def handle_cast(:begin_orbit, state) do
-    # Create orbit path case, and load it
-    path_case = nil
-    {:noreply, %{state | current_path_case: path_case}}
-  end
-
-  @impl GenServer
-  def handle_call(:get_config_points, _from, state) do
-    {:reply, state.config_points, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_current_path_distance, _from, state) do
-    {:reply, state.current_path_distance, state}
-  end
-
-  @impl GenServer
-  def handle_call({:get_dubins, cp_index},_from, state) do
-    cp = Enum.at(state.config_points, cp_index, %{})
-    dubins = Map.get(cp, :dubins)
-    {:reply, dubins, state}
-  end
 
   @spec load_mission(struct(), atom()) :: atom()
   def load_mission(mission, module) do
@@ -182,9 +194,14 @@ defmodule Navigation.PathManager do
     load_mission(Navigation.Path.Mission.get_random_seatac_mission(), __MODULE__)
   end
 
-  @spec load_random_ground() :: atom()
-  def load_random_ground() do
-    load_mission(Navigation.Path.Mission.get_random_ground_mission(), __MODULE__)
+  @spec load_ground() :: atom()
+  def load_ground() do
+    load_mission(Navigation.Path.Mission.get_ground_mission(), __MODULE__)
+  end
+
+  @spec load_landing() ::atom()
+  def load_landing() do
+    load_mission(Navigation.Path.Mission.get_landing_mission(), __MODULE__)
   end
 
   @spec load_random_takeoff() :: atom()
@@ -275,13 +292,13 @@ defmodule Navigation.PathManager do
       theta1 = Common.Utils.constrain_angle_to_compass(current_cp.course)
       theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_0 = can_skip_case(theta1, theta2, cp.start_direction)
-      # Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
+      Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
 
       theta1 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
-      # Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
-      # Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
+      Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
+      Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
       cp = %{cp |
              start_radius: current_cp.start_radius,
              end_radius: next_cp.start_radius,

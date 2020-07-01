@@ -6,8 +6,8 @@ defmodule Display.Scenic.Gcs.Plane do
   # @body_offset 80
   @font_size 24
   @degrees "°"
-  @radians "rads"
-  @dps "°/s"
+  # @radians "rads"
+  # @dps "°/s"
   @radpersec "rps"
   @meters "m"
   @mps "m/s"
