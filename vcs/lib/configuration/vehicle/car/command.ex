@@ -3,8 +3,8 @@ defmodule Configuration.Vehicle.Car.Command do
 
   @spec get_rx_output_channel_map() :: map()
   def get_rx_output_channel_map() do
-    output_limits = Configuration.Module.Command.get_command_output_limits(:Car, [:thrust, :yawrate, :yaw, :course, :speed])
-
+    output_limits = Configuration.Module.Command.get_command_output_limits(:Car, [:thrust, :yawrate, :yaw, :course_flight, :speed])
+    Logger.info("output limits: #{inspect(output_limits)}")
     # channel_number, channel, absolute/relative, min, max
     %{
       -1 => [
@@ -24,7 +24,7 @@ defmodule Configuration.Vehicle.Car.Command do
         {0,:yaw, :absolute, output_limits.yaw.min, output_limits.yaw.max, 1}
       ],
       3 => [
-        {0, :course, :relative, output_limits.course.min, output_limits.course.max, 1},
+        {0, :course_flight, :relative, output_limits.course_flight.min, output_limits.course_flight.max, 1},
         {2,:speed, :absolute, 0, 10, 1}
       ]
     }

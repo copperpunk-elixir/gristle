@@ -39,13 +39,13 @@ defmodule Navigation.CreatePathManagerTest do
     wp3 = Enum.at(current_mission.waypoints,2)
     # assert_in_delta(cp1.pos.latitude, wp1.latitude, max_pos_delta)
     cs1_rad = wp1.speed/turn_rate
-    {exp_cs1_lat, exp_cs1_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(wp1.latitude, wp1.longitude, cs1_rad, 0)
+    exp_cs1 = Common.Utils.Location.lla_from_point_with_distance(wp1, cs1_rad, 0)
 
     cs2_rad = wp2.speed/turn_rate
-    {exp_cs2_lat, exp_cs2_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(wp2.latitude, wp2.longitude, cs2_rad, :math.pi/2)
+    exp_cs2 = Common.Utils.Location.lla_from_point_with_distance(wp2, cs2_rad, :math.pi/2)
 
     cs3_rad = wp3.speed/turn_rate
-    {exp_cs3_lat, exp_cs3_lon} = Common.Utils.Location.lat_lon_from_point_with_distance(wp3.latitude, wp3.longitude, cs3_rad, :math.pi/2)
+    exp_cs3_lat = Common.Utils.Location.lla_from_point_with_distance(wp3, cs3_rad, :math.pi/2)
 
     # assert_in_delta(cp1.cs.latitude, exp_cs1_lat, max_pos_delta)
     # assert_in_delta(cp1.cs.longitude, exp_cs1_lon, max_pos_delta)
@@ -117,7 +117,7 @@ defmodule Navigation.CreatePathManagerTest do
     # pci = 0
     # pc = Enum.at(pcs,pci)
     # # When we start, we can skip case 0
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,1,39)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,1,39)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # pc = Enum.at(pcs, pci)
@@ -126,40 +126,40 @@ defmodule Navigation.CreatePathManagerTest do
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # assert pci==1
     # # Move again, but not past the line
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,9,55)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,9,55)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # assert pci==1
     # # Cross the line
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,11,53)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,11,53)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # pc = Enum.at(pcs, pci)
     # assert pci==2
     # # Move short of the next line
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,99,53)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,99,53)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # assert pci==2
     # # Cross the line
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,101,53)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,101,53)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # pc = Enum.at(pcs, pci)
     # assert pci==3
     # # If somehow we moved backwards, confirm that we haven't advanved cases
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,98,53)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,98,53)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # assert pci==3
     # # Cross the line (which is the same on as for case 2)
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,102,33)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,102,33)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # pc = Enum.at(pcs, pci)
     # assert pci==4
     # # Complete the path
-    # {lat, lon} = Common.Utils.Location.lat_lon_from_point(wp1.latitude, wp1.longitude,97,30)
+    # {lat, lon} = Common.Utils.Location.lla_from_point(wp1.latitude, wp1.longitude,97,30)
     # pos = Navigation.Utils.LatLonAlt.new(lat, lon)
     # pci = Navigation.PathManager.check_for_path_case_completion(pos, cp, pc)
     # assert pci==0

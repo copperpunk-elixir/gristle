@@ -58,12 +58,30 @@ defmodule Pids.Moderator do
       3 ->
         # Logger.warn("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
         # pv_cmd_map will always contain course
-        course_cmd_constrained = Common.Utils.turn_left_or_right_for_correction(pv_cmd_map.course - pv_value_map.course)
-        pv_cmd_map = Map.put(pv_cmd_map, :course, course_cmd_constrained)
-        pv_value_map = Map.put(pv_value_map, :course, 0)
+
+        course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
+        course_cmd = Map.get(pv_cmd_map, course_key)
+        # course_value = Map.get(pv_value_map, course_key)
+        course_cmd_constrained = Common.Utils.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
+        pv_value_map =
+          Map.put(pv_value_map, course_key, 0)
+          |> Map.delete(:course)
+
+        pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd_constrained)
+
+        # pitch_cmd = Map.get(pv_cmd_map, :pitch)
+        # Logger.warn("pitch_cmd: #{pitch_cmd}")
+        # pv_cmd_map = Map.put(pv_cmd_map, :course, course_cmd_constrained)
+        # pv_value_map = Map.put(pv_value_map, :course, 0)
 
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, dt, state.pv_output_pids)
-
+        # If we are below climbout altitude, we should be holding a fixed pitch value
+        # level_2_output_map =
+        # if is_nil(pitch_cmd) do
+        #   level_2_output_map
+        # else
+        #   Map.put(level_2_output_map, :pitch, pitch_cmd)
+        # end
         # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
         publish_cmds(pv_cmd_map, 3)

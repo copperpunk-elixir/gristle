@@ -38,7 +38,7 @@ defmodule Configuration.Vehicle.Plane.Control do
       %{
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
-        default_value: %{course: 0, speed: 0, altitude: 0},
+        default_value: %{course_flight: 0, speed: 0, altitude: 0},
         value_type: :map
       }
     ]

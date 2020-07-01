@@ -3,7 +3,7 @@ defmodule Command.GetGoalsFromRxTest do
   require Logger
 
   setup do
-    vehicle_type = :Car
+    vehicle_type = :Plane
     node_type = :all
     Comms.System.start_link()
     Process.sleep(100)

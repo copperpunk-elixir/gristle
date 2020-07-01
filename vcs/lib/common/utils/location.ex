@@ -25,8 +25,10 @@ defmodule Common.Utils.Location do
     dx_dy_between_points(Navigation.Utils.LatLonAlt.new(lat1, lon1), Navigation.Utils.LatLonAlt.new(lat2, lon2))
   end
 
-  @spec lat_lon_from_point(float(), float(), float(), float()) :: tuple()
-  def lat_lon_from_point(lat1, lon1, dx, dy) do
+  @spec lla_from_point(struct(), float(), float()) :: struct()
+  def lla_from_point(origin, dx, dy) do
+    lat1 = origin.latitude
+    lon1 = origin.longitude
     dlat = dx/@earth_radius_m
     lat2 = lat1 + dlat
     dpsi = :math.log(:math.tan(@pi_4 + lat2/2)/ :math.tan(@pi_4 + lat1/2))
@@ -38,42 +40,29 @@ defmodule Common.Utils.Location do
     end
     dlon = (dy/@earth_radius_m) / q
     lon2 = lon1 + dlon
-    {lat2, lon2}
+    # {lat2, lon2}
+    Navigation.Utils.LatLonAlt.new(lat2, lon2, origin.altitude)
   end
 
-  @spec lat_lon_from_point(map(), float(), float()) :: tuple()
-  def lat_lon_from_point(lat_lon_alt, dx, dy) do
-    lat_lon_from_point(lat_lon_alt.latitude, lat_lon_alt.longitude, dx, dy)
-  end
-
-  @spec lat_lon_from_point(tuple(), tuple()) :: tuple()
-  def lat_lon_from_point(origin, point) do
-    {lat1, lon1} = origin
+  @spec lla_from_point(struct(), tuple()) :: struct()
+  def lla_from_point(origin, point) do
     {dx, dy} = point
-    lat_lon_from_point(lat1, lon1, dx, dy)
+    lla_from_point(origin, dx, dy)
   end
 
-  @spec lat_lon_from_point_with_distance(struct(), float(), float()) :: tuple()
-  def lat_lon_from_point_with_distance(lat_lon_alt, distance, bearing) do
+  @spec lla_from_point_with_distance(struct(), float(), float()) :: struct()
+  def lla_from_point_with_distance(lat_lon_alt, distance, bearing) do
     dx = distance*:math.cos(bearing)
     dy = distance*:math.sin(bearing)
     # Logger.info("dx/dy: #{dx}/#{dy}")
-    lat_lon_from_point(lat_lon_alt.latitude, lat_lon_alt.longitude, dx, dy)
+    lla_from_point(lat_lon_alt, dx, dy)
   end
 
-  @spec lat_lon_from_point_with_distance(float(), float(), float(), float()) :: tuple()
-  def lat_lon_from_point_with_distance(lat1, lon1, distance, bearing) do
-    dx = distance*:math.cos(bearing)
-    dy = distance*:math.sin(bearing)
-    lat_lon_from_point(lat1, lon1, dx, dy)
-  end
-
-  @spec point_from_point_with_dx_dy(struct(), float(), float()) :: struct()
-  def point_from_point_with_dx_dy(lla, dx, dy) do
-    {lat, lon} = lat_lon_from_point(lla.latitude, lla.longitude, dx, dy)
-    Navigation.Utils.LatLonAlt.new(lat, lon, lla.altitude)
-  end
-
-  # @spec point_from_poith_with_distance(struct(), float(), float()) :: struct()
+  # @spec lla_from_point_with_distance(float(), float(), float(), float()) :: tuple()
+  # def lla_from_point_with_distance(lat1, lon1, distance, bearing) do
+  #   dx = distance*:math.cos(bearing)
+  #   dy = distance*:math.sin(bearing)
+  #   lla_from_point(lat1, lon1, dx, dy)
+  # end
 
 end

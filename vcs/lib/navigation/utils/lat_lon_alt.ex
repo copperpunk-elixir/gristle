@@ -17,6 +17,16 @@ defmodule Navigation.Utils.LatLonAlt do
     new(lat, lon, 0)
   end
 
+  @spec new_deg(float(), float(), float()) :: struct()
+  def new_deg(lat, lon, alt) do
+    new(Common.Utils.Math.deg2rad(lat),Common.Utils.Math.deg2rad(lon),alt)
+  end
+
+  @spec new_deg(float(), float()) :: struct()
+  def new_deg(lat, lon) do
+    new(Common.Utils.Math.deg2rad(lat),Common.Utils.Math.deg2rad(lon),0)
+  end
+
   @spec to_string(struct()) :: binary()
   def to_string(lla) do
     lat_str = Common.Utils.eftb(Common.Utils.Math.rad2deg(lla.latitude), 5)

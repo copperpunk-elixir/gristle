@@ -24,7 +24,8 @@ defmodule Navigation.Path.PathFollower do
       temp_vector = q.x*dy - q.y*dx
       si1 = dx + q.y*temp_vector
       si2 = dy - q.x*temp_vector
-      altitude_cmd = path_case.r.altitude - (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))
+      # Logger.info("r.alt/ q.z / si1 / si2: #{path_case.r.altitude}/#{q.z}/#{si1}/#{si2}")
+      altitude_cmd = path_case.r.altitude + (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))
       chi_q = :math.atan2(q.y, q.x)
       chi_q = if ((chi_q - course) < -:math.pi), do: chi_q + @two_pi, else: chi_q
       chi_q = if ((chi_q - course) > :math.pi), do: chi_q - @two_pi, else: chi_q

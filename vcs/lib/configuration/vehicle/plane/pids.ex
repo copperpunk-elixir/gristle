@@ -11,8 +11,10 @@ defmodule Configuration.Vehicle.Plane.Pids do
       roll: %{rollrate: Map.merge(%{kp: 5.0, kd: 0.025}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 5.0, kd: 0.025}, constraints.pitchrate)},
       yaw: %{yawrate: Map.merge(%{kp: 5.0, kd: 0.000}, constraints.yawrate)},
-      course: %{roll: Map.merge(%{kp: 2.5, ki: 0.2, kd: 0*0.02, ki_mult: 3.0}, constraints.roll),
-                yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
+      course_flight: %{roll: Map.merge(%{kp: 2.5, ki: 0.2, kd: 0*0.02, ki_mult: 3.0}, constraints.roll),
+                       yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
+      course_ground: %{roll: Map.merge(%{kp: 0.0}, constraints.roll),
+                       yaw: Map.merge(%{kp: 1.0, ki: 0.1}, constraints.yaw)},
       speed: %{thrust: Map.merge(%{kp: 0.15, ki: 0.01, weight: 1.0}, constraints.thrust)},
       altitude: %{pitch: Map.merge(%{kp: 0.015, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
     }
@@ -40,7 +42,8 @@ defmodule Configuration.Vehicle.Plane.Pids do
       pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       yaw: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       thrust: %{output_min: -1, output_max: 1, output_neutral: 0.0},
-      course: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
+      course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
+      course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       speed: %{output_min: -100, output_max: 100, output_neutral: 0},
       altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
     }

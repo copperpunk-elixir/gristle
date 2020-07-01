@@ -19,7 +19,8 @@ defmodule Navigation.Dubins.ConfigPoint do
     :start_radius,
     :end_radius,
     :dubins,
-    :goto_upon_completion
+    :goto_upon_completion,
+    :type
   ]
 
   @spec new(struct(), float()) :: struct()
@@ -29,7 +30,8 @@ defmodule Navigation.Dubins.ConfigPoint do
       start_speed: waypoint.speed,
       course: waypoint.course,
       start_radius: waypoint.speed/vehicle_turn_rate,
-      dubins: Navigation.Dubins.DubinsPath.new()
+      dubins: Navigation.Dubins.DubinsPath.new(),
+      type: waypoint.type
     }
   end
 end

@@ -1,5 +1,4 @@
 defmodule Cluster.GetNodeAndWarnFromUsbTest do
-  alias Cluster.Heartbeat, as: Hb
   use ExUnit.Case
   require Logger
 
