@@ -61,7 +61,6 @@ defmodule Display.Scenic.Gcs.Plane do
     position =pv_value_map.position
     # velocity = pv_value_map.velocity
     attitude = pv_value_map.attitude
-    calculated_values = pv_value_map.calculated
 
     roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
     pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
@@ -75,10 +74,10 @@ defmodule Display.Scenic.Gcs.Plane do
     alt = Common.Utils.eftb(position.altitude,2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
-    speed = Common.Utils.eftb(calculated_values.speed,1)
+    speed = Common.Utils.eftb(pv_value_map.speed,1)
 
     course=
-    Common.Utils.constrain_angle_to_compass(calculated_values.course)
+    Common.Utils.constrain_angle_to_compass(pv_value_map.course)
     |> Common.Utils.Math.rad2deg()
     |> Common.Utils.eftb(1)
 

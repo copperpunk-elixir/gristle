@@ -34,8 +34,8 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :attitude_bodyrate}, pv_value_map, dt}, state) do
-    # Logger.warn("Control rx att/attrate/dt: #{inspect(pv_value_map)}/#{dt}")
+  def handle_cast({{:pv_values, :attitude_bodyrate}, attitude, bodyrate, dt}, state) do
+    # Logger.warn("Control rx att/attrate/dt: #{inspect(attitude)}/#{inspect(bodyrate)}/#{dt}")
     # Logger.warn("cs: #{state.control_state}")
     {destination_group, pv_cmds} =
       case state.control_state do
@@ -46,17 +46,19 @@ defmodule Control.Controller do
         -1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
         _other -> {nil, nil}
       end
+    pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
     # Logger.warn("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, dt}, destination_group, self())
     {:noreply, %{state | yaw: pv_value_map.attitude.yaw}}
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, pv_value_map, dt}, state) do
+  def handle_cast({{:pv_values, :position_speed_course}, position, speed, course, dt}, state) do
     # Logger.warn("Control rx vel/pos/dt: #{inspect(pv_value_map)}/#{dt}")
     if (state.control_state == 3) do
-      pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map, state.yaw])
+      # pv_value_map = apply(state.vehicle_module, :get_auto_pv_value_map, [pv_value_map, state.yaw])
       # Logger.warn("pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(state.pv_cmds)}")
+      pv_value_map = %{altitude: position.altitude, speed: speed, course: course}
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map,dt},{:pv_cmds_values, 3}, self())
     end
     {:noreply, state}
@@ -87,6 +89,6 @@ defmodule Control.Controller do
 
   defp join_process_variable_groups() do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_speed_course}, self())
   end
 end

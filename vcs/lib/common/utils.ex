@@ -199,6 +199,7 @@ defmodule Common.Utils do
     course =
     if speed >= min_speed_for_course do
       :math.atan2(v_east, v_north)
+      |> constrain_angle_to_compass()
     else
       yaw
     end

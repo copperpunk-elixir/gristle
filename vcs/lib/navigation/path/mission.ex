@@ -71,7 +71,7 @@ defmodule Navigation.Path.Mission do
 
   @spec get_seatac_location(number()) :: struct()
   def get_seatac_location(altitude) do
-    Navigation.Utils.LatLonAlt.new(Common.Utils.Math.deg2rad(47.440622), Common.Utils.Math.deg2rad(-122.318562), altitude)
+    Navigation.Utils.LatLonAlt.new(Common.Utils.Math.deg2rad(47.4407476), Common.Utils.Math.deg2rad(-122.3180652), altitude)
   end
 
   @spec get_seatac_mission() :: struct()
