@@ -50,7 +50,7 @@ defmodule Configuration.Vehicle.Plane.Navigation do
       takeoff_speed: 45,
       climb_speed: 50,
       vehicle_agl_ground_threshold: 3.0,
-      vehicle_max_ground_speed: 30
+      vehicle_max_ground_speed: 35
     }
   end
 

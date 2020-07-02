@@ -25,11 +25,13 @@ defmodule Navigation.Dubins.ConfigPoint do
 
   @spec new(struct(), float()) :: struct()
   def new(waypoint, vehicle_turn_rate) do
+    radius = if (waypoint.speed < 1), do: 1000.0, else: waypoint.speed/vehicle_turn_rate
+    # Logger.debug("new waypoint. speed/turn_rate/radius: #{waypoint.speed}/#{vehicle_turn_rate}/#{radius}")
     %Navigation.Dubins.ConfigPoint{
       pos: Navigation.Utils.LatLonAlt.new(waypoint.latitude, waypoint.longitude, waypoint.altitude),
       start_speed: waypoint.speed,
       course: waypoint.course,
-      start_radius: waypoint.speed/vehicle_turn_rate,
+      start_radius: radius,
       dubins: Navigation.Dubins.DubinsPath.new(),
       type: waypoint.type
     }
