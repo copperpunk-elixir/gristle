@@ -80,13 +80,13 @@ defmodule Common.Utils do
 
   @spec get_mount_path() :: binary()
   def get_mount_path() do
-    "/mnt"
+    "/home/greg/mountpoint"
   end
 
   @spec mount_usb_drive() :: binary()
   def mount_usb_drive() do
     path = get_mount_path()
-    System.cmd("mount", ["/dev/sda1", path])
+    System.cmd("mount", ["/dev/sdb1", path])
     path
   end
 
