@@ -178,7 +178,7 @@ defmodule Navigation.Path.Mission do
 
   @spec get_takeoff_waypoints(struct(), float(), float()) :: list()
   def get_takeoff_waypoints(start_position, climbout_speed ,course) do
-    climb_position = Common.Utils.Location.lla_from_point(start_position,800, 0)
+    climb_position = Common.Utils.Location.lla_from_point(start_position,1200, 0)
     |> Map.put(:altitude, start_position.altitude+100)
     wp1 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "start")
     wp2 = Navigation.Path.Waypoint.new_ground(climb_position, climbout_speed, course, "climbout")
