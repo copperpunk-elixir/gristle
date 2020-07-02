@@ -18,6 +18,7 @@ defmodule Simulation.XplaneSend do
         socket: nil,
         port: config.port,
         vehicle_type: config.vehicle_type,
+        ip_address: {192, 168, 4, 32},
         commands: %{}
      }}
   end
@@ -44,8 +45,8 @@ defmodule Simulation.XplaneSend do
   def handle_cast(:update_actuators, state) do
     case state.vehicle_type do
       :Plane ->
-        send_ail_elev_rud_commands(state.commands, state.socket)
-        send_throttle_command(state.commands, state.socket)
+        send_ail_elev_rud_commands(state.commands, state.socket, state.ip_address)
+        send_throttle_command(state.commands, state.socket, state.ip_address)
     end
     # Logger.debug("cmds: #{inspect(state.commands)}")
     {:noreply, state}
@@ -62,23 +63,23 @@ defmodule Simulation.XplaneSend do
     GenServer.cast(__MODULE__, :update_actuators)
   end
 
-  @spec send_ail_elev_rud_commands(map(), any()) :: atom()
-  def send_ail_elev_rud_commands(commands, socket) do
+  @spec send_ail_elev_rud_commands(map(), any(), tuple()) :: atom()
+  def send_ail_elev_rud_commands(commands, socket, ip_address) do
     buffer = @cmd_header <> <<11, 0, 0, 0>>
     buffer = buffer <> Common.Utils.Math.uint_from_fp(Map.get(commands, :elevator,-999),32)
     buffer = buffer <> Common.Utils.Math.uint_from_fp(Map.get(commands, :aileron,-999),32)
     buffer = buffer <> Common.Utils.Math.uint_from_fp(Map.get(commands, :rudder,-999),32)
     buffer = buffer <> <<"0,0,0,0,0,0,0,0,0,0,0,0">>
     # Logger.debug("buffer: #{buffer}")
-    :gen_udp.send(socket, {127,0,0,1}, 49000,buffer)
+    :gen_udp.send(socket, ip_address, 49000,buffer)
   end
 
-  @spec send_throttle_command(map(), any()) :: atom()
-  def send_throttle_command(commands, socket) do
+  @spec send_throttle_command(map(), any(), tuple()) :: atom()
+  def send_throttle_command(commands, socket, ip_address) do
     buffer = @cmd_header <> <<25, 0, 0, 0>>
     buffer = buffer <> Common.Utils.Math.uint_from_fp(Map.get(commands, :throttle,-999),32)
     buffer = buffer <> <<"0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0">>
     # Logger.debug("buffer: #{buffer}")
-    :gen_udp.send(socket, {127,0,0,1}, 49000,buffer)
+    :gen_udp.send(socket, ip_address, 49000,buffer)
   end
 end

@@ -41,6 +41,6 @@ defmodule Common.Application do
   def start_simulation(vehicle_type) do
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Simulation, Display.Scenic], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Simulation, Display.Scenic], vehicle_type, node_type)
   end
 end
