@@ -47,8 +47,8 @@ defmodule Configuration.Vehicle.Plane.Navigation do
     %{
       vehicle_turn_rate: 0.08,
       vehicle_loiter_speed: 40,
-      takeoff_speed: 45,
-      climb_speed: 50,
+      vehicle_takeoff_speed: 40,
+      vehicle_climb_speed: 50,
       vehicle_agl_ground_threshold: 3.0,
       vehicle_max_ground_speed: 35
     }

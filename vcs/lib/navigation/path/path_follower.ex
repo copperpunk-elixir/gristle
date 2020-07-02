@@ -26,7 +26,7 @@ defmodule Navigation.Path.PathFollower do
       si2 = dy - q.x*temp_vector
       # Logger.info("r.alt/ q.z / si1 / si2: #{path_case.r.altitude}/#{q.z}/#{si1}/#{si2}")
       altitude_cmd =
-      if path_case.type == Navigation.Path.Waypoint.landing_type() do
+      if path_case.type == Navigation.Path.Waypoint.approach_type() or path_case.type == Navigation.Path.Waypoint.climbout_type() do
         landing_distance =
           Common.Utils.Location.dx_dy_between_points(path_case.r, path_case.zi)
           |> Common.Utils.Math.hypot()

@@ -5,6 +5,8 @@ defmodule Navigation.Path.Waypoint do
 
   @flight_type :flight
   @ground_type :ground
+  @climbout_type :climbout
+  @approach_type :approach
   @landing_type :landing
 
   @spec new(float(), float(), number(), number(), number(), atom(), binary(), integer()) :: struct()
@@ -37,9 +39,19 @@ defmodule Navigation.Path.Waypoint do
     new_from_lla(lla, speed, course, @ground_type, name, goto)
   end
 
+  @spec new_climbout(struct(), number, number, binary(), integer()) ::struct()
+  def new_climbout(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @climbout_type, name, goto)
+  end
+
   @spec new_landing(struct(), number, number, binary(), integer()) ::struct()
   def new_landing(lla, speed, course, name \\ "", goto \\ nil) do
     new_from_lla(lla, speed, course, @landing_type, name, goto)
+  end
+
+  @spec new_approach(struct(), number, number, binary(), integer()) ::struct()
+  def new_approach(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @approach_type, name, goto)
   end
 
   @spec flight_type() :: atom()
@@ -52,9 +64,19 @@ defmodule Navigation.Path.Waypoint do
     @ground_type
   end
 
+  @spec climbout_type() :: atom()
+  def climbout_type() do
+    @climbout_type
+  end
+
   @spec landing_type() :: atom()
   def landing_type() do
     @landing_type
+  end
+
+  @spec approach_type() :: atom()
+  def approach_type() do
+    @approach_type
   end
 
 

@@ -47,7 +47,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       speed: %{output_min: -100, output_max: 100, output_neutral: 0},
-      altitude: %{output_min: -20, output_max: 20, output_neutral: 0},
+      altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
     }
   end
 

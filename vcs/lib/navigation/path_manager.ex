@@ -20,7 +20,8 @@ defmodule Navigation.PathManager do
       vehicle_type: vehicle_type,
       vehicle_loiter_speed: config.vehicle_loiter_speed,
       vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
-      vehicle_max_ground_speed: config.vehicle_max_ground_speed,
+      vehicle_takeoff_speed: config.vehicle_takeoff_speed,
+      # vehicle_max_ground_speed: config.vehicle_max_ground_speed,
       goals_classification: goals_classification,
       goals_time_validity_ms: goals_time_validity_ms,
       config_points: [],
@@ -73,17 +74,15 @@ defmodule Navigation.PathManager do
       path_case_type = current_path_case.type
       goals =
       if (path_case_type == Navigation.Path.Waypoint.ground_type()) or (path_case_type == Navigation.Path.Waypoint.landing_type()) do
-        goals =
         if (position.agl < state.vehicle_agl_ground_threshold) do
-          Map.put(goals, :course_ground, course_cmd)
+          if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_takeoff_speed) do
+            Map.put(goals, :altitude, position.altitude)
+          else
+            goals
+          end
+          |> Map.put(:course_ground, course_cmd)
         else
           Map.put(goals, :course_flight, course_cmd)
-        end
-
-        if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_max_ground_speed) do
-          Map.put(goals, :altitude, position.altitude)
-        else
-          goals
         end
       else
         Map.put(goals, :course_flight, course_cmd)

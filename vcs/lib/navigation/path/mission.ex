@@ -138,8 +138,8 @@ defmodule Navigation.Path.Mission do
     |> Map.put(:altitude, final_position.altitude)
     approach_speed = 45
     touchdown_speed = 35
-    wp0 = Navigation.Path.Waypoint.new_landing(pre_approach, approach_speed, course, "pre-approach")
-    wp1 = Navigation.Path.Waypoint.new_landing(approach, approach_speed, course, "approach")
+    wp0 = Navigation.Path.Waypoint.new_flight(pre_approach, approach_speed, course, "pre-approach")
+    wp1 = Navigation.Path.Waypoint.new_approach(approach, approach_speed, course, "approach")
     wp2 = Navigation.Path.Waypoint.new_landing(flare, touchdown_speed, course, "flare")
     wp3 = Navigation.Path.Waypoint.new_landing(touchdown, 0, course, "touchdown")
     [wp0, wp1, wp2, wp3]
@@ -178,11 +178,13 @@ defmodule Navigation.Path.Mission do
 
   @spec get_takeoff_waypoints(struct(), float(), float()) :: list()
   def get_takeoff_waypoints(start_position, climbout_speed ,course) do
+    takeoff_roll = Common.Utils.Location.lla_from_point(start_position,500, 0)
     climb_position = Common.Utils.Location.lla_from_point(start_position,1200, 0)
     |> Map.put(:altitude, start_position.altitude+100)
-    wp1 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "start")
-    wp2 = Navigation.Path.Waypoint.new_ground(climb_position, climbout_speed, course, "climbout")
-    [wp1, wp2]
+    wp0 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "start")
+    wp1 = Navigation.Path.Waypoint.new_climbout(takeoff_roll, climbout_speed, course, "takeoff")
+    wp2 = Navigation.Path.Waypoint.new_flight(climb_position, climbout_speed, course, "climbout")
+    [wp0, wp1, wp2]
   end
 
   @spec get_random_waypoints(struct(), float(), float(), integer(), boolean()) :: struct()
