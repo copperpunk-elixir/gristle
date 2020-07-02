@@ -31,10 +31,9 @@ defmodule Navigation.Path.PathFollower do
           Common.Utils.Location.dx_dy_between_points(path_case.r, path_case.zi)
           |> Common.Utils.Math.hypot()
         d_alt_landing = path_case.zi.altitude - path_case.r.altitude
-        Logger.info("d_alt_landing: #{d_alt_landing}")
         landing_distance_travelled = Common.Utils.Math.hypot(si1, si2)
         d_alt = 0.5*d_alt_landing*(:math.cos(:math.pi()*(1.0-landing_distance_travelled/landing_distance))+1)
-        Logger.info("landing: #{landing_distance_travelled}/#{landing_distance}/#{d_alt}")
+        # Logger.info("landing: #{landing_distance_travelled}/#{landing_distance}/#{d_alt}")
         path_case.r.altitude + d_alt
       else
         path_case.r.altitude + (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))

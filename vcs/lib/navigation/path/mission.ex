@@ -1,14 +1,20 @@
 defmodule Navigation.Path.Mission do
   require Logger
-  @enforce_keys [:name, :waypoints]
+  @enforce_keys [:name, :waypoints, :vehicle_turn_rate]
 
-  defstruct [:name, :waypoints]
+  defstruct [:name, :waypoints, :vehicle_turn_rate]
 
-  @spec new_mission(binary(), list()) :: struct()
-  def new_mission(name, waypoints \\ []) do
+  @spec new_mission(binary(), list(), atom()) :: struct()
+  def new_mission(name, waypoints, vehicle_type) do
+    navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    |> Module.concat(Navigation)
+    vehicle_turn_rate =
+      apply(navigation_config_module, :get_vehicle_limits,[])
+      |> Map.get(:vehicle_turn_rate)
     %Navigation.Path.Mission{
       name: name,
       waypoints: waypoints,
+      vehicle_turn_rate: vehicle_turn_rate
     }
   end
 
@@ -61,7 +67,7 @@ defmodule Navigation.Path.Mission do
     wp3 = Navigation.Path.Waypoint.new_flight(latlon3, speed, :math.pi/2, "wp3",2)
     wp4 = Navigation.Path.Waypoint.new_flight(latlon4, speed, :math.pi, "wp4")
     wp5 = Navigation.Path.Waypoint.new_flight(latlon5, speed, 0, "wp5", 0)
-    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5])
+    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], :Plane)
   end
 
   @spec get_seatac_location() :: struct()
@@ -86,7 +92,7 @@ defmodule Navigation.Path.Mission do
     wp3 = Navigation.Path.Waypoint.new_flight(latlon3, speed, :math.pi, "wp3")
     wp4 = Navigation.Path.Waypoint.new_flight(latlon4, speed, :math.pi, "wp4")
     wp5 = Navigation.Path.Waypoint.new_flight(latlon1, speed, 0, "wp5",0)
-    Navigation.Path.Mission.new_mission("SeaTac", [wp1, wp2, wp3, wp4, wp5])
+    Navigation.Path.Mission.new_mission("SeaTac", [wp1, wp2, wp3, wp4, wp5], :Plane)
   end
 
   @spec get_random_seatac_mission() :: struct()
@@ -110,81 +116,117 @@ defmodule Navigation.Path.Mission do
     wp2 = Navigation.Path.Waypoint.new_ground(takeoff, speed, course, "wp2")
     Logger.debug("wp1: #{inspect(wp1)}")
     Logger.debug("wp2: #{inspect(wp2)}")
-    Navigation.Path.Mission.new_mission("ground",[wp1, wp2])
+    Navigation.Path.Mission.new_mission("ground",[wp1, wp2], :Plane)
   end
 
   @spec get_landing_mission() :: struct()
   def get_landing_mission() do
-    start_position = get_seatac_location(233.3)
-    touchdown = Common.Utils.Location.lla_from_point(start_position, 1000, 0)
-    |> Map.put(:altitude, 133.3)
-    stop = Common.Utils.Location.lla_from_point(touchdown, 200, 0)
+    final_position = get_seatac_location()
+    landing_wps = get_landing_waypoints(final_position, 0)
+    Navigation.Path.Mission.new_mission("landing",landing_wps, :Plane)
+  end
+
+  @spec get_landing_waypoints(struct(), float()) :: list()
+  def get_landing_waypoints(final_position, course) do
+    pre_approach = Common.Utils.Location.lla_from_point(final_position, -1400, 0)
+    |> Map.put(:altitude, final_position.altitude+100)
+    approach = Common.Utils.Location.lla_from_point(final_position, -900, 0)
+    |> Map.put(:altitude, pre_approach.altitude)
+    flare = Common.Utils.Location.lla_from_point(final_position, 100, 0)
+    |> Map.put(:altitude, final_position.altitude+5)
+    touchdown = Common.Utils.Location.lla_from_point(final_position, 600, 0)
+    |> Map.put(:altitude, final_position.altitude)
     approach_speed = 45
     touchdown_speed = 35
-    course = 0
-    wp1 = Navigation.Path.Waypoint.new_landing(start_position, approach_speed, course, "wp1")
-    wp2 = Navigation.Path.Waypoint.new_landing(touchdown, touchdown_speed, course, "wp2")
-    wp3 = Navigation.Path.Waypoint.new_landing(stop, 0, course, "wp3")
-    Logger.debug("wp1: #{inspect(wp1)}")
-    Logger.debug("wp2: #{inspect(wp2)}")
-    Logger.debug("wp3: #{inspect(wp2)}")
-    Navigation.Path.Mission.new_mission("landing",[wp1, wp2, wp3])
+    wp0 = Navigation.Path.Waypoint.new_landing(pre_approach, approach_speed, course, "pre-approach")
+    wp1 = Navigation.Path.Waypoint.new_landing(approach, approach_speed, course, "approach")
+    wp2 = Navigation.Path.Waypoint.new_landing(flare, touchdown_speed, course, "flare")
+    wp3 = Navigation.Path.Waypoint.new_landing(touchdown, 0, course, "touchdown")
+    [wp0, wp1, wp2, wp3]
+  end
+
+  @spec get_complete_mission() :: struct()
+  def get_complete_mission() do
+    start_position = get_seatac_location(133.3)
+    start_course = 0
+    climbout_speed = 45
+    takeoff_wps = get_takeoff_waypoints(start_position, climbout_speed, start_course)
+    # Logger.debug("start: #{inspect(wp1)}")
+    # Logger.debug("climbout: #{inspect(wp2)}")
+    flight_wps = get_random_waypoints(Enum.at(takeoff_wps, -1), climbout_speed, start_course, 1)
+    landing_wps = get_landing_waypoints(start_position, start_course)
+    wps = takeoff_wps ++ flight_wps ++ landing_wps
+    Enum.each(wps, fn wp ->
+      Logger.info("wp: #{wp.name}/#{wp.altitude}m")
+    end)
+    Navigation.Path.Mission.new_mission("complete",wps, :Plane)
   end
 
   @spec get_random_takeoff_mission() :: struct()
   def get_random_takeoff_mission() do
     start_position = get_seatac_location(133.3)
-    takeoff = Common.Utils.Location.lla_from_point(start_position,1500, 0)
-    |> Map.put(:altitude, 233.3)
-    speed = 45
-    course = 0
-    wp1 = Navigation.Path.Waypoint.new_ground(start_position, speed, course, "start")
-    wp2 = Navigation.Path.Waypoint.new_ground(takeoff, speed, course, "climbout")
-    takeoff_wps = [wp1, wp2]
-    Logger.debug("start: #{inspect(wp1)}")
-    Logger.debug("climbout: #{inspect(wp2)}")
-    flight_wps = get_random_waypoints(wp2, speed, course, 4, true, length(takeoff_wps))
+    start_course = 0
+    climbout_speed = 45
+    takeoff_wps = get_takeoff_waypoints(start_position, climbout_speed, start_course)
+    # Logger.debug("start: #{inspect(wp1)}")
+    # Logger.debug("climbout: #{inspect(wp2)}")
+    flight_wps = get_random_waypoints(Enum.at(takeoff_wps, -1), climbout_speed, start_course, 4, true, length(takeoff_wps))
+
     wps = takeoff_wps ++ flight_wps
-    Navigation.Path.Mission.new_mission("takeoff",wps)
+    Navigation.Path.Mission.new_mission("takeoff",wps, :Plane)
+  end
+
+  @spec get_takeoff_waypoints(struct(), float(), float()) :: list()
+  def get_takeoff_waypoints(start_position, climbout_speed ,course) do
+    climb_position = Common.Utils.Location.lla_from_point(start_position,800, 0)
+    |> Map.put(:altitude, start_position.altitude+100)
+    wp1 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "start")
+    wp2 = Navigation.Path.Waypoint.new_ground(climb_position, climbout_speed, course, "climbout")
+    [wp1, wp2]
   end
 
   @spec get_random_waypoints(struct(), float(), float(), integer(), boolean()) :: struct()
   def get_random_waypoints(starting_lla, starting_speed, starting_course, num_wps, loop \\ false, starting_wp_index \\ 0) do
-    max_speed = 55
-    min_speed = 40
+    min_speed = 35
+    max_speed = 45
     min_alt = 300
     max_alt = 400
-    starting_wp = Navigation.Path.Waypoint.new_flight(starting_lla, starting_speed, starting_course,"wp1")
-    min_wp_dist = 1000
-    wp_dist_range = 1500
+    starting_wp = Navigation.Path.Waypoint.new_flight(starting_lla, starting_speed, starting_course,"wp0")
+    min_wp_dist = 601
+    wp_dist_range = 1000
     wps =
-      Enum.reduce(2..num_wps, [starting_wp], fn (index, acc) ->
+      Enum.reduce(1..num_wps, [starting_wp], fn (index, acc) ->
         last_wp = hd(acc)
         dist = :rand.uniform()*wp_dist_range + min_wp_dist
         bearing = :rand.uniform()*2*:math.pi
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*(max_speed-min_speed) + min_speed
         alt = :rand.uniform()*(max_alt - min_alt) + min_alt
-        Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
+        # Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
         Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)
         new_wp = Navigation.Path.Waypoint.new_flight(new_pos, speed, course, "wp#{index}")
         [new_wp | acc]
       end)
-    wps =
+      |> Enum.reverse()
+    |> Enum.drop(1)
+    Logger.warn("before loop")
+    Enum.each(wps, fn wp ->
+      Logger.info("wp: #{wp.name}/#{wp.altitude}m")
+    end)
     if loop do
-      last_wp = %{starting_wp | goto: starting_wp_index}
-      [last_wp | wps]
+      first_wp = Enum.at(wps,0)
+      last_wp = %{first_wp | goto: starting_wp_index}
+      wps ++ [last_wp]
     else
       wps
     end
-    Enum.reverse(wps)
   end
 
   @spec get_random_mission(struct(), float(), float(), integer(), boolean()) :: struct()
   def get_random_mission(starting_lla, starting_speed, starting_course, num_wps, loop) do
     wps = get_random_waypoints(starting_lla, starting_speed, starting_course, num_wps, loop)
-    Navigation.Path.Mission.new_mission("random", wps)
+    Navigation.Path.Mission.new_mission("random", wps, :Plane)
   end
 end

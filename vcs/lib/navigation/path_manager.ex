@@ -15,12 +15,9 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def init(config) do
     vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Vehicle, vehicle_type])
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     {:ok, %{
       vehicle_type: vehicle_type,
-      vehicle_module: vehicle_module,
-      vehicle_turn_rate: config.vehicle_turn_rate,
       vehicle_loiter_speed: config.vehicle_loiter_speed,
       vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
       vehicle_max_ground_speed: config.vehicle_max_ground_speed,
@@ -44,7 +41,7 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({:load_mission, mission}, state) do
-    {config_points, current_path_distance} = new_path(mission.waypoints, state.vehicle_turn_rate)
+    {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
     state = %{
@@ -204,6 +201,11 @@ defmodule Navigation.PathManager do
     load_mission(Navigation.Path.Mission.get_landing_mission(), __MODULE__)
   end
 
+  @spec load_complete() :: atom()
+  def load_complete() do
+    load_mission(Navigation.Path.Mission.get_complete_mission(), __MODULE__)
+  end
+
   @spec load_random_takeoff() :: atom()
   def load_random_takeoff() do
     load_mission(Navigation.Path.Mission.get_random_takeoff_mission(), __MODULE__)
@@ -292,13 +294,13 @@ defmodule Navigation.PathManager do
       theta1 = Common.Utils.constrain_angle_to_compass(current_cp.course)
       theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_0 = can_skip_case(theta1, theta2, cp.start_direction)
-      Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
+      # Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
 
       theta1 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
       theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
-      Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
-      Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
+      # Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
+      # Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
       cp = %{cp |
              start_radius: current_cp.start_radius,
              end_radius: next_cp.start_radius,

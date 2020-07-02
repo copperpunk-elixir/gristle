@@ -18,7 +18,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
       course_ground: %{roll: Map.merge(%{kp: 0.0}, constraints.roll),
                        yaw: Map.merge(%{kp: 1.0, ki: 0.1}, constraints.yaw)},
       speed: %{thrust: Map.merge(%{kp: 0.15, ki: 0.01, weight: 1.0}, constraints.thrust)},
-      altitude: %{pitch: Map.merge(%{kp: 0.015, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
+      altitude: %{pitch: Map.merge(%{kp: 0.018, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
     }
 
     pids = Configuration.Module.Pids.add_pid_input_constraints(pids, constraints)

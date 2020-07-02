@@ -38,7 +38,7 @@ defmodule Display.Scenic.Planner do
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height)
-    {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, 0.08)
+    {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
     graph =
       Scenic.Graph.delete(state.graph, @primitive_id)
       |> draw_waypoints(origin, state.height, mission.waypoints)
@@ -132,21 +132,21 @@ defmodule Display.Scenic.Planner do
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
     # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 0.5
+    margin = 734#0.5
     {origin, total_x, total_y} =
     if (gap_x < gap_y) do
-      total_dist_x = (1+2*margin)*dx_dist
+      total_dist_x = 2*margin + dx_dist#(1+2*margin)*dx_dist
       total_dist_y = aspect_ratio*total_dist_x#*:math.sqrt(2)
-      margin_x = margin*dx_dist
+      margin_x = margin#*dx_dist
       margin_y = (total_dist_y - dy_dist)/2
       origin = Common.Utils.Location.lla_from_point(bottom_left, -margin_x, -margin_y)
       top_corner = Common.Utils.Location.lla_from_point(top_right, margin_x, margin_y)
       {total_dist_lat, total_dist_lon} = {top_corner.latitude-origin.latitude, top_corner.longitude-origin.longitude}
       {origin, total_dist_lat, total_dist_lon}
     else
-      total_dist_y = (1 + 2*margin) * dy_dist##*:math.sqrt(2)
+      total_dist_y = 2*margin + dy_dist#(1 + 2*margin) * dy_dist##*:math.sqrt(2)
       total_dist_x = total_dist_y/aspect_ratio
-      margin_y = margin*dy_dist
+      margin_y = margin#*dy_dist
       margin_x = (total_dist_x - dx_dist)/2
       origin = Common.Utils.Location.lla_from_point(bottom_left, -margin_x, -margin_y)
       top_corner = Common.Utils.Location.lla_from_point(top_right, margin_x, margin_y)
@@ -171,8 +171,8 @@ defmodule Display.Scenic.Planner do
   def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       wp_plot = get_translate(wp, origin, height)
-      Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
-      Logger.info(Navigation.Utils.LatLonAlt.to_string(wp))
+      # Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
+      # Logger.info(Navigation.Utils.LatLonAlt.to_string(wp))
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
       |> text(wp.name, translate: wp_plot, id: @primitive_id)
     end)
