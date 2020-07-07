@@ -18,7 +18,8 @@ defmodule Configuration.Module.Simulation do
   def get_simulation_xplane_send_config(vehicle_type) do
     %{
       vehicle_type: vehicle_type,
-      port: 49003
+      source_port: 49003,
+      dest_port: 49000
     }
   end
 end

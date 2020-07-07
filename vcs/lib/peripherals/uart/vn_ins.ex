@@ -30,7 +30,7 @@ defmodule Peripherals.Uart.VnIns do
         baud: Map.get(config, :baud, @default_baud),
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
-          bodyrate: %{roll: 0, pitch: 0, yaw: 0},
+          bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
           body_accel: %{x: 0, y: 0, z: 0},
           gps_time: 0,
           position: %{latitude: 0, longitude: 0, altitude: 0},
@@ -60,8 +60,6 @@ defmodule Peripherals.Uart.VnIns do
       _success ->
         Logger.debug("VN INS opened #{ins_port}")
     end
-    # Join Goals group
-    join_goals_groups()
     {:noreply, state}
   end
 
@@ -376,9 +374,5 @@ defmodule Peripherals.Uart.VnIns do
 
   def eftb(num, dec) do
     Common.Utils.eftb(num,dec)
-  end
-
-  defp join_goals_groups() do
-    # Comms.Operator.join_group(__MODULE__, {:goals, 3})
   end
 end

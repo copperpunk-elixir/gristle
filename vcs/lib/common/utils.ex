@@ -240,4 +240,28 @@ defmodule Common.Utils do
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(lla_1, lla_2)
     constrain_angle_to_compass(:math.atan2(dy, dx))
   end
+
+  @spec map_rad2deg(map()) :: map()
+  def map_rad2deg(values) do
+    Enum.reduce(values, %{}, fn ({key, value}, acc) ->
+    Map.put(acc, key, Common.Utils.Math.rad2deg(value))
+    end)
+  end
+
+  @spec map_deg2rad(map()) :: map()
+  def map_deg2rad(values) do
+    Enum.reduce(values, %{}, fn ({key, value}, acc) ->
+    Map.put(acc, key, Common.Utils.Math.deg2rad(value))
+    end)
+  end
+
+  @spec attitude_to_accel(map()) :: map()
+  def attitude_to_accel(attitude) do
+    cos_theta = :math.cos(attitude.pitch)
+
+    ax = -:math.sin(attitude.pitch)
+    ay = :math.sin(attitude.roll)*cos_theta
+    az = :math.cos(attitude.roll)*cos_theta
+    %{x: ax*Common.Constants.gravity(), y: ay*Common.Constants.gravity(), z: az*Common.Constants.gravity()}
+  end
 end

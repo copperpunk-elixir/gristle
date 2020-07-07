@@ -13,10 +13,21 @@ defmodule Configuration.Module.Estimation do
     }
   end
 
+  @spec get_razor_input_config() :: map()
+  def get_razor_input_config() do
+    %{
+      device_description: "FT232",
+      imu_loop_interval_ms: 500,
+      ins_loop_interval_ms: 1000,
+      heading_loop_interval_ms: 2000
+    }
+  end
+
   @spec get_estimation_children(atom()) :: list()
   def get_estimation_children(node_type) do
     case node_type do
       :all -> [{Peripherals.Uart.VnIns, %{}}]
+      :sim -> [{Peripherals.Uart.RazorInput, get_razor_input_config()}]
       _other -> []
     end
   end
