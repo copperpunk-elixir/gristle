@@ -61,7 +61,7 @@ defmodule Simulation.XplaneReceive do
     state =
     if state.new_simulation_data_to_publish == true do
       publish_simulation_data(state)
-      publish_perfect_simulation_data(state)
+      # publish_perfect_simulation_data(state)
       %{state | new_simulation_data_to_publish: false}
     else
       state
@@ -186,8 +186,8 @@ defmodule Simulation.XplaneReceive do
   def publish_simulation_data(state) do
     pv_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
-    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
-    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
   end
 
   @spec list_to_int(list(), integer()) :: integer()
