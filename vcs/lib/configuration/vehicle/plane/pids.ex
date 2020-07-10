@@ -7,7 +7,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
 
     pids = %{
       rollrate: %{aileron: Map.merge(%{kp: 0.5, ki: 0.0, kd: 0.005}, constraints.aileron)},
-      pitchrate: %{elevator: Map.merge(%{kp: 0.25, ki: 0.0, kd: 0.00}, constraints.elevator)},
+      pitchrate: %{elevator: Map.merge(%{kp: 0.35, ki: 0.005, kd: 0.00}, constraints.elevator)},
       yawrate: %{rudder: Map.merge(%{kp: 0.35, ki: 0.0, kd: 0.0025}, constraints.rudder)},
       thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
       roll: %{rollrate: Map.merge(%{kp: 5.0, kd: 0.025}, constraints.rollrate)},

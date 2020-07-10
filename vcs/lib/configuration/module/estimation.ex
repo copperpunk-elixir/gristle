@@ -17,9 +17,10 @@ defmodule Configuration.Module.Estimation do
   def get_cp_ins_config() do
     %{
       ublox_device_description: "FT232",
-      imu_loop_interval_ms: 5,
+      antenna_offset: Common.Constants.pi_2(),
+      imu_loop_interval_ms: 20,
       ins_loop_interval_ms: 200,
-      heading_loop_interval_ms: 2000
+      heading_loop_interval_ms: 200
     }
   end
 
@@ -27,6 +28,7 @@ defmodule Configuration.Module.Estimation do
   def get_estimation_children(node_type) do
     case node_type do
       :all -> [{Peripherals.Uart.VnIns, %{}}]
+      # :sim -> [{Peripherals.Uart.CpIns, get_cp_ins_config()}]
       :sim -> [{Peripherals.Uart.VnIns, %{}}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]
       _other -> []
     end

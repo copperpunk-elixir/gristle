@@ -18,6 +18,7 @@ defmodule Peripherals.Uart.CpIns do
         uart_ref: uart_ref,
         ublox_device_description: config.ublox_device_description,
         baud: Map.get(config, :baud, @default_baud),
+        antenna_offset: config.antenna_offset,
         imu_loop_interval_ms: config.imu_loop_interval_ms,
         ins_loop_interval_ms: config.ins_loop_interval_ms,
         heading_loop_interval_ms: config.heading_loop_interval_ms,
@@ -47,7 +48,7 @@ defmodule Peripherals.Uart.CpIns do
 
     Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    # Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
+    Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
     {:noreply, state}
   end
 
@@ -95,8 +96,9 @@ defmodule Peripherals.Uart.CpIns do
   def handle_info(:heading_loop, state) do
     attitude = state.attitude
     unless Enum.empty?(attitude) do
-      # Send heading
-      heading = attitude.yaw
+      rel_pos_ned = get_rel_pos_ned(attitude.yaw, state.antenna_offset)
+      # Logger.info("send ")
+      Circuits.UART.write(state.uart_ref, rel_pos_ned)
     end
     {:noreply, state}
   end
@@ -121,11 +123,11 @@ defmodule Peripherals.Uart.CpIns do
 
   @spec get_accel_gyro(map(), map(), struct()) :: binary()
   def get_accel_gyro(accel, bodyrate, now) do
+    {now_us, _} = now.microsecond
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x69,32,0>>
     iTOW = get_itow()
-    {now_ms, _} = now.microsecond
-    nano = now_ms*1000 |> Common.Utils.Math.int32_little_bin()
+    nano = now_us*1000 |> Common.Utils.Math.int32_little_bin()
     accel_x = Common.Utils.Math.uint_from_fp(accel.x,4)
     accel_y = Common.Utils.Math.uint_from_fp(accel.y,4)
     accel_z = Common.Utils.Math.uint_from_fp(accel.z,4)
@@ -148,6 +150,8 @@ defmodule Peripherals.Uart.CpIns do
 
   @spec get_nav_pvt(map(), map(), struct()) :: binary()
   def get_nav_pvt(position, velocity, now) do
+    {now_us, _} = now.microsecond
+
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x07,92,0>>
     iTOW = get_itow()
@@ -159,21 +163,20 @@ defmodule Peripherals.Uart.CpIns do
     sec = <<now.second>>
     valid = <<15>>
     tAcc = Common.Utils.Math.int32_little_bin(100)
-    {now_ms, _} = now.microsecond
-    nano = now_ms*1000 |> Common.Utils.Math.int32_little_bin()
+    nano = now_us*1000 |> Common.Utils.Math.int32_little_bin()
     fixType = <<3>>
     flags = <<55>>
     flags2 = <<224>>
     numSV = <<:random.uniform(12)+7>>
-    lon = position.longitude |> Common.Utils.Math.rad2deg() |> Kernel.*(10_000_000) |> floor() |> Common.Utils.Math.int32_little_bin()
-    lat = position.latitude |> Common.Utils.Math.rad2deg() |> Kernel.*(10_000_000) |> floor() |> Common.Utils.Math.int32_little_bin()
-    height = position.altitude * 1_000 |> floor() |> Common.Utils.Math.int32_little_bin()
+    lon = position.longitude |> Common.Utils.Math.rad2deg() |> Kernel.*(10_000_000) |> round() |> Common.Utils.Math.int32_little_bin()
+    lat = position.latitude |> Common.Utils.Math.rad2deg() |> Kernel.*(10_000_000) |> round() |> Common.Utils.Math.int32_little_bin()
+    height = position.altitude * 1_000 |> round() |> Common.Utils.Math.int32_little_bin()
     hMSL = height
     hACC = Common.Utils.Math.int32_little_bin(:random.uniform(2000))
     vACC = Common.Utils.Math.int32_little_bin(:random.uniform(2000))
-    velN = velocity.north * 1_000 |> floor() |> Common.Utils.Math.int32_little_bin()
-    velE = velocity.east * 1_000 |> floor() |> Common.Utils.Math.int32_little_bin()
-    velD = velocity.down * 1_000 |> floor() |> Common.Utils.Math.int32_little_bin()
+    velN = velocity.north * 1_000 |> round() |> Common.Utils.Math.int32_little_bin()
+    velE = velocity.east * 1_000 |> round() |> Common.Utils.Math.int32_little_bin()
+    velD = velocity.down * 1_000 |> round() |> Common.Utils.Math.int32_little_bin()
     remainder = <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
     checksum_buffer =
       class_id_length <>
@@ -205,7 +208,54 @@ defmodule Peripherals.Uart.CpIns do
     header <> checksum_buffer <> checksum_bytes
   end
 
-  @spec get_itow() :: binary()
+  @spec get_rel_pos_ned(float(), float()) :: binary()
+  def get_rel_pos_ned(yaw, ant_offset) do
+    header = <<0xB5,0x62>>
+    class_id_length = <<0x01, 0x3C,40,0>>
+    version = <<0>>
+    res1 = <<0>>
+    refStationId = <<0,0>>
+    iTOW = get_itow()
+    distance = 1
+    relPosN_float = distance*:math.cos(yaw + ant_offset)
+    relPosN_cm = relPosN_float * 100 |> trunc()
+    relPosN_mm = (relPosN_float - relPosN_cm*0.01) * 10000 |> round()
+    relPosE_float = distance*:math.sin(yaw + ant_offset)
+    relPosE_cm = relPosE_float * 100 |> trunc()
+    relPosE_mm = (relPosE_float - relPosE_cm*0.01) * 10000 |> round()
+    relPosN = relPosN_cm |> Common.Utils.Math.int32_little_bin()
+    relPosE = relPosE_cm |> Common.Utils.Math.int32_little_bin()
+    relPosD = <<0,0,0,0>>
+    relPosHPN = relPosN_mm |> Common.Utils.Math.int8_little_bin()
+    relPosHPE = relPosE_mm |> Common.Utils.Math.int8_little_bin()
+    relPosHPD = <<0>>
+    res2 = <<0>>
+    accN = Common.Utils.Math.int32_little_bin(:random.uniform(100))
+    accE = Common.Utils.Math.int32_little_bin(:random.uniform(100))
+    accD = Common.Utils.Math.int32_little_bin(:random.uniform(100))
+    flags= Common.Utils.Math.int32_little_bin(:random.uniform(4))
+    checksum_buffer =
+      class_id_length <>
+      version <>
+      res1 <>
+      refStationId <>
+      iTOW <>
+      relPosN <>
+      relPosE <>
+      relPosD <>
+      relPosHPN <>
+      relPosHPE <>
+      relPosHPD <>
+      res2 <>
+      accN <>
+      accE <>
+      accD <>
+      flags
+    checksum_bytes = calculate_ublox_checksum(:binary.bin_to_list(checksum_buffer))
+    header <> checksum_buffer <> checksum_bytes
+  end
+
+  @spec get_itow() :: integer()
   def get_itow() do
     today = Date.utc_today()
     first_day_str = Date.add(today, - Date.day_of_week(today)) |> Date.to_iso8601()
