@@ -64,6 +64,7 @@ defmodule Configuration.Module.Cluster do
       String.contains?(computer_name, "system76") -> "wlp0s20f3"
       String.contains?(computer_name, "nerves") -> "wlan0"
       String.contains?(computer_name, "pi") -> "wlan0"
+      String.contains?(computer_name, "jredding") -> "wlp58s0"
       true -> raise "Unknown Computer Type: #{computer_name}"
     end
   end

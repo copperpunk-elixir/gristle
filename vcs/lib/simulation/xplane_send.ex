@@ -18,7 +18,7 @@ defmodule Simulation.XplaneSend do
         socket: nil,
         port: config.port,
         vehicle_type: config.vehicle_type,
-        ip_address: {192, 168, 4, 32},
+        ip_address: {10, 0, 0, 184},
         commands: %{}
      }}
   end

@@ -85,9 +85,9 @@ defmodule Common.Utils do
 
   @spec mount_usb_drive() :: binary()
   def mount_usb_drive() do
-    path = get_mount_path()
-    System.cmd("mount", ["/dev/sda1", path])
-    path
+    #path = get_mount_path()
+    #System.cmd("mount", ["/dev/sda1", path])
+    #path
   end
 
   @spec get_filename_with_extension(binary()) :: binary()
@@ -111,12 +111,14 @@ defmodule Common.Utils do
 
   @spec get_vehicle_type() :: atom()
   def get_vehicle_type() do
-    get_filename_with_extension(".vehicle") |> String.to_atom()
+    #get_filename_with_extension(".vehicle") |> String.to_atom()
+    :Plane
   end
 
   @spec get_node_type() :: atom()
   def get_node_type() do
-    get_filename_with_extension(".node") |> String.to_atom()
+    #get_filename_with_extension(".node") |> String.to_atom()
+    :sim
   end
 
   def assert_valid_config(config, config_type) do

@@ -147,13 +147,13 @@ defmodule Navigation.Path.Mission do
 
   @spec get_complete_mission() :: struct()
   def get_complete_mission() do
-    start_position = get_seatac_location(133.3)
+    start_position = get_seatac_location(105.46)
     start_course = 0
     climbout_speed = 45
     takeoff_wps = get_takeoff_waypoints(start_position, climbout_speed, start_course)
     # Logger.debug("start: #{inspect(wp1)}")
     # Logger.debug("climbout: #{inspect(wp2)}")
-    flight_wps = get_random_waypoints(Enum.at(takeoff_wps, -1), climbout_speed, start_course, 1)
+    flight_wps = get_random_waypoints(Enum.at(takeoff_wps, -1), climbout_speed, start_course, 1) # last arg is num wpts
     landing_wps = get_landing_waypoints(start_position, start_course)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     Enum.each(wps, fn wp ->

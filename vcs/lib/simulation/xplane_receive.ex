@@ -115,7 +115,7 @@ defmodule Simulation.XplaneReceive do
             # Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
             %{state | velocity: %{north: vel_north_mps, east: vel_east_mps, down: vel_down_mps}}
           _other ->
-            Logger.debug("unknown type")
+            #Logger.debug("unknown type")
             state
         end
       {%{state | new_simulation_data_to_publish: true}, Enum.drop(buffer,32)}
