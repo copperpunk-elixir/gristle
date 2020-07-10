@@ -5,14 +5,14 @@ defmodule Peripherals.Uart.VnIns do
 
 
   # @default_port "ttyACM2"
-  @default_device_description "SFE 9DOF"
+  @default_device_description "SFE SAMD21"
   @default_baud 1_000_000
   @start_byte 250
   # @payload_and_crc_length 104
   # @message_length 108
   # @crc_start_index 106
   @deg2rad 0.017453293
-  # @rad2deg 57.295779513
+  @rad2deg 57.295779513
 
   def start_link(config) do
     Logger.debug("Start VectorNav INS GenServer")
@@ -72,12 +72,13 @@ defmodule Peripherals.Uart.VnIns do
     state = parse_data_buffer(data_list, state)
     ins = state.ins
     # Logger.info("time: #{ins.gps_time}")
-    # Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
-    # Logger.info("lat: #{eftb(ins.position.latitude*@rad2deg,6)}")
+    # Logger.info("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.info("gps_status: #{ins.gps_status}")
 
     state = if (state.new_ins_data_to_publish) do
-      publish_ins_data(ins)
+
+      Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
+      # publish_ins_data(ins)
       %{state | new_ins_data_to_publish: false}
     else
       state

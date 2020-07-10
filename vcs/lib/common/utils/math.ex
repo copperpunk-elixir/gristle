@@ -187,4 +187,12 @@ defmodule Common.Utils.Math do
     si
   end
 
+  def int16_little_bin(x) do
+    <<x::little-signed-integer-16>>
+  end
+
+  def int32_little_bin(x) do
+    <<x::little-signed-integer-32>>
+  end
+
 end
