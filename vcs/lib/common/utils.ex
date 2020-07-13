@@ -264,4 +264,21 @@ defmodule Common.Utils do
     az = :math.cos(attitude.roll)*cos_theta
     %{x: ax*Common.Constants.gravity(), y: ay*Common.Constants.gravity(), z: az*Common.Constants.gravity()}
   end
+
+  @spec inertial_to_body_euler(map(), tuple()) :: tuple()
+  def inertial_to_body_euler(attitude, vector) do
+    cosphi = :math.cos(attitude.roll)
+    sinphi = :math.sin(attitude.roll)
+    costheta = :math.cos(attitude.pitch)
+    sintheta = :math.sin(attitude.pitch)
+    cospsi = :math.cos(attitude.yaw)
+    sinpsi = :math.sin(attitude.yaw)
+
+    {vx,vy,vz} = vector
+
+    bx = costheta*cospsi*vx + costheta*sinpsi*vy - sintheta*vz
+    by = (-cosphi*sinpsi + sinphi*sintheta*cospsi)*vx + (cosphi*cospsi + sinphi*sintheta*sinpsi)*vy + sinphi*costheta*vz
+    bz = (sinphi*sinpsi + cosphi*sintheta*cospsi)*vx - (sinphi*cospsi + cosphi*sintheta*sinpsi)*vy + cosphi*costheta*vz
+    {bx,by,bz}
+  end
 end

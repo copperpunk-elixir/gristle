@@ -19,9 +19,9 @@ defmodule Simulation.Ublox.SendImuMsgTest do
     # Create Attitude Message
     position = %{latitude: Common.Utils.Math.deg2rad(45.0), longitude: Common.Utils.Math.deg2rad(-120.0), altitude: 123.4}
     velocity = %{north: 10.0, east: -1.0, down: 0.5}
-    attitude = %{}
-    bodyrate = %{rollrate: 0.0, pitchrate: 0.0, yawrate: -3.0}
-    bodyaccel = %{x: 0.0, y: 0.0, z: 9.8}
+    attitude = %{roll: 0.0, pitch: 0.0, yaw: 0.0}
+    bodyrate = %{rollrate: Common.Utils.Math.deg2rad(5.0), pitchrate: 0.0, yawrate: 0.0}
+    bodyaccel = %{x: 0.0, y: 0.173648178*Common.Constants.gravity(), z: 0.984807753*Common.Constants.gravity()}
     pv_measured = %{attitude: attitude, bodyrate: bodyrate, bodyaccel: bodyaccel, position: position, velocity: velocity}
     Enum.each(1..1000, fn x ->
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())

@@ -41,7 +41,7 @@ defmodule Simulation.XplaneReceive do
   end
 
   @impl GenServer
-  def handle_cast(:publish_razor_data, state) do
+  def handle_cast(:publish_pv_measured, state) do
     keys = [:attitude, :bodyrate, :bodyaccel, :velocity, :position]
     value_map = Enum.reduce(keys, %{}, fn (key, acc) ->
       value = Map.get(state,key)
@@ -60,8 +60,8 @@ defmodule Simulation.XplaneReceive do
     state = parse_data_buffer(msg, state)
     state =
     if state.new_simulation_data_to_publish == true do
-      publish_simulation_data(state)
-      # publish_perfect_simulation_data(state)
+      # publish_simulation_data(state)
+      publish_perfect_simulation_data(state)
       %{state | new_simulation_data_to_publish: false}
     else
       state
@@ -153,7 +153,7 @@ defmodule Simulation.XplaneReceive do
             vel_east_mps = list_to_int(vel_east_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             vel_down_mps = -(list_to_int(vel_up_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32))
             # Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
-            GenServer.cast(__MODULE__, :publish_razor_data)
+            GenServer.cast(__MODULE__, :publish_pv_measured)
             %{state | velocity: %{north: vel_north_mps, east: vel_east_mps, down: vel_down_mps}}
           _other ->
             Logger.debug("unknown type")
@@ -185,7 +185,7 @@ defmodule Simulation.XplaneReceive do
   @spec publish_simulation_data(map()) ::atom()
   def publish_simulation_data(state) do
     pv_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
   end

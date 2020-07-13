@@ -27,7 +27,9 @@ defmodule Peripherals.Uart.CpIns do
         bodyaccel: %{},
         gps_time: 0,
         position: %{},
-        velocity: %{}
+        velocity: %{},
+        pv_measured_time_prev: 0
+
      }
     }
   end
@@ -54,13 +56,35 @@ defmodule Peripherals.Uart.CpIns do
 
   @impl GenServer
   def handle_cast({:pv_measured, values}, state) do
+    current_time = :os.system_time(:microsecond)
+    dt = (current_time - state.pv_measured_time_prev)*(0.000001)
+
+    velocity_prev = if Enum.empty?(state.velocity), do: %{north: 0.0, east: 0.0, down: 0.0}, else: state.velocity
+    velocity = values.velocity
+    # Logger.info("v_prev: #{inspect(velocity_prev)}")
+    # Logger.info("v_curr: #{inspect(velocity)}")
+    # Logger.info("dt: #{dt}")
+    dv_north =velocity.north - velocity_prev.north
+    dv_east =velocity.east - velocity_prev.east
+    dv_down =velocity.down - velocity_prev.down
+
+    accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity()}
+    {ax_i, ay_i, az_i} = accel_inertial
+    # Logger.info("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
+    {ax, ay, az}= Common.Utils.inertial_to_body_euler(values.attitude, accel_inertial)
+    bodyaccel = %{x: ax, y: ay, z: az}
+    # Logger.warn("body_accel: #{Common.Utils.eftb(ax,3)}/#{Common.Utils.eftb(ay,3)}/#{Common.Utils.eftb(az,3)}")
+    # Logger.info("accel mag: #{:math.sqrt(ax*ax+ay*ay+az*az)}")
+    # Logger.info("gyro: #{Common.Utils.map_rad2deg}")
     state = %{state |
               attitude: values.attitude,
               bodyrate: values.bodyrate,
-              bodyaccel: values.bodyaccel,
+              bodyaccel: bodyaccel,
               velocity: values.velocity,
-              position: values.position
+              position: values.position,
+              pv_measured_time_prev: current_time
              }
+
     {:noreply, state}
   end
 
