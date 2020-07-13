@@ -18,7 +18,7 @@ defmodule Configuration.Module.Estimation do
     %{
       ublox_device_description: "FT232",
       antenna_offset: Common.Constants.pi_2(),
-      imu_loop_interval_ms: 20,
+      imu_loop_interval_ms: 10,
       ins_loop_interval_ms: 200,
       heading_loop_interval_ms: 200
     }
