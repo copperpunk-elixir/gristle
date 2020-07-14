@@ -73,6 +73,7 @@ defmodule Peripherals.Uart.CpIns do
     # Logger.info("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
     {ax, ay, az}= Common.Utils.inertial_to_body_euler(values.attitude, accel_inertial)
     bodyaccel = %{x: ax, y: ay, z: az}
+    # bodyaccel = values.bodyaccel
     # Logger.warn("body_accel: #{Common.Utils.eftb(ax,3)}/#{Common.Utils.eftb(ay,3)}/#{Common.Utils.eftb(az,3)}")
     # Logger.info("accel mag: #{:math.sqrt(ax*ax+ay*ay+az*az)}")
     # Logger.info("gyro: #{Common.Utils.map_rad2deg}")
