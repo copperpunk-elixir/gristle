@@ -109,7 +109,8 @@ defmodule Common.Utils.Math do
     # exp = length(significand)-1 + 127
     # exponent = :erlang.integer_to_list(exp, 2)
     # Logger.debug("exponent: #{exponent}")
-    if x == 0 do
+    x = x + 1-1
+    if x == 0 or (x>(3.4e38)) or (x<(-3.4e38)) do
       <<0,0,0,0>>
     else
       abs_x = abs(x)
@@ -185,6 +186,18 @@ defmodule Common.Utils.Math do
   def twos_comp_64_bin(x) do
     <<si::signed-integer-64>> = x
     si
+  end
+
+  def int16_little_bin(x) do
+    <<x::little-signed-integer-16>>
+  end
+
+  def int32_little_bin(x) do
+    <<x::little-signed-integer-32>>
+  end
+
+  def int8_little_bin(x) do
+    <<x::little-signed-integer-8>>
   end
 
 end

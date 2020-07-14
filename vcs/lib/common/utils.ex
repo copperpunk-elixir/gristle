@@ -240,4 +240,45 @@ defmodule Common.Utils do
     {dx, dy} = Common.Utils.Location.dx_dy_between_points(lla_1, lla_2)
     constrain_angle_to_compass(:math.atan2(dy, dx))
   end
+
+  @spec map_rad2deg(map()) :: map()
+  def map_rad2deg(values) do
+    Enum.reduce(values, %{}, fn ({key, value}, acc) ->
+    Map.put(acc, key, Common.Utils.Math.rad2deg(value))
+    end)
+  end
+
+  @spec map_deg2rad(map()) :: map()
+  def map_deg2rad(values) do
+    Enum.reduce(values, %{}, fn ({key, value}, acc) ->
+    Map.put(acc, key, Common.Utils.Math.deg2rad(value))
+    end)
+  end
+
+  @spec attitude_to_accel(map()) :: map()
+  def attitude_to_accel(attitude) do
+    cos_theta = :math.cos(attitude.pitch)
+
+    ax = -:math.sin(attitude.pitch)
+    ay = :math.sin(attitude.roll)*cos_theta
+    az = :math.cos(attitude.roll)*cos_theta
+    %{x: ax*Common.Constants.gravity(), y: ay*Common.Constants.gravity(), z: az*Common.Constants.gravity()}
+  end
+
+  @spec inertial_to_body_euler(map(), tuple()) :: tuple()
+  def inertial_to_body_euler(attitude, vector) do
+    cosphi = :math.cos(attitude.roll)
+    sinphi = :math.sin(attitude.roll)
+    costheta = :math.cos(attitude.pitch)
+    sintheta = :math.sin(attitude.pitch)
+    cospsi = :math.cos(attitude.yaw)
+    sinpsi = :math.sin(attitude.yaw)
+
+    {vx,vy,vz} = vector
+
+    bx = costheta*cospsi*vx + costheta*sinpsi*vy - sintheta*vz
+    by = (-cosphi*sinpsi + sinphi*sintheta*cospsi)*vx + (cosphi*cospsi + sinphi*sintheta*sinpsi)*vy + sinphi*costheta*vz
+    bz = (sinphi*sinpsi + cosphi*sintheta*cospsi)*vx - (sinphi*cospsi + cosphi*sintheta*sinpsi)*vy + cosphi*costheta*vz
+    {bx,by,bz}
+  end
 end

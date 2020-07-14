@@ -6,7 +6,7 @@ defmodule Simulation.XplaneReceive do
   @deg2rad 0.017453293
   @ft2m 0.3048
   @knots2mps 0.51444444
-  # @rad2deg 57.295779513
+  @rad2deg 57.295779513
 
 
   def start_link(config) do
@@ -18,16 +18,18 @@ defmodule Simulation.XplaneReceive do
 
   @impl GenServer
   def init(config) do
+    Logger.debug("recieve config: #{inspect(config)}")
     {:ok, %{
         socket: nil,
         port: config.port,
+        bodyaccel: %{},
         attitude: %{},
         bodyrate: %{},
         position: %{},
         velocity: %{},
         agl: 0,
         airspeed: 0,
-        new_simulation_data_to_publish: false
+        new_simulation_data_to_publish: false,
      }}
   end
 
@@ -39,12 +41,27 @@ defmodule Simulation.XplaneReceive do
   end
 
   @impl GenServer
+  def handle_cast(:publish_pv_measured, state) do
+    keys = [:attitude, :bodyrate, :bodyaccel, :velocity, :position]
+    value_map = Enum.reduce(keys, %{}, fn (key, acc) ->
+      value = Map.get(state,key)
+      if Enum.empty?(value), do: %{}, else: Map.put(acc, key, value)
+    end)
+
+    unless Enum.empty?(value_map) do
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, value_map}, :pv_measured, self())
+    end
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info({:udp, _socket, _src_ip, _src_port, msg}, state) do
     # Logger.info("received data from #{inspect(src_ip)} on port #{src_port} with length #{length(msg)}")
     state = parse_data_buffer(msg, state)
     state =
     if state.new_simulation_data_to_publish == true do
       publish_simulation_data(state)
+      # publish_perfect_simulation_data(state)
       %{state | new_simulation_data_to_publish: false}
     else
       state
@@ -75,6 +92,29 @@ defmodule Simulation.XplaneReceive do
             {indicated_airspeed_knots_uint32, _buffer} = Enum.split(buffer, 4)
             indicated_airspeed_knots = list_to_int(indicated_airspeed_knots_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             %{state | airspeed: indicated_airspeed_knots*@knots2mps}
+          4 ->
+            {_mach_uint32, buffer} = Enum.split(buffer, 4)
+            {_unknown, buffer} = Enum.split(buffer, 4)
+            {_unknown, buffer} = Enum.split(buffer, 4)
+            {_unknown, buffer} = Enum.split(buffer, 4)
+            {accel_z_g_int32, buffer} = Enum.split(buffer, 4)
+            {accel_x_g_uint32, buffer} = Enum.split(buffer, 4)
+
+            {accel_y_g_uint32, _buffer} = Enum.split(buffer, 4)
+
+            accel_z_mpss =
+              list_to_int(accel_z_g_int32,4) |> Common.Utils.Math.fp_from_uint(32)
+              |> Kernel.-(1)
+              |> Kernel.*(Common.Constants.gravity())
+            accel_x_mpss = list_to_int(accel_x_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity())
+            accel_y_mpss = list_to_int(accel_y_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity())
+            # Add accel due to gravity
+            # Logger.debug("accel_mpss xyz: #{eftb(accel_x_mpss,3)}/#{eftb(accel_y_mpss, 3)}/#{eftb(accel_z_mpss, 3)}")
+            attitude = if Enum.empty?(state.attitude), do: %{roll: 0.0, pitch: 0.0, yaw: 0.0}, else: state.attitude
+            accel_gravity = Common.Utils.attitude_to_accel(attitude)
+            accel = %{x: accel_gravity.x + accel_x_mpss, y: accel_gravity.y + accel_y_mpss, z: accel_gravity.z + accel_z_mpss}
+            # Logger.debug("accel xyz: #{eftb(accel.x,3)}/#{eftb(accel.y, 3)}/#{eftb(accel.z, 3)}")
+            %{state | bodyaccel: accel}
           16 ->
             {pitch_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
             {roll_rate_rad_uint32, buffer} = Enum.split(buffer, 4)
@@ -113,6 +153,7 @@ defmodule Simulation.XplaneReceive do
             vel_east_mps = list_to_int(vel_east_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             vel_down_mps = -(list_to_int(vel_up_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32))
             # Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
+            GenServer.cast(__MODULE__, :publish_pv_measured)
             %{state | velocity: %{north: vel_north_mps, east: vel_east_mps, down: vel_down_mps}}
           _other ->
             Logger.debug("unknown type")
@@ -131,12 +172,20 @@ defmodule Simulation.XplaneReceive do
     end
   end
 
-  @spec publish_simulation_data(map()) ::atom()
-  def publish_simulation_data(state) do
+  @spec publish_perfect_simulation_data(map()) ::atom()
+  def publish_perfect_simulation_data(state) do
     attitude_bodyrate_value_map = %{attitude: state.attitude, bodyrate: state.bodyrate}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
     position_velocity_value_map = %{position: state.position, velocity: state.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+  end
+
+  @spec publish_simulation_data(map()) ::atom()
+  def publish_simulation_data(state) do
+    pv_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
   end
@@ -148,8 +197,8 @@ defmodule Simulation.XplaneReceive do
     end)
   end
 
-  # defp eftb(num, dec) do
-  #   Common.Utils.eftb(num,dec)
-  # end
+  defp eftb(num, dec) do
+    Common.Utils.eftb(num,dec)
+  end
 
 end
