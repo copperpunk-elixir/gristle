@@ -48,9 +48,9 @@ defmodule Peripherals.Uart.CpIns do
     end
     Comms.Operator.join_group(__MODULE__, :pv_measured, self())
 
-    Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
+    # Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
+    # Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    # Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
     {:noreply, state}
   end
 

@@ -24,12 +24,26 @@ defmodule Configuration.Module.Estimation do
     }
   end
 
+  @spec get_vn_ins_config(atom()) :: map()
+  def get_vn_ins_config(node_type) do
+    {device_desc, baud} =
+      case node_type do
+        # :sim -> {"SFE SAMD21", 115_200}
+        :sim -> {"RedBoard", 115_200}
+        _other -> {"RedBoard", 115_200}
+      end
+    %{
+      vn_device_description: device_desc,
+      baud: baud
+    }
+  end
+
   @spec get_estimation_children(atom()) :: list()
   def get_estimation_children(node_type) do
     case node_type do
-      :all -> [{Peripherals.Uart.VnIns, %{}}]
+      :all -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}]
       # :sim -> [{Peripherals.Uart.CpIns, get_cp_ins_config()}]
-      :sim -> [{Peripherals.Uart.VnIns, %{}}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]
+      :sim -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]
       _other -> []
     end
   end

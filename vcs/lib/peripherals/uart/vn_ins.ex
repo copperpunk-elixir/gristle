@@ -5,8 +5,8 @@ defmodule Peripherals.Uart.VnIns do
 
 
   # @default_port "ttyACM2"
-  @default_device_description "SFE SAMD21"
-  @default_baud 1_000_000
+  # @default_device_description "SFE SAMD21"
+  # @default_baud 1_000_000
   @start_byte 250
   # @payload_and_crc_length 104
   # @message_length 108
@@ -26,8 +26,8 @@ defmodule Peripherals.Uart.VnIns do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: Map.get(config, :device_description, @default_device_description),
-        baud: Map.get(config, :baud, @default_baud),
+        device_description: config.vn_device_description,
+        baud: config.baud,
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
           bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
@@ -64,6 +64,13 @@ defmodule Peripherals.Uart.VnIns do
   end
 
   @impl GenServer
+  def handle_cast(:close, state) do
+    result = Circuits.UART.close(state.uart_ref)
+    Logger.warn("Closing UART port with result: #{inspect(result)}")
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     # Enum.each(data_list, fn x->
@@ -77,7 +84,7 @@ defmodule Peripherals.Uart.VnIns do
 
     state = if (state.new_ins_data_to_publish) do
 
-      # Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
+      Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
       publish_ins_data(ins)
       %{state | new_ins_data_to_publish: false}
     else
@@ -375,5 +382,11 @@ defmodule Peripherals.Uart.VnIns do
 
   def eftb(num, dec) do
     Common.Utils.eftb(num,dec)
+  end
+
+  @spec close() :: atom()
+  def close() do
+    Logger.info("close port")
+    GenServer.cast(__MODULE__, :close)
   end
 end
