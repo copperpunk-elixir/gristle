@@ -48,9 +48,9 @@ defmodule Peripherals.Uart.CpIns do
     end
     Comms.Operator.join_group(__MODULE__, :pv_measured, self())
 
-    # Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    # Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    # Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
+    Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
+    Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    Common.Utils.start_loop(self(), state.heading_loop_interval_ms, :heading_loop)
     {:noreply, state}
   end
 
@@ -122,7 +122,7 @@ defmodule Peripherals.Uart.CpIns do
     attitude = state.attitude
     unless Enum.empty?(attitude) do
       rel_pos_ned = get_rel_pos_ned(attitude.yaw, state.antenna_offset)
-      # Logger.info("send ")
+      # Logger.info("send relposned: #{length(:binary.bin_to_list(rel_pos_ned))}")
       Circuits.UART.write(state.uart_ref, rel_pos_ned)
     end
     {:noreply, state}
@@ -236,7 +236,7 @@ defmodule Peripherals.Uart.CpIns do
   @spec get_rel_pos_ned(float(), float()) :: binary()
   def get_rel_pos_ned(yaw, ant_offset) do
     header = <<0xB5,0x62>>
-    class_id_length = <<0x01, 0x3C,40,0>>
+    class_id_length = <<0x01, 0x3C,64,0>>
     version = <<0>>
     res1 = <<0>>
     refStationId = <<0,0>>
@@ -254,11 +254,20 @@ defmodule Peripherals.Uart.CpIns do
     relPosHPN = relPosN_mm |> Common.Utils.Math.int8_little_bin()
     relPosHPE = relPosE_mm |> Common.Utils.Math.int8_little_bin()
     relPosHPD = <<0>>
-    res2 = <<0>>
+    relPosHeading = Common.Utils.Math.rad2deg(yaw + ant_offset) |> Kernel.*(100_000) |> round() |> Common.Utils.Math.int32_little_bin()
+    relPosLengthFloat = 1.0414#Common.Utils.Math.hypot(relPosN_float, relPosE_float)
+    relPosLength_cm = relPosLengthFloat* 100 |> trunc()
+    relPosLength_mm_em1 = ((relPosLengthFloat*100-relPosLength_cm)*100) |> round()
+    relPosLength = relPosLength_cm |> Common.Utils.Math.int32_little_bin()
+    relPosHPLength = relPosLength_mm_em1 |> Common.Utils.Math.int8_little_bin()
+    res2 = <<0,0,0,0>>
     accN = Common.Utils.Math.int32_little_bin(:random.uniform(100))
     accE = Common.Utils.Math.int32_little_bin(:random.uniform(100))
     accD = Common.Utils.Math.int32_little_bin(:random.uniform(100))
-    flags= Common.Utils.Math.int32_little_bin(:random.uniform(4))
+    accLength = Common.Utils.Math.int32_little_bin(:random.uniform(100))
+    accHeading = Common.Utils.Math.int32_little_bin(:random.uniform(100))
+    res3 = <<0,0,0,0>>
+    flags= Common.Utils.Math.int32_little_bin(261)
     checksum_buffer =
       class_id_length <>
       version <>
@@ -268,13 +277,19 @@ defmodule Peripherals.Uart.CpIns do
       relPosN <>
       relPosE <>
       relPosD <>
+      relPosLength<>
+      relPosHeading<>
+      res2<>
       relPosHPN <>
       relPosHPE <>
       relPosHPD <>
-      res2 <>
+      relPosHPLength <>
       accN <>
       accE <>
       accD <>
+      accLength <>
+      accHeading <>
+    res3 <>
       flags
     checksum_bytes = calculate_ublox_checksum(:binary.bin_to_list(checksum_buffer))
     header <> checksum_buffer <> checksum_bytes

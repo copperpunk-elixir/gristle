@@ -49,8 +49,8 @@ defmodule Simulation.XplaneSend do
   def handle_cast(:update_actuators, state) do
     case state.vehicle_type do
       :Plane ->
-        # send_ail_elev_rud_commands(state.commands, state.socket, state.dest_port)
-        # send_throttle_command(state.commands, state.socket, state.dest_port)
+        send_ail_elev_rud_commands(state.commands, state.socket, state.dest_port)
+        send_throttle_command(state.commands, state.socket, state.dest_port)
     end
     # Logger.debug("cmds: #{inspect(state.commands)}")
     {:noreply, state}

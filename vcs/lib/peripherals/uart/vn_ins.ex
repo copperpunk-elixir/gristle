@@ -84,7 +84,7 @@ defmodule Peripherals.Uart.VnIns do
 
     state = if (state.new_ins_data_to_publish) do
 
-      Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
+      # Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
       publish_ins_data(ins)
       %{state | new_ins_data_to_publish: false}
     else
