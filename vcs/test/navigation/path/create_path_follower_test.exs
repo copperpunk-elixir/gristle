@@ -18,7 +18,7 @@ defmodule Navigation.Path.CreatePathFollowerTest do
   test "Create Path Follower" do
     max_rad_delta = 0.0001
     pf = Navigation.Path.PathFollower.new(0.12, 2.05, 0.52)
-    assert_in_delta(pf.chi_inf_over_two_pi, 0.52*0.5/:math.pi,max_rad_delta)
+    assert_in_delta(pf.chi_inf_two_over_pi, 0.52*2.0/:math.pi,max_rad_delta)
 
     Navigation.PathManager.load_mission(Navigation.Path.Mission.get_default_mission(), __MODULE__)
     Process.sleep(100)

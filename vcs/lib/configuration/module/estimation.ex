@@ -43,7 +43,8 @@ defmodule Configuration.Module.Estimation do
     case node_type do
       :all -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}]
       # :sim -> [{Peripherals.Uart.CpIns, get_cp_ins_config()}]
-      :sim -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]
+      # :sim -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]
+      :sim -> []
       _other -> []
     end
   end

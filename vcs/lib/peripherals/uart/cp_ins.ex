@@ -69,7 +69,7 @@ defmodule Peripherals.Uart.CpIns do
     dv_down =velocity.down - velocity_prev.down
 
     accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity()}
-    {ax_i, ay_i, az_i} = accel_inertial
+    # {ax_i, ay_i, az_i} = accel_inertial
     # Logger.info("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
     {ax, ay, az}= Common.Utils.inertial_to_body_euler(values.attitude, accel_inertial)
     bodyaccel = %{x: ax, y: ay, z: az}

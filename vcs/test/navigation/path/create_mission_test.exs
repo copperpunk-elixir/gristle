@@ -12,7 +12,7 @@ defmodule Navigation.Path.CreateMissionTest do
     wp1 = Navigation.Path.Waypoint.new_flight(latlon1, speed, course, "wp1")
     wp2 = Navigation.Path.Waypoint.new_flight(latlon2, speed, course, "wp2")
 
-    mission = Navigation.Path.Mission.new_mission("test", [wp1, wp2])
+    mission = Navigation.Path.Mission.new_mission("test", [wp1, wp2], :Plane)
     assert mission.name == "test"
     assert mission.waypoints == [wp1, wp2]
 
@@ -43,12 +43,12 @@ defmodule Navigation.Path.CreateMissionTest do
     assert new_mission.waypoints == [wp1, wp4, wp2]
 
     # Remove waypoint
-    mission = Navigation.Path.Mission.new_mission("test1", [wp1, wp2, wp3, wp4])
+    mission = Navigation.Path.Mission.new_mission("test1", [wp1, wp2, wp3, wp4], :Plane)
     new_mission = Navigation.Path.Mission.remove_waypoint_at_index(mission, 0)
     assert new_mission.waypoints == [wp2, wp3, wp4]
 
     # Remove all waypoints
-    mission = Navigation.Path.Mission.new_mission("test1", [wp1, wp2, wp3, wp4])
+    mission = Navigation.Path.Mission.new_mission("test1", [wp1, wp2, wp3, wp4], :Plane)
     new_mission = Navigation.Path.Mission.remove_all_waypoints(mission)
     assert new_mission.waypoints == []
 

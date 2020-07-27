@@ -56,7 +56,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
+  def handle_cast({{:pv_values, :position_velocity}, position, velocity, _dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
@@ -69,7 +69,7 @@ defmodule Navigation.PathManager do
     # If we have a path_case, then follow it
     unless is_nil(current_path_case) do
       # Logger.info("cpc_i: #{current_path_case.case_index}")
-      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, dt, current_path_case)
+      {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, speed, current_path_case)
       goals = %{speed: speed_cmd, altitude: altitude_cmd}
       path_case_type = current_path_case.type
       goals =
