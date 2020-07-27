@@ -29,7 +29,7 @@ defmodule Common.Utils.Math do
     end
   end
 
-  @spec hypot(float(), float()) :: float()
+  @spec hypot(number(), number()) :: float()
   def hypot(x, y) do
     :math.sqrt(x*x + y*y)
   end
@@ -37,6 +37,11 @@ defmodule Common.Utils.Math do
   @spec hypot(tuple()) :: float()
   def hypot({x, y}) do
     :math.sqrt(x*x + y*y)
+  end
+
+  @spec hypot3(number(), number(), number()) :: float()
+  def hypot3(x,y,z) do
+    :math.sqrt(x*x + y*y + z*z)
   end
 
 

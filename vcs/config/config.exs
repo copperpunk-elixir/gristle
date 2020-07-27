@@ -23,6 +23,8 @@ config :nerves, source_date_epoch: "1585927776"
 
 config :logger, backends: [:console, RingLogger]
 
+config :logger, RingLogger, max_size: 10_000
+
 config :logger,
   level: :debug
 

@@ -60,8 +60,8 @@ defmodule Simulation.XplaneReceive do
     state = parse_data_buffer(msg, state)
     state =
     if state.new_simulation_data_to_publish == true do
-      publish_simulation_data(state)
-      # publish_perfect_simulation_data(state)
+      # publish_simulation_data(state)
+      publish_perfect_simulation_data(state)
       %{state | new_simulation_data_to_publish: false}
     else
       state

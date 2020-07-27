@@ -3,23 +3,26 @@ defmodule Navigation.Path.PathFollower do
   @pi_2 1.5708#79633267948966
   @two_pi 6.2832#185307179586
 
-  @enforce_keys [:k_path, :k_orbit, :chi_inf_over_two_pi]
+  @enforce_keys [:k_path, :k_orbit, :chi_inf_two_over_pi]
 
-  defstruct [:k_path, :k_orbit, :chi_inf_over_two_pi]
+  defstruct [:k_path, :k_orbit, :chi_inf_two_over_pi]
 
   @spec new(float(), float(), float()) :: struct()
   def new(k_path, k_orbit, chi_inf) do
     %Navigation.Path.PathFollower{
       k_path: k_path,
       k_orbit: k_orbit,
-      chi_inf_over_two_pi: chi_inf / @two_pi
+      chi_inf_two_over_pi: chi_inf *2.0/:math.pi
     }
   end
 
   @spec follow(struct(), struct(), float(), float(), struct()) :: map()
-  def follow(path_follower, position, course, dt, path_case) do
+  def follow(path_follower, position, course, speed, path_case) do
     if path_case.flag == Navigation.Dubins.PathCase.line_flag() do
+      position = get_lookahead_position(position, speed, course, 0.5)
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(path_case.r, position)
+      # Logger.debug("post look: #{dx}/#{dy}")
+     # Add lookahead
       q = path_case.q
       temp_vector = q.x*dy - q.y*dx
       si1 = dx + q.y*temp_vector
@@ -46,30 +49,39 @@ defmodule Navigation.Path.PathFollower do
 
       # e_px = cos_chi_q*dx + sin_chi_q*dy
       e_py = -sin_chi_q*dx + cos_chi_q*dy
-      course_cmd = chi_q - path_follower.chi_inf_over_two_pi*:math.atan(path_follower.k_path*e_py)
+      course_cmd = chi_q - path_follower.chi_inf_two_over_pi*:math.atan(path_follower.k_path*e_py)
       |> Common.Utils.constrain_angle_to_compass()
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
-
+      distance_to_z1 = Common.Utils.Location.dx_dy_between_points(path_case.zi,position)
+      |> Common.Utils.Math.hypot()
+      # Only use lookahead position if we are far enough away from the transition to the next path case
+      position = if (abs(distance_to_z1) > speed*1.0) or path_case.case_index == 0 or path_case.case_index == 3 do
+        get_lookahead_position(position, speed, course, 2.0)
+      else
+        position
+      end
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(path_case.c, position)
+      # Logger.debug("post look: #{dx}/#{dy}")
       orbit_d = Common.Utils.Math.hypot(dx, dy)
       phi = :math.atan2(dy, dx)
       phi = if ((phi - course) < -:math.pi), do: phi + @two_pi, else: phi
       phi = if ((phi - course) > :math.pi), do: phi - @two_pi, else: phi
       course_cmd = phi + path_case.turn_direction*(@pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
-      |> add_orbit_feedforward(path_case.v_des, path_case.rho, dt, path_case.turn_direction)
       |> Common.Utils.constrain_angle_to_compass()
 
       # e_py = orbit_d - path_case.rho
+      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     end
   end
 
-  @spec add_orbit_feedforward(float(), float(), float(), float(), integer()) :: float()
-  def add_orbit_feedforward(course_cmd, speed, radius, dt, direction) do
-    dchi = direction*speed/radius*dt
-    course_cmd + dchi
+  @spec get_lookahead_position(struct(), float(), float(), float()) :: struct()
+  def get_lookahead_position(position, speed, course, dt) do
+    look_dx = speed*dt*:math.cos(course)
+    look_dy = speed*dt*:math.sin(course)
+    Common.Utils.Location.lla_from_point(position, look_dx, look_dy)
   end
 end
