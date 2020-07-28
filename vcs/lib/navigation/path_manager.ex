@@ -150,7 +150,13 @@ defmodule Navigation.PathManager do
               nil ->
                 Logger.warn("no goto, move to cp_index: #{state.current_cp_index + 1}")
                 cp_index = state.current_cp_index + 1
-                if cp_index >= length(state.config_points), do: nil, else: cp_index
+                if cp_index >= length(state.config_points) do
+                  # No more waypoints
+                  Logging.Logger.save_log("mission_complete")
+                  nil
+                else
+                  cp_index
+                end
               index ->
                 Logger.warn("goto: #{index}")
                 index
