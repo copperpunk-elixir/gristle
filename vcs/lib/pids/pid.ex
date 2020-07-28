@@ -68,7 +68,6 @@ defmodule Pids.Pid do
         nil -> 0
         f -> f.(pv_value+correction, pv_value, airspeed)
       end
-    # fscalculate_feed_forward(correction, state.ff_poly, state.ff_poly_degree)
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output
     # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
@@ -94,15 +93,28 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
-  def handle_call(:get_config, _from, state) do
-    {:reply, state, state}
+  def handle_call(:get_all_parameters, _from, state) do
+    output = filter_parameters(state)
+    {:reply, output, state}
   end
 
+  @impl GenServer
+  def handle_call({:get_parameter, parameter}, _from, state) do
+    {:reply, Map.get(state, parameter, nil), state}
+  end
 
-  def calculate_feed_forward(correction, ff_poly, ff_poly_deg) do
-    Enum.reduce(ff_poly_deg..0, 0, fn (degree, acc) ->
-      acc + Common.Utils.Math.integer_power(correction,degree)*Enum.at(ff_poly, ff_poly_deg - degree)
-    end)
+  @impl GenServer
+  def handle_cast({:set_parameter, parameter, value}, state) do
+    {:noreply, Map.put(state, parameter, value)}
+  end
+
+  @impl GenServer
+  def handle_cast(:write_parameters_to_file, state) do
+    output = filter_parameters(state)
+    file_suffix = Atom.to_string(state.process_variable) <> "-" <> Atom.to_string(state.control_variable)
+    {:ok, data} = Jason.encode(output, [pretty: true])
+    Logging.Logger.write_to_folder("pid", data, file_suffix)
+    {:noreply, state}
   end
 
   def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt) do
@@ -121,7 +133,27 @@ defmodule Pids.Pid do
     via_tuple(process_variable, control_variable)
   end
 
-  def get_config(process_variable_name, output_variable_name) do
-    GenServer.call(via_tuple(process_variable_name, output_variable_name), :get_config)
+  def get_all_parameters(process_variable_name, output_variable_name) do
+    GenServer.call(via_tuple(process_variable_name, output_variable_name), :get_all_parameters)
+  end
+
+  @spec filter_parameters(map()) :: map()
+  def filter_parameters(state) do
+    Map.take(state, [:kp, :ki, :kd, :output_min, :output_max, :correction_min, :correction_max, :output_neutral])
+  end
+
+  @spec get_parameter(atom(), atom(), atom()) :: float()
+  def get_parameter(process_variable_name, output_variable_name, parameter) do
+    GenServer.call(via_tuple(process_variable_name, output_variable_name), {:get_parameter, parameter})
+  end
+
+  @spec set_parameter(atom(), atom(), atom(), float()) :: atom()
+  def set_parameter(process_variable_name, output_variable_name, parameter, value) do
+    GenServer.cast(via_tuple(process_variable_name, output_variable_name), {:set_parameter, parameter, value})
+  end
+
+  @spec write_parameters_to_file(atom(), atom()) :: atom()
+  def write_parameters_to_file(process_variable_name, output_variable_name) do
+    GenServer.cast(via_tuple(process_variable_name, output_variable_name), :write_parameters_to_file)
   end
 end

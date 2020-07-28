@@ -121,6 +121,27 @@ defmodule Pids.Moderator do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_cast(:write_pids_to_file, state) do
+    data = Enum.reduce(state.pv_output_pids, %{}, fn ({pv, output_pids}, acc) ->
+      pv_pids =
+        Enum.reduce(output_pids, %{}, fn ({output, _pid}, acc2) ->
+          params = Pids.Pid.get_all_parameters(pv, output)
+          Map.put(acc2, output, params)
+        end)
+      Map.put(acc, pv, pv_pids)
+    end)
+    file_suffix = "all_pids"
+    {:ok, data} = Jason.encode(data, [pretty: true])
+    Logging.Logger.write_to_folder("pid",data, file_suffix)
+    {:noreply, state}
+  end
+
+  @spec write_pids_to_file() :: atom()
+  def write_pids_to_file() do
+    GenServer.cast(__MODULE__, :write_pids_to_file)
+  end
+
   @spec calculate_outputs_for_pv_cmds_values(map(), map(), float(), float(), map()) :: map()
   defp calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, pv_output_pids) do
     Enum.reduce(pv_value_map, %{}, fn ({pv_name, pv_value}, output_variable_list) ->

@@ -11,51 +11,73 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def init(config) do
-    log_path = config.log_path
-    now = DateTime.utc_now
-    log_folder = get_date_string(now,"-") <> "/"
+    root_path = config.root_path
     {:ok, %{
-        log_directory: log_path <> log_folder
+        root_directory: root_path
      }}
   end
 
   @impl GenServer
   def handle_cast(:begin, state) do
     RingLogger.attach()
-    Logger.warn("log directory: #{state.log_directory}")
-    :filelib.ensure_dir(state.log_directory)
+    # Logger.warn("log directory: #{state.log_directory}")
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast({:save_log, message}, state) do
-    time_string = get_time_string(DateTime.utc_now, "-")
-    filename = state.log_directory <> time_string <> message <> ".txt"
-    # Logger.info("save filename: #{filename}")
+  def handle_cast({:save_log, file_suffix}, state) do
+    path = get_directory(state.root_directory,"log")
+    :filelib.ensure_dir(path)
+    filename = path <> (get_file_name(file_suffix))
+    Logger.info("save filename: #{filename}")
     RingLogger.save(filename)
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_call(:get_log_directory, _from, state) do
-    {:reply, state.log_directory, state}
+  def handle_cast({:write_to_file, folder, data, file_suffix}, state) do
+    path = get_directory(state.root_directory, folder)
+    :filelib.ensure_dir(path)
+    filename = path <> get_file_name(file_suffix)
+    Logger.info("write filename: #{filename}")
+    File.write(filename, data)
+    {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_call(:get_log_directory, _from, state) do
+    log_directory = state.root_directory <> "log/"
+    {:reply, log_directory, state}
+  end
 
   @spec save_log(binary()) ::atom()
-  def save_log(message \\ "") do
-    # Logger.info("save log: #{message}")
-    message = cond do
-      is_atom(message) -> "_" <> Atom.to_string(message)
-      is_binary(message) ->
-        if String.length(message) == 0, do: "", else: "_" <> message
-    end
-    GenServer.cast(__MODULE__, {:save_log, message})
+  def save_log(file_suffix \\ "") do
+    # Logger.info("save log: #{file_suffix}")
+    GenServer.cast(__MODULE__, {:save_log, file_suffix})
   end
 
   @spec get_log_directory() :: binary()
   def get_log_directory do
     GenServer.call(__MODULE__, :get_log_directory)
+  end
+
+  @spec get_directory(binary(), binary()) :: binary()
+  def get_directory(root, directory_name \\ "") do
+    now = DateTime.utc_now
+    date_directory = get_date_string(now,"-") <> "/"
+    root <> directory_name <> "/" <> date_directory
+  end
+
+  @spec get_file_name(binary()) :: binary()
+  def get_file_name(file_suffix) do
+    file_suffix =
+      cond do
+      is_atom(file_suffix) -> "_" <> Atom.to_string(file_suffix)
+      is_binary(file_suffix) ->
+        if String.length(file_suffix) == 0, do: "", else: "_" <> file_suffix
+    end
+    time_string = get_time_string(DateTime.utc_now, "-")
+    time_string <> file_suffix <> ".txt"
   end
 
   @spec get_date_string(struct(), binary()) :: binary()
@@ -81,5 +103,15 @@ defmodule Logging.Logger do
     Logger.error("trap: #{inspect(reason)}")
     Logger.info("state: #{inspect(state)}")
     save_log(module)
+  end
+
+  @spec write_to_log_folder(binary(), binary()) :: atom()
+  def write_to_log_folder(data, file_suffix) do
+    GenServer.cast(__MODULE__, {:write_to_file, "log", data, file_suffix})
+  end
+
+  @spec write_to_folder(binary(), binary(), binary()) :: atom()
+  def write_to_folder(folder, data, file_suffix) do
+    GenServer.cast(__MODULE__, {:write_to_file, folder, data, file_suffix})
   end
 end
