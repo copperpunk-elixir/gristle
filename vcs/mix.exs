@@ -60,7 +60,9 @@ defmodule Vcs.MixProject do
       #Scenic dependencies
       {:scenic, "~> 0.10"},
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
-      {:scenic_sensor, "~> 0.7"}
+      {:scenic_sensor, "~> 0.7"},
+      #Jason
+      {:jason, "~> 1.2"}
     ]
   end
 
