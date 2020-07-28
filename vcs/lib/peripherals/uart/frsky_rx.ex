@@ -40,6 +40,12 @@ defmodule Peripherals.Uart.FrskyRx do
   end
 
   @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+  @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     frsky_port = Common.Utils.get_uart_devices_containing_string(state.device_description)

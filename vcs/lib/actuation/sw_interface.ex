@@ -24,7 +24,13 @@ defmodule Actuation.SwInterface do
      }}
   end
 
-    @impl GenServer
+  @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+   @impl GenServer
   def handle_cast(:start_actuator_loop, state) do
       actuator_timer = Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
       state = %{state | actuator_timer: actuator_timer}

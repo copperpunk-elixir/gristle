@@ -33,6 +33,11 @@ config :logger, :console,
   level: :debug,
   metadata: []
 
+config :ring_logger,
+  format: "$time $metadata[$level] $levelpad$message\n",
+  level: :debug,
+  metadata: []
+
 if Mix.target() != :host do
   import_config "target.exs"
 end

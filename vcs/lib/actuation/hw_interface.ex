@@ -29,6 +29,12 @@ defmodule Actuation.HwInterface do
   end
 
   @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+  @impl GenServer
   def handle_cast({:begin, driver_config}, state) do
     interface_ref = apply(state.interface_module, :new_device, [driver_config])
     interface = open_interface_connection(state.interface_module, interface_ref, 0, @connection_count_max)

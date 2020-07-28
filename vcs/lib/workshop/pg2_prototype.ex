@@ -1,17 +1,32 @@
 defmodule Workshop do
   use GenServer
+  require Logger
 
   def start_link(_) do
-    GenServer.start(__MODULE__, nil)
+    Logger.debug("starting workshop")
+    GenServer.start(__MODULE__, nil, name: __MODULE__)
   end
 
   def init(_) do
+    Process.flag(:trap_exit, true)
     {:ok, %{}}
+  end
+
+  def terminate(reason, state) do
+    Logger.error("trap: #{inspect(reason)}")
+    Logging.Logger.save_log(__MODULE__)
+    state
+  end
+
+  def handle_cast(:crash, state) do
+    Logger.debug("crash.")
+    raise "crash"
+    {:noreply, state}
   end
 
   def handle_cast({:time, send_time}, state) do
     receive_time = System.os_time(:microsecond)
-    IO.puts("msg rx: #{dt_ms(send_time, receive_time)}")
+    Logger.debug("msg rx: #{dt_ms(send_time, receive_time)}")
     {:noreply, state}
   end
 
@@ -24,7 +39,7 @@ defmodule Workshop do
     start_time = System.monotonic_time(:microsecond)
     :pg2.create(group)
     end_time = System.monotonic_time(:microsecond)
-    IO.puts("create time: #{dt_ms(start_time, end_time)}")
+    Logger.debug("create time: #{dt_ms(start_time, end_time)}")
   end
 
   def join(group, pid) do
@@ -84,5 +99,9 @@ defmodule Workshop do
         GenServer.cast(pid, {:time, System.os_time(:microsecond)})
       end
     end)
+  end
+
+  def crash() do
+    GenServer.cast(__MODULE__, :crash)
   end
 end

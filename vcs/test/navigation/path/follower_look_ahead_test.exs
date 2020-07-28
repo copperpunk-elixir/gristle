@@ -38,7 +38,7 @@ defmodule Navigation.Path.FollowerLookAheadTest do
     assert Common.Utils.turn_left_or_right_for_correction(course-:math.pi/2) < 0
     latlon = Common.Utils.Location.lla_from_point(wp1, -1, 0)
     {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, 0, speed, pc)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(course-:math.pi/2),0,max_rad_delta)
+    assert Common.Utils.turn_left_or_right_for_correction(course-:math.pi/2) > 0
 
     pci = 2
     pc = Enum.at(pcs,pci)
@@ -46,7 +46,7 @@ defmodule Navigation.Path.FollowerLookAheadTest do
     Navigation.Path.PathFollower.follow(pf, wp1, 0, 0, pc)
     {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, 0, speed, pc)
     assert_in_delta(Common.Utils.turn_left_or_right_for_correction(course-0),0,max_rad_delta)
-    latlon = Common.Utils.Location.lla_from_point(wp1, 10, 10.5)
+    latlon = Common.Utils.Location.lla_from_point(wp1, 10, 10.01)
     {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, 0,speed, pc)
     assert Common.Utils.turn_left_or_right_for_correction(course-0) < 0
     {_speed, course, _alt} = Navigation.Path.PathFollower.follow(pf, latlon, -:math.pi/2,speed, pc)

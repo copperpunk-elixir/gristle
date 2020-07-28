@@ -28,6 +28,12 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+  @impl GenServer
   def handle_cast({:add_message, classification, expiration_mono_ms, value}, state) do
     # Logger.debug("add_message: #{inspect(self())}")
     # Check if message has a valid classification
