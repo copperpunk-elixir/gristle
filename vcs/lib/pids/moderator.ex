@@ -30,6 +30,12 @@ defmodule Pids.Moderator do
   end
 
   @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+  @impl GenServer
   def handle_cast(:join_pv_cmds_values_groups, state) do
     Comms.System.start_operator(__MODULE__)
     Enum.each(0..3, fn level ->

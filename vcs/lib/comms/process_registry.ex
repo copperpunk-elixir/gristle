@@ -6,6 +6,11 @@ defmodule Comms.ProcessRegistry do
     Common.Utils.start_link_redundant(Registry, Registry, [keys: :unique, name: __MODULE__])
   end
 
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
   def via_tuple(process_module, process_name) do
     key = get_key_for_module_and_name(process_module, process_name)
     {:via, Registry, {__MODULE__, key}}

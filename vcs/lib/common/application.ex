@@ -10,6 +10,7 @@ defmodule Common.Application do
     vehicle_type = Common.Utils.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
     Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
+    Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
   end
 
   @spec start_remaining_processes() :: atom()

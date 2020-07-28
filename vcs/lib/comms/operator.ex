@@ -21,6 +21,12 @@ defmodule Comms.Operator do
      }}
   end
 
+  @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
   def handle_cast(:start_refresh_loop, state) do
     refresh_groups_timer = Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
     {:noreply, %{state | refresh_groups_timer: refresh_groups_timer}}

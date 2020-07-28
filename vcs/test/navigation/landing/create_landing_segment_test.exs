@@ -1,4 +1,4 @@
-defmodule Navigation.Ground.CreateGroundSegmentTest do
+defmodule Navigation.Ground.CreateLandingSegmentTest do
   use ExUnit.Case
   require Logger
 

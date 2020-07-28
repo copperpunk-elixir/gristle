@@ -49,6 +49,12 @@ defmodule Peripherals.Uart.VnIns do
   end
 
   @impl GenServer
+  def terminate(reason, state) do
+    Logging.Logger.log_terminate(reason, state, __MODULE__)
+    state
+  end
+
+  @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.debug("VN INS begin with process: #{inspect(self())}")

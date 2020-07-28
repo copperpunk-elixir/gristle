@@ -15,7 +15,7 @@ defmodule Cluster.UnhealthyClusterTest do
   test "Create unhealthy cluster" do
     Logger.info("Create unhealthy cluster")
     Comms.System.start_operator(__MODULE__)
-    {hb_class, hb_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
+    {_hb_class, hb_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     Process.sleep(400)
     assert Hb.cluster_healthy?() == false
     assert Hb.node_healthy?(0) == false
