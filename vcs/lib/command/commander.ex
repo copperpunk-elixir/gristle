@@ -89,7 +89,7 @@ defmodule Command.Commander do
       end
       reference_cmds =
       if (control_state != state.control_state) or (state.transmit_cmds == false) do
-        Logger.info("latch cs")
+        Logger.info("latch cs: #{control_state}")
         latch_commands(control_state, state.pv_values)
       else
         state.reference_cmds
