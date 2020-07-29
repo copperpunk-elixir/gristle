@@ -103,7 +103,7 @@ defmodule Actuation.HwInterface do
     end
   end
 
-  defp open_interface_connection(interface_module, interface, connection_count, connection_count_max) do
+  def open_interface_connection(interface_module, interface, connection_count, connection_count_max) do
     case apply(interface_module, :open_port, [interface]) do
       nil ->
         if (connection_count < connection_count_max) do

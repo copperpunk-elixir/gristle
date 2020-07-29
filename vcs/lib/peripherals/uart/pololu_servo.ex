@@ -31,7 +31,7 @@ defmodule Peripherals.Uart.PololuServo do
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
     message = get_message_for_channel_and_output_ms(channel, output_ms)
-    # Logger.info("set #{channel} to #{Common.Utils.eftb(output_ms,0)}")
+    Logger.info("set #{channel} to #{Common.Utils.eftb(output_ms,0)}")
     Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
   end
 
@@ -90,7 +90,9 @@ defmodule Peripherals.Uart.PololuServo do
   @spec write_channels(struct(), map()) :: atom()
   def write_channels(device, channels) do
     Enum.each(channels, fn{channel_number, value} ->
-      write_microseconds(device, channel_number, value)
+      unless is_nil(value) do
+        write_microseconds(device, channel_number, value)
+      end
     end)
   end
 
