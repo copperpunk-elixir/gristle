@@ -32,17 +32,17 @@ defmodule Actuation.SwInterfacePololuTest do
     actuator = Map.get(actuators, actuator_name)
     # With no valid commands, the actuator output should be the failsafe_cmd
     Process.sleep(150)
-    failsafe_output = 0.5*(actuator.min_pw_ms + actuator.max_pw_ms)
+    failsafe_output = 0.5*(actuator.min_pw_us + actuator.max_pw_us)
     assert Actuation.HwInterface.get_output_for_actuator(actuator) == failsafe_output
     # Send min_cmd to Actuator
     current_cmds = MessageSorter.Sorter.get_value(:actuator_cmds)
     new_cmds = Map.merge(current_cmds, %{actuator_name => actuator.cmd_limit_min})
     MessageSorter.Sorter.add_message(:actuator_cmds, [0], 400, new_cmds)
     Process.sleep(200)
-    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.min_pw_ms
+    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.min_pw_us
     new_cmds = Map.merge(current_cmds, %{actuator_name => actuator.cmd_limit_max})
     MessageSorter.Sorter.add_message(:actuator_cmds, [0], 1000, new_cmds)
     Process.sleep(300)
-    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.max_pw_ms
+    assert Actuation.HwInterface.get_output_for_actuator(actuator) == actuator.max_pw_us
   end
 end

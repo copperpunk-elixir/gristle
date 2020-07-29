@@ -27,19 +27,6 @@ defmodule Peripherals.Uart.PololuServo do
     end
   end
 
-  def output_to_ms(output, reversed, min_pw_ms, max_pw_ms) do
-    # Output will arrive in range [0,1]
-    if (output < 0) || (output > 1) do
-      nil
-    else
-      case reversed do
-        false ->
-          min_pw_ms + output*(max_pw_ms - min_pw_ms)
-        true ->
-          max_pw_ms - output*(max_pw_ms - min_pw_ms)
-      end
-    end
-  end
 
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
@@ -100,4 +87,15 @@ defmodule Peripherals.Uart.PololuServo do
     end
   end
 
+  @spec write_channels(struct(), map()) :: atom()
+  def write_channels(device, channels) do
+    Enum.each(channels, fn{channel_number, value} ->
+      write_microseconds(device, channel_number, value)
+    end)
+  end
+
+  @spec set_interface_ref(struct(), any()) :: atom()
+  def set_interface_ref(device, interface_ref) do
+    %{device | interface_ref: interface_ref}
+  end
 end

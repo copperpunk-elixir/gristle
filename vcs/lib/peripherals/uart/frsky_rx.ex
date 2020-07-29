@@ -49,7 +49,7 @@ defmodule Peripherals.Uart.FrskyRx do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     frsky_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
-    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: 2]) do
+    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
         raise "#{frsky_port} is unavailable"
@@ -73,6 +73,17 @@ defmodule Peripherals.Uart.FrskyRx do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call(:get_uart_ref, _from, state) do
+    uart_ref =
+      if is_nil(state.publish_rx_output_loop_interval_ms) do
+        nil
+      else
+        state.uart_ref
+      end
+    {:reply, uart_ref, state}
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -214,5 +225,9 @@ defmodule Peripherals.Uart.FrskyRx do
 
   def frame_lost?() do
     GenServer.call(__MODULE__, :is_frame_lost)
+  end
+
+  def get_uart_ref() do
+    GenServer.call(__MODULE__, :get_uart_ref)
   end
 end

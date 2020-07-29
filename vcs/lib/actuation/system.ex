@@ -11,13 +11,10 @@ defmodule Actuation.System do
 
   @impl Supervisor
   def init(config) do
-    children =
-      unless config.sw_interface.node_type == :sim do
-      [Supervisor.child_spec({Actuation.HwInterface, config.hw_interface}, id: Actuation.HwInterface)]
-    else
-      []
-    end
-    children = [Supervisor.child_spec({Actuation.SwInterface, config.sw_interface}, id: Actuation.SwInterface)] ++ children
+    children = [
+      Supervisor.child_spec({Actuation.HwInterface, config.hw_interface}, id: Actuation.HwInterface),
+      Supervisor.child_spec({Actuation.SwInterface, config.sw_interface}, id: Actuation.SwInterface)
+    ]
     Supervisor.init(children, strategy: :one_for_one)
   end
 end
