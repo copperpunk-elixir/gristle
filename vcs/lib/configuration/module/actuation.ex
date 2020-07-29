@@ -2,7 +2,7 @@ defmodule Configuration.Module.Actuation do
   @spec get_config(atom(), atom()) :: map()
   def get_config(vehicle_type, node_type) do
     hw_config = %{
-      interface_driver_name: :pololu,
+      interface_driver_name: :feather,
       driver_config: %{
         baud: 115_200,
         write_timeout: 10,
@@ -21,13 +21,13 @@ defmodule Configuration.Module.Actuation do
   @spec get_actuation_sw_config(list(), atom()) :: map()
   def get_actuation_sw_config(actuator_names, node_type) do
     {channels, failsafes} = get_channels_failsafes(actuator_names)
-    {min_pw_ms, max_pw_ms} = get_min_max_pw(node_type)
+    {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
     actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
       Map.put(acc, Enum.at(actuator_names, index), %{
             channel_number: Enum.at(channels, index),
             reversed: false,
-            min_pw_ms: min_pw_ms,
-            max_pw_ms: max_pw_ms,
+            min_pw_us: min_pw_us,
+            max_pw_us: max_pw_us,
             cmd_limit_min: 0.0,
             cmd_limit_max: 1.0,
             failsafe_cmd: Enum.at(failsafes, index)

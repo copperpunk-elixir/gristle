@@ -13,8 +13,8 @@ defmodule Actuation.SwInterface do
   def init(config) do
     output_module =
       case config.node_type do
-        :sim -> Simulation.XplaneSend
-        _other -> Actuation.HwInterface
+        :sim -> [Simulation.XplaneSend, Actuation.HwInterface]
+        _other -> [Actuation.HwInterface]
       end
     {:ok, %{
         actuators: Map.get(config, :actuators),
@@ -50,9 +50,13 @@ defmodule Actuation.SwInterface do
       # Logger.debug("move_actuator #{actuator_name} to #{Common.Utils.eftb(output, 3)}")
       # end
       # Actuation.HwInterface.set_output_for_actuator(actuator, output)
-      apply(state.output_module, :set_output_for_actuator, [actuator,actuator_name, output])
+      Enum.each(state.output_module, fn module ->
+        apply(module, :set_output_for_actuator, [actuator,actuator_name, output])
+      end)
     end)
-    apply(state.output_module, :update_actuators,[])
+    Enum.each(state.output_module, fn module ->
+      apply(module, :update_actuators,[])
+    end)
     {:noreply, state}
   end
 
