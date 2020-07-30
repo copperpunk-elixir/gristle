@@ -63,35 +63,35 @@ defmodule Peripherals.Uart.FrskyServo do
 
     b2a = Bitwise.&&&(Map.get(channels,0,0), 0x7FF) |> Bitwise.>>>(8) |> Bitwise.&&&(0xFF)
     b2b = Bitwise.&&&(Map.get(channels,1,0), 0x7FF) |> Bitwise.<<<(3) |> Bitwise.&&&(0xFF)
-    b2 = Bitwise.^^^(b2a, b2b)
+    b2 = Bitwise.|||(b2a, b2b)
 
     b3a = Bitwise.&&&(Map.get(channels,1,0), 0x7FF) |> Bitwise.>>>(5) |> Bitwise.&&&(0xFF)
     b3b = Bitwise.&&&(Map.get(channels,2,0), 0x7FF) |> Bitwise.<<<(6) |> Bitwise.&&&(0xFF)
-    b3 = Bitwise.^^^(b3a, b3b)
+    b3 = Bitwise.|||(b3a, b3b)
 
     b4 = Bitwise.&&&(Map.get(channels,2,0), 0x7FF) |> Bitwise.>>>(2) |> Bitwise.&&&(0xFF)
 
     b5a = Bitwise.&&&(Map.get(channels,2,0), 0x7FF) |> Bitwise.>>>(10) |> Bitwise.&&&(0xFF)
     b5b = Bitwise.&&&(Map.get(channels,3,0), 0x7FF) |> Bitwise.<<<(1) |> Bitwise.&&&(0xFF)
-    b5 = Bitwise.^^^(b5a, b5b)
+    b5 = Bitwise.|||(b5a, b5b)
 
     b6a = Bitwise.&&&(Map.get(channels,3,0), 0x7FF) |> Bitwise.>>>(7) |> Bitwise.&&&(0xFF)
     b6b = Bitwise.&&&(Map.get(channels,4,0), 0x7FF) |> Bitwise.<<<(4) |> Bitwise.&&&(0xFF)
-    b6 = Bitwise.^^^(b6a, b6b)
+    b6 = Bitwise.|||(b6a, b6b)
 
     b7a = Bitwise.&&&(Map.get(channels,4,0), 0x7FF) |> Bitwise.>>>(4) |> Bitwise.&&&(0xFF)
     b7b = Bitwise.&&&(Map.get(channels,5,0), 0x7FF) |> Bitwise.<<<(7) |> Bitwise.&&&(0xFF)
-    b7 = Bitwise.^^^(b7a, b7b)
+    b7 = Bitwise.|||(b7a, b7b)
 
     b8 = Bitwise.&&&(Map.get(channels,5,0), 0x7FF) |> Bitwise.>>>(1) |> Bitwise.&&&(0xFF)
 
     b9a = Bitwise.&&&(Map.get(channels,5,0), 0x7FF) |> Bitwise.>>>(9) |> Bitwise.&&&(0xFF)
     b9b = Bitwise.&&&(Map.get(channels,6,0), 0x7FF) |> Bitwise.<<<(2) |> Bitwise.&&&(0xFF)
-    b9 = Bitwise.^^^(b9a, b9b)
+    b9 = Bitwise.|||(b9a, b9b)
 
     b10a = Bitwise.&&&(Map.get(channels,6,0), 0x7FF) |> Bitwise.>>>(6) |> Bitwise.&&&(0xFF)
     b10b = Bitwise.&&&(Map.get(channels,7,0), 0x7FF) |> Bitwise.<<<(5) |> Bitwise.&&&(0xFF)
-    b10 = Bitwise.^^^(b10a, b10b)
+    b10 = Bitwise.|||(b10a, b10b)
 
     b11 = Bitwise.&&&(Map.get(channels,7,0), 0x7FF) |> Bitwise.>>>(3) |> Bitwise.&&&(0xFF)
 
@@ -99,35 +99,35 @@ defmodule Peripherals.Uart.FrskyServo do
 
     b13a = Bitwise.&&&(Map.get(channels,8,0), 0x7FF) |> Bitwise.>>>(8) |> Bitwise.&&&(0xFF)
     b13b = Bitwise.&&&(Map.get(channels,9,0), 0x7FF) |> Bitwise.<<<(3) |> Bitwise.&&&(0xFF)
-    b13 = Bitwise.^^^(b13a, b13b)
+    b13 = Bitwise.|||(b13a, b13b)
 
     b14a = Bitwise.&&&(Map.get(channels,9,0), 0x7FF) |> Bitwise.>>>(5) |> Bitwise.&&&(0xFF)
     b14b = Bitwise.&&&(Map.get(channels,10,0), 0x7FF) |> Bitwise.<<<(6) |> Bitwise.&&&(0xFF)
-    b14 = Bitwise.^^^(b14a, b14b)
+    b14 = Bitwise.|||(b14a, b14b)
 
     b15 = Bitwise.&&&(Map.get(channels,10,0), 0x7FF) |> Bitwise.>>>(2) |> Bitwise.&&&(0xFF)
 
     b16a = Bitwise.&&&(Map.get(channels,10,0), 0x7FF) |> Bitwise.>>>(10) |> Bitwise.&&&(0xFF)
     b16b = Bitwise.&&&(Map.get(channels,11,0), 0x7FF) |> Bitwise.<<<(1) |> Bitwise.&&&(0xFF)
-    b16 = Bitwise.^^^(b16a, b16b)
+    b16 = Bitwise.|||(b16a, b16b)
 
     b17a = Bitwise.&&&(Map.get(channels,11,0), 0x7FF) |> Bitwise.>>>(7) |> Bitwise.&&&(0xFF)
     b17b = Bitwise.&&&(Map.get(channels,12,0), 0x7FF) |> Bitwise.<<<(4) |> Bitwise.&&&(0xFF)
-    b17 = Bitwise.^^^(b17a, b17b)
+    b17 = Bitwise.|||(b17a, b17b)
 
     b18a = Bitwise.&&&(Map.get(channels,12,0), 0x7FF) |> Bitwise.>>>(4) |> Bitwise.&&&(0xFF)
     b18b = Bitwise.&&&(Map.get(channels,13,0), 0x7FF) |> Bitwise.<<<(7) |> Bitwise.&&&(0xFF)
-    b18 = Bitwise.^^^(b18a, b18b)
+    b18 = Bitwise.|||(b18a, b18b)
 
     b19 = Bitwise.&&&(Map.get(channels,13,0), 0x7FF) |> Bitwise.>>>(1) |> Bitwise.&&&(0xFF)
 
     b20a = Bitwise.&&&(Map.get(channels,13,0), 0x7FF) |> Bitwise.>>>(9) |> Bitwise.&&&(0xFF)
     b20b = Bitwise.&&&(Map.get(channels,14,0), 0x7FF) |> Bitwise.<<<(2) |> Bitwise.&&&(0xFF)
-    b20 = Bitwise.^^^(b20a, b20b)
+    b20 = Bitwise.|||(b20a, b20b)
 
     b21a = Bitwise.&&&(Map.get(channels,14,0), 0x7FF) |> Bitwise.>>>(6) |> Bitwise.&&&(0xFF)
     b21b = Bitwise.&&&(Map.get(channels,15,0), 0x7FF) |> Bitwise.<<<(5) |> Bitwise.&&&(0xFF)
-    b21 = Bitwise.^^^(b21a, b21b)
+    b21 = Bitwise.|||(b21a, b21b)
 
     b22 = Bitwise.&&&(Map.get(channels,15,0), 0x7FF) |> Bitwise.>>>(3) |> Bitwise.&&&(0xFF)
 
