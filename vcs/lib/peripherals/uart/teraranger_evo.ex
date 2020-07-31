@@ -77,6 +77,12 @@ defmodule Peripherals.Uart.TerarangerEvo do
     # Logger.debug("evo received: #{data}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
+    state = if (state.new_range_data_to_publish) do
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_measured, :range}, state.range}, {:pv_measured, :range}, self())
+      %{state | new_range_data_to_publish: false}
+    else
+      state
+    end
     {:noreply, state}
   end
 
