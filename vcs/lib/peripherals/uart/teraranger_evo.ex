@@ -4,6 +4,7 @@ defmodule Peripherals.Uart.TerarangerEvo do
   require Logger
 
   @start_byte 84
+  @default_baud 115_200
 
   @crc_table {
  0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15, 0x38, 0x3f, 0x36, 0x31,
@@ -40,6 +41,8 @@ defmodule Peripherals.Uart.TerarangerEvo do
   def init(config) do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
+        uart_ref: uart_ref,
+        device_description: config.device_description,
         range: nil,
         start_byte_found: false,
         remaining_buffer: [],
@@ -51,6 +54,35 @@ defmodule Peripherals.Uart.TerarangerEvo do
   def terminate(reason, state) do
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
+  end
+
+  @impl GenServer
+  def handle_cast(:begin, state) do
+    Comms.System.start_operator(__MODULE__)
+    unless is_nil(state.device_description) do
+      evo_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+      case Circuits.UART.open(state.uart_ref, evo_port, [speed: @default_baud, active: true]) do
+        {:error, error} ->
+          Logger.error("Error opening UART: #{inspect(error)}")
+          raise "#{evo_port} is unavailable"
+        _success ->
+          Logger.debug("Teraranger Evo opened #{evo_port}")
+      end
+    end
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info({:circuits_uart, _port, data}, state) do
+    # Logger.debug("evo received: #{data}")
+    data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
+    state = parse_data_buffer(data_list, state)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call(:get_range, _from, state) do
+    {:reply, state.range, state}
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -134,7 +166,7 @@ defmodule Peripherals.Uart.TerarangerEvo do
 
   @spec parse_good_message(list()) :: {integer(), boolean()}
   def parse_good_message(buffer) do
-    Logger.debug("payload buffer: #{inspect(buffer)}")
+    # Logger.debug("payload buffer: #{inspect(buffer)}")
     range = Bitwise.<<<(Enum.at(buffer,0),8) + Enum.at(buffer,1)
     if (range == 0) or (range == 0xFFFF) do
       {0, false}
@@ -151,4 +183,15 @@ defmodule Peripherals.Uart.TerarangerEvo do
     crc = calculate_checksum(buffer)
     buffer ++ [crc]
   end
+
+  @spec create_message_for_range_m(float()) :: list()
+  def create_message_for_range_m(range) do
+    range*1000 |> round() |> create_message_for_range_mm()
+  end
+
+  @spec get_range() :: float()
+  def get_range() do
+    GenServer.call(__MODULE__, :get_range)
+  end
+
 end
