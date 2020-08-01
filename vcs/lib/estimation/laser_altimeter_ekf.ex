@@ -2,11 +2,11 @@ defmodule Estimation.LaserAltimeterEkf do
   require Bitwise
   require Logger
 
-  defstruct [phi: 0, theta: 0, zdot: 0, z: 100, q33: 0, p00: 0, p11: 0, p22: 0, p33: 0, r: 0]
+  defstruct [phi: 0, theta: 0, zdot: 0, z: 100, q33: 0, p00: 0, p11: 0, p22: 0, p33: 0, r: 0, time_prev_us: -1]
 
   @default_q_att_sq 0.00274 #3deg^2
   @default_q_zdot_sq 0.25
-  @default_q_z_sq 1.0
+  @default_q_z_sq 0.1
   @default_r_range_sq 1.0
 
   @max_phi 0.52
@@ -20,17 +20,19 @@ defmodule Estimation.LaserAltimeterEkf do
     %Estimation.LaserAltimeterEkf{q33: q_z_sq, p00: q_att_sq, p11: q_att_sq, p22: q_zdot_sq, p33: q_z_sq, r: r_range_sq}
   end
 
-  @spec predict(struct(), float(), float(), float(), float()) :: struct()
-  def predict(ekf, phi, theta, zdot, dt) do
+  @spec predict(struct(), float(), float(), float()) :: struct()
+  def predict(ekf, phi, theta, zdot) do
+    current_time = :os.system_time(:microsecond)
+    dt = if (ekf.time_prev_us < 0), do: 0, else: (current_time - ekf.time_prev_us)*(1.0e-6)
     z = ekf.z + ekf.zdot*dt
-    # Logger.info("zdot/zprev/z: #{zdot}/#{ekf.z}/#{z}")
+    # Logger.info("zdot/zprev/z/dt: #{zdot}/#{ekf.z}/#{z}/#{dt}")
     p33 = ekf.p33 + ekf.p22*dt*dt + ekf.q33
-    %{ekf | phi: phi, theta: theta, zdot: zdot, z: z, p33: p33}
+    %{ekf | phi: phi, theta: theta, zdot: zdot, z: z, p33: p33, time_prev_us: current_time}
   end
 
   @spec update(struct(), float()) :: struct()
   def update(ekf, range_meas) do
-    ekf = if (abs(ekf.phi) > @max_phi) or (abs(ekf.theta) > @max_theta) do
+    if (abs(ekf.phi) > @max_phi) or (abs(ekf.theta) > @max_theta) do
       ekf
     else
       z_sq = ekf.z*ekf.z

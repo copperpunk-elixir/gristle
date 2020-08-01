@@ -33,8 +33,10 @@ defmodule Estimation.Estimator do
         attitude: %{},
         velocity: %{},
         position: %{},
+        vertical_velocity: 0.0,
         agl: 0.0,
-        airspeed: 0.0
+        airspeed: 0.0,
+        laser_alt_ekf: Estimation.LaserAltimeterEkf.new(%{})
      }}
   end
 
@@ -49,8 +51,9 @@ defmodule Estimation.Estimator do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_calculated, :agl}, self())
+    # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :agl}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :airspeed}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_measured, :range}, self())
     imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
@@ -98,21 +101,23 @@ defmodule Estimation.Estimator do
       # If the velocity is below a threshold, we use yaw instead
       # velocity = Common.Utils.adjust_velocity_for_min_speed(velocity, Map.get(state.attitude, :yaw, 0), state.min_speed_for_course)
       {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
-      velocity = %{speed: speed, course: course}
+      velocity = %{speed: speed, course: course, vertical: -velocity.down}
       {position, velocity, new_watchdog_time}
     end
+
+    ekf = update_ekf(state.laser_alt_ekf, state.attitude, velocity)
     watchdog_elapsed = %{state.watchdog_elapsed | ins: new_watchdog_elapsed}
-    state = %{state | position: position, velocity: velocity, watchdog_elapsed: watchdog_elapsed}
+    state = %{state | position: position, velocity: velocity, watchdog_elapsed: watchdog_elapsed, laser_alt_ekf: ekf}
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_cast({{:pv_calculated, :agl}, agl}, state) do
-    new_watchdog_elapsed = max(state.watchdog_elapsed.agl - 1.1*state.ins_loop_interval_ms, 0)
-    watchdog_elapsed = %{state.watchdog_elapsed | agl: new_watchdog_elapsed}
-    state = %{state | watchdog_elapsed: watchdog_elapsed, agl: agl}
-    {:noreply, state}
-  end
+  # @impl GenServer
+  # def handle_cast({{:pv_calculated, :agl}, agl}, state) do
+  #   new_watchdog_elapsed = max(state.watchdog_elapsed.agl - 1.1*state.ins_loop_interval_ms, 0)
+  #   watchdog_elapsed = %{state.watchdog_elapsed | agl: new_watchdog_elapsed}
+  #   state = %{state | watchdog_elapsed: watchdog_elapsed, agl: agl}
+  #   {:noreply, state}
+  # end
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :airspeed}, airspeed}, state) do
@@ -120,6 +125,13 @@ defmodule Estimation.Estimator do
     watchdog_elapsed = %{state.watchdog_elapsed | airspeed: new_watchdog_elapsed}
     state = %{state | watchdog_elapsed: watchdog_elapsed, airspeed: airspeed}
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({{:pv_measured, :range}, range}, state) do
+    # Logger.info("rx range: #{range}")
+    ekf = Estimation.LaserAltimeterEkf.update(state.laser_alt_ekf, range)
+    {:noreply, %{state | laser_alt_ekf: ekf}}
   end
 
   @impl GenServer
@@ -139,9 +151,9 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_info(:ins_loop, state) do
     position = state.position
-    velocity = state.velocity
+    velocity = Map.take(state.velocity, [:speed, :course])
     unless Enum.empty?(position) or Enum.empty?(velocity) do
-      position = Map.put(position, :agl, state.agl)
+      position = Map.put(position, :agl, Estimation.LaserAltimeterEkf.agl(state.laser_alt_ekf))
       velocity = Map.put(velocity, :airspeed, state.airspeed)
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
@@ -154,7 +166,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:telemetry_loop, state) do
-    position = Map.put(state.position, :agl, state.agl)
+    position = Map.put(state.position, :agl, Estimation.LaserAltimeterEkf.agl(state.laser_alt_ekf))
     velocity = Map.put(state.velocity, :airspeed, state.airspeed)
     attitude = state.attitude
     bodyrate = state.bodyrate
@@ -166,5 +178,23 @@ defmodule Estimation.Estimator do
         self())
     end
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call(:get_range, _from, state) do
+    {:reply, Estimation.LaserAltimeterEkf.agl(state.laser_alt_ekf), state}
+  end
+
+  @spec update_ekf(struct(), map(), map()) :: struct()
+  def update_ekf(ekf, attitude, velocity) do
+    roll = Map.get(attitude, :roll, 0)
+    pitch = Map.get(attitude, :pitch, 0)
+    zdot = Map.get(velocity, :vertical, 0)
+    # Logger.debug("rpv: #{Common.Utils.eftb_deg(roll,1)}/#{Common.Utils.eftb_deg(pitch,1)}/#{zdot}")
+    Estimation.LaserAltimeterEkf.predict(ekf, roll, pitch, zdot)
+  end
+
+  def get_range() do
+    GenServer.call(__MODULE__, :get_range)
   end
 end

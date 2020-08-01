@@ -183,7 +183,7 @@ defmodule Common.Utils do
   end
 
   @spec eftb_deg(float(), integer()) ::binary()
-  def eftb_deg(number, num_decimals) do
+  def eftb_deg(number, num_decimals\\1) do
     :erlang.float_to_binary(Common.Utils.Math.rad2deg(number), [decimals: num_decimals])
   end
 
