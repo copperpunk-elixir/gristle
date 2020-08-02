@@ -3,8 +3,7 @@ defmodule Command.Commander do
   require Logger
 
   @rx_control_state_channel 4
-  @rx_armed_state_channel 5
-  @transmit_channel 6
+  @transmit_channel 5
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
@@ -68,8 +67,8 @@ defmodule Command.Commander do
 
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
-    armed_state_float = Enum.at(rx_output, @rx_armed_state_channel)
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
+    # Logger.debug("cs_float: #{control_state_float}")
     transmit_cmds =
     if (Enum.at(rx_output, @transmit_channel) > 0) do
       true
@@ -78,14 +77,12 @@ defmodule Command.Commander do
     end
     if (transmit_cmds == true) do
       control_state = cond do
-        (armed_state_float < -0.5) -> -1
-        (armed_state_float < 0.5) -> 0
-        true ->
-          cond do
-            control_state_float > 0.5 -> 3
-            control_state_float > -0.5 -> 2
-            true -> 1
-          end
+        control_state_float < -0.85 -> -1
+        control_state_float < -0.75 -> 0
+        control_state_float > -0.35 and control_state_float < -0.25 -> 1
+        control_state_float > 0.65 and control_state_float < 0.75 -> 2
+        control_state_float > 0.9 -> 3
+        true -> -1
       end
       reference_cmds =
       if (control_state != state.control_state) or (state.transmit_cmds == false) do
