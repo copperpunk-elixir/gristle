@@ -3,7 +3,6 @@ defmodule Peripherals.Uart.TerarangerEvo.BinaryMessageTest do
   require Logger
 
   setup do
-    Comms.ProcessRegistry.start_link()
     Comms.System.start_link()
     Process.sleep(100)
     {:ok, []}

@@ -381,9 +381,7 @@ defmodule Peripherals.Uart.VnIns do
   end
 
   def list_to_int(x_list, bytes) do
-    Enum.reduce(0..bytes-1, 0, fn(index,acc) ->
-      acc + (Enum.at(x_list,index)<<<(8*index))
-    end)
+    Common.Utils.list_to_int(x_list, bytes)
   end
 
   def eftb(num, dec) do
