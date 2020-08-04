@@ -11,6 +11,7 @@ defmodule Common.Application do
     MessageSorter.System.start_link(vehicle_type)
     Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
+    Telemetry.System.start_link(Configuration.Module.get_config(Telemetry, nil, nil))
   end
 
   @spec start_remaining_processes() :: atom()

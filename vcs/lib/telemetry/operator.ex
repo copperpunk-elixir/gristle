@@ -18,6 +18,14 @@ defmodule Telemetry.Operator do
         uart_ref: uart_ref,
         device_description: config.device_description,
         ublox: Telemetry.Ublox.new(),
+        fast_loop_interval_ms: config.fast_loop_interval_ms,
+        medium_loop_interval_ms: config.medium_loop_interval_ms,
+        slow_loop_interval_ms: config.slow_loop_interval_ms,
+        accel: %{},
+        bodyrate: %{},
+        attitude: %{},
+        velocity: %{},
+        position: %{}
      }}
   end
 
@@ -38,13 +46,37 @@ defmodule Telemetry.Operator do
       _success ->
         Logger.debug("TelemetryRx opened #{telemetry_port}")
     end
+    fast_loop_timer = nil#Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
+    medium_loop_timer = nil#Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
+    slow_loop_timer = Common.Utils.start_loop(self(), state.slow_loop_interval_ms, :slow_loop)
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:store_data, data_map}, state) do
+    state = Enum.reduce(data_map, state, fn ({key, value}, acc) ->
+      Map.put(acc, key, value)
+    end)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call({:get_values, key_list}, _from, state) do
+    {:reply, Map.take(state, key_list), state}
   end
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
+  end
+
+  @impl GenServer
+  def handle_info(:slow_loop, state) do
+    unless Enum.empty?(state.position) or Enum.empty?(state.velocity) or Enum.empty?(state.attitude) do
+      send_local({{:telemetry, :pvat}, state.position, state.velocity, state.attitude})
+    end
+    {:noreply, state}
   end
 
   @spec parse(struct(), list()) :: tuple()
@@ -74,6 +106,7 @@ defmodule Telemetry.Operator do
             [itow, nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(buffer,bytes)
             Logger.info("accel xyz: #{ax}/#{ay}/#{az}")
             Logger.info("gyro xyz: #{gx}/#{gy}/#{gz}")
+            store_data(%{accel: %{x: ax, y: ay, z: az}, bodyrate: %{roll: gx, pitch: gy, yaw: gz}})
           _other -> Logger.warn("Bad message id: #{msg_id}")
         end
       0x45 ->
@@ -86,15 +119,20 @@ defmodule Telemetry.Operator do
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
             Logger.debug("agl: #{agl}")
             Logger.debug("yaw: #{yaw*57.3}")
-            send_local({{:telemetry, :pvat}, position, velocity, attitude, itow})
+            store_data(%{position: position, velocity: velocity, attitude: attitude})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
   end
 
+  @spec store_data(map()) :: atom()
+  def store_data(data_map) do
+    GenServer.cast(__MODULE__, {:store_data, data_map})
+  end
+
   def get_accel_gyro() do
-    GenServer.call(__MODULE__, :get_accel_gyro)
+    GenServer.call(__MODULE__, {:get_values, [:accel, :bodyrate]})
   end
 
   def send_local(message) do

@@ -2,7 +2,7 @@ defmodule Estimation.LaserAltimeterEkf do
   require Bitwise
   require Logger
 
-  defstruct [phi: 0, theta: 0, zdot: 0, z: 100, q33: 0, p00: 0, p11: 0, p22: 0, p33: 0, r: 0, time_prev_us: -1]
+  defstruct [phi: 0, theta: 0, zdot: 0, z: 0, q33: 0, p00: 0, p11: 0, p22: 0, p33: 0, r: 0, time_prev_us: -1]
 
   @default_q_att_sq 0.00274 #3deg^2
   @default_q_zdot_sq 0.25

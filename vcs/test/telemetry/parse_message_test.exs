@@ -10,13 +10,11 @@ defmodule Telemetry.ParseMessageTest do
 
   test "Parse Message Test" do
     delta_float_max = 0.0001
-    config = %{device_description: "FT230X"}
     config = Configuration.Module.get_config(Telemetry, nil, nil)
     {:ok, pid} = Telemetry.Operator.start_link(config.operator)
 
     accel = %{x: 1, y: 2, z: 3}
     gyro = %{x: -1, y: -2, z: -3}
-    bodyrate = %{rollrate: gyro.x, pitchrate: gyro.y, yawrate: gyro.z}
 
     now = DateTime.utc_now
     {now_us, _} = now.microsecond
@@ -32,6 +30,13 @@ defmodule Telemetry.ParseMessageTest do
     assert_in_delta(az, accel.z, delta_float_max)
     send(pid,{:circuits_uart, 0,accel_gyro})
     Process.sleep(500)
+    accel_gyro = Telemetry.Operator.get_accel_gyro()
+    accel_telem = accel_gyro.accel
+    gyro_telem = accel_gyro.bodyrate
+    assert_in_delta(accel_telem.x, accel.x, delta_float_max)
+    assert_in_delta(accel_telem.y, accel.y, delta_float_max)
+    assert_in_delta(accel_telem.z, accel.z, delta_float_max)
+
   end
 
   # test ""
