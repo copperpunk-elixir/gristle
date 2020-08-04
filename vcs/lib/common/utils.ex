@@ -1,5 +1,6 @@
 defmodule Common.Utils do
   require Logger
+  use Bitwise
 
   def start_link_redundant(parent_module, module, config, name \\ nil) do
     name =
@@ -183,7 +184,7 @@ defmodule Common.Utils do
   end
 
   @spec eftb_deg(float(), integer()) ::binary()
-  def eftb_deg(number, num_decimals) do
+  def eftb_deg(number, num_decimals\\1) do
     :erlang.float_to_binary(Common.Utils.Math.rad2deg(number), [decimals: num_decimals])
   end
 
@@ -281,4 +282,11 @@ defmodule Common.Utils do
     bz = (sinphi*sinpsi + cosphi*sintheta*cospsi)*vx - (sinphi*cospsi + cosphi*sintheta*sinpsi)*vy + cosphi*costheta*vz
     {bx,by,bz}
   end
+
+  def list_to_int(x_list, bytes) do
+    Enum.reduce(0..bytes-1, 0, fn(index,acc) ->
+      acc + (Enum.at(x_list,index)<<<(8*index))
+    end)
+  end
+
 end

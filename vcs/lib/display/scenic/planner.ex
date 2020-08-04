@@ -27,7 +27,7 @@ defmodule Display.Scenic.Planner do
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
-    Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
+    Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     {:ok, state, push: graph}
   end
 
@@ -49,10 +49,9 @@ defmodule Display.Scenic.Planner do
     {:noreply, state, push: graph }
   end
 
-  def handle_cast({:pv_estimate, pv_value_map}, state) do
-    position = pv_value_map.position
-    yaw = pv_value_map.attitude.yaw
-    speed = pv_value_map.velocity.speed
+  def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
+    yaw = attitude.yaw
+    speed = velocity.speed
     vehicle = %{position: position, yaw: yaw, speed: speed}
     origin =
     if Map.get(state, :origin) == nil do

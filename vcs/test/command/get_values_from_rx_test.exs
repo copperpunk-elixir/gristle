@@ -38,6 +38,6 @@ defmodule Command.GetGoalsFromRxTest do
   # end
 
   test "Show Car Cmds sent out as Goals", context do
-    Process.sleep(4000)
+    Process.sleep(400000)
   end
 end

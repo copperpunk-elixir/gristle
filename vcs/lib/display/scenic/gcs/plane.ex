@@ -40,16 +40,16 @@ defmodule Display.Scenic.Gcs.Plane do
     # build the graph
     graph =
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude"], ids: [:lat, :lon, :alt], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 3*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 5*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 4*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 4*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 6*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
     # subscribe to the simulated temperature sensor
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
+    Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
     Comms.Operator.join_group(__MODULE__, :control_state, self())
     {:ok, graph, push: graph}
@@ -57,11 +57,8 @@ defmodule Display.Scenic.Gcs.Plane do
 
   # --------------------------------------------------------
   # receive PV updates from the vehicle
-  def handle_cast({:pv_estimate, pv_value_map}, graph) do
-    position =pv_value_map.position
-    velocity = pv_value_map.velocity
-    attitude = pv_value_map.attitude
-
+  def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, graph) do
+    # Logger.debug("position: #{Navigation.Utils.LatLonAlt.to_string(position)}")
     roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
     pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
     yaw =
@@ -72,6 +69,7 @@ defmodule Display.Scenic.Gcs.Plane do
     lat = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.latitude),5)
     lon = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.longitude),5)
     alt = Common.Utils.eftb(position.altitude,2)
+    agl = Common.Utils.eftb(position.agl, 2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
     speed = Common.Utils.eftb(velocity.speed,1)
@@ -84,6 +82,7 @@ defmodule Display.Scenic.Gcs.Plane do
     graph = Scenic.Graph.modify(graph, :lat, &text(&1, lat <> @degrees))
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
     |> Scenic.Graph.modify(:alt, &text(&1, alt <> @meters))
+    |> Scenic.Graph.modify(:agl, &text(&1, agl <> @meters))
     |> Scenic.Graph.modify(:speed, &text(&1, speed <> @mps))
     |> Scenic.Graph.modify(:course, &text(&1, course <> @degrees))
     |> Scenic.Graph.modify(:roll, &text(&1, roll <> @degrees))
