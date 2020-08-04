@@ -205,4 +205,12 @@ defmodule Common.Utils.Math do
     <<x::little-signed-integer-8>>
   end
 
+  def int_little_bin(x, bits) do
+    case bits do
+      8 -> int8_little_bin(x)
+      16 -> int16_little_bin(x)
+      32 -> int32_little_bin(x)
+    end
+  end
+
 end

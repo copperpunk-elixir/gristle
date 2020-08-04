@@ -171,11 +171,12 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     bodyrate = state.bodyrate
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      Comms.Operator.send_global_msg_to_group(
-        __MODULE__,
-        {:pv_estimate, %{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate}},
-        :pv_estimate,
-        self())
+      # Comms.Operator.send_global_msg_to_group(
+      #   __MODULE__,
+      #   {:pv_estimate, %{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate}},
+      #   :pv_estimate,
+      #   self())
+      Telemetry.Operator.store_data(%{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate})
     end
     {:noreply, state}
   end

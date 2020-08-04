@@ -184,14 +184,18 @@ defmodule Simulation.XplaneReceive do
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
     position_velocity_value_map = %{position: state.position, velocity: state.velocity}
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    if !is_nil(state.attitude) do
+      range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_measured, :range}, range_meas}, {:pv_measured, :range}, self())
+    end
   end
 
   @spec publish_simulation_data(map()) ::atom()
   def publish_simulation_data(state) do
     pv_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
-    # Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
     Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
   end
