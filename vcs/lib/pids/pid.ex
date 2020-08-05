@@ -72,8 +72,14 @@ defmodule Pids.Pid do
     output = state.output_neutral + feed_forward + delta_output
     # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-    if state.process_variable == :course do
-      # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(output, 3)}")
+    output = if state.process_variable == :speed do
+      max_delta_output = 0.02
+      delta_output = output-state.output
+      |> Common.Utils.Math.constrain(delta_output, -max_delta_output, max_delta_output)
+      # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(state.output+delta_output, 3)}")
+      state.output + delta_output
+    else
+      output
     end
     pv_correction_prev = correction_raw
     pv_integrator =

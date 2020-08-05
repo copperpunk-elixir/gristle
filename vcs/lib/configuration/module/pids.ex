@@ -9,7 +9,7 @@ defmodule Configuration.Module.Pids do
 
   def add_pid_input_constraints(pids, constraints) do
     Enum.reduce(pids, pids, fn ({pv, pv_cvs},acc) ->
-      pid_config_with_input_constraints = 
+      pid_config_with_input_constraints =
         Enum.reduce(pv_cvs, pv_cvs, fn ({cv, pid_config}, acc2) ->
           # IO.puts("pv/cv/config: #{pv}/#{cv}/#{inspect(pid_config)}}")
           input_min = get_in(constraints, [pv, :output_min])
