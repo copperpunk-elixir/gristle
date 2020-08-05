@@ -21,7 +21,8 @@ config :nerves, source_date_epoch: "1585927776"
 # See https://hexdocs.pm/ring_logger/readme.html for more information on
 # configuring ring_logger.
 
-config :logger, backends: [:console, RingLogger]
+# config :logger, backends: [:console, RingLogger]
+config :logger, backends: [RingLogger]
 
 config :logger, RingLogger, max_size: 10_000
 

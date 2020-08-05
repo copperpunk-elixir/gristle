@@ -24,11 +24,12 @@ defmodule Telemetry.Ublox do
   @spec parse(struct(), integer()) :: struct()
   def parse(ublox, byte) do
     state = ublox.state
+    # Logger.info("state/byte: #{state}/#{byte}")
     cond do
       state == @got_none and byte == 0xB5 -> %{ublox | state: @got_sync1}
       state == @got_sync1 ->
         if (byte == 0x62) do
-          %{ublox | state: @got_sync2, chka: 0, chkb: 0}
+          %{ublox | state: @got_sync2, chka: 0, chkb: 0, payload_rev: []}
         else
           %{ublox | state: @got_none}
         end
@@ -48,7 +49,7 @@ defmodule Telemetry.Ublox do
         msglen = ublox.msg_len + Bitwise.<<<(byte,8)
         if (msglen <= @max_payload_length) do
           {chka, chkb} = add_to_checksum(ublox, byte)
-          %{ublox | state: @got_length2, count: 0, chka: chka, chkb: chkb, payload_ready: false}
+          %{ublox | state: @got_length2, count: 0, chka: chka, chkb: chkb}
         else
           %{ublox | state: @got_none}
         end
@@ -66,8 +67,8 @@ defmodule Telemetry.Ublox do
         payload_ready = if (byte == ublox.chkb), do: true, else: false
         %{ublox | state: state, payload_ready: payload_ready}
       true ->
-        # how did we get here?
-        Logger.warn("parse unexpected condition")
+        # Garbage byte
+        # Logger.warn("parse unexpected condition")
         %{ublox | state: @got_none}
     end
   end
@@ -82,6 +83,11 @@ defmodule Telemetry.Ublox do
   @spec payload(struct()) :: list()
   def payload(ublox) do
     Enum.reverse(ublox.payload_rev)
+  end
+
+  @spec clear(struct()) :: struct()
+  def clear(ublox) do
+    %{ublox | payload_ready: false}
   end
 
   @spec msg_class_and_id(struct()) :: tuple()
@@ -147,4 +153,20 @@ defmodule Telemetry.Ublox do
     <<ck_a,ck_b>>
   end
 
+  @spec get_bytes_for_class_and_id(integer(), integer()) :: list()
+  def get_bytes_for_class_and_id(class, id) do
+    case class do
+      0x01 ->
+        case id do
+          0x69 -> [-4,-4,4,4,4,4,4,4]
+          _other -> []
+        end
+      0x45 ->
+        case id do
+          0x01 -> [-4,4,4,4,4,4,4,4,4,4]
+          _other -> []
+        end
+      _other -> []
+    end
+  end
 end

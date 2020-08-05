@@ -1,5 +1,5 @@
 defmodule Logging.System do
-  use Supervisor
+  # use Supervisor
   require Logger
 
   def start_link(config) do

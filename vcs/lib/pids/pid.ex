@@ -75,7 +75,7 @@ defmodule Pids.Pid do
     output = if state.process_variable == :speed do
       max_delta_output = 0.02
       delta_output = output-state.output
-      |> Common.Utils.Math.constrain(delta_output, -max_delta_output, max_delta_output)
+      |> Common.Utils.Math.constrain(-max_delta_output, max_delta_output)
       # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(state.output+delta_output, 3)}")
       state.output + delta_output
     else

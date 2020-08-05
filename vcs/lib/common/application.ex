@@ -5,7 +5,7 @@ defmodule Common.Application do
   def start(_type, _args) do
     Logger.debug("Start Application")
     Comms.System.start_link()
-    Process.sleep(100)
+    Process.sleep(200)
     Common.Utils.mount_usb_drive()
     vehicle_type = Common.Utils.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
@@ -34,8 +34,7 @@ defmodule Common.Application do
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
-    display_config = Configuration.Module.get_config(Display, vehicle_type, nil)
-    Display.Scenic.System.start_link(display_config)
+    Display.Scenic.System.start_link(Configuration.Module.get_config(Display.Scenic, vehicle_type, nil))
   end
 
 

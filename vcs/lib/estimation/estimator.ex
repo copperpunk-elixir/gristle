@@ -17,13 +17,13 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        imu_loop_timer: nil,
+        # imu_loop_timer: nil,
         imu_loop_interval_ms: config.imu_loop_interval_ms,
         imu_loop_timeout_ms: config.imu_loop_timeout_ms,
-        ins_loop_timer: nil,
+        # ins_loop_timer: nil,
         ins_loop_interval_ms: config.ins_loop_interval_ms,
         ins_loop_timeout_ms: config.ins_loop_timeout_ms,
-        telemetry_loop_timer: nil,
+        # telemetry_loop_timer: nil,
         telemetry_loop_interval_ms: config.telemetry_loop_interval_ms,
         estimator_health: :unknown,
         watchdog_elapsed: %{imu: 0, ins: 0, agl: 0, airspeed: 0},
@@ -54,17 +54,14 @@ defmodule Estimation.Estimator do
     # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :agl}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :airspeed}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_measured, :range}, self())
-    imu_loop_timer = Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
-    ins_loop_timer = Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    telemetry_loop_timer = Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
+    Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
+    Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
     imu_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
     ins_watchdog_elapsed = :erlang.monotonic_time(:millisecond)
     watchdog_elapsed = %{state.watchdog_elapsed | imu: imu_watchdog_elapsed, ins: ins_watchdog_elapsed}
     state =
       %{state |
-        imu_loop_timer: imu_loop_timer,
-        ins_loop_timer: ins_loop_timer,
-        telemetry_loop_timer: telemetry_loop_timer,
         watchdog_elapsed: watchdog_elapsed
        }
     {:noreply, state}
@@ -167,20 +164,32 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_info(:telemetry_loop, state) do
+    # Logger.info("telemetry loop")
     position = Map.put(state.position, :agl, Estimation.LaserAltimeterEkf.agl(state.laser_alt_ekf))
     velocity = Map.put(state.velocity, :airspeed, state.airspeed)
     attitude = state.attitude
-    bodyrate = state.bodyrate
-    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
+    # bodyrate = state.bodyrate
+    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude)) do
+      # Logger.debug("roll: #{Common.Utils.eftb_deg(attitude.roll,2)}")
       # Comms.Operator.send_global_msg_to_group(
       #   __MODULE__,
       #   {:pv_estimate, %{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate}},
       #   :pv_estimate,
       #   self())
-      Telemetry.Operator.store_data(%{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate})
+      # Telemetry.Operator.store_data(%{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate})
+      now = DateTime.utc_now
+      {now_us, _} = now.microsecond
+      iTOW = Telemetry.Ublox.get_itow()
+      bytes = Telemetry.Ublox.get_bytes_for_class_and_id(0x45, 0x01)
+      message_values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
+      pvat = Telemetry.Ublox.construct_message(0x45,0x01, message_values, bytes)
+      # Logger.info("send pvat message")
+      Telemetry.Operator.send_message(pvat)
+    else
+      Logger.debug("telemetry loop something is empty")
     end
     {:noreply, state}
-  end
+    end
 
   @impl GenServer
   def handle_call(:get_range, _from, state) do

@@ -133,7 +133,7 @@ defmodule Command.Commander do
       # if (control_state == 3) do
       #   Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
       # else
-        Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
       # end
       # Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
       {reference_cmds, control_state, transmit_cmds}
