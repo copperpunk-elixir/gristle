@@ -131,6 +131,7 @@ defmodule Estimation.Estimator do
   def handle_cast({{:pv_measured, :range}, range}, state) do
     # Logger.info("rx range: #{range}")
     ekf = Estimation.LaserAltimeterEkf.update(state.laser_alt_ekf, range)
+    # Logger.info("agl: #{Estimation.LaserAltimeterEkf.agl(ekf)}")
     {:noreply, %{state | laser_alt_ekf: ekf}}
   end
 

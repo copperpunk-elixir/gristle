@@ -125,6 +125,7 @@ defmodule Peripherals.Uart.TerarangerEvo do
           # The remaining_buffer is everything after the CRC bytes
           remaining_buffer = Enum.drop(crc_and_remaining_buffer,1)
           {range, valid} = parse_good_message(Enum.drop(payload_buffer,1))
+          # Logger.debug("range: #{range}/#{valid}")
           state = %{state |
                     remaining_buffer: remaining_buffer,
                     start_byte_found: false,

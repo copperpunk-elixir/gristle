@@ -91,7 +91,7 @@ defmodule Telemetry.Ublox do
 
   @spec deconstruct_message(list(), list()) :: list()
   def deconstruct_message(payload, byte_types) do
-    {payload_rem, values} = Enum.reduce(byte_types, {payload, []}, fn (bytes, {remaining_buffer, values}) ->
+    {_payload_rem, values} = Enum.reduce(byte_types, {payload, []}, fn (bytes, {remaining_buffer, values}) ->
       bytes_abs = abs(bytes)
       {buffer, remaining_buffer} = Enum.split(remaining_buffer, bytes_abs)
 

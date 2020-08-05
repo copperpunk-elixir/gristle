@@ -34,6 +34,14 @@ defmodule Configuration.Module.Actuation do
               })
     end)
 
+    actuators =
+      case node_type do
+        :Plane ->
+          aileron_actuator = actuators.aileron
+          |> Map.put(:reversed, true)
+          Map.put(actuators, :aileron, aileron_actuator)
+        _other -> actuators
+      end
     #return config
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
