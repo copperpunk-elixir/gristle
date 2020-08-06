@@ -53,8 +53,8 @@ config :vintage_net,
                   networks: [
                     %{
                       key_mgmt: :wpa_psk,
-                      ssid: "dialup",
-                      psk: "binghamplace",
+                      ssid: "vcs_ground",
+                      psk: "8052156247",
                     }
                   ]
                 },
