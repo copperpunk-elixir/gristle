@@ -38,10 +38,20 @@ defmodule Configuration.Module.Estimation do
     }
   end
 
+  @spec get_teraranger_evo_config() :: map()
+  def get_teraranger_evo_config() do
+    %{
+      device_description: "STM32"
+    }
+  end
+
   @spec get_estimation_children(atom()) :: list()
   def get_estimation_children(node_type) do
     case node_type do
-      :all -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}]
+      :all -> [
+        {Peripherals.Uart.VnIns, get_vn_ins_config(node_type)},
+        # {Peripherals.Uart.TerarangerEvo, get_teraranger_evo_config()}
+      ]
       :gcs -> []
       # :sim -> [{Peripherals.Uart.CpIns, get_cp_ins_config()}]
       # :sim -> [{Peripherals.Uart.VnIns, get_vn_ins_config(node_type)}, {Peripherals.Uart.CpIns, get_cp_ins_config()}]

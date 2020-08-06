@@ -137,6 +137,7 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     bodyrate = state.bodyrate
     unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
+      Telemetry.Operator.store_data(%{attitude: attitude})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
@@ -153,6 +154,7 @@ defmodule Estimation.Estimator do
     unless Enum.empty?(position) or Enum.empty?(velocity) do
       position = Map.put(position, :agl, Estimation.LaserAltimeterEkf.agl(state.laser_alt_ekf))
       velocity = Map.put(velocity, :airspeed, state.airspeed)
+      Telemetry.Operator.store_data(%{position: position, velocity: velocity})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :position_velocity}, position, velocity, state.ins_loop_interval_ms/1000},
@@ -176,7 +178,6 @@ defmodule Estimation.Estimator do
       #   {:pv_estimate, %{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate}},
       #   :pv_estimate,
       #   self())
-      # Telemetry.Operator.store_data(%{position: position, velocity: velocity, attitude: attitude, bodyrate: bodyrate})
       now = DateTime.utc_now
       {now_us, _} = now.microsecond
       iTOW = Telemetry.Ublox.get_itow()
@@ -185,8 +186,6 @@ defmodule Estimation.Estimator do
       pvat = Telemetry.Ublox.construct_message(0x45,0x01, message_values, bytes)
       # Logger.info("send pvat message")
       Telemetry.Operator.send_message(pvat)
-    else
-      Logger.debug("telemetry loop something is empty")
     end
     {:noreply, state}
     end

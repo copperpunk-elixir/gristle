@@ -56,9 +56,14 @@ defmodule Actuation.HwInterface do
   end
 
   @impl GenServer
-  def handle_cast(:update_actuators, state) do
-    apply(state.interface_module, :write_channels, [state.interface, state.channels])
-    {:noreply, state}
+  def handle_cast({:update_actuators, actuators_and_outputs}, state) do
+    channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({actuator_name, {actuator, output}}, acc) ->
+      pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
+      Map.put(acc, actuator.channel_number, pulse_width_us)
+    end)
+
+    apply(state.interface_module, :write_channels, [state.interface, channels])
+    {:noreply, %{state | channels: channels}}
   end
 
   @impl GenServer
@@ -83,9 +88,9 @@ defmodule Actuation.HwInterface do
     actuator.failsafe_cmd*(actuator.max_pw_us - actuator.min_pw_us) + actuator.min_pw_us
   end
 
-  @spec update_actuators() :: atom()
-  def update_actuators() do
-    GenServer.cast(__MODULE__, :update_actuators)
+  @spec update_actuators(map()) :: atom()
+  def update_actuators(actuators_and_outputs) do
+    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
   end
 
   def output_to_us(output, reversed, min_pw_us, max_pw_us) do

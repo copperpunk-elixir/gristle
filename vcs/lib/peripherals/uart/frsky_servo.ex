@@ -57,7 +57,7 @@ defmodule Peripherals.Uart.FrskyServo do
     channels = Enum.reduce(channels, %{}, fn ({key, value},acc) ->
       if (is_nil(value)), do: acc, else: Map.put(acc, key, round(value))
     end)
-    # Logger.debug("channels: #{inspect(channels)}")
+    # Logger.debug("ail: #{Map.get(channels,0)}")
     header = 0x0F
     b1 = Bitwise.&&&(Map.get(channels,0,0), 0xFF)
 
@@ -134,6 +134,8 @@ defmodule Peripherals.Uart.FrskyServo do
     buffer = <<header, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, 0, 0>>
     # Logger.debug("write buffer: #{buffer}")
     Circuits.UART.write(device.interface_ref, buffer, device.write_timeout)
+    Circuits.UART.drain(device.interface_ref)
+
   end
 
   @spec set_interface_ref(struct(), any()) :: atom()

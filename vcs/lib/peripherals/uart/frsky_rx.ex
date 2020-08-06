@@ -34,7 +34,6 @@ defmodule Peripherals.Uart.FrskyRx do
         frame_lost: false,
         valid_frame_count: 0,
         new_frsky_data_to_publish: false,
-        publish_rx_output_loop_timer: nil,
         publish_rx_output_loop_interval_ms: config.publish_rx_output_loop_interval_ms
      }}
   end
@@ -56,8 +55,8 @@ defmodule Peripherals.Uart.FrskyRx do
       _success ->
         Logger.debug("FrskyRx opened #{frsky_port}")
     end
-    publish_rx_output_loop_timer = Common.Utils.start_loop(self(), state.publish_rx_output_loop_interval_ms, :publish_rx_output_loop)
-    {:noreply, %{state | publish_rx_output_loop_timer: publish_rx_output_loop_timer}}
+    # publish_rx_output_loop_timer = Common.Utils.start_loop(self(), state.publish_rx_output_loop_interval_ms, :publish_rx_output_loop)
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -72,6 +71,13 @@ defmodule Peripherals.Uart.FrskyRx do
   def handle_info({:circuits_uart, _port, data}, state) do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
+    state =
+    if (state.new_frsky_data_to_publish and !state.frame_lost) do
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, state.channel_values, state.failsafe_active}, :rx_output, self())
+      %{state | new_frsky_data_to_publish: false}
+    else
+      state
+    end
     {:noreply, state}
   end
 
@@ -84,6 +90,22 @@ defmodule Peripherals.Uart.FrskyRx do
         state.uart_ref
       end
     {:reply, uart_ref, state}
+  end
+
+  @impl GenServer
+  def handle_call({:get_channel_value, channel}, _from, state) do
+    value = Enum.at(state.channel_values,channel)
+    {:reply, value, state}
+  end
+
+  @impl GenServer
+  def handle_call(:is_failsafe_active, _from, state) do
+    {:reply, state.failsafe_active, state}
+  end
+
+  @impl GenServer
+  def handle_call(:is_frame_lost, _from ,state) do
+    {:reply, state.frame_lost, state}
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -198,22 +220,6 @@ defmodule Peripherals.Uart.FrskyRx do
     frame_lost = ((flag_byte &&& 0x04) > 0)
     {channels,failsafe_active, frame_lost}
 	end
-
-  @impl GenServer
-  def handle_call({:get_channel_value, channel}, _from, state) do
-    value = Enum.at(state.channel_values,channel)
-    {:reply, value, state}
-  end
-
-  @impl GenServer
-  def handle_call(:is_failsafe_active, _from, state) do
-    {:reply, state.failsafe_active, state}
-  end
-
-  @impl GenServer
-  def handle_call(:is_frame_lost, _from ,state) do
-    {:reply, state.frame_lost, state}
-  end
 
   def get_value_for_channel(channel) do
     GenServer.call(__MODULE__, {:get_channel_value, channel})

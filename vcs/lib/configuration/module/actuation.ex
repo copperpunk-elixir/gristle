@@ -5,8 +5,8 @@ defmodule Configuration.Module.Actuation do
       interface_driver_name: :feather,
       driver_config: %{
         baud: 115_200,
-        write_timeout: 10,
-        read_timeout: 10
+        write_timeout: 1,
+        read_timeout: 1
       }
     }
 
@@ -35,12 +35,11 @@ defmodule Configuration.Module.Actuation do
     end)
 
     actuators =
-      case node_type do
-        :Plane ->
-          aileron_actuator = actuators.aileron
-          |> Map.put(:reversed, true)
-          Map.put(actuators, :aileron, aileron_actuator)
-        _other -> actuators
+      if Map.has_key?(actuators, :aileron) do
+        aileron_actuator = Map.put(actuators.aileron, :reversed, true)
+        Map.put(actuators, :aileron, aileron_actuator)
+      else
+        actuators
       end
     #return config
     %{
