@@ -34,13 +34,21 @@ defmodule Configuration.Module.Actuation do
               })
     end)
 
-    actuators =
-      if Map.has_key?(actuators, :aileron) do
-        aileron_actuator = Map.put(actuators.aileron, :reversed, true)
-        Map.put(actuators, :aileron, aileron_actuator)
+    reversed_actuators = [:aileron, :elevator]
+    actuators = Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
+      if Map.has_key?(acc, actuator_name) do
+        put_in(acc, [actuator_name, :reversed], true)
       else
-        actuators
+        acc
       end
+    end)
+    # actuators =
+
+    #     aileron_actuator = Map.put(actuators.aileron, :reversed, true)
+    #     Map.put(actuators, :aileron, aileron_actuator)
+    #   else
+    #     actuators
+    #   end
     #return config
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
