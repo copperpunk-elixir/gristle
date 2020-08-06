@@ -20,6 +20,7 @@ defmodule Configuration.Module.Cluster do
       :gcs -> {-1,-1}
       :all -> {0,0}
       :sim -> {0,0}
+      :hil -> {0,0}
 
       :wing -> {0,1}
       :fuselage -> {1,2}

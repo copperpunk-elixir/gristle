@@ -12,13 +12,11 @@ defmodule Configuration.Module.Command do
     case node_type do
       :all ->
         [{Peripherals.Uart.FrskyRx, %{
-             device_description: "Feather M0",
-             publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+             device_description: "Feather M0"
           }}]
       :sim ->
         [{Peripherals.Uart.FrskyRx, %{
              device_description: "Feather M0",
-             publish_rx_output_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
           }}]
       _other -> []
     end

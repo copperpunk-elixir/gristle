@@ -1,4 +1,4 @@
-defmodule Command.GetGoalsFromRxTest do
+defmodule Command.GetValuesFromRxTest do
   use ExUnit.Case
   require Logger
 
@@ -22,22 +22,20 @@ defmodule Command.GetGoalsFromRxTest do
   #   Process.sleep(4000)
   # end
 
-  # This test is only required if something changes with the FrSky receiver
+  # # This test is only required if something changes with the FrSky receiver
   # test "Show Plane Cmds sent out as Goals" do
-  #   navigator_config = %{vehicle_type: :Plane, navigator_loop_interval_ms: 100}
-  #   Navigation.System.start_link(%{navigator: navigator_config})
 
   #   command_config = %{
   #     commander: %{vehicle_type: :Plane},
   #     frsky_rx: %{
-  #       device_description: "Arduino Micro",
-  #       publish_rx_output_loop_interval_ms: 100}
+  #       device_description: "Feather"
+  #     }
   #   }
   #   Command.System.start_link(command_config)
-  #   Process.sleep(4000)
+  #   Process.sleep(400000)
   # end
 
-  test "Show Car Cmds sent out as Goals", context do
-    Process.sleep(400000)
-  end
+  # test "Show Car Cmds sent out as Goals", context do
+  #   Process.sleep(400000)
+  # end
 end

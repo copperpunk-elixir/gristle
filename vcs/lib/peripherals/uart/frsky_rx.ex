@@ -33,8 +33,7 @@ defmodule Peripherals.Uart.FrskyRx do
         failsafe_active: false,
         frame_lost: false,
         valid_frame_count: 0,
-        new_frsky_data_to_publish: false,
-        publish_rx_output_loop_interval_ms: config.publish_rx_output_loop_interval_ms
+        new_frsky_data_to_publish: false
      }}
   end
 
@@ -55,7 +54,6 @@ defmodule Peripherals.Uart.FrskyRx do
       _success ->
         Logger.debug("FrskyRx opened #{frsky_port}")
     end
-    # publish_rx_output_loop_timer = Common.Utils.start_loop(self(), state.publish_rx_output_loop_interval_ms, :publish_rx_output_loop)
     {:noreply, state}
   end
 
@@ -83,13 +81,7 @@ defmodule Peripherals.Uart.FrskyRx do
 
   @impl GenServer
   def handle_call(:get_uart_ref, _from, state) do
-    uart_ref =
-      if is_nil(state.publish_rx_output_loop_interval_ms) do
-        nil
-      else
-        state.uart_ref
-      end
-    {:reply, uart_ref, state}
+    {:reply, state.uart_ref, state}
   end
 
   @impl GenServer

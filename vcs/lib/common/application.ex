@@ -22,6 +22,7 @@ defmodule Common.Application do
     case node_type do
       :gcs -> start_gcs(vehicle_type)
       :sim -> start_simulation(vehicle_type)
+      :hil -> start_hil(vehicle_type)
       _other -> start_vehicle(vehicle_type, node_type)
     end
   end
@@ -44,4 +45,12 @@ defmodule Common.Application do
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
     Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Simulation, Display.Scenic], vehicle_type, node_type)
   end
+
+  @spec start_hil(atom()) ::atom()
+  def start_hil(vehicle_type) do
+    node_type = :all
+    Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
+    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Display.Scenic], vehicle_type, node_type)
+  end
+
 end

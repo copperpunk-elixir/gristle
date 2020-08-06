@@ -10,7 +10,8 @@ defmodule Peripherals.FrskyRx.ReceiveSingleMessageTest do
   end
 
   test "Receive Single Message" do
-    Peripherals.Uart.FrskyRx.start_link(%{device_description: "Feather", publish_rx_output_loop_interval_ms: 50})
+    Logger.info("Receive Single Message test")
+    Peripherals.Uart.FrskyRx.start_link(%{device_description: "Feather"})
     Process.sleep(500)
     Enum.each(0..10000, fn _index ->
       Logger.debug("#{Peripherals.Uart.FrskyRx.get_value_for_channel(4)}")

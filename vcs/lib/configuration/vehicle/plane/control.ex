@@ -1,15 +1,6 @@
 defmodule Configuration.Vehicle.Plane.Control do
   require Logger
 
-  def get_config() do
-    %{
-      controller: %{
-        vehicle_type: :Plane,
-        process_variable_cmd_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
-      }
-    }
-  end
-
   def get_auto_pv_value_map(pv_value_map, yaw) do
     # course = :math.atan2(pv_value_map.velocity.east, pv_value_map.velocity.north)
     # speed = Common.Utils.Math.hypot(pv_value_map.velocity.north, pv_value_map.velocity.east)
