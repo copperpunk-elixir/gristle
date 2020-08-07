@@ -56,7 +56,7 @@ defmodule Cluster.Network.NodeConnection do
           nil
       end
     else
-      Logger.warn("Unnown msg: #{inspect(msg)}")
+      Logger.warn("Unknown msg: #{inspect(msg)}")
       nil
     end
   end

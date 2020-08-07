@@ -35,7 +35,8 @@ defmodule Common.Application do
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
-    Display.Scenic.System.start_link(Configuration.Module.get_config(Display.Scenic, vehicle_type, nil))
+    node_type = :gcs
+    Configuration.Module.start_modules([Display.Scenic], vehicle_type, node_type)
   end
 
 
