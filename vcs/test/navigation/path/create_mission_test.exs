@@ -59,4 +59,22 @@ defmodule Navigation.Path.CreateMissionTest do
     Navigation.Path.Mission.get_default_mission()
     assert true
   end
+
+  test "Create Mission from current location" do
+    vehicle_type = :Plane
+    nav_config = Configuration.Module.get_config(Navigation, vehicle_type, :all)
+    Navigation.System.start_link(nav_config)
+    config = Configuration.Module.get_config(Display.Scenic, vehicle_type, nil)
+    Display.Scenic.System.start_link(config)
+    Process.sleep(400)
+    pos = %{latitude: 45.0, longitude: -120.0, altitude: 123.4}
+    speed = 3.0
+    airspeed = speed
+    course = 0.3
+    velocity = %{speed: speed, course: course, airspeed: airspeed}
+    Comms.Operator.send_local_msg_to_group(__MODULE__,{{:pv_values, :position_velocity}, pos, velocity, 0}, self())
+    Process.sleep(100)
+    Navigation.Path.PathManager.load_from_current("Montague 1")
+    Process.sleep(100000)
+  end
 end

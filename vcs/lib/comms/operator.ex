@@ -62,9 +62,9 @@ defmodule Comms.Operator do
 
   @impl GenServer
   def handle_cast({:send_msg_to_group, message, group, sender, global_or_local}, state) do
-    # Logger.debug("send_msg. group: #{inspect(group)}")
+    Logger.debug("send_msg. group: #{inspect(group)}")
     group_members = get_group_members(state.groups, group, global_or_local)
-    # Logger.debug("Group members: #{inspect(group_members)}")
+    Logger.debug("Group members: #{inspect(group_members)}")
     send_msg_to_group_members(message, group_members, sender)
     {:noreply, state}
   end
@@ -112,13 +112,26 @@ defmodule Comms.Operator do
     GenServer.cast(via_tuple(operator_name), {:leave_group, group, process_id})
   end
 
+  @spec send_local_msg_to_group(atom(), any(), any(), any()) :: atom()
   def send_local_msg_to_group(operator_name, message, group, sender) do
     GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, group, sender, :local})
   end
 
+  @spec send_local_msg_to_group(atom(), tuple(), any()) :: atom()
+  def send_local_msg_to_group(operator_name, message, sender) do
+    GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, elem(message,0), sender, :local})
+  end
+
+  @spec send_global_msg_to_group(atom(), any(), any(), any()) :: atom()
   def send_global_msg_to_group(operator_name, message, group, sender) do
     # Logger.debug("send global: #{inspect(message)}")
     GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, group, sender, :global})
+  end
+
+  @spec send_global_msg_to_group(atom(), tuple(), any()) :: atom()
+  def send_global_msg_to_group(operator_name, message, sender) do
+    # Logger.debug("send global: #{inspect(message)}")
+    GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, elem(message,0), sender, :global})
   end
 
   defp send_msg_to_group_members(message, group_members, sender) do

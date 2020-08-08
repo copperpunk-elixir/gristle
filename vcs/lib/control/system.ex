@@ -2,7 +2,7 @@ defmodule Control.System do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Control Supervisor start_link()")
+    Logger.info("Control Supervisor start_link()")
     Comms.System.start_link()
     Supervisor.start_link(
       [

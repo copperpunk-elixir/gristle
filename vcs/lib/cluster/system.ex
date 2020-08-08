@@ -2,7 +2,7 @@ defmodule Cluster.System do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Cluster Supervisor start_link()")
+    Logger.info("Cluster Supervisor start_link()")
     Comms.System.start_link()
     Supervisor.start_link(
       [

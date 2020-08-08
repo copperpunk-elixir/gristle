@@ -2,7 +2,7 @@ defmodule Telemetry.System do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Telemetry Supervisor start_link()")
+    Logger.info("Telemetry Supervisor start_link()")
     Comms.System.start_link()
     Supervisor.start_link(
       [

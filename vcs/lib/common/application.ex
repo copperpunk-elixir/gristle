@@ -38,7 +38,7 @@ defmodule Common.Application do
   def start_gcs(vehicle_type) do
     Logger.add_backend(:console)
     node_type = :gcs
-    Configuration.Module.start_modules([Display.Scenic], vehicle_type, node_type)
+    Configuration.Module.start_modules([Display.Scenic, Navigation], vehicle_type, node_type)
   end
 
 
