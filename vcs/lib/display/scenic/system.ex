@@ -2,7 +2,7 @@ defmodule Display.Scenic.System do
   use Supervisor
   require Logger
   def start_link(config) do
-    Logger.debug("Display Supervisor start_link()")
+    Logger.info("Display Supervisor start_link()")
     display_module = Map.get(config, :display_module, Display.Scenic)
 
     #GCS

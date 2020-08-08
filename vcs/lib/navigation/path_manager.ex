@@ -17,18 +17,18 @@ defmodule Navigation.PathManager do
     vehicle_type = config.vehicle_type
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     {:ok, %{
-      vehicle_type: vehicle_type,
-      vehicle_loiter_speed: config.vehicle_loiter_speed,
-      vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
-      vehicle_takeoff_speed: config.vehicle_takeoff_speed,
-      # vehicle_max_ground_speed: config.vehicle_max_ground_speed,
-      goals_classification: goals_classification,
-      goals_time_validity_ms: goals_time_validity_ms,
-      config_points: [],
-      current_cp_index: nil,
-      current_path_case: nil,
-      current_path_distance: 0,
-      path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf)
+        vehicle_type: vehicle_type,
+        vehicle_loiter_speed: config.vehicle_loiter_speed,
+        vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
+        vehicle_takeoff_speed: config.vehicle_takeoff_speed,
+        # vehicle_max_ground_speed: config.vehicle_max_ground_speed,
+        goals_classification: goals_classification,
+        goals_time_validity_ms: goals_time_validity_ms,
+        config_points: [],
+        current_cp_index: nil,
+        current_path_case: nil,
+        current_path_distance: 0,
+        path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf)
      }}
   end
 
@@ -48,6 +48,7 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({:load_mission, mission}, state) do
+    Logger.debug("path manager load mission: #{inspect(mission)}")
     {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
@@ -179,47 +180,6 @@ defmodule Navigation.PathManager do
     else
       state
     end
-  end
-
-
-  @spec load_mission(struct(), atom()) :: atom()
-  def load_mission(mission, module) do
-    Logger.info("load mission: #{inspect(mission.name)}")
-    Comms.Operator.send_global_msg_to_group(
-      module,
-      {:load_mission, mission},
-      :load_mission,
-      self())
-  end
-
-  @spec load_seatac() :: atom()
-  def load_seatac() do
-    load_mission(Navigation.Path.Mission.get_seatac_mission(), __MODULE__)
-  end
-
-  @spec load_random_seatac() :: atom()
-  def load_random_seatac() do
-    load_mission(Navigation.Path.Mission.get_random_seatac_mission(), __MODULE__)
-  end
-
-  @spec load_ground() :: atom()
-  def load_ground() do
-    load_mission(Navigation.Path.Mission.get_ground_mission(), __MODULE__)
-  end
-
-  @spec load_landing() ::atom()
-  def load_landing() do
-    load_mission(Navigation.Path.Mission.get_landing_mission(), __MODULE__)
-  end
-
-  @spec load_complete() :: atom()
-  def load_complete() do
-    load_mission(Navigation.Path.Mission.get_complete_mission(), __MODULE__)
-  end
-
-  @spec load_random_takeoff() :: atom()
-  def load_random_takeoff() do
-    load_mission(Navigation.Path.Mission.get_random_takeoff_mission(), __MODULE__)
   end
 
   @spec begin_orbit() :: atom()
