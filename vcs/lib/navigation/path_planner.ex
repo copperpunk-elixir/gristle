@@ -11,7 +11,7 @@ defmodule Navigation.PathPlanner do
   end
 
   @impl GenServer
-  def init(config) do
+  def init(_config) do
     {:ok, %{}}
   end
 
@@ -39,25 +39,25 @@ defmodule Navigation.PathPlanner do
 
   @spec load_seatac_34R(integer()) ::atom()
   def load_seatac_34R(num_wps \\ 1) do
-    load_path_mission("seatac", "34R",:cessna, num_wps)
+    load_path_mission("seatac", "34R",:Cessna, num_wps)
   end
 
   @spec load_montague_0L(integer()) :: atom()
-  def load_montague_0L() do
-    load_path_mission("montague", "0L",:ec1500, num_wps)
+  def load_montague_0L(num_wps) do
+    load_path_mission("montague", "0L",:EC1500, num_wps)
   end
 
   @spec load_montague_18R(integer()) :: atom()
   def load_montague_18R(num_wps) do
-    load_path_mission("montague", "18R",:ec1500, num_wps)
+    load_path_mission("montague", "18R",:EC1500, num_wps)
   end
 
   @spec load_montague_standard() :: atom()
-  def load_montague_standard() :: atom()
+  def load_montague_standard() do
     load_mission(Navigation.Path.Mission.get_montague_standard(), __MODULE__)
   end
 
-  @spec load_path_mission(binary(), binary(), atom(), integer())
+  @spec load_path_mission(binary(), binary(), atom(), integer()) :: atom()
   def load_path_mission(airport, runway, aircraft_type, num_wps) do
     load_mission(Navigation.Path.Mission.get_complete_mission(airport, runway, aircraft_type, num_wps), __MODULE__)
   end
