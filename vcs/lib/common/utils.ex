@@ -120,6 +120,11 @@ defmodule Common.Utils do
     get_filename_with_extension(".node") |> String.to_atom()
   end
 
+  @spec get_aircraft_type() :: atom()
+  def get_aircraft_type() do
+    get_filename_with_extension(".aircraft") |> String.to_atom()
+  end
+
   def assert_valid_config(config, config_type) do
     {verify_fn, default_value} =
       case config_type do

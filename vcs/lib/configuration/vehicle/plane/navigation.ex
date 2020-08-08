@@ -44,15 +44,9 @@ defmodule Configuration.Vehicle.Plane.Navigation do
 
   @spec get_vehicle_limits() :: map()
   def get_vehicle_limits() do
-    %{
-      vehicle_turn_rate: 0.08,
-      vehicle_loiter_speed: 40,
-      vehicle_takeoff_speed: 40,
-      vehicle_climb_speed: 50,
-      vehicle_agl_ground_threshold: 3.0,
-      vehicle_max_ground_speed: 35
-    }
+    aircraft_type = Common.Utils.get_aircraft_type()
+    aircraft_module =
+      Module.concat(Configuration.Vehicle.Plane.Navigation, aircraft_type)
+    apply(aircraft_module, :get_vehicle_limits, [])
   end
-
 end
-

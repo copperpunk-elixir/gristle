@@ -62,9 +62,9 @@ defmodule Comms.Operator do
 
   @impl GenServer
   def handle_cast({:send_msg_to_group, message, group, sender, global_or_local}, state) do
-    Logger.debug("send_msg. group: #{inspect(group)}")
+    # Logger.debug("send_msg. group: #{inspect(group)}")
     group_members = get_group_members(state.groups, group, global_or_local)
-    Logger.debug("Group members: #{inspect(group_members)}")
+    # Logger.debug("Group members: #{inspect(group_members)}")
     send_msg_to_group_members(message, group_members, sender)
     {:noreply, state}
   end

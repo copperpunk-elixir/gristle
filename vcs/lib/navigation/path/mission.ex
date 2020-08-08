@@ -111,7 +111,8 @@ defmodule Navigation.Path.Mission do
     landing_wps = get_landing_waypoints(start_position, start_course, aircraft_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     Enum.each(wps, fn wp ->
-      Logger.info("wp: #{wp.name}/#{wp.altitude}m")
+      {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
+      Logger.info("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
     Navigation.Path.Mission.new_mission("complete",wps, :Plane)
   end
@@ -152,7 +153,7 @@ defmodule Navigation.Path.Mission do
         speed = :rand.uniform*flight_speed_range + min_flight_speed
         alt = :rand.uniform()*flight_agl_range + min_flight_agl + starting_lla.altitude
         # Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
-        Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
+        # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)
         new_wp = Navigation.Path.Waypoint.new_flight(new_pos, speed, course, "wp#{index}")
@@ -176,7 +177,7 @@ defmodule Navigation.Path.Mission do
   @spec get_aircraft_spec(atom(), atom()) :: any()
   def get_aircraft_spec(aircraft_type, spec) do
     aircraft = %{
-      cessna: %{
+      Cessna: %{
         takeoff_roll: 500,
         climbout_distance: 1200,
         climbout_height: 100,
@@ -188,7 +189,7 @@ defmodule Navigation.Path.Mission do
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
       },
-      ec1500: %{
+      EC1500: %{
         takeoff_roll: 30,
         climbout_distance: 200,
         climbout_height: 40,
