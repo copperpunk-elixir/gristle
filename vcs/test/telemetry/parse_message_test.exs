@@ -19,13 +19,12 @@ defmodule Telemetry.ParseMessageTest do
 
     now = DateTime.utc_now
     {now_us, _} = now.microsecond
-    iTOW = Telemetry.Ublox.get_itow()
+    iTOW = Telemetry.Ublox.get_itow(now)
     nano = now_us*1000
-    bytes = Telemetry.Ublox.get_bytes_for_class_and_id(0x01, 0x69)
     message_values = [iTOW, nano, accel.x, accel.y, accel.z, gyro.x, gyro.y, gyro.z]
-    accel_gyro = Telemetry.Ublox.construct_message(1,0x69, message_values, bytes)
+    accel_gyro = Telemetry.Ublox.construct_message(:accel_gyro, message_values)
     accel_gyro_payload = :binary.bin_to_list(accel_gyro) |> Enum.drop(6) |> Enum.drop(-2)
-    [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(accel_gyro_payload,bytes)
+    [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, accel_gyro_payload)
     assert_in_delta(ax, accel.x, delta_float_max)
     assert_in_delta(ay, accel.y, delta_float_max)
     assert_in_delta(az, accel.z, delta_float_max)
@@ -51,7 +50,7 @@ defmodule Telemetry.ParseMessageTest do
     attitude = %{roll: 0.1, pitch: -0.2, yaw: 1.23}
     now = DateTime.utc_now
     {now_us, _} = now.microsecond
-    iTOW = Telemetry.Ublox.get_itow()
+    iTOW = Telemetry.Ublox.get_itow(now)
     nano = now_us*1000
     bytes = Telemetry.Ublox.get_bytes_for_class_and_id(0x45, 0x01)
     message_values = [iTOW, nano, position.latitude, position.longitude, position.altitude, velocity.speed, velocity.course, attitude.roll, attitude. pitch, attitude.yaw]

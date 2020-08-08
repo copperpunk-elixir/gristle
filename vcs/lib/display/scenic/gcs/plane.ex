@@ -59,23 +59,25 @@ defmodule Display.Scenic.Gcs.Plane do
   # receive PV updates from the vehicle
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, graph) do
     # Logger.debug("position: #{Navigation.Utils.LatLonAlt.to_string(position)}")
-    roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
-    pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
+    roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
+    pitch = Map.get(attitude, :pitch,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
     yaw =
-      Common.Utils.constrain_angle_to_compass(attitude.yaw)
+      Map.get(attitude, :yaw,0) |>
+      Common.Utils.constrain_angle_to_compass()
       |> Common.Utils.Math.rad2deg()
       |> Common.Utils.eftb(1)
 
-    lat = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.latitude),5)
-    lon = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.longitude),5)
-    alt = Common.Utils.eftb(position.altitude,2)
-    agl = Common.Utils.eftb(position.agl, 2)
+    lat = Map.get(position, :latitude,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(5)
+    lon = Map.get(position, :longitude,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(5)
+    alt = Map.get(position, :altitude,0) |> Common.Utils.eftb(2)
+    agl = Map.get(position, :agl, 0) |> Common.Utils.eftb(2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
-    speed = Common.Utils.eftb(velocity.speed,1)
+    speed = Map.get(velocity, :speed,0) |> Common.Utils.eftb(1)
 
     course=
-    Common.Utils.constrain_angle_to_compass(velocity.course)
+    Map.get(velocity, :course, 0)
+    |> Common.Utils.constrain_angle_to_compass()
     |> Common.Utils.Math.rad2deg()
     |> Common.Utils.eftb(1)
 
@@ -95,38 +97,33 @@ defmodule Display.Scenic.Gcs.Plane do
     graph =
       cond do
       level <=1 ->
-        rollrate = Common.Utils.Math.rad2deg(cmds.rollrate) |> Common.Utils.eftb(0)
-        pitchrate = Common.Utils.Math.rad2deg(cmds.pitchrate) |> Common.Utils.eftb(0)
-        yawrate = Common.Utils.Math.rad2deg(cmds.yawrate) |> Common.Utils.eftb(0)
-        thrust = Common.Utils.eftb(cmds.thrust*100,0)
+        rollrate = Map.get(cmds, :rollrate, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        pitchrate = Map.get(cmds, :pitchrate, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        yawrate = Map.get(cmds, :yawrate, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        thrust = Map.get(cmds, :thrust,0)*100 |> Common.Utils.eftb(0)
         graph
         |> Scenic.Graph.modify(:rollrate_cmd, &text(&1,rollrate <> @dps))
         |> Scenic.Graph.modify(:pitchrate_cmd, &text(&1,pitchrate <> @dps))
         |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @dps))
         |> Scenic.Graph.modify(:thrust_1_cmd, &text(&1,thrust <> @pct))
       level == 2 ->
-        roll= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.roll),0)
-        pitch= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.pitch),0)
-        yaw= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yaw),0)
-        thrust = Common.Utils.eftb(cmds.thrust*100,0)
+        roll= Map.get(cmds, :roll, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        pitch = Map.get(cmds, :pitch, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        yaw = Map.get(cmds, :yaw, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        thrust = Map.get(cmds, :thrust, 0)*100 |> Common.Utils.eftb(0)
         graph
         |> Scenic.Graph.modify(:roll_cmd, &text(&1,roll<> @degrees))
         |> Scenic.Graph.modify(:pitch_cmd, &text(&1,pitch<> @degrees))
         |> Scenic.Graph.modify(:yaw_cmd, &text(&1,yaw<> @degrees))
         |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
       level == 3 ->
-        speed= Common.Utils.eftb(cmds.speed,1)
-        course=
-        if (Map.has_key?(cmds, :course_flight)) do
-          Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course_flight),1)
-        else
-          Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course_ground),1)
-        end
-          altitude= Common.Utils.eftb(cmds.altitude,1)
-          graph
-          |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
-          |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
-          |> Scenic.Graph.modify(:altitude_cmd, &text(&1,altitude <> @meters))
+        speed= Map.get(cmds, :speed, 0) |> Common.Utils.eftb(1)
+        course= Map.get(cmds, :course, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
+        altitude= Map.get(cmds, :altitude, 0) |> Common.Utils.eftb(1)
+        graph
+        |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
+        |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
+        |> Scenic.Graph.modify(:altitude_cmd, &text(&1,altitude <> @meters))
       true -> graph
       end
     {:noreply, graph, push: graph}

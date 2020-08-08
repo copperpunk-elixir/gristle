@@ -172,7 +172,24 @@ defmodule Pids.Moderator do
     MessageSorter.Sorter.add_message(cmd_type, msg_class, msg_time_ms, output_map)
   end
 
-  defp publish_cmds(cmds, level) do
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, level}, cmds}, :tx_goals, self())
+  @spec publish_cmds(map(), integer()) :: atom()
+  def publish_cmds(cmds, level) do
+    # Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, level}, cmds}, :tx_goals, self())
+    # {data_key, goals_list} =
+    #   case level do
+    #     1 -> {:level_1, [cmds.rollrate, cmds.pitchrate, cmds.yawrate, cmds.thrust]}
+    #     2 -> {:level_2, [cmds.roll, cmds.pitch, cmds.yaw, cmds.thrust]}
+    #     3 ->
+    #       course = Map.get(cmds, :course_flight, Map.get(cmds, :course_ground))
+    #       {:level_3, [cmds.speed, course, cmds.altitude]}
+    #   end
+    # goals_list = [Telemetry.Ublox.get_itow()] ++ goals_list
+    cmd_level =
+      case level do
+        1-> :level_1
+        2-> :level_2
+        3-> :level_3
+      end
+    Telemetry.Operator.store_data(%{cmd_level => cmds})
   end
 end

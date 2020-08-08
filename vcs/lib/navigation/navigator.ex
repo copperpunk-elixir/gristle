@@ -82,7 +82,9 @@ defmodule Navigation.Navigator do
     control_state_pv_cmds = max(1,control_state)
     MessageSorter.Sorter.add_message(:control_state, [0,1], 2*state.navigator_loop_interval_ms, control_state)
     MessageSorter.Sorter.add_message({:pv_cmds, control_state_pv_cmds}, [0,1], 2*state.navigator_loop_interval_ms, pv_cmds)
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:control_state, control_state}, :control_state, self())
+    # Comms.Operator.send_global_msg_to_group(__MODULE__, {:control_state, control_state}, :control_state, self())
+    # Telemetry.Operator.construct_and_send_message(:control_state, [Telemetry.Ublox.get_itow(), control_state])
+    Telemetry.Operator.store_data(%{control_state: control_state})
     # Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, control_state}, pv_cmds}, :tx_goals, self())
     # MessageSorter.Sorter.add_message(
     #   {:pv_cmds, control_state},

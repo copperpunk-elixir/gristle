@@ -47,7 +47,7 @@ node_name = if Mix.env() != :prod, do: "vcs"
 config :vintage_net,
   regulatory_domain: "US",
   config: [
-    {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
+    # {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
     {"wlan0", %{type: VintageNetWiFi,
                 vintage_net_wifi: %{
                   networks: [

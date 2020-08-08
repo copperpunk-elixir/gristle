@@ -19,7 +19,6 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    RingLogger.attach()
     # Logger.warn("log directory: #{state.log_directory}")
     {:noreply, state}
   end

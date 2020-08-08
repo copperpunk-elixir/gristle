@@ -25,7 +25,11 @@ defmodule Telemetry.Operator do
         bodyrate: %{},
         attitude: %{},
         velocity: %{},
-        position: %{}
+        position: %{},
+        level_1: %{},
+        level_2: %{},
+        level_3: %{},
+        control_state: nil
      }}
   end
 
@@ -80,8 +84,37 @@ defmodule Telemetry.Operator do
 
   @impl GenServer
   def handle_info(:slow_loop, state) do
-    unless Enum.empty?(state.position) or Enum.empty?(state.velocity) or Enum.empty?(state.attitude) do
-      send_local({{:telemetry, :pvat}, state.position, state.velocity, state.attitude})
+    iTOW = Telemetry.Ublox.get_itow()
+    #pvat
+    position = state.position
+    velocity = state.velocity
+    attitude = state.attitude
+    unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude)) do
+      values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
+      # Logger.info("send pvat message")
+      construct_and_send_message({:telemetry, :pvat}, values, state.uart_ref)
+    end
+    #tx_goals
+    level_1 = state.level_1
+    level_2 = state.level_2
+    level_3 = state.level_3
+    unless(Enum.empty?(level_1)) do
+      values = [iTOW, level_1.rollrate, level_1.pitchrate, level_1.yawrate, level_1.thrust]
+      construct_and_send_message({:tx_goals, 1}, values, state.uart_ref)
+    end
+    unless(Enum.empty?(level_2)) do
+      values = [iTOW, level_2.roll, level_2.pitch, level_2.yaw, level_2.thrust]
+      construct_and_send_message({:tx_goals, 2}, values, state.uart_ref)
+    end
+    unless(Enum.empty?(level_3)) do
+      course = Map.get(level_3, :course_flight, Map.get(level_3, :course_ground))
+      values = [iTOW, level_3.speed, course, level_3.altitude]
+      construct_and_send_message({:tx_goals, 3}, values, state.uart_ref)
+    end
+    control_state = state.control_state
+    unless is_nil(control_state) do
+      values = [iTOW, control_state]
+      construct_and_send_message(:control_state, values, state.uart_ref)
     end
     {:noreply, state}
   end
@@ -114,8 +147,7 @@ defmodule Telemetry.Operator do
       1 ->
         case msg_id do
           0x69 ->
-            bytes = Telemetry.Ublox.get_bytes_for_class_and_id(msg_class, msg_id)
-            [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(buffer,bytes)
+            [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, buffer)
             # Logger.info("accel xyz: #{ax}/#{ay}/#{az}")
             # Logger.info("gyro xyz: #{gx}/#{gy}/#{gz}")
             store_data(%{accel: %{x: ax, y: ay, z: az}, bodyrate: %{roll: gx, pitch: gy, yaw: gz}})
@@ -123,15 +155,34 @@ defmodule Telemetry.Operator do
         end
       0x45 ->
         case msg_id do
-          0x01 ->
-            bytes = Telemetry.Ublox.get_bytes_for_class_and_id(msg_class, msg_id)
-            [itow, lat, lon, alt, agl, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(buffer, bytes)
+          0x00 ->
+            msg_type = {:telemetry, :pvat}
+            [itow, lat, lon, alt, agl, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
             position = %{latitude: lat, longitude: lon, altitude: alt, agl: agl}
             velocity = %{speed: speed, course: course}
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
             # Logger.debug("roll: #{Common.Utils.eftb_deg(roll,2)}")
             # Logger.debug("agl: #{agl}")
-            store_data(%{position: position, velocity: velocity, attitude: attitude})
+            send_local({msg_type, position, velocity, attitude})
+          0x11 ->
+            msg_type = {:tx_goals, 1}
+            [itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            level_1 = %{rollrate: rollrate, pitchrate: pitchrate, yawrate: yawrate, thrust: thrust}
+            send_local({msg_type, level_1}, :tx_goals)
+          0x12 ->
+            msg_type = {:tx_goals, 2}
+            [itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            level_2 = %{roll: roll, pitch: pitch, yaw: yaw, thrust: thrust}
+            send_local({msg_type, level_2}, :tx_goals)
+          0x13 ->
+            msg_type = {:tx_goals, 3}
+            [itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            level_3 = %{speed: speed, course: course, altitude: altitude}
+            send_local({msg_type, level_3}, :tx_goals)
+          0x14 ->
+            msg_type = :control_state
+            [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            send_local({msg_type, control_state})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
@@ -147,8 +198,19 @@ defmodule Telemetry.Operator do
     GenServer.call(__MODULE__, {:get_values, [:accel, :bodyrate]})
   end
 
+  def send_local(message, group) do
+    Comms.Operator.send_local_msg_to_group(__MODULE__, message, group, self())
+  end
+
   def send_local(message) do
     Comms.Operator.send_local_msg_to_group(__MODULE__, message, elem(message,0), self())
+  end
+
+  @spec construct_and_send_message(any(), list(), any()) :: atom()
+  def construct_and_send_message(msg_type, payload, uart_ref) do
+    msg = Telemetry.Ublox.construct_message(msg_type, payload)
+    Circuits.UART.write(uart_ref, msg)
+    Circuits.UART.drain(uart_ref)
   end
 
   @spec send_message(binary()) :: atom()

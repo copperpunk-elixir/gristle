@@ -50,21 +50,27 @@ defmodule Display.Scenic.Planner do
   end
 
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
-    yaw = attitude.yaw
-    speed = velocity.speed
-    vehicle = %{position: position, yaw: yaw, speed: speed}
-    origin =
-    if Map.get(state, :origin) == nil do
-      bounding_box = calculate_lat_lon_bounding_box(%{}, position)
-      calculate_origin(bounding_box, state.width, state.height)
+    {state, graph} =
+    if !Enum.empty?(position) and !Enum.empty?(velocity) and !Enum.empty?(attitude) do
+      yaw = Map.get(attitude, :yaw, 0)
+      speed = Map.get(velocity, :speed, 0)
+      vehicle = %{position: position, yaw: yaw, speed: speed}
+      origin =
+      if Map.get(state, :origin) == nil do
+        bounding_box = calculate_lat_lon_bounding_box(%{}, position)
+        calculate_origin(bounding_box, state.width, state.height)
+      else
+        state.origin
+      end
+      graph = draw_vehicle(state.graph, vehicle, origin, state.height)
+      state =
+        Map.put(state, :vehicle, vehicle)
+        |> Map.put(:origin, origin)
+        |> Map.put(:graph, graph)
+      {state, graph}
     else
-      state.origin
+      {state, state.graph}
     end
-    graph = draw_vehicle(state.graph, vehicle, origin, state.height)
-    state =
-      Map.put(state, :vehicle, vehicle)
-      |> Map.put(:origin, origin)
-      |> Map.put(:graph, graph)
     {:noreply, state, push: graph}
   end
 

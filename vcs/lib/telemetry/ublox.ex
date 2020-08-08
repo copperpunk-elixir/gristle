@@ -95,8 +95,9 @@ defmodule Telemetry.Ublox do
     {ublox.msg_class, ublox.msg_id}
   end
 
-  @spec deconstruct_message(list(), list()) :: list()
-  def deconstruct_message(payload, byte_types) do
+  @spec deconstruct_message(atom(), list()) :: list()
+  def deconstruct_message(msg_type, payload) do
+    byte_types = get_bytes_for_msg(msg_type)
     {_payload_rem, values} = Enum.reduce(byte_types, {payload, []}, fn (bytes, {remaining_buffer, values}) ->
       bytes_abs = abs(bytes)
       {buffer, remaining_buffer} = Enum.split(remaining_buffer, bytes_abs)
@@ -112,9 +113,10 @@ defmodule Telemetry.Ublox do
     values
   end
 
-  @spec construct_message(integer(), integer(), list(), list()) :: binary()
-  def construct_message(msg_class, msg_id, values, byte_types) do
-
+  @spec construct_message(any(), list()) :: binary()
+  def construct_message(msg_type, values) do
+    {msg_class, msg_id} = get_class_and_id_for_msg(msg_type)
+    byte_types = get_bytes_for_msg(msg_type)
     {payload, payload_length} = Enum.reduce(Enum.zip(values, byte_types), {<<>>,0}, fn ({value, bytes}, {payload, payload_length}) ->
       bytes_abs = abs(bytes)
       value_bin = if bytes>0 do
@@ -134,12 +136,17 @@ defmodule Telemetry.Ublox do
 
   @spec get_itow() :: integer()
   def get_itow() do
+    get_itow(DateTime.utc_now)
+  end
+
+  @spec get_itow(struct()) :: integer()
+  def get_itow(now) do
     today = Date.utc_today()
     first_day_str = Date.add(today, - Date.day_of_week(today)) |> Date.to_iso8601()
     |> Kernel.<>("T00:00:00Z")
     {:ok, first_day, 0} = DateTime.from_iso8601(first_day_str)
 
-    DateTime.diff(DateTime.utc_now, first_day, :millisecond)
+    DateTime.diff(now, first_day, :millisecond)
   end
 
   @spec calculate_ublox_checksum(list()) :: binary()
@@ -153,20 +160,33 @@ defmodule Telemetry.Ublox do
     <<ck_a,ck_b>>
   end
 
-  @spec get_bytes_for_class_and_id(integer(), integer()) :: list()
-  def get_bytes_for_class_and_id(class, id) do
-    case class do
-      0x01 ->
-        case id do
-          0x69 -> [-4,-4,4,4,4,4,4,4]
-          _other -> []
-        end
-      0x45 ->
-        case id do
-          0x01 -> [-4,4,4,4,4,4,4,4,4,4]
-          _other -> []
-        end
-      _other -> []
+  @spec get_bytes_for_msg(atom()) :: list()
+  def get_bytes_for_msg(msg_type) do
+    case msg_type do
+      :accel_gyro -> [-4,-4,4,4,4,4,4,4]
+      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4]
+      {:tx_goals, 1} -> [-4,4,4,4,4]
+      {:tx_goals, 2} -> [-4,4,4,4,4]
+      {:tx_goals, 3} -> [-4,4,4,4]
+      :control_state -> [-4,-4]
+      _other ->
+        Logger.error("Non-existent msg_type")
+        []
+    end
+  end
+
+  @spec get_class_and_id_for_msg(any())::tuple()
+  def get_class_and_id_for_msg(msg_type) do
+    case msg_type do
+      :accel_gyro -> {0x01, 0x69}
+      {:telemetry, :pvat} -> {0x45, 0x00}
+      {:tx_goals, 1} -> {0x45, 0x11}
+      {:tx_goals, 2} -> {0x45, 0x12}
+      {:tx_goals, 3} -> {0x45, 0x13}
+      :control_state -> {0x45, 0x14}
+      _other ->
+        Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
+        []
     end
   end
 end

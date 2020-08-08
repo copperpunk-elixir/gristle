@@ -157,7 +157,7 @@ defmodule Peripherals.Uart.CpIns do
     {now_us, _} = now.microsecond
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x69,32,0>>
-    iTOW = get_itow()
+    iTOW = Telemetry.Ublox.get_itow(now) |> Common.Utils.Math.int32_little_bin()
     nano = now_us*1000 |> Common.Utils.Math.int32_little_bin()
     accel_x = Common.Utils.Math.uint_from_fp(accel.x,4)
     accel_y = Common.Utils.Math.uint_from_fp(accel.y,4)
@@ -185,7 +185,7 @@ defmodule Peripherals.Uart.CpIns do
 
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x07,92,0>>
-    iTOW = get_itow()
+    iTOW = Telemetry.Ublox.get_itow(now) |> Common.Utils.Math.int32_little_bin()
     year = now.year |> Common.Utils.Math.int16_little_bin()
     month = <<now.month>>
     day = <<now.month>>
@@ -246,7 +246,7 @@ defmodule Peripherals.Uart.CpIns do
     version = <<0>>
     res1 = <<0>>
     refStationId = <<0,0>>
-    iTOW = get_itow()
+    iTOW = Telemetry.Ublox.get_itow() |> Common.Utils.Math.int32_little_bin()
     distance = 1
     relPosN_float = distance*:math.cos(yaw + ant_offset)
     relPosN_cm = relPosN_float * 100 |> trunc()
@@ -299,17 +299,6 @@ defmodule Peripherals.Uart.CpIns do
       flags
     checksum_bytes = calculate_ublox_checksum(:binary.bin_to_list(checksum_buffer))
     header <> checksum_buffer <> checksum_bytes
-  end
-
-  @spec get_itow() :: integer()
-  def get_itow() do
-    today = Date.utc_today()
-    first_day_str = Date.add(today, - Date.day_of_week(today)) |> Date.to_iso8601()
-    |> Kernel.<>("T00:00:00Z")
-    {:ok, first_day, 0} = DateTime.from_iso8601(first_day_str)
-
-    DateTime.diff(DateTime.utc_now, first_day, :millisecond)
-    |> Common.Utils.Math.int32_little_bin()
   end
 
   @spec calculate_ublox_checksum(list()) :: binary()
