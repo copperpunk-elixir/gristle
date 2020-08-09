@@ -51,7 +51,7 @@ defmodule Logging.Logger do
 
   @spec save_log(binary()) ::atom()
   def save_log(file_suffix \\ "") do
-    # Logger.info("save log: #{file_suffix}")
+    Logger.info("save log: #{file_suffix}")
     GenServer.cast(__MODULE__, {:save_log, file_suffix})
   end
 

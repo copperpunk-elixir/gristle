@@ -48,7 +48,7 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({:load_mission, mission}, state) do
-    Logger.debug("path manager load mission")
+    Logger.debug("path manager load mission: #{mission.name}")
     {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)

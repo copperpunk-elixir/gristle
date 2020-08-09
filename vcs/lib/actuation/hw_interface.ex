@@ -22,6 +22,7 @@ defmodule Actuation.HwInterface do
           raise "Actuator Interface #{other} not supported"
       end
 
+    Logger.warn("hwinterface module: #{interface_module}")
     {:ok, %{
         interface_module: interface_module,
         interface: nil,

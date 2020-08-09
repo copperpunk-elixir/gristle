@@ -25,9 +25,15 @@ defmodule Configuration.Module.Command do
   @spec get_command_output_limits(atom(), list()) :: tuple()
   def get_command_output_limits(vehicle_type, channels) do
     vehicle_module =
-      Module.concat(Configuration.Vehicle, vehicle_type)
-      |> Module.concat(Pids)
-
+      case vehicle_type do
+        :Plane ->
+          aircraft_type = Common.Utils.get_aircraft_type()
+          Module.concat(Configuration.Vehicle.Plane.Pids, aircraft_type)
+        _other ->
+          Module.concat(Configuration.Vehicle, vehicle_type)
+          |> Module.concat(Pids)
+      end
+ 
     Enum.reduce(channels, %{}, fn (channel, acc) ->
       IO.puts("channel: #{channel}")
       constraints =

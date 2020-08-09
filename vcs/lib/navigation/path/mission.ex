@@ -116,7 +116,7 @@ defmodule Navigation.Path.Mission do
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
       Logger.info("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
-    Navigation.Path.Mission.new_mission("complete",wps, :Plane)
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, :Plane)
   end
 
   @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
