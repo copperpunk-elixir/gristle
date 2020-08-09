@@ -20,6 +20,19 @@ defmodule Estimation.LaserAltimeterEkf do
     %Estimation.LaserAltimeterEkf{q33: q_z_sq, p00: q_att_sq, p11: q_att_sq, p22: q_zdot_sq, p33: q_z_sq, r: r_range_sq}
   end
 
+  @spec reset(struct(), float()) :: struct()
+  def reset(ekf, z) do
+    config = %{
+      q_att_sq: ekf.p00,
+      q_zdot_sq: ekf.p22,
+      q_z_sq: ekf.q33,
+      r_range_sq: ekf.r
+    }
+    ekf = Estimation.LaserAltimeterEkf.new(config)
+    %{ekf | z: z}
+  end
+
+
   @spec predict(struct(), float(), float(), float()) :: struct()
   def predict(ekf, phi, theta, zdot) do
     current_time = :os.system_time(:microsecond)

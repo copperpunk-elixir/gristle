@@ -175,7 +175,7 @@ defmodule Peripherals.Uart.TerarangerEvo do
   def parse_good_message(buffer) do
     # Logger.debug("payload buffer: #{inspect(buffer)}")
     range = Bitwise.<<<(Enum.at(buffer,0),8) + Enum.at(buffer,1)
-    if (range == 0) or (range == 0xFFFF) do
+    if (range == 0xFFFF) do
       {0, false}
     else
       {range*0.001, true}
