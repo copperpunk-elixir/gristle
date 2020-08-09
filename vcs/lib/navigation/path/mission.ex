@@ -157,7 +157,6 @@ defmodule Navigation.Path.Mission do
       {lat, lon, alt} = get_in(wps, [airport, wp_name])
       lla = Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt)
       wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
-      Logger.info("wp: #{inspect(wp)}")
       acc ++ [wp]
     end)
     wps ++ [Enum.at(wps,0)]

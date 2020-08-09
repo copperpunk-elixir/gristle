@@ -4,9 +4,11 @@ defmodule Configuration.Module.Estimation do
     %{
       estimator: %{
         imu_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
-        imu_loop_timeout_ms: 1000,
         ins_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
-        ins_loop_timeout_ms: 2000,
+        att_rate_expected_interval_ms: 20,
+        pos_vel_expected_interval_ms: 20,
+        airspeed_expected_interval_ms: 200,
+        range_expected_interval_ms: 100,
       },
       children: get_estimation_children(node_type)
     }
@@ -17,7 +19,7 @@ defmodule Configuration.Module.Estimation do
     %{
       ublox_device_description: "FT232",
       antenna_offset: Common.Constants.pi_2(),
-      imu_loop_interval_ms: 10,
+      imu_loop_interval_ms: 20,
       ins_loop_interval_ms: 200,
       heading_loop_interval_ms: 200
     }
