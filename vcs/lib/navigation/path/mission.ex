@@ -100,14 +100,16 @@ defmodule Navigation.Path.Mission do
     [wp0, wp1, wp2, wp3]
   end
 
-  @spec get_complete_mission(binary(), binary(), atom(), integer()) :: struct()
-  def get_complete_mission(airport, runway, aircraft_type, num_wps) do
+  @spec get_complete_mission(binary(), binary(), atom(), atom(), integer()) :: struct()
+  def get_complete_mission(airport, runway, aircraft_type, track_type, num_wps) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
     takeoff_wps = get_takeoff_waypoints(start_position, start_course, aircraft_type)
-    # Logger.debug("start: #{inspect(wp1)}")
-    # Logger.debug("climbout: #{inspect(wp2)}")
     first_flight_wp = Enum.at(takeoff_wps, -1)
-    flight_wps = get_random_waypoints(aircraft_type, first_flight_wp, first_flight_wp.speed, first_flight_wp.course,num_wps)
+    flight_wps =
+      case track_type do
+        nil -> get_random_waypoints(aircraft_type, first_flight_wp, first_flight_wp.speed, first_flight_wp.course,num_wps)
+        type -> get_track_waypoints(airport, runway, type, aircraft_type)
+      end
     landing_wps = get_landing_waypoints(start_position, start_course, aircraft_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     Enum.each(wps, fn wp ->
@@ -115,6 +117,50 @@ defmodule Navigation.Path.Mission do
       Logger.info("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
     Navigation.Path.Mission.new_mission("complete",wps, :Plane)
+  end
+
+  @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
+  def get_track_waypoints(airport, runway, track_type, aircraft_type) do
+    wp_speed =
+      case aircraft_type do
+        :Cessna -> 45
+        :EC1500 -> 15
+      end
+    wps = %{
+      "seatac" =>  %{},
+      "montague" =>
+      %{
+        top_left: {41.7693, -122.5077, 900},
+        top_right: {41.7693, -122.50603, 900},
+        bottom_left: {41.76782, -122.5077, 900},
+        bottom_right: {41.76782, -122.50603, 900}
+      }
+    }
+    wps_and_course_map =
+      %{
+        "montague" =>
+        %{
+          "0L" => %{
+            racetrack_left: [{:top_left, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_right, 0}],
+            racetrack_right: [{:top_right, :math.pi}, {:bottom_right, :math.pi}, {:bottom_left, 0}, {:top_left, 0}],
+            hourglass: [{:top_right, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_left, 0}]
+          },
+          "18R" => %{
+            racetrack_left: [{:bottom_right, 0}, {:top_right, 0}, {:top_left, :math.pi}, {:bottom_left, :math.pi}],
+            racetrack_right: [{:bottom_left, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_right, :math.pi}],
+            hourglass: [{:bottom_right, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_left, :math.pi}]
+          }
+        }
+      }
+    wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
+    wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
+      {lat, lon, alt} = get_in(wps, [airport, wp_name])
+      lla = Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt)
+      wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
+      Logger.info("wp: #{inspect(wp)}")
+      acc ++ [wp]
+    end)
+    wps ++ [Enum.at(wps,0)]
   end
 
   @spec get_runway_position_heading(binary(), binary()) :: tuple()
@@ -127,11 +173,11 @@ defmodule Navigation.Path.Mission do
         end
       "montague" ->
         case runway do
-          "0L" -> {47.76816, -122.50686, 802.0, 2.3}
+          "0L" -> {41.76816, -122.50686, 802.0, 2.3}
           "18R" -> {41.7689, -122.50682, 803.0, 182.3}
         end
       end
-    {Navigation.Utils.LatLonAlt.new(Common.Utils.Math.deg2rad(lat), Common.Utils.Math.deg2rad(lon), alt), Common.Utils.Math.deg2rad(heading)}
+    {Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
   end
 
 
@@ -194,7 +240,7 @@ defmodule Navigation.Path.Mission do
         climbout_distance: 200,
         climbout_height: 40,
         climbout_speed: 15,
-        landing_distances_heights: [{-250, 40}, {-200,40}, {-150,3}, {1,0}],
+        landing_distances_heights: [{-250, 40}, {-200,40}, {-50,3}, {1,0}],
         landing_speeds: {15, 10},
         flight_speed_range: {15,20},
         flight_agl_range: {50, 100},

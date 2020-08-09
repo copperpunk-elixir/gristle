@@ -39,26 +39,33 @@ defmodule Navigation.PathPlanner do
 
   @spec load_seatac_34R(integer()) ::atom()
   def load_seatac_34R(num_wps \\ 1) do
-    load_path_mission("seatac", "34R",:Cessna, num_wps)
+    load_path_mission("seatac", "34R",:Cessna, nil, num_wps)
   end
 
-  @spec load_montague_0L(integer()) :: atom()
-  def load_montague_0L(num_wps) do
-    load_path_mission("montague", "0L",:EC1500, num_wps)
+  @spec load_montague_0L(any()) :: atom()
+  def load_montague_0L(track_type_or_num_wps) do
+    {track_type, num_wps} =
+    if (is_atom(track_type_or_num_wps)) do
+      {track_type_or_num_wps, 0}
+    else
+      {nil, track_type_or_num_wps}
+    end
+    load_path_mission("montague", "0L",:EC1500, track_type, num_wps)
   end
 
-  @spec load_montague_18R(integer()) :: atom()
-  def load_montague_18R(num_wps) do
-    load_path_mission("montague", "18R",:EC1500, num_wps)
+  @spec load_montague_18R(any()) :: atom()
+  def load_montague_18R(track_type_or_num_wps) do
+    {track_type, num_wps} =
+    if (is_atom(track_type_or_num_wps)) do
+      {track_type_or_num_wps, 0}
+    else
+      {nil, track_type_or_num_wps}
+    end
+    load_path_mission("montague", "18R",:EC1500, track_type, num_wps)
   end
 
-  @spec load_montague_standard() :: atom()
-  def load_montague_standard() do
-    load_mission(Navigation.Path.Mission.get_montague_standard(), __MODULE__)
-  end
-
-  @spec load_path_mission(binary(), binary(), atom(), integer()) :: atom()
-  def load_path_mission(airport, runway, aircraft_type, num_wps) do
-    load_mission(Navigation.Path.Mission.get_complete_mission(airport, runway, aircraft_type, num_wps), __MODULE__)
+  @spec load_path_mission(binary(), binary(), atom(), atom(), integer()) :: atom()
+  def load_path_mission(airport, runway, aircraft_type, track_type, num_wps) do
+    load_mission(Navigation.Path.Mission.get_complete_mission(airport, runway, aircraft_type, track_type, num_wps), __MODULE__)
   end
 end

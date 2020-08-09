@@ -137,7 +137,7 @@ defmodule Display.Scenic.Planner do
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
     # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 734#0.5
+    margin = 100#734
     {origin, total_x, total_y} =
     if (gap_x < gap_y) do
       total_dist_x = 2*margin + dx_dist#(1+2*margin)*dx_dist
@@ -176,10 +176,11 @@ defmodule Display.Scenic.Planner do
   def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       wp_plot = get_translate(wp, origin, height)
+      wp_text = {elem(wp_plot,0) + 10, elem(wp_plot,1)}
       # Logger.info("#{wp.name} xy: #{inspect(wp_plot)}")
       # Logger.info(Navigation.Utils.LatLonAlt.to_string(wp))
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
-      |> text(wp.name, translate: wp_plot, id: @primitive_id)
+      |> text(wp.name, translate: wp_text, id: @primitive_id)
     end)
   end
 
