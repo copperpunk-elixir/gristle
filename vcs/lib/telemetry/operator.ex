@@ -42,7 +42,9 @@ defmodule Telemetry.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
+    Logger.info("telemetry device: #{state.device_description}")
     telemetry_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+    Logger.info("telemetry port: #{inspect(telemetry_port)}")
     case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: @default_baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")

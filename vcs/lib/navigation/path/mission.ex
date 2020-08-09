@@ -168,7 +168,7 @@ defmodule Navigation.Path.Mission do
       case airport do
       "seatac" ->
         case runway do
-          "34R" -> {47.4407476, -122.3180652, 133.3, 0.0}
+          "34L" -> {47.4407476, -122.3180652, 133.3, 0.0}
         end
       "montague" ->
         case runway do
@@ -230,7 +230,7 @@ defmodule Navigation.Path.Mission do
         landing_distances_heights: [{-1400,100}, {-900,100}, {100,5}, {600,0}],
         landing_speeds: {45, 35},
         flight_speed_range: {35,45},
-        flight_agl_range: {300, 400},
+        flight_agl_range: {100, 200},
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
       },
