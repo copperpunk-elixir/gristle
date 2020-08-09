@@ -40,23 +40,18 @@ defmodule Simulation.XplaneSend do
     {:noreply, %{state | socket: socket}}
   end
 
-  @impl GenServer
-  def handle_cast({:set_actuator_output, actuator_name, output}, state) do
-    output =
+    @impl GenServer
+  def handle_cast({update_actuators, actuators_and_outputs}, state) do
+    cmds = Enum.reduce(actuators_and_outputs, %{}, fn ({actuator_name, {actuator,output}}, acc) ->
       case actuator_name do
-        :throttle -> output
-        _cmd -> 2*(output - 0.5)
+        :throttle -> Map.put(acc, actuator_name, output)
+        name -> Map.put(acc, name, 2*(output - 0.5))
       end
-    # Logger.info("actuator_name/output: #{actuator_name}/#{output}")
-    {:noreply, %{state | commands: Map.put(state.commands, actuator_name, output)}}
-  end
-
-  @impl GenServer
-  def handle_cast(:update_actuators, state) do
+    end)
     case state.vehicle_type do
       :Plane ->
-        send_ail_elev_rud_commands(state.commands, state.socket, state.dest_port)
-        send_throttle_command(state.commands, state.socket, state.dest_port)
+        send_ail_elev_rud_commands(cmds, state.socket, state.dest_port)
+        send_throttle_command(cmds, state.socket, state.dest_port)
     end
     # Logger.debug("cmds: #{inspect(state.commands)}")
     {:noreply, state}
@@ -72,14 +67,9 @@ defmodule Simulation.XplaneSend do
     {:noreply, state}
   end
 
-  @spec set_output_for_actuator(map(), atom(), float()) :: atom()
-  def set_output_for_actuator(_actuator,actuator_name, output) do
-    GenServer.cast(__MODULE__, {:set_actuator_output, actuator_name, output})
-  end
-
-  @spec update_actuators() :: atom()
-  def update_actuators() do
-    GenServer.cast(__MODULE__, :update_actuators)
+  @spec update_actuators(map()) :: atom()
+  def update_actuators(actuators_and_outputs) do
+    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
   end
 
   @spec send_ail_elev_rud_commands(map(), any(), integer()) :: atom()

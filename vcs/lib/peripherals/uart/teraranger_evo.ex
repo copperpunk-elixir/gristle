@@ -3,6 +3,7 @@ defmodule Peripherals.Uart.TerarangerEvo do
   use GenServer
   require Logger
 
+  @max_range_expected 40.0
   @start_byte 84
   @default_baud 115_200
 
@@ -201,4 +202,8 @@ defmodule Peripherals.Uart.TerarangerEvo do
     GenServer.call(__MODULE__, :get_range)
   end
 
+  @spec max_range() :: float()
+  def max_range() do
+    @max_range_expected
+  end
 end

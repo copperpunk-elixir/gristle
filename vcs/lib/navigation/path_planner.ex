@@ -37,9 +37,9 @@ defmodule Navigation.PathPlanner do
       self())
   end
 
-  @spec load_seatac_34R(integer()) ::atom()
-  def load_seatac_34R(num_wps \\ 1) do
-    load_path_mission("seatac", "34R",:Cessna, nil, num_wps)
+  @spec load_seatac_34L(integer()) ::atom()
+  def load_seatac_34L(num_wps \\ 1) do
+    load_path_mission("seatac", "34L",:Cessna, nil, num_wps)
   end
 
   @spec load_montague_0L(any()) :: atom()

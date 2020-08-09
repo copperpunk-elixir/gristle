@@ -20,10 +20,20 @@ defmodule Display.Scenic.Planner do
     graph =
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       |> Display.Scenic.Gcs.Utils.draw_arrow(0,0, 0, 1, :vehicle, true, :clear)
+    margin =
+      case Common.Utils.get_vehicle_type() do
+        :Plane ->
+          case Common.Utils.get_aircraft_type() do
+            :Cessna -> 734
+            :EC1500 -> 100
+          end
+        _other -> 734
+      end
     state = %{
       graph: graph,
       width: vp_width,
       height: vp_height,
+      margin: margin
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
@@ -37,7 +47,7 @@ defmodule Display.Scenic.Planner do
       Map.get(state, :vehicle, %{})
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
-    origin = calculate_origin(bounding_box, state.width, state.height)
+    origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
     {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
     graph =
       Scenic.Graph.delete(state.graph, @primitive_id)
@@ -58,7 +68,7 @@ defmodule Display.Scenic.Planner do
       origin =
       if Map.get(state, :origin) == nil do
         bounding_box = calculate_lat_lon_bounding_box(%{}, position)
-        calculate_origin(bounding_box, state.width, state.height)
+        calculate_origin(bounding_box, state.width, state.height, state.margin)
       else
         state.origin
       end
@@ -123,8 +133,8 @@ defmodule Display.Scenic.Planner do
     {Navigation.Utils.LatLonAlt.new(min_lat, min_lon), Navigation.Utils.LatLonAlt.new(max_lat, max_lon)}
   end
 
-  @spec calculate_origin(tuple(), integer(), integer()) :: tuple()
-  def calculate_origin(bounding_box, vp_width, vp_height) do
+  @spec calculate_origin(tuple(), integer(), integer(), integer()) :: tuple()
+  def calculate_origin(bounding_box, vp_width, vp_height, margin) do
     # {min_lat, max_lat, min_lon, max_lon} = bounding_box
     {bottom_left, top_right} = bounding_box
     Logger.info("bottom left: #{Navigation.Utils.LatLonAlt.to_string(bottom_left)}")
@@ -137,7 +147,7 @@ defmodule Display.Scenic.Planner do
     gap_x = 1/dx_dist
     gap_y = aspect_ratio/dy_dist
     # Logger.debug("gap_x/gap_y: #{gap_x}/#{gap_y}")
-    margin = 100#734
+    # margin = 100#734
     {origin, total_x, total_y} =
     if (gap_x < gap_y) do
       total_dist_x = 2*margin + dx_dist#(1+2*margin)*dx_dist
