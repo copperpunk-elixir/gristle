@@ -30,10 +30,10 @@ config :logger, RingLogger, max_size: 10_000
 config :logger,
   level: :debug
 
-config :logger, :console,
-  format: "$time $metadata[$level] $levelpad$message\n",
-  level: :debug,
-  metadata: []
+# config :logger, :console,
+#   format: "$time $metadata[$level] $levelpad$message\n",
+#   level: :debug,
+#   metadata: []
 
 config :ring_logger,
   format: "$time $metadata[$level] $levelpad$message\n",

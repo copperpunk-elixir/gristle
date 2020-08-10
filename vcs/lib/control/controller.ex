@@ -34,7 +34,8 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    join_process_variable_groups()
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
     {:noreply, %{state | control_loop_timer: control_loop_timer}}
   end
@@ -93,10 +94,5 @@ defmodule Control.Controller do
     Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
       Map.merge(acc, MessageSorter.Sorter.get_value({:pv_cmds, level}))
     end)
-  end
-
-  defp join_process_variable_groups() do
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
   end
 end

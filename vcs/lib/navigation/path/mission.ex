@@ -74,7 +74,7 @@ defmodule Navigation.Path.Mission do
   def get_takeoff_waypoints(start_position, course, aircraft_type) do
     takeoff_roll_distance = get_aircraft_spec(aircraft_type, :takeoff_roll)
     climbout_distance = get_aircraft_spec(aircraft_type, :climbout_distance)
-    climbout_height = get_aircraft_spec(aircraft_type, :climbout_speed)
+    climbout_height = get_aircraft_spec(aircraft_type, :climbout_height)
     climbout_speed = get_aircraft_spec(aircraft_type, :climbout_speed)
     takeoff_roll = Common.Utils.Location.lla_from_point_with_distance(start_position,takeoff_roll_distance, course)
     climb_position = Common.Utils.Location.lla_from_point_with_distance(start_position,climbout_distance, course)
@@ -104,10 +104,11 @@ defmodule Navigation.Path.Mission do
   def get_complete_mission(airport, runway, aircraft_type, track_type, num_wps) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
     takeoff_wps = get_takeoff_waypoints(start_position, start_course, aircraft_type)
+    starting_wp = Enum.at(takeoff_wps, 0)
     first_flight_wp = Enum.at(takeoff_wps, -1)
     flight_wps =
       case track_type do
-        nil -> get_random_waypoints(aircraft_type, first_flight_wp, first_flight_wp.speed, first_flight_wp.course,num_wps)
+        nil -> get_random_waypoints(aircraft_type, starting_wp, first_flight_wp,num_wps)
         type -> get_track_waypoints(airport, runway, type, aircraft_type)
       end
     landing_wps = get_landing_waypoints(start_position, start_course, aircraft_type)
@@ -180,12 +181,12 @@ defmodule Navigation.Path.Mission do
   end
 
 
-  @spec get_random_waypoints(atom(), struct(), float(), float(), integer(), boolean(), integer()) :: struct()
-  def get_random_waypoints(aircraft_type, starting_lla, starting_speed, starting_course, num_wps, loop \\ false, starting_wp_index \\ 0) do
+  @spec get_random_waypoints(atom(), struct(), struct(), integer(), boolean(), integer()) :: struct()
+  def get_random_waypoints(aircraft_type, ground_wp, first_flight_wp, num_wps, loop \\ false, starting_wp_index \\ 0) do
     {min_flight_speed, max_flight_speed} = get_aircraft_spec(aircraft_type, :flight_speed_range)
     {min_flight_agl, max_flight_agl} = get_aircraft_spec(aircraft_type, :flight_agl_range)
     {min_wp_dist, max_wp_dist} = get_aircraft_spec(aircraft_type, :wp_dist_range)
-    starting_wp = Navigation.Path.Waypoint.new_flight(starting_lla, starting_speed, starting_course,"wp0")
+    starting_wp = Navigation.Path.Waypoint.new_flight(first_flight_wp, first_flight_wp.speed, first_flight_wp.course,"wp0")
     flight_speed_range = max_flight_speed - min_flight_speed
     flight_agl_range = max_flight_agl - min_flight_agl
     wp_dist_range = max_wp_dist-min_wp_dist
@@ -196,7 +197,7 @@ defmodule Navigation.Path.Mission do
         bearing = :rand.uniform()*2*:math.pi
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*flight_speed_range + min_flight_speed
-        alt = :rand.uniform()*flight_agl_range + min_flight_agl + starting_lla.altitude
+        alt = :rand.uniform()*flight_agl_range + min_flight_agl + ground_wp.altitude
         # Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
         # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
