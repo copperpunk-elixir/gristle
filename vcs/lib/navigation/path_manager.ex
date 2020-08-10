@@ -28,6 +28,7 @@ defmodule Navigation.PathManager do
         current_cp_index: nil,
         current_path_case: nil,
         current_path_distance: 0,
+        landing_altitude: 0,
         path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf)
      }}
   end
@@ -52,12 +53,15 @@ defmodule Navigation.PathManager do
     {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
+    landing_altitude = Enum.at(config_points, -1) |> Map.get(:z2) |> Map.get(:altitude)
+    Logger.warn("landing altitude: #{landing_altitude}")
     state = %{
       state |
       config_points: config_points,
       current_cp_index: 0,
       current_path_case: current_path_case,
-      current_path_distance: current_path_distance
+      current_path_distance: current_path_distance,
+      landing_altitude: landing_altitude
     }
     {:noreply, state}
   end
@@ -80,20 +84,49 @@ defmodule Navigation.PathManager do
       goals = %{speed: speed_cmd, altitude: altitude_cmd}
       path_case_type = current_path_case.type
       goals =
-      if (path_case_type == Navigation.Path.Waypoint.ground_type()) or (path_case_type == Navigation.Path.Waypoint.landing_type()) do
-        if (position.agl < state.vehicle_agl_ground_threshold) do
-          if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_takeoff_speed) do
-            Map.put(goals, :altitude, position.altitude)
-          else
-            goals
-          end
-          |> Map.put(:course_ground, course_cmd)
-        else
-          Map.put(goals, :course_flight, course_cmd)
+        case path_case_type do
+          :flight -> Map.put(goals, :course_flight, course_cmd)
+          :climbout -> Map.put(goals, :course_flight, course_cmd)
+          :ground ->
+            if (position.agl < state.vehicle_agl_ground_threshold) do
+              if (speed < state.vehicle_takeoff_speed) do
+                Map.put(goals, :altitude, position.altitude)
+              else
+                goals
+              end
+              |> Map.put(:course_ground, course_cmd)
+            else
+              Map.put(goals, :course_flight, course_cmd)
+            end
+          :landing->
+            agl_error = get_agl_error(altitude_cmd, state.landing_altitude, position.agl)
+            altitude_cmd = position.altitude + agl_error
+            if (position.agl < state.vehicle_agl_ground_threshold) do
+              Map.put(goals, :course_ground, course_cmd)
+            else
+              Map.put(goals, :course_flight, course_cmd)
+            end
+            |> Map.put(:altitude, altitude_cmd)
+          :approach->
+            agl_error = get_agl_error(altitude_cmd, state.landing_altitude, position.agl)
+            altitude_cmd = position.altitude + agl_error
+            Map.put(goals, :course_flight, course_cmd)
+            |> Map.put(:altitude, altitude_cmd)
         end
-      else
-        Map.put(goals, :course_flight, course_cmd)
-      end
+      # if (path_case_type == Navigation.Path.Waypoint.ground_type()) or (path_case_type == Navigation.Path.Waypoint.landing_type()) do
+      #   if (position.agl < state.vehicle_agl_ground_threshold) do
+      #     if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_takeoff_speed) do
+      #       Map.put(goals, :altitude, position.altitude)
+      #     else
+      #       goals
+      #     end
+      #     |> Map.put(:course_ground, course_cmd)
+      #   else
+      #     Map.put(goals, :course_flight, course_cmd)
+      #   end
+      # else
+      #   Map.put(goals, :course_flight, course_cmd)
+      # end
       # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
       # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
       # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
@@ -103,11 +136,11 @@ defmodule Navigation.PathManager do
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_cast(:begin_orbit, state) do
-    # Create orbit path case, and load it
-    path_case = nil
-    {:noreply, %{state | current_path_case: path_case}}
+  @spec get_agl_error(float(), float(), float()) :: float()
+  def get_agl_error(altitude_cmd, landing_altitude, agl) do
+    agl_cmd = altitude_cmd - landing_altitude
+    agl_error = agl_cmd - agl
+    agl_error
   end
 
   @impl GenServer
@@ -212,7 +245,7 @@ defmodule Navigation.PathManager do
     end
   end
 
-  @spec new_path(list(), float()) :: list()
+  @spec new_path(list(), float()) :: tuple()
   def new_path(waypoints,  vehicle_turn_rate) do
     num_wps = length(waypoints)
     Logger.info("calculate new path with : #{num_wps} waypoints")

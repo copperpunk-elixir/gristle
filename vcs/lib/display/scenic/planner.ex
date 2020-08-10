@@ -135,13 +135,10 @@ defmodule Display.Scenic.Planner do
 
   @spec calculate_origin(tuple(), integer(), integer(), integer()) :: tuple()
   def calculate_origin(bounding_box, vp_width, vp_height, margin) do
-    # {min_lat, max_lat, min_lon, max_lon} = bounding_box
     {bottom_left, top_right} = bounding_box
-    Logger.info("bottom left: #{Navigation.Utils.LatLonAlt.to_string(bottom_left)}")
-    Logger.info("top right: #{Navigation.Utils.LatLonAlt.to_string(top_right)}")
+    # Logger.info("bottom left: #{Navigation.Utils.LatLonAlt.to_string(bottom_left)}")
+    # Logger.info("top right: #{Navigation.Utils.LatLonAlt.to_string(top_right)}")
     aspect_ratio = vp_width/vp_height
-    # dx_dist_from_lat = max_lat-min_lat
-    # dy_dist_from_lon = (max_lon-min_lon)/:math.sqrt(2)
     {dx_dist, dy_dist} = Common.Utils.Location.dx_dy_between_points(bottom_left, top_right)
     # Logger.warn("dx_dist/dy_dist: #{dx_dist}/#{dy_dist}")
     gap_x = 1/dx_dist
@@ -174,13 +171,6 @@ defmodule Display.Scenic.Planner do
     # Logger.warn("dx/dy ratio: #{dx_lat/dy_lon}")
     Display.Scenic.PlannerOrigin.new_origin(origin.latitude, origin.longitude, dx_lat, dy_lon)
   end
-
-  # @spec get_origin_without_mission(float(), float()) :: struct()
-  # def get_boundary_without_mission(lat, lon, vp_width, vp_height) do
-  #   dLat = 0.001
-  #   dLon = dLat*sqrt(2)
-  #   bounding_box = {lat - dLat, lat + dLat, lon - dLon, lon + dLon}
-  # end
 
   @spec draw_waypoints(map(), struct(),float(), list()) :: map()
   def draw_waypoints(graph, origin, height, waypoints) do
