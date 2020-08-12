@@ -51,7 +51,7 @@ defmodule Configuration.Module.Estimation do
     case node_type do
       :all -> [
         {Peripherals.Uart.VnIns, get_vn_ins_config(node_type)},
-        # {Peripherals.Uart.TerarangerEvo, get_teraranger_evo_config()}
+        {Peripherals.Uart.TerarangerEvo, get_teraranger_evo_config()}
       ]
       :gcs -> []
       # :sim -> [{Peripherals.Uart.CpIns, get_cp_ins_config()}]

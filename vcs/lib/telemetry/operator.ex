@@ -187,6 +187,29 @@ defmodule Telemetry.Operator do
             send_local({msg_type, control_state})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
+      0x46  ->
+        case msg_id do
+          0x00 ->
+            # Set
+            msg_type = :set_pid_gain
+            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            Pids.Pid.set_parameter(process_variable, output_variable, parameter, value)
+          0x01 ->
+            msg_type = :request_pid_gain
+            [process_variable_code, output_variable_code, parameter_code] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            value = Pids.Pid.get_parameter(process_variable, output_variable, parameter)
+            msg = Telemetry.Ublox.construct_message(:get_pid_gain, [process_variable_code, output_variable_code, parameter_code, value])
+            send_message(msg)
+          0x02 ->
+            msg_type = :get_pid_gain
+            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+          Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
+          other -> Logger.warn("Bad message id: #{msg_id}")
+        end
+
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
   end
@@ -200,6 +223,12 @@ defmodule Telemetry.Operator do
     GenServer.call(__MODULE__, {:get_values, [:accel, :bodyrate]})
   end
 
+  @spec get_value(list()) :: any()
+  def get_value(keys) do
+    keys = Common.Utils.assert_list(keys)
+    GenServer.call(__MODULE__, {:get_values, keys})
+  end
+
   def send_local(message, group) do
     Comms.Operator.send_local_msg_to_group(__MODULE__, message, group, self())
   end
@@ -210,6 +239,7 @@ defmodule Telemetry.Operator do
 
   @spec construct_and_send_message(any(), list(), any()) :: atom()
   def construct_and_send_message(msg_type, payload, uart_ref) do
+    payload = Common.Utils.assert_list(payload)
     msg = Telemetry.Ublox.construct_message(msg_type, payload)
     Circuits.UART.write(uart_ref, msg)
     Circuits.UART.drain(uart_ref)

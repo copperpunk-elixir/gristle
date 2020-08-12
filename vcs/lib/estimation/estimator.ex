@@ -84,7 +84,7 @@ defmodule Estimation.Estimator do
       {state.position, state.velocity}
     else
       # Add 10m error
-      position = Map.put(position, :altitude, position.altitude - 10)
+      position = Map.put(position, :altitude, position.altitude)
 
       Watchdog.Active.feed(:pos_vel)
       # If the velocity is below a threshold, we use yaw instead

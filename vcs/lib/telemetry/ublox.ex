@@ -169,6 +169,9 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 2} -> [-4,4,4,4,4]
       {:tx_goals, 3} -> [-4,4,4,4]
       :control_state -> [-4,-4]
+      :set_pid_gain -> [-4,-4,-4,4]
+      :request_pid_gain -> [-4, -4, -4]
+      :get_pid_gain -> [-4, -4, -4, 4]
       _other ->
         Logger.error("Non-existent msg_type")
         []
@@ -184,6 +187,9 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 2} -> {0x45, 0x12}
       {:tx_goals, 3} -> {0x45, 0x13}
       :control_state -> {0x45, 0x14}
+      :set_pid_gain -> {0x46, 0x00}
+      :request_pid_gain -> {0x46, 0x01}
+      :get_pid_gain -> {0x46, 0x02}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []
