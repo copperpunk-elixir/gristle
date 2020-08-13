@@ -66,7 +66,9 @@ defmodule Pids.Pid do
     feed_forward =
       case Map.get(state, :ff) do
         nil -> 0
-        f -> f.(pv_value+correction, pv_value, airspeed)
+        f ->
+          f.(pv_value+correction, pv_value, airspeed)
+          |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
       end
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output

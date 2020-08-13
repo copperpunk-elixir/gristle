@@ -9,8 +9,9 @@ defmodule Common.Application do
     Common.Utils.mount_usb_drive()
     vehicle_type = Common.Utils.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
-    Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
+    # Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
+    start_remaining_processes()
   end
 
   @spec start_remaining_processes() :: atom()
@@ -46,7 +47,7 @@ defmodule Common.Application do
     RingLogger.attach()
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Simulation, Telemetry, Display.Scenic], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Telemetry, Display.Scenic], vehicle_type, node_type)
   end
 
   @spec start_hil(atom()) ::atom()

@@ -164,7 +164,7 @@ defmodule Telemetry.Ublox do
   def get_bytes_for_msg(msg_type) do
     case msg_type do
       :accel_gyro -> [-4,-4,4,4,4,4,4,4]
-      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4]
+      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4,4]
       {:tx_goals, 1} -> [-4,4,4,4,4]
       {:tx_goals, 2} -> [-4,4,4,4,4]
       {:tx_goals, 3} -> [-4,4,4,4]

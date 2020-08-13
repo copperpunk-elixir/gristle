@@ -92,7 +92,7 @@ defmodule Telemetry.Operator do
     velocity = state.velocity
     attitude = state.attitude
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude)) do
-      values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
+      values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.airspeed, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
       # Logger.info("send pvat message")
       construct_and_send_message({:telemetry, :pvat}, values, state.uart_ref)
     end
@@ -159,9 +159,9 @@ defmodule Telemetry.Operator do
         case msg_id do
           0x00 ->
             msg_type = {:telemetry, :pvat}
-            [itow, lat, lon, alt, agl, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
             position = %{latitude: lat, longitude: lon, altitude: alt, agl: agl}
-            velocity = %{speed: speed, course: course}
+            velocity = %{airspeed: airspeed, speed: speed, course: course}
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
             # Logger.debug("roll: #{Common.Utils.eftb_deg(roll,2)}")
             # Logger.debug("agl: #{agl}")

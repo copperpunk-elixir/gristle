@@ -14,10 +14,10 @@ defmodule Configuration.Module.Command do
         [{Peripherals.Uart.FrskyRx, %{
              device_description: "Feather M0"
           }}]
-      :sim ->
-        [{Peripherals.Uart.FrskyRx, %{
-             device_description: "Feather M0",
-          }}]
+      :sim ->[]
+        # [{Peripherals.Uart.FrskyRx, %{
+        #      device_description: "Feather M0",
+        #   }}]
       _other -> []
     end
   end
