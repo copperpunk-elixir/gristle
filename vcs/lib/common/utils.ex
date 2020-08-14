@@ -88,7 +88,12 @@ defmodule Common.Utils do
   def mount_usb_drive() do
     path = get_mount_path()
     System.cmd("mount", ["/dev/sda1", path])
-    path
+  end
+
+  @spec mount_usb_drive() :: binary()
+  def unmount_usb_drive() do
+    path = get_mount_path()
+    System.cmd("umount", [path])
   end
 
   @spec get_filename_with_extension(binary()) :: binary()
@@ -294,4 +299,14 @@ defmodule Common.Utils do
     end)
   end
 
+  @spec get_key_or_value(map(), any()) :: any()
+  def get_key_or_value(key_value_map, id) do
+    Enum.reduce(key_value_map, nil, fn ({key, value}, acc) ->
+      cond do
+        (key == id) -> value
+        (value == id) -> key
+        true -> acc
+      end
+    end)
+  end
 end

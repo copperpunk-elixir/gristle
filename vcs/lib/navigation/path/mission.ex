@@ -141,7 +141,7 @@ defmodule Navigation.Path.Mission do
       %{
         "montague" =>
         %{
-          "0L" => %{
+          "36L" => %{
             racetrack_left: [{:top_left, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_right, 0}],
             racetrack_right: [{:top_right, :math.pi}, {:bottom_right, :math.pi}, {:bottom_left, 0}, {:top_left, 0}],
             hourglass: [{:top_right, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_left, 0}]
@@ -173,7 +173,7 @@ defmodule Navigation.Path.Mission do
         end
       "montague" ->
         case runway do
-          "0L" -> {41.76816, -122.50686, 802.0, 2.3}
+          "36L" -> {41.76816, -122.50686, 802.0, 2.3}
           "18R" -> {41.7689, -122.50682, 803.0, 182.3}
         end
       end

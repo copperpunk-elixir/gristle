@@ -11,7 +11,7 @@ defmodule Configuration.Module.Navigation do
       navigator: %{
         vehicle_type: vehicle_type,
         navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
-        default_pv_cmds_level: 3
+        default_pv_cmds_level: 2
       },
       path_manager: Map.merge(
         %{

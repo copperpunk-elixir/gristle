@@ -8,7 +8,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
     pids = %{
       rollrate: %{aileron: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.00, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
       pitchrate: %{elevator: Map.merge(%{kp: 0.15, ki: 0.005, kd: 0.00, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
-      yawrate: %{rudder: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.0}, constraints.rudder)},
+      yawrate: %{rudder: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.0, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
       thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
       roll: %{rollrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.pitchrate)},

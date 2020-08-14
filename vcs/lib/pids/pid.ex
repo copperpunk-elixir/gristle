@@ -83,6 +83,10 @@ defmodule Pids.Pid do
     else
       output
     end
+    # if state.process_variable == :rollrate do
+    #   Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
+    # end
+
     pv_correction_prev = correction_raw
     pv_integrator =
     if (state.ki != 0) do
@@ -207,21 +211,10 @@ defmodule Pids.Pid do
         4 => :output_max,
         5 => :output_neutral
       }
-    pv_output = get_value_or_code(process_variable_map, process_variable_id)
-    ov_output = get_value_or_code(output_variable_map, output_variable_id)
-    param_output = get_value_or_code(parameter_map, parameter_id)
+    pv_output = Common.Utils.get_key_or_value(process_variable_map, process_variable_id)
+    ov_output = Common.Utils.get_key_or_value(output_variable_map, output_variable_id)
+    param_output = Common.Utils.get_key_or_value(parameter_map, parameter_id)
     [pv_output, ov_output, param_output]
-  end
-
-  @spec get_value_or_code(map(), any()) :: any()
-  def get_value_or_code(value_code_map, id) do
-    Enum.reduce(value_code_map, nil, fn ({key, value}, acc) ->
-      cond do
-        (key == id) -> value
-        (value == id) -> key
-        true -> acc
-      end
-    end)
   end
 
   @spec set_pid_gain(atom(), atom(), atom(), float()) :: atom()

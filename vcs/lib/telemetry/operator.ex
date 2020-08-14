@@ -210,6 +210,32 @@ defmodule Telemetry.Operator do
           other -> Logger.warn("Bad message id: #{msg_id}")
         end
 
+      0x50 ->
+        case msg_id do
+          0x00 ->
+            msg_type = :rpc
+            [cmd, arg] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            case cmd do
+              0x01 -> Logging.Logger.save_log()
+              0x02 -> Common.Utils.unmount_usb_drive()
+            end
+          0x01 ->
+            msg_type = :mission
+            Logger.warn("mission received")
+            [airport_code, runway_code, aircraft_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            airport = Navigation.PathPlanner.get_airport(airport_code)
+            runway = Navigation.PathPlanner.get_runway(runway_code)
+            aircraft = Navigation.PathPlanner.get_aircraft(aircraft_code)
+            track= Navigation.PathPlanner.get_track(track_code)
+            Navigation.PathPlanner.load_path_mission(airport, runway, aircraft, track, num_wps)
+            if Navigation.PathPlanner.get_confirmation(confirmation) do
+              Logger.warn("send confirmation")
+              Navigation.PathPlanner.send_path_mission(airport, runway, aircraft, track, num_wps, false)
+            else
+              Logger.warn("confirmation received")
+            end
+
+        end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
   end
@@ -243,6 +269,13 @@ defmodule Telemetry.Operator do
     msg = Telemetry.Ublox.construct_message(msg_type, payload)
     Circuits.UART.write(uart_ref, msg)
     Circuits.UART.drain(uart_ref)
+  end
+
+  @spec construct_and_send_message(any(), list()) :: atom()
+  def construct_and_send_message(msg_type, payload) do
+    payload = Common.Utils.assert_list(payload)
+    msg = Telemetry.Ublox.construct_message(msg_type, payload)
+    send_message(msg)
   end
 
   @spec send_message(binary()) :: atom()

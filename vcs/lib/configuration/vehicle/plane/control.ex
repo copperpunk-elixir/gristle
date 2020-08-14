@@ -23,7 +23,7 @@ defmodule Configuration.Vehicle.Plane.Control do
       %{
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, roll: 0, pitch: 0, yaw: 0},
+        default_value: %{thrust: 0, roll: 0.26, pitch: 0.05, yaw: 0.09},
         value_type: :map
       },
       %{
@@ -40,7 +40,7 @@ defmodule Configuration.Vehicle.Plane.Control do
     %{
       name: :control_state,
       default_message_behavior: :default_value,
-      default_value: 3,
+      default_value: 2,
       value_type: :number
     }
   end

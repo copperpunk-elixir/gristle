@@ -30,7 +30,7 @@ defmodule Navigation.PathPlanner do
   @spec load_mission(struct(), atom()) :: atom()
   def load_mission(mission, module) do
     Logger.info("load mission: #{inspect(mission.name)}")
-    Comms.Operator.send_global_msg_to_group(
+    Comms.Operator.send_local_msg_to_group(
       module,
       {:load_mission, mission},
       :load_mission,
@@ -39,18 +39,20 @@ defmodule Navigation.PathPlanner do
 
   @spec load_seatac_34L(integer()) ::atom()
   def load_seatac_34L(num_wps \\ 1) do
-    load_path_mission("seatac", "34L",:Cessna, nil, num_wps)
+    # load_path_mission("seatac", "34L",:Cessna, nil, num_wps)
+    send_path_mission("seatac", "34L",:Cessna, nil, num_wps, true)
   end
 
-  @spec load_montague_0L(any()) :: atom()
-  def load_montague_0L(track_type_or_num_wps) do
+  @spec load_montague_36L(any()) :: atom()
+  def load_montague_36L(track_type_or_num_wps) do
     {track_type, num_wps} =
     if (is_atom(track_type_or_num_wps)) do
       {track_type_or_num_wps, 0}
     else
       {nil, track_type_or_num_wps}
     end
-    load_path_mission("montague", "0L",:EC1500, track_type, num_wps)
+    # load_path_mission("montague", "36L",:EC1500, track_type, num_wps)
+    send_path_mission("montague", "36L",:EC1500, track_type, num_wps, true)
   end
 
   @spec load_montague_18R(any()) :: atom()
@@ -61,11 +63,67 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    load_path_mission("montague", "18R",:EC1500, track_type, num_wps)
+    # load_path_mission("montague", "18R",:EC1500, track_type, num_wps)
+    send_path_mission("montague", "18R",:EC1500, track_type, num_wps, true)
   end
 
   @spec load_path_mission(binary(), binary(), atom(), atom(), integer()) :: atom()
   def load_path_mission(airport, runway, aircraft_type, track_type, num_wps) do
     load_mission(Navigation.Path.Mission.get_complete_mission(airport, runway, aircraft_type, track_type, num_wps), __MODULE__)
+  end
+
+  @spec send_path_mission(binary(), binary(), atom(), atom(), integer(), boolean()) :: atom()
+  def send_path_mission(airport, runway, aircraft, track, num_wps, confirmation) do
+    airport_code = get_airport(airport)
+    runway_code = get_runway(runway)
+    aircraft_code = get_aircraft(aircraft)
+    track_code = get_track(track)
+    confirm = if confirmation, do: 1, else: 0
+    payload = [airport_code, runway_code, aircraft_code, track_code, num_wps, confirm]
+    Telemetry.Operator.construct_and_send_message(:mission, payload)
+  end
+
+  @spec get_airport(any()) :: binary()
+  def get_airport(arg) do
+    airports = %{
+      0 => "seatac",
+      1 => "montague"
+    }
+    Common.Utils.get_key_or_value(airports, arg)
+  end
+
+  @spec get_runway(any()) :: binary()
+  def get_runway(arg) do
+    runways =
+      Enum.reduce(1..36, %{}, fn (deg, acc) ->
+        acc = Map.put(acc, deg, Integer.to_string(deg) |> String.pad_leading(2,"0") |> Kernel.<>("R"))
+        Map.put(acc, deg*10, Integer.to_string(deg) |> String.pad_leading(2,"0") |> Kernel.<>("L"))
+      end)
+    Common.Utils.get_key_or_value(runways, arg)
+  end
+
+  @spec get_aircraft(any()) :: binary()
+  def get_aircraft(arg) do
+    aircraft = %{
+      0 => :Cessna,
+      1 => :EC1500
+    }
+    Common.Utils.get_key_or_value(aircraft, arg)
+  end
+
+  @spec get_track(integer()) :: atom()
+  def get_track(arg) do
+    tracks = %{
+      0 => :racetrack_left,
+      1 => :racetrack_right,
+      2 => :hourglass,
+      3 => nil
+    }
+    Common.Utils.get_key_or_value(tracks, arg)
+  end
+
+  @spec get_confirmation(integer()) :: atom()
+  def get_confirmation(arg) do
+    if (arg == 1), do: true, else: false
   end
 end

@@ -2,7 +2,7 @@ defmodule Navigation.Navigator do
   use GenServer
   require Logger
 
-  @default_pv_cmds_level 3
+  @default_pv_cmds_level 2
 
   def start_link(config) do
     Logger.debug("Start Navigation.Navigator")
