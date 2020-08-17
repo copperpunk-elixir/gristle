@@ -5,7 +5,7 @@ defmodule Configuration.Module.Telemetry do
     Logger.info("Telemetry node type: #{node_type}")
     device_description =
       case node_type do
-        :sim -> "CP2104"
+        :sim -> "USB Serial"
         _other -> "FT230X"
       end
     %{

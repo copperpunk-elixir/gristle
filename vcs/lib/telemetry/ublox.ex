@@ -164,11 +164,16 @@ defmodule Telemetry.Ublox do
   def get_bytes_for_msg(msg_type) do
     case msg_type do
       :accel_gyro -> [-4,-4,4,4,4,4,4,4]
-      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4]
+      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4,4]
       {:tx_goals, 1} -> [-4,4,4,4,4]
       {:tx_goals, 2} -> [-4,4,4,4,4]
       {:tx_goals, 3} -> [-4,4,4,4]
       :control_state -> [-4,-4]
+      :set_pid_gain -> [-4,-4,-4,4]
+      :request_pid_gain -> [-4, -4, -4]
+      :get_pid_gain -> [-4, -4, -4, 4]
+      :rpc -> [-4, -4]
+      :mission -> [-4, -4, -4, -4, -4, -4]
       _other ->
         Logger.error("Non-existent msg_type")
         []
@@ -184,6 +189,11 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 2} -> {0x45, 0x12}
       {:tx_goals, 3} -> {0x45, 0x13}
       :control_state -> {0x45, 0x14}
+      :set_pid_gain -> {0x46, 0x00}
+      :request_pid_gain -> {0x46, 0x01}
+      :get_pid_gain -> {0x46, 0x02}
+      :rpc  -> {0x50, 0x00}
+      :mission -> {0x50, 0x01}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []

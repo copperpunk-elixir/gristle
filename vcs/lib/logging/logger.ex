@@ -55,6 +55,18 @@ defmodule Logging.Logger do
     GenServer.cast(__MODULE__, {:save_log, file_suffix})
   end
 
+  @spec save_log_remote() :: atom()
+  def save_log_remote() do
+    payload = [0,0]
+    Telemetry.Operator.construct_and_send_message(:rpc, payload)
+  end
+
+  @spec unmount_remote() :: atom()
+  def unmount_remote() do
+    payload = [1,0]
+    Telemetry.Operator.construct_and_send_message(:rpc, payload)
+  end
+
   @spec get_log_directory() :: binary()
   def get_log_directory do
     GenServer.call(__MODULE__, :get_log_directory)

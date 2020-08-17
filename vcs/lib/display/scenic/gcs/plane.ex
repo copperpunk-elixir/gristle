@@ -41,8 +41,8 @@ defmodule Display.Scenic.Gcs.Plane do
     graph =
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 4*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 4*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 6*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 4*label_value_height+40, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 7*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
       |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
@@ -73,6 +73,8 @@ defmodule Display.Scenic.Gcs.Plane do
     agl = Map.get(position, :agl, 0) |> Common.Utils.eftb(2)
 
     # v_down = Common.Utils.eftb(velocity.down,1)
+    airspeed = Map.get(velocity, :airspeed, 0) |> Common.Utils.eftb(1)
+    # Logger.info("disp #{airspeed}")
     speed = Map.get(velocity, :speed,0) |> Common.Utils.eftb(1)
 
     course=
@@ -85,6 +87,7 @@ defmodule Display.Scenic.Gcs.Plane do
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
     |> Scenic.Graph.modify(:alt, &text(&1, alt <> @meters))
     |> Scenic.Graph.modify(:agl, &text(&1, agl <> @meters))
+    |> Scenic.Graph.modify(:airspeed, &text(&1, airspeed <> @mps))
     |> Scenic.Graph.modify(:speed, &text(&1, speed <> @mps))
     |> Scenic.Graph.modify(:course, &text(&1, course <> @degrees))
     |> Scenic.Graph.modify(:roll, &text(&1, roll <> @degrees))

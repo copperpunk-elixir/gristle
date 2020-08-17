@@ -66,7 +66,9 @@ defmodule Pids.Pid do
     feed_forward =
       case Map.get(state, :ff) do
         nil -> 0
-        f -> f.(pv_value+correction, pv_value, airspeed)
+        f ->
+          f.(pv_value+correction, pv_value, airspeed)
+          |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
       end
     # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
     output = state.output_neutral + feed_forward + delta_output
@@ -81,6 +83,10 @@ defmodule Pids.Pid do
     else
       output
     end
+    # if state.process_variable == :rollrate do
+    #   Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
+    # end
+
     pv_correction_prev = correction_raw
     pv_integrator =
     if (state.ki != 0) do
@@ -164,4 +170,65 @@ defmodule Pids.Pid do
   def write_parameters_to_file(process_variable_name, output_variable_name) do
     GenServer.cast(via_tuple(process_variable_name, output_variable_name), :write_parameters_to_file)
   end
+
+  @spec get_pv_ov_param(integer(), integer(), integer()) :: list()
+  def get_pv_ov_param(process_variable_id, output_variable_id, parameter_id) do
+    process_variable_map =
+      %{
+        0 => :rollrate,
+        1 => :pitchrate,
+        2 => :yawrate,
+        3 => :thrust,
+        4 => :roll,
+        5 => :pitch,
+        6 => :yaw,
+        7 => :course_flight,
+        8 => :course_ground,
+        9 => :speed,
+        10 => :altitude
+      }
+    output_variable_map =
+      %{
+        0 => :aileron,
+        1 => :elevator,
+        2 => :rudder,
+        3 => :throttle,
+        4 => :rollrate,
+        5 => :pitchrate,
+        6 => :yawrate,
+        7 => :thrust,
+        8 => :roll,
+        9 => :pitch,
+        10 => :yaw,
+      }
+
+    parameter_map =
+      %{
+        0 => :kp,
+        1 => :ki,
+        2 => :kd,
+        3 => :output_min,
+        4 => :output_max,
+        5 => :output_neutral
+      }
+    pv_output = Common.Utils.get_key_or_value(process_variable_map, process_variable_id)
+    ov_output = Common.Utils.get_key_or_value(output_variable_map, output_variable_id)
+    param_output = Common.Utils.get_key_or_value(parameter_map, parameter_id)
+    [pv_output, ov_output, param_output]
+  end
+
+  @spec set_pid_gain(atom(), atom(), atom(), float()) :: atom()
+  def set_pid_gain(pv, ov, param, value) do
+    [pv_code, ov_code, param_code] = Pids.Pid.get_pv_ov_param(pv, ov, param)
+    msg = Telemetry.Ublox.construct_message(:set_pid_gain,[pv_code, ov_code, param_code,value])
+    Telemetry.Operator.send_message(msg)
+  end
+
+  @spec get_pid_gain(atom(), atom(), atom()) :: atom()
+  def get_pid_gain(pv, ov, param) do
+    [pv_code, ov_code, param_code] = Pids.Pid.get_pv_ov_param(pv, ov, param)
+    msg = Telemetry.Ublox.construct_message(:request_pid_gain,[pv_code, ov_code, param_code])
+    Telemetry.Operator.send_message(msg)
+  end
+
 end

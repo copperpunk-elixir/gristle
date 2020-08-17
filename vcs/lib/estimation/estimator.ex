@@ -84,7 +84,7 @@ defmodule Estimation.Estimator do
       {state.position, state.velocity}
     else
       # Add 10m error
-      position = Map.put(position, :altitude, position.altitude - 10)
+      position = Map.put(position, :altitude, position.altitude)
 
       Watchdog.Active.feed(:pos_vel)
       # If the velocity is below a threshold, we use yaw instead
@@ -108,7 +108,7 @@ defmodule Estimation.Estimator do
 
   @impl GenServer
   def handle_cast({{:pv_calculated, :airspeed}, airspeed}, state) do
-    {:noreply, %{state | airspeed: airspeed}}
+    {:noreply, %{state | airspeed: max(airspeed, 0)}}
   end
 
   @impl GenServer
@@ -152,7 +152,9 @@ defmodule Estimation.Estimator do
     velocity = Map.take(state.velocity, [:speed, :course])
     unless Enum.empty?(position) or Enum.empty?(velocity) do
       position = Map.put(position, :agl, state.agl)
-      velocity = Map.put(velocity, :airspeed, state.airspeed)
+      airspeed = state.airspeed
+      airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
+      velocity = Map.put(velocity, :airspeed, airspeed)
       Telemetry.Operator.store_data(%{position: position, velocity: velocity})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
