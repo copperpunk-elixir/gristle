@@ -52,8 +52,8 @@ defmodule Telemetry.Operator do
       _success ->
         Logger.debug("TelemetryRx opened #{telemetry_port}")
     end
-    # fast_loop_timer = nil#Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
-    # medium_loop_timer = nil#Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
+    # fast_loop_timer = Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
+    # medium_loop_timer = Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
     Common.Utils.start_loop(self(), state.slow_loop_interval_ms, :slow_loop)
     {:noreply, state}
   end
@@ -222,15 +222,15 @@ defmodule Telemetry.Operator do
           0x01 ->
             msg_type = :mission
             Logger.warn("mission received")
-            [airport_code, runway_code, aircraft_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
             airport = Navigation.PathPlanner.get_airport(airport_code)
             runway = Navigation.PathPlanner.get_runway(runway_code)
-            aircraft = Navigation.PathPlanner.get_aircraft(aircraft_code)
+            model = Navigation.PathPlanner.get_model(model_code)
             track= Navigation.PathPlanner.get_track(track_code)
-            Navigation.PathPlanner.load_path_mission(airport, runway, aircraft, track, num_wps)
+            Navigation.PathPlanner.load_path_mission(airport, runway, model, track, num_wps)
             if Navigation.PathPlanner.get_confirmation(confirmation) do
               Logger.warn("send confirmation")
-              Navigation.PathPlanner.send_path_mission(airport, runway, aircraft, track, num_wps, false)
+              Navigation.PathPlanner.send_path_mission(airport, runway, model, track, num_wps, false)
             else
               Logger.warn("confirmation received")
             end

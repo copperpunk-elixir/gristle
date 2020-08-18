@@ -44,9 +44,9 @@ defmodule Configuration.Vehicle.Plane.Navigation do
 
   @spec get_vehicle_limits() :: map()
   def get_vehicle_limits() do
-    aircraft_type = Common.Utils.get_aircraft_type()
-    aircraft_module =
-      Module.concat(Configuration.Vehicle.Plane.Navigation, aircraft_type)
-    apply(aircraft_module, :get_vehicle_limits, [])
+    model_type = Common.Utils.get_model_type()
+    model_module =
+      Module.concat(Configuration.Vehicle.Plane.Navigation, model_type)
+    apply(model_module, :get_vehicle_limits, [])
   end
 end

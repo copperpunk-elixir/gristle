@@ -115,6 +115,25 @@ defmodule Common.Utils do
     filename
   end
 
+  @spec get_filenames_with_extension(binary()) :: list()
+  def get_filenames_with_extension(extension) do
+    path = get_mount_path()
+    {:ok, files} = :file.list_dir(path)
+    filenames = Enum.reduce(files,[], fn (file, acc) ->
+      file = to_string(file)
+      if (String.contains?(file,extension)) do
+        [filename] = String.split(file,extension,[trim: true])
+        acc ++ [String.to_atom(filename)]
+      else
+        acc
+      end
+    end)
+    if (Enum.empty?(filenames)) do
+      raise "Filename is not available"
+    end
+    filenames
+  end
+
   @spec get_vehicle_type() :: atom()
   def get_vehicle_type() do
     get_filename_with_extension(".vehicle") |> String.to_atom()
@@ -125,9 +144,19 @@ defmodule Common.Utils do
     get_filename_with_extension(".node") |> String.to_atom()
   end
 
-  @spec get_aircraft_type() :: atom()
-  def get_aircraft_type() do
-    get_filename_with_extension(".aircraft") |> String.to_atom()
+  @spec get_model_type() :: atom()
+  def get_model_type() do
+    get_filename_with_extension(".model") |> String.to_atom()
+  end
+
+  @spec get_modules() :: list()
+  def get_modules() do
+    get_filenames_with_extension(".module")
+  end
+
+  @spec get_uart_peripherals() :: list()
+  def get_uart_peripherals() do
+    get_filenames_with_extension(".uart")
   end
 
   def assert_valid_config(config, config_type) do

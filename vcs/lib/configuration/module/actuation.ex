@@ -10,16 +10,16 @@ defmodule Configuration.Module.Actuation do
       }
     }
 
-    actuator_names = get_actuator_names(vehicle_type, node_type)
-    sw_config = get_actuation_sw_config(actuator_names, node_type)
+    sw_config = get_actuation_sw_config(vehicle_type, node_type)
     %{
       hw_interface: hw_config,
       sw_interface: sw_config
     }
   end
 
-  @spec get_actuation_sw_config(list(), atom()) :: map()
-  def get_actuation_sw_config(actuator_names, node_type) do
+  @spec get_actuation_sw_config(atom(), atom()) :: map()
+  def get_actuation_sw_config(vehicle_type, node_type) do
+    actuator_names = get_actuator_names(vehicle_type, node_type)
     {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
     actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
@@ -34,22 +34,20 @@ defmodule Configuration.Module.Actuation do
               })
     end)
 
-    reversed_actuators = [:aileron, :elevator]
-    actuators = Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
-      if Map.has_key?(acc, actuator_name) do
-        put_in(acc, [actuator_name, :reversed], true)
-      else
-        acc
-      end
-    end)
-    # actuators =
+    model_type = Common.Utils.get_model_type()
+    model_module =
+      Module.concat(Configuration.Vehicle, vehicle_type)
+      |> Module.concat(Actuation)
+    |> Module.concat(model_type)
 
-    #     aileron_actuator = Map.put(actuators.aileron, :reversed, true)
-    #     Map.put(actuators, :aileron, aileron_actuator)
-    #   else
-    #     actuators
-    #   end
-    #return config
+    actuators = apply(model_module, :apply_reversed_actuators, [actuators])
+
+    output_modules =
+      case node_type do
+        :sim -> [Simulation.XplaneSend, Peripherals.Actuation]
+        _other -> [Peripherals.Actuation]
+      end
+
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       actuators: actuators,

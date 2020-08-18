@@ -10,12 +10,7 @@ defmodule Command.System do
 
   @impl Supervisor
   def init(config) do
-    children = Enum.reduce(config.children, [], fn (child, acc) ->
-      {module, _args} = child
-      [Supervisor.child_spec(child, id: module)] ++ acc
-    end)
-    children = [{Command.Commander, config.commander}] ++ children
+    children = [{Command.Commander, config.commander}]
     Supervisor.init(children, strategy: :one_for_one)
-
   end
 end

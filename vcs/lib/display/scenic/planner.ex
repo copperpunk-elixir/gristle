@@ -20,10 +20,12 @@ defmodule Display.Scenic.Planner do
     graph =
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       |> Display.Scenic.Gcs.Utils.draw_arrow(0,0, 0, 1, :vehicle, true, :clear)
+
+    model = Common.Utils.get_model_type()
     margin =
       case Common.Utils.get_vehicle_type() do
         :Plane ->
-          case Common.Utils.get_aircraft_type() do
+          case model do
             :Cessna -> 734
             :EC1500 -> 100
           end

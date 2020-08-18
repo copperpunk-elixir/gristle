@@ -75,18 +75,7 @@ defmodule Pids.Moderator do
 
         pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd_constrained)
 
-        # pitch_cmd = Map.get(pv_cmd_map, :pitch)
-        # Logger.warn("pitch_cmd: #{pitch_cmd}")
-        # pv_cmd_map = Map.put(pv_cmd_map, :course, course_cmd_constrained)
-        # pv_value_map = Map.put(pv_value_map, :course, 0)
         level_2_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, state.pv_output_pids)
-        # If we are below climbout altitude, we should be holding a fixed pitch value
-        # level_2_output_map =
-        # if is_nil(pitch_cmd) do
-        #   level_2_output_map
-        # else
-        #   Map.put(level_2_output_map, :pitch, pitch_cmd)
-        # end
         # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
         publish_cmds(pv_cmd_map, 3)
@@ -153,9 +142,6 @@ defmodule Pids.Moderator do
       pv_output_map = Map.get(pv_output_pids, pv_name, %{})
       unless Enum.empty?(pv_output_map) do
         Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
-          # if pv_name == :roll do
-            # Logger.info("error: #{Common.Utils.eftb(pv_cmd - pv_value,3)}")
-          # end
           # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
           output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt)
           total_output = output*weight + Map.get(acc, output_variable_name, 0)
@@ -174,16 +160,6 @@ defmodule Pids.Moderator do
 
   @spec publish_cmds(map(), integer()) :: atom()
   def publish_cmds(cmds, level) do
-    # Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, level}, cmds}, :tx_goals, self())
-    # {data_key, goals_list} =
-    #   case level do
-    #     1 -> {:level_1, [cmds.rollrate, cmds.pitchrate, cmds.yawrate, cmds.thrust]}
-    #     2 -> {:level_2, [cmds.roll, cmds.pitch, cmds.yaw, cmds.thrust]}
-    #     3 ->
-    #       course = Map.get(cmds, :course_flight, Map.get(cmds, :course_ground))
-    #       {:level_3, [cmds.speed, course, cmds.altitude]}
-    #   end
-    # goals_list = [Telemetry.Ublox.get_itow()] ++ goals_list
     cmd_level =
       case level do
         1-> :level_1

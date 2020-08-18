@@ -3,23 +3,7 @@ defmodule Configuration.Module.Command do
   def get_config(vehicle_type, node_type) do
     %{
       commander: %{vehicle_type: vehicle_type},
-      children: get_command_children(node_type)
     }
-  end
-
-  @spec get_command_children(atom()) :: map()
-  def get_command_children(node_type) do
-    case node_type do
-      :all ->
-        [{Peripherals.Uart.FrskyRx, %{
-             device_description: "Feather M0"
-          }}]
-      :sim ->[]
-        # [{Peripherals.Uart.FrskyRx, %{
-        #      device_description: "Feather M0",
-        #   }}]
-      _other -> []
-    end
   end
 
   @spec get_command_output_limits(atom(), list()) :: tuple()
@@ -27,13 +11,13 @@ defmodule Configuration.Module.Command do
     vehicle_module =
       case vehicle_type do
         :Plane ->
-          aircraft_type = Common.Utils.get_aircraft_type()
-          Module.concat(Configuration.Vehicle.Plane.Pids, aircraft_type)
+          model_type = Common.Utils.get_model_type()
+          Module.concat(Configuration.Vehicle.Plane.Pids, model_type)
         _other ->
           Module.concat(Configuration.Vehicle, vehicle_type)
           |> Module.concat(Pids)
       end
- 
+
     Enum.reduce(channels, %{}, fn (channel, acc) ->
       IO.puts("channel: #{channel}")
       constraints =

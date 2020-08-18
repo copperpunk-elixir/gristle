@@ -32,7 +32,7 @@ defmodule Common.Application do
   def start_vehicle(vehicle_type, node_type) do
     RingLogger.attach()
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Telemetry], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Telemetry, Peripherals.Uart], vehicle_type, node_type)
   end
 
   @spec start_gcs(binary()) :: atom()
@@ -48,7 +48,7 @@ defmodule Common.Application do
     RingLogger.attach()
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Telemetry, Display.Scenic], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Telemetry, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
   end
 
   @spec start_hil(atom()) ::atom()

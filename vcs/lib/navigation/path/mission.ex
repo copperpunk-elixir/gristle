@@ -71,11 +71,11 @@ defmodule Navigation.Path.Mission do
   end
 
   @spec get_takeoff_waypoints(struct(), float(), atom()) :: list()
-  def get_takeoff_waypoints(start_position, course, aircraft_type) do
-    takeoff_roll_distance = get_aircraft_spec(aircraft_type, :takeoff_roll)
-    climbout_distance = get_aircraft_spec(aircraft_type, :climbout_distance)
-    climbout_height = get_aircraft_spec(aircraft_type, :climbout_height)
-    climbout_speed = get_aircraft_spec(aircraft_type, :climbout_speed)
+  def get_takeoff_waypoints(start_position, course, model_type) do
+    takeoff_roll_distance = get_model_spec(model_type, :takeoff_roll)
+    climbout_distance = get_model_spec(model_type, :climbout_distance)
+    climbout_height = get_model_spec(model_type, :climbout_height)
+    climbout_speed = get_model_spec(model_type, :climbout_speed)
     takeoff_roll = Common.Utils.Location.lla_from_point_with_distance(start_position,takeoff_roll_distance, course)
     climb_position = Common.Utils.Location.lla_from_point_with_distance(start_position,climbout_distance, course)
     |> Map.put(:altitude, start_position.altitude+climbout_height)
@@ -86,13 +86,13 @@ defmodule Navigation.Path.Mission do
   end
 
  @spec get_landing_waypoints(struct(), float(), atom()) :: list()
-  def get_landing_waypoints(final_position, course, aircraft_type) do
-    landing_points = Enum.reduce(get_aircraft_spec(aircraft_type, :landing_distances_heights),[],fn({distance, height},acc) ->
+  def get_landing_waypoints(final_position, course, model_type) do
+    landing_points = Enum.reduce(get_model_spec(model_type, :landing_distances_heights),[],fn({distance, height},acc) ->
       wp = Common.Utils.Location.lla_from_point_with_distance(final_position, distance, course)
       |> Map.put(:altitude, final_position.altitude+height)
       acc ++ [wp]
     end)
-    {approach_speed, touchdown_speed} = get_aircraft_spec(aircraft_type, :landing_speeds)
+    {approach_speed, touchdown_speed} = get_model_spec(model_type, :landing_speeds)
     wp0 = Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,0), approach_speed, course, "pre-approach")
     wp1 = Navigation.Path.Waypoint.new_approach(Enum.at(landing_points,1), approach_speed, course, "approach")
     wp2 = Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,2), touchdown_speed, course, "flare")
@@ -101,17 +101,17 @@ defmodule Navigation.Path.Mission do
   end
 
   @spec get_complete_mission(binary(), binary(), atom(), atom(), integer()) :: struct()
-  def get_complete_mission(airport, runway, aircraft_type, track_type, num_wps) do
+  def get_complete_mission(airport, runway, model_type, track_type, num_wps) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
-    takeoff_wps = get_takeoff_waypoints(start_position, start_course, aircraft_type)
+    takeoff_wps = get_takeoff_waypoints(start_position, start_course, model_type)
     starting_wp = Enum.at(takeoff_wps, 0)
     first_flight_wp = Enum.at(takeoff_wps, -1)
     flight_wps =
       case track_type do
-        nil -> get_random_waypoints(aircraft_type, starting_wp, first_flight_wp,num_wps)
-        type -> get_track_waypoints(airport, runway, type, aircraft_type)
+        nil -> get_random_waypoints(model_type, starting_wp, first_flight_wp,num_wps)
+        type -> get_track_waypoints(airport, runway, type, model_type)
       end
-    landing_wps = get_landing_waypoints(start_position, start_course, aircraft_type)
+    landing_wps = get_landing_waypoints(start_position, start_course, model_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     Enum.each(wps, fn wp ->
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
@@ -121,9 +121,9 @@ defmodule Navigation.Path.Mission do
   end
 
   @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
-  def get_track_waypoints(airport, runway, track_type, aircraft_type) do
+  def get_track_waypoints(airport, runway, track_type, model_type) do
     wp_speed =
-      case aircraft_type do
+      case model_type do
         :Cessna -> 45
         :EC1500 -> 15
       end
@@ -182,10 +182,10 @@ defmodule Navigation.Path.Mission do
 
 
   @spec get_random_waypoints(atom(), struct(), struct(), integer(), boolean(), integer()) :: struct()
-  def get_random_waypoints(aircraft_type, ground_wp, first_flight_wp, num_wps, loop \\ false, starting_wp_index \\ 0) do
-    {min_flight_speed, max_flight_speed} = get_aircraft_spec(aircraft_type, :flight_speed_range)
-    {min_flight_agl, max_flight_agl} = get_aircraft_spec(aircraft_type, :flight_agl_range)
-    {min_wp_dist, max_wp_dist} = get_aircraft_spec(aircraft_type, :wp_dist_range)
+  def get_random_waypoints(model_type, ground_wp, first_flight_wp, num_wps, loop \\ false, starting_wp_index \\ 0) do
+    {min_flight_speed, max_flight_speed} = get_model_spec(model_type, :flight_speed_range)
+    {min_flight_agl, max_flight_agl} = get_model_spec(model_type, :flight_agl_range)
+    {min_wp_dist, max_wp_dist} = get_model_spec(model_type, :wp_dist_range)
     starting_wp = Navigation.Path.Waypoint.new_flight(first_flight_wp, first_flight_wp.speed, first_flight_wp.course,"wp0")
     flight_speed_range = max_flight_speed - min_flight_speed
     flight_agl_range = max_flight_agl - min_flight_agl
@@ -220,9 +220,9 @@ defmodule Navigation.Path.Mission do
     end
   end
 
-  @spec get_aircraft_spec(atom(), atom()) :: any()
-  def get_aircraft_spec(aircraft_type, spec) do
-    aircraft = %{
+  @spec get_model_spec(atom(), atom()) :: any()
+  def get_model_spec(model_type, spec) do
+    model = %{
       Cessna: %{
         takeoff_roll: 500,
         climbout_distance: 1200,
@@ -248,6 +248,6 @@ defmodule Navigation.Path.Mission do
         planning_turn_rate: 0.80
       }
     }
-    get_in(aircraft, [aircraft_type, spec])
+    get_in(model, [model_type, spec])
   end
 end
