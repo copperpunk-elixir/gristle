@@ -20,15 +20,6 @@ defmodule Peripherals.Uart.Telemetry.Operator do
         fast_loop_interval_ms: config.fast_loop_interval_ms,
         medium_loop_interval_ms: config.medium_loop_interval_ms,
         slow_loop_interval_ms: config.slow_loop_interval_ms,
-        accel: %{},
-        bodyrate: %{},
-        attitude: %{},
-        velocity: %{},
-        position: %{},
-        level_1: %{},
-        level_2: %{},
-        level_3: %{},
-        control_state: nil
      }}
   end
 
@@ -87,18 +78,18 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   def handle_info(:slow_loop, state) do
     iTOW = Telemetry.Ublox.get_itow()
     #pvat
-    position = state.position
-    velocity = state.velocity
-    attitude = state.attitude
+    position = Map.get(state, :position, %{})
+    velocity = Map.get(state, :velocity, %{})
+    attitude = Map.get(state, :attitude, %{})
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude)) do
       values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.airspeed, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
       # Logger.info("send pvat message")
       construct_and_send_message({:telemetry, :pvat}, values, state.uart_ref)
     end
     #tx_goals
-    level_1 = state.level_1
-    level_2 = state.level_2
-    level_3 = state.level_3
+    level_1 = Map.get(state, :level_1, %{})
+    level_2 = Map.get(state, :level_2, %{})
+    level_3 = Map.get(state, :level_3, %{})
     unless(Enum.empty?(level_1)) do
       values = [iTOW, level_1.rollrate, level_1.pitchrate, level_1.yawrate, level_1.thrust]
       construct_and_send_message({:tx_goals, 1}, values, state.uart_ref)
@@ -112,7 +103,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       values = [iTOW, level_3.speed, course, level_3.altitude]
       construct_and_send_message({:tx_goals, 3}, values, state.uart_ref)
     end
-    control_state = state.control_state
+    control_state = Map.get(state, :control_state, nil)
     unless is_nil(control_state) do
       values = [iTOW, control_state]
       construct_and_send_message(:control_state, values, state.uart_ref)
