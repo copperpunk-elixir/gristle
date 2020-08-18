@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.PololuServo do
+defmodule Peripherals.Uart.Actuation.Pololu.Device do
   require Bitwise
   require Logger
 
@@ -9,7 +9,7 @@ defmodule Peripherals.Uart.PololuServo do
     write_timeout = config.write_timeout
     read_timeout = config.read_timeout
     {:ok, interface_ref} = Circuits.UART.start_link()
-    %Peripherals.Uart.PololuServo{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
+    %Peripherals.Uart.Actuation.Pololu.Device{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
   end
 
   def open_port(device) do
@@ -31,7 +31,7 @@ defmodule Peripherals.Uart.PololuServo do
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation
     message = get_message_for_channel_and_output_ms(channel, output_ms)
-    Logger.info("set #{channel} to #{Common.Utils.eftb(output_ms,0)}")
+    # Logger.info("set #{channel} to #{Common.Utils.eftb(output_ms,0)}")
     Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
   end
 

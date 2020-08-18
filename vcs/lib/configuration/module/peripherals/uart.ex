@@ -7,48 +7,36 @@ defmodule Configuration.Module.Peripherals.Uart do
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =
         case module do
-          :FrskyRx -> {FrskyRx, get_frsky_rx_config(node_type)}
-          :FrskyServo -> {Actuation, get_frsky_servo_config()}
-          :PololuServo -> {Actuation, get_pololu_servo_config()}
-          :TerarangerEvo -> {TerarangerEvo, get_teraranger_evo_config(node_type)}
-          :VnIns -> {VnIns, get_vn_ins_config(node_type)}
+          :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
+          :FrskyServo -> {Actuation, get_actuation_config(module)}
+          :PololuServo -> {Actuation, get_actuation_config(module)}
+          :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
+          :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
+          :Xbee -> {Telemetry, get_telemetry_config(module)}
+          :Sik -> {Telemetry, get_telemetry_config(module)}
         end
       Map.put(acc, module_key, module_config)
     end)
   end
 
-  @spec get_frsky_rx_config(atom()) :: map()
-  def get_frsky_rx_config(node_type) do
-    stop_bits =
-      case node_type do
-        :sim -> 1
-        _other -> 2
+  @spec get_frsky_rx_config() :: map()
+  def get_frsky_rx_config() do
+    %{
+      device_description: "Feather M0",
+    }
+  end
+
+  @spec get_actuation_config(atom()) :: map()
+  def get_actuation_config(module) do
+    {interface_module, device_desc} =
+      case module do
+        :FrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0"}
+        :PololuServo -> {Peripherals.Uart.Actuation.Pololu.Device, "Pololu"}
       end
     %{
-      device_description: "CP2104",
-      stop_bits: stop_bits
-    }
-  end
-
-  @spec get_frsky_servo_config() :: map()
-  def get_frsky_servo_config() do
-    %{
-      interface_module: Peripherals.Uart.FrskyServo,
+      interface_module: interface_module,
       driver_config: %{
-        device_description: "Feather M0",
-        baud: 115_200,
-        write_timeout: 1,
-        read_timeout: 1
-      }
-    }
-  end
-
-  @spec get_pololu_servo_config() :: map()
-  def get_pololu_servo_config() do
-    %{
-      interface_module: Peripherals.Uart.PololuServo,
-      driver_config: %{
-        device_description: "Pololu",
+        device_description: device_desc,
         baud: 115_200,
         write_timeout: 1,
         read_timeout: 1
@@ -89,6 +77,39 @@ defmodule Configuration.Module.Peripherals.Uart do
       imu_loop_interval_ms: 20,
       ins_loop_interval_ms: 200,
       heading_loop_interval_ms: 200
+    }
+  end
+
+  @spec get_telemetry_config(atom()) :: map()
+  def get_telemetry_config(module) do
+    {device_desc, baud} =
+      case module do
+        # :Xbee -> {"FT231X", 57_600}
+        :Xbee -> {"FT232R", 57_600}
+        :Sik -> {"FT231X", 57_600}
+      end
+    %{
+      device_description: device_desc,
+      baud: baud,
+      fast_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+      medium_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
+      slow_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+    }
+  end
+
+  @spec get_sik_config() :: map()
+  def get_sik_config() do
+    %{
+      device_description: "FT231X",
+      baud: 57_600
+    }
+  end
+
+  @spec get_xbee_config() :: map()
+  def get_xbee_config() do
+    %{
+      device_description: "FT231X",
+      baud: 57_600
     }
   end
 

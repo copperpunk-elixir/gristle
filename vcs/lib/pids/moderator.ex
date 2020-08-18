@@ -166,6 +166,6 @@ defmodule Pids.Moderator do
         2-> :level_2
         3-> :level_3
       end
-    Telemetry.Operator.store_data(%{cmd_level => cmds})
+    Peripherals.Uart.Telemetry.Operator.store_data(%{cmd_level => cmds})
   end
 end

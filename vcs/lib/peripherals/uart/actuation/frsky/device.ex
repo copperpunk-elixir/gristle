@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.FrskyServo do
+defmodule Peripherals.Uart.Actuation.Frsky.Device do
   require Bitwise
   require Logger
 
@@ -9,7 +9,7 @@ defmodule Peripherals.Uart.FrskyServo do
     write_timeout = config.write_timeout
     read_timeout = config.read_timeout
     {:ok, interface_ref} = Circuits.UART.start_link()
-    %Peripherals.Uart.FrskyServo{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
+    %Peripherals.Uart.Actuation.Frsky.Device{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
   end
 
   def open_port(device) do

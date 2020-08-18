@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.TerarangerEvo do
+defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   use Bitwise
   use GenServer
   require Logger

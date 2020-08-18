@@ -135,7 +135,7 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     bodyrate = state.bodyrate
     unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      Telemetry.Operator.store_data(%{attitude: attitude})
+      Peripherals.Uart.Telemetry.Operator.store_data(%{attitude: attitude})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
@@ -154,7 +154,7 @@ defmodule Estimation.Estimator do
       airspeed = state.airspeed
       airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
       velocity = Map.put(velocity, :airspeed, airspeed)
-      Telemetry.Operator.store_data(%{position: position, velocity: velocity})
+      Peripherals.Uart.Telemetry.Operator.store_data(%{position: position, velocity: velocity})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :position_velocity}, position, velocity, state.ins_loop_interval_ms/1000},

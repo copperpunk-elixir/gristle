@@ -32,14 +32,14 @@ defmodule Common.Application do
   def start_vehicle(vehicle_type, node_type) do
     RingLogger.attach()
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Telemetry, Peripherals.Uart], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart], vehicle_type, node_type)
   end
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
     Logger.add_backend(:console)
     node_type = :gcs
-    Configuration.Module.start_modules([Display.Scenic, Navigation, Telemetry], vehicle_type, node_type)
+    Configuration.Module.start_modules([Display.Scenic, Navigation], vehicle_type, node_type)
   end
 
 
@@ -48,7 +48,7 @@ defmodule Common.Application do
     RingLogger.attach()
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Telemetry, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
   end
 
   @spec start_hil(atom()) ::atom()
@@ -56,7 +56,7 @@ defmodule Common.Application do
     RingLogger.attach()
     node_type = :all
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Display.Scenic, Telemetry], vehicle_type, node_type)
+    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
   end
 
 end

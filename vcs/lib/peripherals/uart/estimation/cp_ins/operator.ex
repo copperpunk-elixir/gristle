@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.CpIns do
+defmodule Peripherals.Uart.Estimation.CpIns.Operator do
   use GenServer
   require Logger
 

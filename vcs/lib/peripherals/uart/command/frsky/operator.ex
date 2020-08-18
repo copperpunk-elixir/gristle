@@ -1,9 +1,10 @@
-defmodule Peripherals.Uart.FrskyRx do
+defmodule Peripherals.Uart.Command.Frsky.Operator do
   use Bitwise
   use GenServer
   require Logger
 
   @default_baud 115_200
+  @stop_bits 1
   @start_byte 0x0F
   @end_byte 0x00
   @end_byte_index 24
@@ -25,7 +26,6 @@ defmodule Peripherals.Uart.FrskyRx do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
-        stop_bits: config.stop_bits,
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
@@ -46,7 +46,8 @@ defmodule Peripherals.Uart.FrskyRx do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     frsky_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
-    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true]) do
+    Logger.info("open port: #{frsky_port}")
+    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
         raise "#{frsky_port} is unavailable"
@@ -66,6 +67,7 @@ defmodule Peripherals.Uart.FrskyRx do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
+    # Logger.info("data: #{inspect(data)}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     state =

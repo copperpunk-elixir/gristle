@@ -11,7 +11,6 @@ defmodule Actuation.System do
   @impl Supervisor
   def init(config) do
     children = [
-      # Supervisor.child_spec({Actuation.HwInterface, config.hw_interface}, id: Actuation.HwInterface),
       Supervisor.child_spec({Actuation.SwInterface, config.sw_interface}, id: Actuation.SwInterface)
     ]
     Supervisor.init(children, strategy: :one_for_one)

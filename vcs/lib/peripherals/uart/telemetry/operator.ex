@@ -1,8 +1,6 @@
-defmodule Telemetry.Operator do
+defmodule Peripherals.Uart.Telemetry.Operator do
   use GenServer
   require Logger
-
-  @default_baud 57_600
 
   def start_link(config) do
     Logger.debug("Start Telemetry.Operator")
@@ -17,6 +15,7 @@ defmodule Telemetry.Operator do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
+        baud: config.baud,
         ublox: Telemetry.Ublox.new(),
         fast_loop_interval_ms: config.fast_loop_interval_ms,
         medium_loop_interval_ms: config.medium_loop_interval_ms,
@@ -45,7 +44,7 @@ defmodule Telemetry.Operator do
     Logger.info("telemetry device: #{state.device_description}")
     telemetry_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
     Logger.info("telemetry port: #{inspect(telemetry_port)}")
-    case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: @default_baud, active: true]) do
+    case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: state.baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
         raise "#{telemetry_port} is unavailable"

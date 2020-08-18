@@ -17,10 +17,6 @@ defmodule MessageSorter.System do
 
   @spec get_all_children(list()) :: list()
   def get_all_children(sorter_configs) do
-    # generic_sorters = Configuration.Generic.get_sorter_configs()
-    # vehicle_sorters = Configuration.Vehicle.get_sorter_configs(vehicle_type)
-    # sorter_configs = generic_sorters ++ vehicle_sorters
-    # sorter_configs = Configuration.Module.MessageSorter.get_sorters(vehicle_type)
     Enum.reduce(sorter_configs, [], fn (config, acc) ->
       [Supervisor.child_spec({MessageSorter.Sorter, config}, id: config.name)] ++ acc
     end)

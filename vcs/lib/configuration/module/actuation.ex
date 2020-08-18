@@ -1,18 +1,18 @@
 defmodule Configuration.Module.Actuation do
   @spec get_config(atom(), atom()) :: map()
   def get_config(vehicle_type, node_type) do
-    hw_config = %{
-      interface_driver_name: :feather,
-      driver_config: %{
-        baud: 115_200,
-        write_timeout: 1,
-        read_timeout: 1
-      }
-    }
+    # hw_config = %{
+    #   interface_driver_name: :feather,
+    #   driver_config: %{
+    #     baud: 115_200,
+    #     write_timeout: 1,
+    #     read_timeout: 1
+    #   }
+    # }
 
     sw_config = get_actuation_sw_config(vehicle_type, node_type)
     %{
-      hw_interface: hw_config,
+      # hw_interface: hw_config,
       sw_interface: sw_config
     }
   end
@@ -40,19 +40,31 @@ defmodule Configuration.Module.Actuation do
       |> Module.concat(Actuation)
     |> Module.concat(model_type)
 
-    actuators = apply(model_module, :apply_reversed_actuators, [actuators])
+    actuators = apply_reversed_actuators(model_module, actuators)
 
     output_modules =
       case node_type do
-        :sim -> [Simulation.XplaneSend, Peripherals.Actuation]
-        _other -> [Peripherals.Actuation]
+        :sim -> [Simulation.XplaneSend, Peripherals.Uart.Actuation.Operator]
+        _other -> [Peripherals.Uart.Actuation.Operator]
       end
 
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       actuators: actuators,
-      node_type: node_type
+      output_modules: output_modules
     }
+  end
+
+  @spec apply_reversed_actuators(atom(), map()) :: map()
+  def apply_reversed_actuators(model_module, actuators) do
+    reversed_actuators = apply(model_module, :get_reversed_actuators, [])
+    Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
+      if Map.has_key?(acc, actuator_name) do
+        put_in(acc, [actuator_name, :reversed], true)
+      else
+        acc
+      end
+    end)
   end
 
   @spec get_min_max_pw(atom()) :: tuple()

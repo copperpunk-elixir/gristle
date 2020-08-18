@@ -14,7 +14,7 @@ defmodule Actuation.SwInterface do
         {:ok, %{
         actuators: Map.get(config, :actuators),
         actuator_loop_interval_ms: Map.get(config, :actuator_loop_interval_ms, 0),
-        output_module: config.output_module
+        output_modules: config.output_modules
      }}
   end
 
@@ -39,7 +39,7 @@ defmodule Actuation.SwInterface do
         output = Map.fetch!(actuator_output_map, actuator_name)
         Map.put(acc, actuator_name, {actuator,output})
     end)
-    Enum.each(state.output_module, fn module ->
+    Enum.each(state.output_modules, fn module ->
       apply(module, :update_actuators,[actuators_and_outputs])
     end)
     {:noreply, state}

@@ -74,11 +74,10 @@ defmodule Command.Commander do
     end
     if (transmit_cmds == true) do
       control_state = cond do
-        control_state_float < -0.85 -> -1
-        control_state_float < -0.75 -> 0
-        control_state_float > -0.35 and control_state_float < -0.25 -> 1
-        control_state_float > 0.65 and control_state_float < 0.75 -> 2
-        control_state_float > 0.9 -> 3
+        control_state_float < -0.95 -> 0
+        control_state_float > -0.80 and control_state_float < -0.70 -> 1
+        control_state_float > 0.20 and control_state_float < 0.30 -> 2
+        control_state_float > 0.95 -> 3
         true -> -1
       end
       reference_cmds =

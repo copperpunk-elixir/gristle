@@ -221,14 +221,14 @@ defmodule Pids.Pid do
   def set_pid_gain(pv, ov, param, value) do
     [pv_code, ov_code, param_code] = Pids.Pid.get_pv_ov_param(pv, ov, param)
     msg = Telemetry.Ublox.construct_message(:set_pid_gain,[pv_code, ov_code, param_code,value])
-    Telemetry.Operator.send_message(msg)
+    Peripherals.Uart.Telemetry.Operator.send_message(msg)
   end
 
   @spec get_pid_gain(atom(), atom(), atom()) :: atom()
   def get_pid_gain(pv, ov, param) do
     [pv_code, ov_code, param_code] = Pids.Pid.get_pv_ov_param(pv, ov, param)
     msg = Telemetry.Ublox.construct_message(:request_pid_gain,[pv_code, ov_code, param_code])
-    Telemetry.Operator.send_message(msg)
+    Peripherals.Uart.Telemetry.Operator.send_message(msg)
   end
 
 end

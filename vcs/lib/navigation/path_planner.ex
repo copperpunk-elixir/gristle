@@ -77,7 +77,7 @@ defmodule Navigation.PathPlanner do
     track_code = get_track(track)
     confirm = if confirmation, do: 1, else: 0
     payload = [airport_code, runway_code, aircraft_code, track_code, num_wps, confirm]
-    Telemetry.Operator.construct_and_send_message(:mission, payload)
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:mission, payload)
   end
 
   @spec get_airport(any()) :: binary()
