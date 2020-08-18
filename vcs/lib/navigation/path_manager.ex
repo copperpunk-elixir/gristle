@@ -113,23 +113,6 @@ defmodule Navigation.PathManager do
             Map.put(goals, :course_flight, course_cmd)
             |> Map.put(:altitude, altitude_cmd)
         end
-      # if (path_case_type == Navigation.Path.Waypoint.ground_type()) or (path_case_type == Navigation.Path.Waypoint.landing_type()) do
-      #   if (position.agl < state.vehicle_agl_ground_threshold) do
-      #     if (path_case_type == Navigation.Path.Waypoint.ground_type()) and (speed < state.vehicle_takeoff_speed) do
-      #       Map.put(goals, :altitude, position.altitude)
-      #     else
-      #       goals
-      #     end
-      #     |> Map.put(:course_ground, course_cmd)
-      #   else
-      #     Map.put(goals, :course_flight, course_cmd)
-      #   end
-      # else
-      #   Map.put(goals, :course_flight, course_cmd)
-      # end
-      # Logger.info("cp_index/path_case: #{current_cp_index}/#{current_path_case.case_index}")
-      # Logger.info("spd/course/alt: #{Common.Utils.eftb(speed_cmd,1)}/#{Common.Utils.eftb(Common.Utils.Math.rad2deg(course_cmd),1)}/#{Common.Utils.eftb(altitude_cmd,1)}")
-      # Logger.debug("course/cmd: #{Common.Utils.eftb_deg(course, 1)}/#{Common.Utils.eftb_deg(course_cmd, 1)}")
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
     end

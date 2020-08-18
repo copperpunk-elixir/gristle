@@ -39,7 +39,6 @@ defmodule Navigation.PathPlanner do
 
   @spec load_seatac_34L(integer()) ::atom()
   def load_seatac_34L(num_wps \\ 1) do
-    # load_path_mission("seatac", "34L",:Cessna, nil, num_wps)
     send_path_mission("seatac", "34L",:Cessna, nil, num_wps, true)
   end
 
@@ -51,7 +50,6 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    # load_path_mission("montague", "36L",:EC1500, track_type, num_wps)
     send_path_mission("montague", "36L",:EC1500, track_type, num_wps, true)
   end
 
@@ -63,7 +61,6 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    # load_path_mission("montague", "18R",:EC1500, track_type, num_wps)
     send_path_mission("montague", "18R",:EC1500, track_type, num_wps, true)
   end
 
@@ -76,11 +73,11 @@ defmodule Navigation.PathPlanner do
   def send_path_mission(airport, runway, aircraft, track, num_wps, confirmation) do
     airport_code = get_airport(airport)
     runway_code = get_runway(runway)
-    aircraft_code = get_aircraft(aircraft)
+    aircraft_code = get_model(aircraft)
     track_code = get_track(track)
     confirm = if confirmation, do: 1, else: 0
     payload = [airport_code, runway_code, aircraft_code, track_code, num_wps, confirm]
-    Telemetry.Operator.construct_and_send_message(:mission, payload)
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:mission, payload)
   end
 
   @spec get_airport(any()) :: binary()
@@ -102,8 +99,8 @@ defmodule Navigation.PathPlanner do
     Common.Utils.get_key_or_value(runways, arg)
   end
 
-  @spec get_aircraft(any()) :: binary()
-  def get_aircraft(arg) do
+  @spec get_model(any()) :: binary()
+  def get_model(arg) do
     aircraft = %{
       0 => :Cessna,
       1 => :EC1500

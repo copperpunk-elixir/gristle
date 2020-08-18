@@ -42,7 +42,7 @@ defmodule Command.Commander do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
-    Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
+    Comms.Operator.join_group(__MODULE__, :pv_3_local, self())
     rx_output_time_prev = :erlang.monotonic_time(:millisecond)
     {:noreply, %{state | rx_output_time_prev: rx_output_time_prev}}
   end
@@ -57,11 +57,8 @@ defmodule Command.Commander do
   end
 
   @impl GenServer
-  def handle_cast({:pv_estimate, pv_values}, state) do
-    # Logger.debug("position: #{inspect(pv_values.position)}")
-    # Logger.debug("velocity: #{inspect(pv_values.velocity)}")
-    # Logger.debug("attitude: #{inspect(pv_values.attitude)}")
-    # Logger.debug("bodyrate: #{inspect(pv_values.bodyrate)}")
+  def handle_cast({:pv_3_local, pv_values}, state) do
+    # Logger.debug("pv_3_local: #{inspect(pv_values)}")
     {:noreply, %{state | pv_values: pv_values}}
   end
 
@@ -77,11 +74,10 @@ defmodule Command.Commander do
     end
     if (transmit_cmds == true) do
       control_state = cond do
-        control_state_float < -0.85 -> -1
-        control_state_float < -0.75 -> 0
-        control_state_float > -0.35 and control_state_float < -0.25 -> 1
-        control_state_float > 0.65 and control_state_float < 0.75 -> 2
-        control_state_float > 0.9 -> 3
+        control_state_float < -0.95 -> 0
+        control_state_float > -0.80 and control_state_float < -0.70 -> 1
+        control_state_float > 0.20 and control_state_float < 0.30 -> 2
+        control_state_float > 0.95 -> 3
         true -> -1
       end
       reference_cmds =
@@ -92,7 +88,6 @@ defmodule Command.Commander do
         state.reference_cmds
       end
 
-      # channel_map = apply(state.vehicle_module, :get_rx_output_channel_map, [control_state])
       {cmds, reference_cmds} = Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
         channel_index = elem(channel_tuple, 0)
         channel = elem(channel_tuple, 1)
@@ -130,12 +125,8 @@ defmodule Command.Commander do
           end
         {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
       end)
-      # if (control_state == 3) do
-      #   Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals_relative, control_state},classification, time_validity_ms, cmds}, {:goals_relative, control_state}, self())
-      # else
+      # Publish Goals
       Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
-      # end
-      # Comms.Operator.send_global_msg_to_group(__MODULE__, {{:tx_goals, control_state}, cmds}, :tx_goals, self())
       {reference_cmds, control_state, transmit_cmds}
     else
       {%{}, state.control_state, transmit_cmds}
@@ -146,17 +137,11 @@ defmodule Command.Commander do
   def latch_commands(new_control_state, pv_values) do
     case new_control_state do
       2 ->
-        # yaw = Map.get(pv_values, :attitude, %{})
-        # |> Map.get(:yaw, 0)
         %{yaw: 0}
       3 ->
-        course = Map.get(pv_values,:velocity, %{})
-        |> Map.get(:course, 0)
-        speed =
-          Map.get(pv_values,:velocity, %{})
-          |> Map.get(:speed, 0)
-        altitude = Map.get(pv_values, :position, %{})
-        |> Map.get(:altitude, 0)
+        course = Map.get(pv_values, :course, 0)
+        speed = Map.get(pv_values,:speed, 0)
+        altitude = Map.get(pv_values, :altitude, 0)
         %{speed: speed, course_flight: course, altitude: altitude}
       _other ->
         %{}

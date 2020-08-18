@@ -15,6 +15,7 @@ defmodule Estimation.Estimator do
     {:ok, %{
         imu_loop_interval_ms: config.imu_loop_interval_ms,
         ins_loop_interval_ms: config.ins_loop_interval_ms,
+        pv_3_local_loop_interval_ms: config.pv_3_local_loop_interval_ms,
         att_rate_expected_interval_ms: config.att_rate_expected_interval_ms,
         pos_vel_expected_interval_ms: config.pos_vel_expected_interval_ms,
         range_expected_interval_ms: config.range_expected_interval_ms,
@@ -83,9 +84,7 @@ defmodule Estimation.Estimator do
     if (position == nil) or (velocity==nil) do
       {state.position, state.velocity}
     else
-      # Add 10m error
       position = Map.put(position, :altitude, position.altitude)
-
       Watchdog.Active.feed(:pos_vel)
       # If the velocity is below a threshold, we use yaw instead
       {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
@@ -136,7 +135,7 @@ defmodule Estimation.Estimator do
     attitude = state.attitude
     bodyrate = state.bodyrate
     unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      Telemetry.Operator.store_data(%{attitude: attitude})
+      Peripherals.Uart.Telemetry.Operator.store_data(%{attitude: attitude})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
@@ -155,7 +154,7 @@ defmodule Estimation.Estimator do
       airspeed = state.airspeed
       airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
       velocity = Map.put(velocity, :airspeed, airspeed)
-      Telemetry.Operator.store_data(%{position: position, velocity: velocity})
+      Peripherals.Uart.Telemetry.Operator.store_data(%{position: position, velocity: velocity})
       Comms.Operator.send_local_msg_to_group(
         __MODULE__,
         {{:pv_values, :position_velocity}, position, velocity, state.ins_loop_interval_ms/1000},
@@ -164,6 +163,25 @@ defmodule Estimation.Estimator do
     end
     {:noreply, state}
   end
+
+  @impl GenServer
+  def handle_info(:pv_3_local_loop, state) do
+    position = state.position
+    velocity = Map.take(state.velocity, [:speed, :course])
+    unless Enum.empty?(position) or Enum.empty?(velocity) do
+
+      airspeed = state.airspeed
+      airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
+      pv_3_values = Map.put(velocity, :airspeed, airspeed)
+      |> Map.put(:altitude, position.altitude)
+      Comms.Operator.send_local_msg_to_group(
+        __MODULE__,
+        {:pv_3_local, pv_3_values},
+        self())
+    end
+    {:noreply, state}
+  end
+
 
   @impl GenServer
   def handle_call({:get, key}, _from, state) do

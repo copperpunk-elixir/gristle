@@ -1,20 +1,20 @@
-defmodule Peripherals.Uart.FrskyServo do
+defmodule Peripherals.Uart.Actuation.Frsky.Device do
   require Bitwise
   require Logger
 
-  defstruct [interface_ref: nil, baud: nil, write_timeout: 0, read_timeout: 0]
+  defstruct [device_description: "", interface_ref: nil, baud: nil, write_timeout: 0, read_timeout: 0]
 
   def new_device(config) do
     baud = config.baud
     write_timeout = config.write_timeout
     read_timeout = config.read_timeout
     {:ok, interface_ref} = Circuits.UART.start_link()
-    %Peripherals.Uart.FrskyServo{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
+    %Peripherals.Uart.Actuation.Frsky.Device{interface_ref: interface_ref, baud: baud, write_timeout: write_timeout, read_timeout: read_timeout}
   end
 
   def open_port(device) do
     Logger.debug("Open port with device: #{inspect(device)}")
-    command_port = Common.Utils.get_uart_devices_containing_string("Feather")
+    command_port = Common.Utils.get_uart_devices_containing_string(device.device_description)
     Logger.debug("FrskyServo port: #{command_port}")
     # Logger.debug("interface_ref: #{inspect(device.interface_ref)}")
     case Circuits.UART.open(device.interface_ref,command_port,[speed: device.baud, active: false]) do

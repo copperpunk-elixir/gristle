@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.IsIns do
+defmodule Peripherals.Uart.Estimation.IsIns.Operator do
   use Bitwise
   use GenServer
   require Logger

@@ -1,16 +1,10 @@
-defmodule Peripherals.Uart.VnIns do
+defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   use Bitwise
   use GenServer
   require Logger
 
 
-  # @default_port "ttyACM2"
-  # @default_device_description "SFE SAMD21"
-  # @default_baud 1_000_000
   @start_byte 250
-  # @payload_and_crc_length 104
-  # @message_length 108
-  # @crc_start_index 106
   @deg2rad 0.017453293
   @rad2deg 57.295779513
 
