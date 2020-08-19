@@ -29,7 +29,7 @@ defmodule Navigation.PathManager do
         current_path_case: nil,
         current_path_distance: 0,
         landing_altitude: 0,
-        path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf)
+        path_follower: Navigation.Path.PathFollower.new(config.path_follower.k_path, config.path_follower.k_orbit, config.path_follower.chi_inf, config.path_follower.lookahead_dt)
      }}
   end
 

@@ -3,23 +3,24 @@ defmodule Navigation.Path.PathFollower do
   @pi_2 1.5708#79633267948966
   @two_pi 6.2832#185307179586
 
-  @enforce_keys [:k_path, :k_orbit, :chi_inf_two_over_pi]
+  @enforce_keys [:k_path, :k_orbit, :chi_inf_two_over_pi, :lookahead_dt]
 
-  defstruct [:k_path, :k_orbit, :chi_inf_two_over_pi]
+  defstruct [:k_path, :k_orbit, :chi_inf_two_over_pi, :lookahead_dt]
 
-  @spec new(float(), float(), float()) :: struct()
-  def new(k_path, k_orbit, chi_inf) do
+  @spec new(float(), float(), float(), float()) :: struct()
+  def new(k_path, k_orbit, chi_inf, lookahead_dt) do
     %Navigation.Path.PathFollower{
       k_path: k_path,
       k_orbit: k_orbit,
-      chi_inf_two_over_pi: chi_inf *2.0/:math.pi
+      chi_inf_two_over_pi: chi_inf *2.0/:math.pi,
+      lookahead_dt: lookahead_dt
     }
   end
 
   @spec follow(struct(), struct(), float(), float(), struct()) :: map()
   def follow(path_follower, position, course, speed, path_case) do
     if path_case.flag == Navigation.Dubins.PathCase.line_flag() do
-      position = get_lookahead_position(position, speed, course, 0.5)
+      position = get_lookahead_position(position, speed, course, path_follower.lookahead_dt)
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(path_case.r, position)
       # Logger.debug("post look: #{dx}/#{dy}")
      # Add lookahead

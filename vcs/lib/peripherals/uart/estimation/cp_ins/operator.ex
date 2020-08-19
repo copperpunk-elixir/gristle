@@ -159,12 +159,12 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     class_id_length = <<0x01, 0x69,32,0>>
     iTOW = Telemetry.Ublox.get_itow(now) |> Common.Utils.Math.int32_little_bin()
     nano = now_us*1000 |> Common.Utils.Math.int32_little_bin()
-    accel_x = Common.Utils.Math.uint_from_fp(accel.x,4)
-    accel_y = Common.Utils.Math.uint_from_fp(accel.y,4)
-    accel_z = Common.Utils.Math.uint_from_fp(accel.z,4)
-    gyro_x = Common.Utils.Math.uint_from_fp(bodyrate.rollrate,4)
-    gyro_y = Common.Utils.Math.uint_from_fp(bodyrate.pitchrate,4)
-    gyro_z = Common.Utils.Math.uint_from_fp(bodyrate.yawrate,4)
+    accel_x = Common.Utils.Math.uint_from_fp(accel.x,32)
+    accel_y = Common.Utils.Math.uint_from_fp(accel.y,32)
+    accel_z = Common.Utils.Math.uint_from_fp(accel.z,32)
+    gyro_x = Common.Utils.Math.uint_from_fp(bodyrate.rollrate,32)
+    gyro_y = Common.Utils.Math.uint_from_fp(bodyrate.pitchrate,32)
+    gyro_z = Common.Utils.Math.uint_from_fp(bodyrate.yawrate,32)
     checksum_buffer =
       class_id_length <>
       iTOW <>

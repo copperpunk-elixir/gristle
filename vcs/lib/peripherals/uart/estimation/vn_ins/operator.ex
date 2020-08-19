@@ -25,7 +25,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
           bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
-          body_accel: %{x: 0, y: 0, z: 0},
+          bodyaccel: %{x: 0, y: 0, z: 0},
           gps_time: 0,
           position: %{latitude: 0, longitude: 0, altitude: 0},
           velocity: %{north: 0, east: 0, down: 0},
@@ -67,6 +67,13 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   def handle_cast(:close, state) do
     result = Circuits.UART.close(state.uart_ref)
     Logger.warn("Closing UART port with result: #{inspect(result)}")
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:write, msg}, state) do
+    Circuits.UART.write(state.uart_ref, msg)
+    Circuits.UART.drain(state.uart_ref)
     {:noreply, state}
   end
 
@@ -322,7 +329,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       {ins.velocity, buffer}
     end
 
-    {body_accel, buffer} = if(accel_bit == 1) do
+    {bodyaccel, buffer} = if(accel_bit == 1) do
       {accel_x_mpss_uint32, buffer} = Enum.split(buffer, 4)
       {accel_y_mpss_uint32, buffer} = Enum.split(buffer, 4)
       {accel_z_mpss_uint32, buffer} = Enum.split(buffer, 4)
@@ -371,7 +378,54 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       {ins.gps_status, buffer}
     end
 
-    %{gps_time: gps_time, attitude: attitude, bodyrate: bodyrate, body_accel: body_accel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
+    %{gps_time: gps_time, attitude: attitude, bodyrate: bodyrate, bodyaccel: bodyaccel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
+  end
+
+  def publish_vn_message(bodyaccel, bodyrate, attitude, velocity, position) do
+    header = <<0xFA>>
+    group = <<0x01>>
+    fields_word = <<0xEA, 0x11>>
+    current_time_ns = :os.system_time(:nanosecond) |> Common.Utils.Math.uint_from_fp(64)
+    yaw_deg = attitude.yaw |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
+    pitch_deg = attitude.pitch |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
+    roll_deg = attitude.roll |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
+    body_x = bodyrate.rollrate |> Common.Utils.Math.uint_from_fp(32)
+    body_y = bodyrate.pitchrate |> Common.Utils.Math.uint_from_fp(32)
+    body_z = bodyrate.yawrate |> Common.Utils.Math.uint_from_fp(32)
+    latitude_deg = position.latitude |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(64)
+    longitude_deg = position.longitude |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(64)
+    altitude_m = position.altitude |> Common.Utils.Math.uint_from_fp(64)
+    vel_north = velocity.north |> Common.Utils.Math.uint_from_fp(32)
+    vel_east = velocity.east |> Common.Utils.Math.uint_from_fp(32)
+    vel_down = velocity.down |> Common.Utils.Math.uint_from_fp(32)
+    accel_x = bodyaccel.x |> Common.Utils.Math.uint_from_fp(32)
+    accel_y = bodyaccel.y |> Common.Utils.Math.uint_from_fp(32)
+    accel_z = bodyaccel.z |> Common.Utils.Math.uint_from_fp(32)
+    gps_status = <<3,0>>
+    payload =
+      group <>
+      fields_word <>
+      current_time_ns <>
+      yaw_deg <>
+      pitch_deg <>
+      roll_deg <>
+      body_x <>
+      body_y <>
+      body_z <>
+      latitude_deg <>
+      longitude_deg <>
+      altitude_m <>
+      vel_north <>
+      vel_east <>
+      vel_down <>
+      accel_x <>
+      accel_y <>
+      accel_z <>
+      gps_status
+    checksum = calculate_checksum(:binary.bin_to_list(payload))
+    crc = <<checksum >>> 8, checksum &&& 0xFF>>
+    msg = header <> payload <> crc
+    GenServer.cast(__MODULE__, {:write, msg})
   end
 
   def list_to_int(x_list, bytes) do

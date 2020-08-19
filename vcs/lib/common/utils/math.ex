@@ -105,7 +105,7 @@ defmodule Common.Utils.Math do
 
   @log2 0.69314718056
   @spec uint_from_fp(float(), integer) :: integer()
-  def uint_from_fp(x, _bits) do
+  def uint_from_fp(x, bits) do
     # abs_x = abs(x)
     # int_x = floor(abs_x)
     # dec_x = abs_x-int_x
@@ -114,13 +114,20 @@ defmodule Common.Utils.Math do
     # exp = length(significand)-1 + 127
     # exponent = :erlang.integer_to_list(exp, 2)
     # Logger.debug("exponent: #{exponent}")
+    {exponent_add, max_value, default_value, exp_min_index} =
+      case bits do
+        32 -> {127, 3.4e38, <<0,0,0,0>>, 23}
+        64 -> {1023, 1.0e300, <<0,0,0,0,0,0,0,0>>, 52}
+      end
     x = x + 1-1
-    if x == 0 or (x>(3.4e38)) or (x<(-3.4e38)) do
-      <<0,0,0,0>>
+    # Logger.info("x: #{x}")
+    if x == 0 or (x > max_value) or (x < -max_value) do
+      # Logger.warn("use default")
+      default_value
     else
       abs_x = abs(x)
       exponent = floor(:math.log(abs_x)/@log2)
-      biased_exponent = exponent + 127
+      biased_exponent = exponent + exponent_add
       exponent_bin = :erlang.integer_to_binary(biased_exponent,2)
       # add leading zeros if necessary
       num_zeros = 8 - String.length(exponent_bin)
@@ -135,7 +142,7 @@ defmodule Common.Utils.Math do
       exp_mult = :math.pow(2,exponent)
       # Logger.info("exp/exp_mult: #{exponent}/#{exp_mult}")
       {_mantissa, mantissa_string} =
-        Enum.reduce(1..23, {1,""}, fn (ctr, {mantissa, mantissa_string}) ->
+        Enum.reduce(1..exp_min_index, {1,""}, fn (ctr, {mantissa, mantissa_string}) ->
           mantissa_temp = mantissa + 1.0/Bitwise.<<<(1,ctr)
           # Logger.info("ctr/mtemp/mult: #{ctr}/#{mantissa_temp}/#{mantissa_temp*exp_mult}")
           if mantissa_temp*exp_mult <= abs_x do
@@ -157,7 +164,10 @@ defmodule Common.Utils.Math do
       # Logger.debug("number: #{number}")
       num_int = :erlang.binary_to_integer(number,2)
       # Logger.info("num_int: #{num_int}")
-      <<num_int :: little-unsigned-32>>
+      case bits do
+        32 -> <<num_int :: little-unsigned-32>>
+            64 -> <<num_int :: little-unsigned-64>>
+      end
 
     end
     # Logger.debug("[#{a},#{b},#{c},#{d}]")
