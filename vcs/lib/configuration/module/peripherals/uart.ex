@@ -84,8 +84,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_telemetry_config(module) do
     {device_desc, baud} =
       case module do
-        # :Xbee -> {"FT231X", 57_600}
-        :Xbee -> {"FT232R", 57_600}
+        :Xbee -> {"FT231X", 57_600}
         :Sik -> {"FT231X", 57_600}
       end
     %{

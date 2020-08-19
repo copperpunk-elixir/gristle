@@ -120,7 +120,7 @@ defmodule Telemetry.Ublox do
     {payload, payload_length} = Enum.reduce(Enum.zip(values, byte_types), {<<>>,0}, fn ({value, bytes}, {payload, payload_length}) ->
       bytes_abs = abs(bytes)
       value_bin = if bytes>0 do
-        Common.Utils.Math.uint_from_fp(value, bytes_abs)
+        Common.Utils.Math.uint_from_fp(value, round(bytes_abs*8))
       else
         Common.Utils.Math.int_little_bin(value, bytes_abs*8)
       end

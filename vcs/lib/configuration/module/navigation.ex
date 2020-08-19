@@ -19,7 +19,8 @@ defmodule Configuration.Module.Navigation do
           path_follower: %{
             k_path: 0.05,
             k_orbit: 3.5,
-            chi_inf: 0.52
+            chi_inf: 0.52,
+            lookahead_dt: 0.5
           }
         },
         vehicle_limits),

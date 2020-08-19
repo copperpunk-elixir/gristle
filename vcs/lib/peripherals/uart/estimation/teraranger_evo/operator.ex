@@ -74,6 +74,14 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   end
 
   @impl GenServer
+  def handle_cast({:write, range}, state) do
+    msg = create_message_for_range_m(range) |> :binary.list_to_bin()
+    Circuits.UART.write(state.uart_ref, msg)
+    Circuits.UART.drain(state.uart_ref)
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
     # Logger.debug("evo received: #{data}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
@@ -185,8 +193,14 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
 
   @spec create_message_for_range_mm(integer()) :: list()
   def create_message_for_range_mm(range) do
+    {msb, lsb} =
+    if (range < 60000) do
     msb = Bitwise.>>>(range,8)
     lsb = Bitwise.&&&(range,0xFF)
+    {msb, lsb}
+    else
+      {0xFF, 0xFF}
+    end
     buffer = [@start_byte, msb, lsb]
     crc = calculate_checksum(buffer)
     buffer ++ [crc]
@@ -195,6 +209,11 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   @spec create_message_for_range_m(float()) :: list()
   def create_message_for_range_m(range) do
     range*1000 |> round() |> create_message_for_range_mm()
+  end
+
+  @spec publish_range(float()) :: atom()
+  def publish_range(range) do
+    GenServer.cast(__MODULE__, {:write, range})
   end
 
   @spec get_range() :: float()

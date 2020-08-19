@@ -180,16 +180,11 @@ defmodule Simulation.XplaneReceive do
 
   @spec publish_perfect_simulation_data(map()) ::atom()
   def publish_perfect_simulation_data(state) do
-    attitude_bodyrate_value_map = %{attitude: state.attitude, bodyrate: state.bodyrate}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
-    position_velocity_value_map = %{position: state.position, velocity: state.velocity}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
-    if !is_nil(state.attitude) do
+    Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyaccel, state.bodyrate, state.attitude, state.velocity, state.position)
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    if !is_nil(state.attitude) and (:rand.uniform(5) == 1) do
       range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
-      if range_meas < Peripherals.Uart.Estimation.TerarangerEvo.Operator.max_range() do
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_measured, :range}, range_meas}, {:pv_measured, :range}, self())
-      end
+      Peripherals.Uart.Estimation.TerarangerEvo.Operator.publish_range(range_meas)
     end
   end
 
