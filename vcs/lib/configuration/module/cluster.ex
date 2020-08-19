@@ -47,8 +47,11 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_network_config() :: map()
   def get_network_config() do
+    {interface, vintage_net_config} = get_interface_and_config()
     %{
-      interface: get_interface(),
+      interface: interface,
+      vintage_net_access: vintage_net_access?(),
+      vintage_net_config: vintage_net_config,
       broadcast_ip_loop_interval_ms: 1000,
       cookie: get_cookie(),
       src_port: 8780,
@@ -56,21 +59,63 @@ defmodule Configuration.Module.Cluster do
     }
   end
 
-  @spec get_interface() :: binary()
-  def get_interface() do
-    {:ok, computer_name} = :inet.gethostname()
-    computer_name = to_string(computer_name)
-
-    cond do
-      String.contains?(computer_name, "system76") -> "wlp0s20f3"
-      String.contains?(computer_name, "nerves") -> "wlan0"
-      String.contains?(computer_name, "pi") -> "wlan0"
-      true -> raise "Unknown Computer Type: #{computer_name}"
-    end
-  end
-
   @spec get_cookie() :: atom()
   def get_cookie() do
     :guestoftheday
+  end
+
+  @spec vintage_net_access?() :: boolean()
+  def vintage_net_access?() do
+    if String.contains?(get_computer_name(), "system76"), do: false, else: true
+  end
+
+  @spec get_computer_name() :: binary()
+  def get_computer_name do
+    {:ok, computer_name} = :inet.gethostname()
+    to_string(computer_name)
+  end
+
+  @spec get_interface_and_config() :: tuple()
+  def get_interface_and_config() do
+    [interface_type] = Common.Utils.get_filenames_with_extension(".network")
+    computer_name = get_computer_name()
+    case interface_type do
+      "wired" ->
+        interface =
+        cond do
+          String.contains?(computer_name, "system76") -> "eno1"
+          true -> "eth0"
+        end
+        {interface, get_wired_config()}
+      "wireless" ->
+        interface =
+          cond do
+          String.contains?(computer_name, "system76") -> "wlp0s20f3"
+          String.contains?(computer_name, "nerves") -> "wlan0"
+          String.contains?(computer_name, "pi") -> "wlan0"
+          true -> raise "Unknown Computer Type: #{computer_name}"
+        end
+        {interface, get_wireless_config()}
+    end
+  end
+
+  @spec get_wireless_config() :: map()
+  def get_wireless_config do
+     %{type: VintageNetWiFi,
+       vintage_net_wifi: %{
+         networks: [
+           %{
+             key_mgmt: :wpa_psk,
+             ssid: "dialup",
+             psk: "binghamplace",
+           }
+         ]
+       },
+       ipv4: %{method: :dhcp}}
+  end
+
+  @spec get_wired_config() :: map()
+  def get_wired_config() do
+    %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}
   end
 end

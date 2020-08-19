@@ -4,15 +4,16 @@ defmodule Common.Application do
 
   def start(_type, _args) do
     Logger.debug("Start Application")
+    RingLogger.attach()
     Comms.System.start_link()
     Process.sleep(200)
     Common.Utils.mount_usb_drive()
     vehicle_type = Common.Utils.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
-    # Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
+    Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Process.sleep(200)
     Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
-    start_remaining_processes()
+    # start_remaining_processes()
   end
 
   @spec start_remaining_processes() :: atom()
@@ -30,14 +31,15 @@ defmodule Common.Application do
 
   @spec start_vehicle(atom(), atom()) :: atom()
   def start_vehicle(vehicle_type, node_type) do
-    RingLogger.attach()
+    # RingLogger.attach()
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
     Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart], vehicle_type, node_type)
   end
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
-    Logger.add_backend(:console)
+    # Logger.add_backend(:console)
+    # RingLogger.attach
     node_type = :gcs
     Configuration.Module.start_modules([Display.Scenic, Navigation], vehicle_type, node_type)
   end
@@ -45,7 +47,7 @@ defmodule Common.Application do
 
   @spec start_simulation(atom()) ::atom()
   def start_simulation(vehicle_type) do
-    RingLogger.attach()
+    # RingLogger.attach()
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
     Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
@@ -53,7 +55,7 @@ defmodule Common.Application do
 
   @spec start_hil(atom()) ::atom()
   def start_hil(vehicle_type) do
-    RingLogger.attach()
+    # RingLogger.attach()
     node_type = :all
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
     Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)

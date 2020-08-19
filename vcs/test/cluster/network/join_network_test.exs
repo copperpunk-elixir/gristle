@@ -3,21 +3,24 @@ defmodule Cluster.Network.JoinNetworkTest do
   require Logger
 
   setup do
+    RingLogger.attach
+    Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
     Comms.System.start_link()
     Process.sleep(100)
     network_config = Configuration.Module.Cluster.get_network_config()
     Cluster.Network.start_link(network_config)
-    Process.sleep(100)
+    Process.sleep(1000)
     {:ok, []}
   end
 
-  test "Connect to network" do
-    interface = "wlp0s20f3"
-    connection_status = VintageNet.get(["interface", interface, "lower_up"])
+  test "Connect to wireless network" do
+    # interface = "wlp0s20f3"
+    connection_status = Cluster.Network.connected_to_network?()
     if connection_status == false do
+      Logger.warn("network not connected")
       Process.sleep(10000)
     end
-    connection_status = VintageNet.get(["interface", interface, "lower_up"])
+    connection_status = Cluster.Network.connected_to_network?()
     assert connection_status == true
   end
 
