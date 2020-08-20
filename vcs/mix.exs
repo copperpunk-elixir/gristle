@@ -30,7 +30,7 @@ defmodule Vcs.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {Common.Application, []},
+      # mod: {Common.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -61,6 +61,7 @@ defmodule Vcs.MixProject do
       {:vintage_net_ethernet, "~> 0.7.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.3"},
+      {:circuits_gpio, "~> 0.4"},
       #Scenic dependencies
       {:scenic, "~> 0.10"},
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
