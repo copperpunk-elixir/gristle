@@ -50,20 +50,20 @@ defmodule Peripherals.Gpio.Logging.Operator do
 
   @impl GenServer
   def handle_info({:circuits_gpio, pin_number, timestamp, value}, state) do
-    falling_time = if (value == 1), do: timestamp, else: Map.get(state, :falling_time, timestamp)
-    if (value == 0) do
+    falling_time = if (value == 0), do: timestamp, else: Map.get(state, :falling_time, timestamp)
+    if (value == 1) do
       dt = round((timestamp - falling_time)*(1.0e-6))
       if (dt > 0) do
-      Logger.debug("dt: #{dt}")
-      cond do
-        dt > state.time_threshold_power_off_ms -> 
-          Logger.warn("Power off!")
-          Common.Utils.power_off()
-        dt > state.time_threshold_cycle_mount_ms -> 
-          Logger.warn("Cycle USB mount")
-          Common.Utils.File.cycle_mount()
-        true -> nil
-      end
+        Logger.debug("dt: #{dt}")
+        cond do
+          dt > state.time_threshold_power_off_ms ->
+            Logger.warn("Power off!")
+            Common.Utils.power_off()
+          dt > state.time_threshold_cycle_mount_ms ->
+            Logger.warn("Cycle USB mount")
+            Common.Utils.File.cycle_mount()
+          true -> nil
+        end
       end
     end
     {:noreply, Map.put(state, :falling_time, falling_time)}
