@@ -79,6 +79,13 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
+  @spec common_startup() :: atom()
+  def common_startup() do
+    RingLogger.attach()
+    mount_usb_drive()
+    set_host_name()
+  end
+
   @spec get_mount_path() :: binary()
   def get_mount_path() do
     "/mnt"
@@ -96,34 +103,21 @@ defmodule Common.Utils do
     System.cmd("umount", [path])
   end
 
-  @spec get_filename_with_extension(binary()) :: binary()
-  def get_filename_with_extension(extension) do
-    path = get_mount_path()
-    {:ok, files} = :file.list_dir(path)
-    filename = Enum.reduce(files,nil, fn (file, acc) ->
-      file = to_string(file)
-      if (String.contains?(file,extension)) do
-        [filename] = String.split(file,extension,[trim: true])
-        filename
-      else
-        acc
-      end
-    end)
-    if (filename == nil) do
-      raise "Filename is note available"
-    end
-    filename
+  @spec set_host_name() :: atom()
+  def set_host_name() do
+    host_name = get_filenames_with_extension(".node") |> Enum.at(0)
+    MdnsLite.set_host(host_name)
   end
 
-  @spec get_filenames_with_extension(binary()) :: list()
-  def get_filenames_with_extension(extension) do
-    path = get_mount_path()
+  @spec get_filenames_with_extension(binary(), binary()) :: list()
+  def get_filenames_with_extension(extension, subdirectory \\ "") do
+    path = get_mount_path() <> "/" <> subdirectory
     {:ok, files} = :file.list_dir(path)
     filenames = Enum.reduce(files,[], fn (file, acc) ->
       file = to_string(file)
       if (String.contains?(file,extension)) do
         [filename] = String.split(file,extension,[trim: true])
-        acc ++ [String.to_atom(filename)]
+        acc ++ [filename]
       else
         acc
       end
@@ -136,17 +130,17 @@ defmodule Common.Utils do
 
   @spec get_vehicle_type() :: atom()
   def get_vehicle_type() do
-    get_filename_with_extension(".vehicle") |> String.to_atom()
+    get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
   end
 
   @spec get_node_type() :: atom()
   def get_node_type() do
-    get_filename_with_extension(".node") |> String.to_atom()
+    get_filenames_with_extension(".node") |> Enum.at(0) |> String.to_atom()
   end
 
   @spec get_model_type() :: atom()
   def get_model_type() do
-    get_filename_with_extension(".model") |> String.to_atom()
+    get_filenames_with_extension(".model") |> Enum.at(0) |> String.to_atom()
   end
 
   @spec get_modules() :: list()
@@ -156,7 +150,10 @@ defmodule Common.Utils do
 
   @spec get_uart_peripherals() :: list()
   def get_uart_peripherals() do
-    get_filenames_with_extension(".uart")
+    peripherals_bin_list = get_filenames_with_extension(".uart", "peripherals")
+    Enum.map(peripherals_bin_list, fn x ->
+      String.to_atom(x)
+    end)
   end
 
   def assert_valid_config(config, config_type) do

@@ -21,6 +21,9 @@ defmodule Cluster.Network do
         broadcast_ip_loop_interval_ms: config.broadcast_ip_loop_interval_ms,
         broadcast_ip_loop_timer: nil,
         interface: config.interface,
+        vintage_net_access: config.vintage_net_access,
+        vintage_net_config: config.vintage_net_config,
+        connected_to_network: false
      }}
   end
 
@@ -34,23 +37,27 @@ defmodule Cluster.Network do
   def handle_cast(:begin , state) do
     Process.sleep(100)
     Comms.System.start_operator(__MODULE__)
+    if (state.vintage_net_access) do
+      VintageNet.configure(state.interface, state.vintage_net_config)
+    end
     GenServer.cast(__MODULE__, :connect_to_network)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast(:connect_to_network, state) do
-    connection_status = VintageNet.get(["interface", state.interface, "lower_up"])
-    if connection_status == true do
+    connected = VintageNet.get(["interface", state.interface, "lower_up"])
+    connected =  if (connected), do: true, else: false
+    if connected == true do
       Logger.warn("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      Common.Application.start_remaining_processes()
+      # Common.Application.start_remaining_processes()
     else
       Logger.warn("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
       GenServer.cast(__MODULE__, :connect_to_network)
     end
-    {:noreply, state}
+    {:noreply, %{state | connected_to_network: connected}}
   end
 
   @impl GenServer
@@ -116,6 +123,11 @@ defmodule Cluster.Network do
     {:reply, ip_address, state}
   end
 
+  @impl GenServer
+  def handle_call(:is_connected, _from, state) do
+    {:reply, state.connected_to_network, state}
+  end
+
   @spec get_ip_address() :: tuple()
   def get_ip_address() do
     GenServer.call(__MODULE__, :get_ip_address)
@@ -154,23 +166,8 @@ defmodule Cluster.Network do
     end
   end
 
-
-  @spec configure_wifi() :: atom()
-  def configure_wifi() do
-    interface = "wlp0s20f3"
-     config = %{
-       type: VintageNetWiFi,
-       vintage_net_wifi: %{
-         networks: [
-           %{
-             key_mgmt: :wpa_psk,
-             ssid: "dialup",
-             psk: "binghamplace",
-           }
-         ]
-       },
-       ipv4: %{method: :dhcp},
-     }
-    VintageNet.configure(interface, config)
+  @spec connected_to_network?() :: boolean()
+  def connected_to_network?() do
+    GenServer.call(__MODULE__, :is_connected)
   end
 end

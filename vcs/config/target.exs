@@ -5,7 +5,7 @@ import Config
 # involved with firmware updates.
 
 config :shoehorn,
-  init: [:nerves_runtime],
+  init: [:nerves_runtime, :nerves_pack],
   app: Mix.Project.config()[:app]
 
 # Nerves Runtime can enumerate hardware devices and send notifications via
@@ -44,22 +44,22 @@ config :nerves_firmware_ssh,
 # Only enable this for prod if you understand the risks.
 node_name = if Mix.env() != :prod, do: "vcs"
 
-config :vintage_net,
-  regulatory_domain: "US",
-  config: [
-    # {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
-    {"wlan0", %{type: VintageNetWiFi,
-                vintage_net_wifi: %{
-                  networks: [
-                    %{
-                      key_mgmt: :wpa_psk,
-                      ssid: "vcs_ground",
-                      psk: "8052156247",
-                    }
-                  ]
-                },
-                ipv4: %{method: :dhcp}}}
-  ]
+# config :vintage_net,
+#   regulatory_domain: "US",
+#   config: [
+#     # {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
+#     {"wlan0", %{type: VintageNetWiFi,
+#                 vintage_net_wifi: %{
+#                   networks: [
+#                     %{
+#                       key_mgmt: :wpa_psk,
+#                       ssid: "vcs_ground",
+#                       psk: "8052156247",
+#                     }
+#                   ]
+#                 },
+#                 ipv4: %{method: :dhcp}}}
+#   ]
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 # Uncomment to use target specific configurations
