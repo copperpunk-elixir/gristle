@@ -16,14 +16,6 @@ defmodule Cluster.Network.NodeConnection do
     Node.set_cookie(cookie)
   end
 
-  # @spec open_socket_active(integer()) :: any()
-  # def open_socket_active(port) do
-  #   Logger.debug("open socken on port #{port}")
-  #   {:ok, socket} = :gen_udp.open(port, [broadcast: true, active: true])
-  #   Logger.debug(inspect(socket))
-  #   socket
-  # end
-
   @spec broadcast_node(any(), tuple(), binary(), integer()) :: atom()
   def broadcast_node(socket, ip_address, node_name_with_domain, dest_port) do
     # Logger.debug("Broadcast")

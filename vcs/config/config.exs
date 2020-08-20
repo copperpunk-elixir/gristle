@@ -16,6 +16,12 @@ config :shoehorn,
   init: [:nerves_runtime, :nerves_pack],
   app: Mix.Project.config()[:app]
 
+config :vintage_net,
+  persistence: VintageNet.Persistence.Null
+
+config :mdns_lite,
+  host: :hostname
+
 # Set the SOURCE_DATE_EPOCH date for reproducible builds.
 # See https://reproducible-builds.org/docs/source-date-epoch/ for more information
 

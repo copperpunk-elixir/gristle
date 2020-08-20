@@ -110,10 +110,10 @@ defmodule Command.Commander do
                   |> Common.Utils.Math.constrain(min_value, max_value)
                 :course_flight ->
                   reference_cmds.course_flight + value_to_add
-                  |> Common.Utils.constrain_angle_to_compass()
+                  |> Common.Utils.Motion.constrain_angle_to_compass()
                 :course_ground ->
                   reference_cmds.course_ground + value_to_add
-                  |> Common.Utils.constrain_angle_to_compass()
+                  |> Common.Utils.Motion.constrain_angle_to_compass()
                 :speed ->
                   reference_cmds.speed + value_to_add
                   |> Common.Utils.Math.constrain(min_value, max_value)

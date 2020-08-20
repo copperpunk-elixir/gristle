@@ -68,7 +68,7 @@ defmodule Pids.Moderator do
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
         course_cmd = Map.get(pv_cmd_map, course_key)
         # course_value = Map.get(pv_value_map, course_key)
-        course_cmd_constrained = Common.Utils.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
+        course_cmd_constrained = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
         pv_value_map =
           Map.put(pv_value_map, course_key, 0)
           |> Map.delete(:course)

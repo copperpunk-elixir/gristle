@@ -3,7 +3,7 @@ defmodule System.TotalSystemTest do
 
   setup do
     # Expects node_type to be :all
-    vehicle_type = Common.Utils.get_vehicle_type()
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type()
     Common.Application.start(nil,nil)
 
     display_config = Configuration.Module.get_config(Display.Scenic, vehicle_type, nil)

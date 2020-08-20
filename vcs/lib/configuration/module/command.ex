@@ -1,6 +1,6 @@
 defmodule Configuration.Module.Command do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(vehicle_type, node_type) do
+  def get_config(vehicle_type, _node_type) do
     %{
       commander: %{vehicle_type: vehicle_type},
     }
@@ -11,7 +11,7 @@ defmodule Configuration.Module.Command do
     vehicle_module =
       case vehicle_type do
         :Plane ->
-          model_type = Common.Utils.get_model_type()
+          model_type = Common.Utils.Configuration.get_model_type()
           Module.concat(Configuration.Vehicle.Plane.Pids, model_type)
         _other ->
           Module.concat(Configuration.Vehicle, vehicle_type)
@@ -32,7 +32,7 @@ defmodule Configuration.Module.Command do
     vehicle_module =
       case vehicle_type do
         :Plane ->
-          model_type = Common.Utils.get_model_type()
+          model_type = Common.Utils.Configuration.get_model_type()
           Module.concat(Configuration.Vehicle.Plane.Actuation, model_type)
       end
 

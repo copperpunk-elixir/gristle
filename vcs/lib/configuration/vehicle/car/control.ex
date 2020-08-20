@@ -2,7 +2,7 @@ defmodule Configuration.Vehicle.Car.Control do
   require Logger
 
   def get_auto_pv_value_map(pv_value_map, yaw) do
-    {speed, course} = Common.Utils.get_speed_course_for_velocity(pv_value_map.velocity.north, pv_value_map.velocity.east, 2, yaw)
+    {speed, course} = Common.Utils.Motion.get_speed_course_for_velocity(pv_value_map.velocity.north, pv_value_map.velocity.east, 2, yaw)
     %{course: course, speed: speed}
   end
 

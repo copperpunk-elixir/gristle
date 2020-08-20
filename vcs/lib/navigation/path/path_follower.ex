@@ -51,7 +51,7 @@ defmodule Navigation.Path.PathFollower do
       # e_px = cos_chi_q*dx + sin_chi_q*dy
       e_py = -sin_chi_q*dx + cos_chi_q*dy
       course_cmd = chi_q - path_follower.chi_inf_two_over_pi*:math.atan(path_follower.k_path*e_py)
-      |> Common.Utils.constrain_angle_to_compass()
+      |> Common.Utils.Motion.constrain_angle_to_compass()
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
@@ -71,7 +71,7 @@ defmodule Navigation.Path.PathFollower do
       phi = if ((phi - course) < -:math.pi), do: phi + @two_pi, else: phi
       phi = if ((phi - course) > :math.pi), do: phi - @two_pi, else: phi
       course_cmd = phi + path_case.turn_direction*(@pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
-      |> Common.Utils.constrain_angle_to_compass()
+      |> Common.Utils.Motion.constrain_angle_to_compass()
 
       # e_py = orbit_d - path_case.rho
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")

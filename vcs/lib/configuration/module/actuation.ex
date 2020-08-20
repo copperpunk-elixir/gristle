@@ -34,7 +34,7 @@ defmodule Configuration.Module.Actuation do
               })
     end)
 
-    model_type = Common.Utils.get_model_type()
+    model_type = Common.Utils.Configuration.get_model_type()
     model_module =
       Module.concat(Configuration.Vehicle, vehicle_type)
       |> Module.concat(Actuation)

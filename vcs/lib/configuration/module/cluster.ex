@@ -9,7 +9,7 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_heartbeat_config() :: map()
   def get_heartbeat_config do
-    node_type = Common.Utils.get_node_type()
+    node_type = Common.Utils.Configuration.get_node_type()
     {node, ward} = get_node_and_ward(node_type)
     get_heartbeat_config(node, ward)
   end
@@ -77,7 +77,7 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_interface_and_config() :: tuple()
   def get_interface_and_config() do
-    [interface_type] = Common.Utils.get_filenames_with_extension(".network")
+    [interface_type] = Common.Utils.File.get_filenames_with_extension(".network")
     computer_name = get_computer_name()
     case interface_type do
       "wired" ->

@@ -117,7 +117,7 @@ defmodule Simulation.XplaneReceive do
             # Add accel due to gravity
             # Logger.debug("accel_mpss xyz: #{eftb(accel_x_mpss,3)}/#{eftb(accel_y_mpss, 3)}/#{eftb(accel_z_mpss, 3)}")
             attitude = if Enum.empty?(state.attitude), do: %{roll: 0.0, pitch: 0.0, yaw: 0.0}, else: state.attitude
-            accel_gravity = Common.Utils.attitude_to_accel(attitude)
+            accel_gravity = Common.Utils.Motion.attitude_to_accel(attitude)
             accel = %{x: accel_gravity.x + accel_x_mpss, y: accel_gravity.y + accel_y_mpss, z: accel_gravity.z + accel_z_mpss}
             # Logger.debug("accel xyz: #{eftb(accel.x,3)}/#{eftb(accel.y, 3)}/#{eftb(accel.z, 3)}")
             %{state | bodyaccel: accel}

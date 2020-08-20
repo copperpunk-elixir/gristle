@@ -55,7 +55,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
     assert_in_delta(cmds.altitude, 0, max_pos_delta)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     # Speed up
     Logger.info("same position but with 35m/s speed")
     pos = new_position
@@ -64,7 +64,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     assert cmds.altitude > 0
     assert Map.has_key?(cmds, :pitch) == false
     # Climb above AGL threshold up
@@ -77,7 +77,7 @@ defmodule Navigation.Ground.CreateGroundSegmentTest do
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     Logger.info("goals 3: #{inspect(cmds)}")
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
     assert Map.has_key?(cmds, :pitch) == false
     assert cmds.altitude > 0
   end

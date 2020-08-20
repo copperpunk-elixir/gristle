@@ -3,7 +3,7 @@ defmodule Configuration.Vehicle.Plane.Pids do
 
   @spec get_config() :: map()
   def get_config() do
-    model_type = Common.Utils.get_model_type()
+    model_type = Common.Utils.Configuration.get_model_type()
     model_module =
       Module.concat(Configuration.Vehicle.Plane.Pids, model_type)
     pids = apply(model_module, :get_pids, [])

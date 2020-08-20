@@ -62,19 +62,19 @@ defmodule Navigation.MoveVehicleTest do
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0), max_rad_delta)
+    assert_in_delta(0, Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0), max_rad_delta)
     # Move in positive Y direction
     pos = Common.Utils.Location.lla_from_point(wp1, 10, 10.2)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0) < 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0) < 0
     # Move in negative Y direction
     pos = Common.Utils.Location.lla_from_point(wp1, 10, 9.8)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0) > 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0) > 0
 
    # Check Next orbit
     # Start at the end of the line
@@ -82,45 +82,45 @@ defmodule Navigation.MoveVehicleTest do
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0), max_rad_delta)
+    assert_in_delta(0, Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0), max_rad_delta)
     # Move in positive Y direction
     pos = Common.Utils.Location.lla_from_point(wp1, 190, 10.2)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0) < 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0) < 0
     # Move in negative Y direction
     pos = Common.Utils.Location.lla_from_point(wp1, 190, 9.8)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - 0) > 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - 0) > 0
     # Check Next orbit
     pos = Common.Utils.Location.lla_from_point(wp1, 197.07107, 12.928932)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert_in_delta(0, Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/4), max_rad_delta)
+    assert_in_delta(0, Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/4), max_rad_delta)
     # Move in positive X direction
     pos = Common.Utils.Location.lla_from_point(wp1, 202, 18)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) > 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) > 0
 
     # Move in negative X direction
     pos = Common.Utils.Location.lla_from_point(wp1, 198, 18)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) < 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) < 0
 
     # complete the CP
     pos = Common.Utils.Location.lla_from_point(wp1, 200, 20.00001)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2),0, max_rad_delta)
     # Perform the next CP
     pos = Common.Utils.Location.lla_from_point(wp1, 200, 21)
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
@@ -134,6 +134,6 @@ defmodule Navigation.MoveVehicleTest do
     Comms.Operator.send_local_msg_to_group(__MODULE__,{@pos_vel_group, pos, velocity, 0}, @pos_vel_group, self())
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
-    assert Common.Utils.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) < 0
+    assert Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - :math.pi/2) < 0
   end
 end

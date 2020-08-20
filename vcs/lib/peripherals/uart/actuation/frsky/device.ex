@@ -14,7 +14,7 @@ defmodule Peripherals.Uart.Actuation.Frsky.Device do
 
   def open_port(device) do
     Logger.debug("Open port with device: #{inspect(device)}")
-    command_port = Common.Utils.get_uart_devices_containing_string(device.device_description)
+    command_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(device.device_description)
     Logger.debug("FrskyServo port: #{command_port}")
     # Logger.debug("interface_ref: #{inspect(device.interface_ref)}")
     case Circuits.UART.open(device.interface_ref,command_port,[speed: device.baud, active: false]) do

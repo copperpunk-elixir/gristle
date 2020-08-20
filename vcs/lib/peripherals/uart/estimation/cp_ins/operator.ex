@@ -44,7 +44,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.debug("CP INS begin with process: #{inspect(self())}")
-    ins_port = Common.Utils.get_uart_devices_containing_string(state.ublox_device_description)
+    ins_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.ublox_device_description)
     case Circuits.UART.open(state.uart_ref, ins_port,[speed: state.baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -77,7 +77,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity()}
     # {ax_i, ay_i, az_i} = accel_inertial
     # Logger.info("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
-    {ax, ay, az}= Common.Utils.inertial_to_body_euler(values.attitude, accel_inertial)
+    {ax, ay, az}= Common.Utils.Motion.inertial_to_body_euler(values.attitude, accel_inertial)
     bodyaccel = %{x: ax, y: ay, z: az}
     # bodyaccel = values.bodyaccel
     # Logger.warn("body_accel: #{Common.Utils.eftb(ax,3)}/#{Common.Utils.eftb(ay,3)}/#{Common.Utils.eftb(az,3)}")

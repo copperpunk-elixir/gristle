@@ -33,7 +33,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.info("telemetry device: #{state.device_description}")
-    telemetry_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+    telemetry_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
     Logger.info("telemetry port: #{inspect(telemetry_port)}")
     case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: state.baud, active: true]) do
       {:error, error} ->
@@ -197,7 +197,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
             [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
           Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
-          other -> Logger.warn("Bad message id: #{msg_id}")
+          other -> Logger.warn("Bad message id: #{other}")
         end
 
       0x50 ->
@@ -207,7 +207,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [cmd, arg] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
             case cmd do
               0x01 -> Logging.Logger.save_log()
-              0x02 -> Common.Utils.unmount_usb_drive()
+              0x02 -> Common.Utils.File.unmount_usb_drive()
+              other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
             end
           0x01 ->
             msg_type = :mission
