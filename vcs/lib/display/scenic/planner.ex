@@ -21,9 +21,9 @@ defmodule Display.Scenic.Planner do
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       |> Display.Scenic.Gcs.Utils.draw_arrow(0,0, 0, 1, :vehicle, true, :clear)
 
-    model = Common.Utils.get_model_type()
+    model = Common.Utils.Configuration.get_model_type()
     margin =
-      case Common.Utils.get_vehicle_type() do
+      case Common.Utils.Configuration.get_vehicle_type() do
         :Plane ->
           case model do
             :Cessna -> 734
@@ -192,18 +192,18 @@ defmodule Display.Scenic.Planner do
     Enum.reduce(config_points, graph, fn(cp, acc) ->
       #Arc
       # Line
-      cs_arc_start_angle =  (Common.Utils.angle_between_points(cp.cs, cp.pos) - :math.pi/2) |> Common.Utils.constrain_angle_to_compass()
-      cs_arc_finish_angle = (Common.Utils.angle_between_points(cp.cs, cp.z1) - :math.pi/2) |> Common.Utils.constrain_angle_to_compass()
+      cs_arc_start_angle =  (Common.Utils.Motion.angle_between_points(cp.cs, cp.pos) - :math.pi/2) |> Common.Utils.Motion.constrain_angle_to_compass()
+      cs_arc_finish_angle = (Common.Utils.Motion.angle_between_points(cp.cs, cp.z1) - :math.pi/2) |> Common.Utils.Motion.constrain_angle_to_compass()
       {cs_arc_start_angle, cs_arc_finish_angle} = correct_arc_angles(cs_arc_start_angle, cs_arc_finish_angle, cp.start_direction)
       # if (cs_arc_finish_angle - cs_arc_start_angle < ) do
       # end
-      ce_arc_start_angle =  Common.Utils.angle_between_points(cp.ce, cp.z2) - :math.pi/2 |> Common.Utils.constrain_angle_to_compass()
-      ce_arc_finish_angle = Common.Utils.angle_between_points(cp.ce, cp.z3) - :math.pi/2 |> Common.Utils.constrain_angle_to_compass()
+      ce_arc_start_angle =  Common.Utils.Motion.angle_between_points(cp.ce, cp.z2) - :math.pi/2 |> Common.Utils.Motion.constrain_angle_to_compass()
+      ce_arc_finish_angle = Common.Utils.Motion.angle_between_points(cp.ce, cp.z3) - :math.pi/2 |> Common.Utils.Motion.constrain_angle_to_compass()
       {ce_arc_start_angle, ce_arc_finish_angle} = correct_arc_angles(ce_arc_start_angle, ce_arc_finish_angle, cp.end_direction)
-        # Common.Utils.constrain_angle_to_compass(:math.atan2(cp.q1.y, cp.q1.x) - cp.start_direction*:math.pi/2)
+        # Common.Utils.Motion.constrain_angle_to_compass(:math.atan2(cp.q1.y, cp.q1.x) - cp.start_direction*:math.pi/2)
       # Logger.debug("q1: #{inspect(cp.q1)}")
-      # Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
-      # Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
+      # Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
+      # Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
       # Logger.debug("cs/ce loc:")
       # Navigation.Utils.LatLonAlt.print_deg(cp.cs)
       # Navigation.Utils.LatLonAlt.print_deg(cp.ce)
@@ -254,7 +254,7 @@ defmodule Display.Scenic.Planner do
   @spec correct_arc_angles(float(), float(), integer()) :: tuple()
   def correct_arc_angles(start, finish, direction) do
     # Logger.debug("start/finish initial: #{Common.Utils.Math.rad2deg(start)}/#{Common.Utils.Math.rad2deg(finish)}")
-    arc = Common.Utils.turn_left_or_right_for_correction(start - finish) |> abs()
+    arc = Common.Utils.Motion.turn_left_or_right_for_correction(start - finish) |> abs()
     if (arc < Common.Utils.Math.deg2rad(2)) do
       {0,0}
     else

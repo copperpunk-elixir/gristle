@@ -73,7 +73,7 @@ defmodule Navigation.PathManager do
     # Send to Navigator
     speed = velocity.speed
     course = velocity.course
-    airspeed = velocity.airspeed
+    # airspeed = velocity.airspeed
     current_case_index = if is_nil(state.current_path_case), do: -1, else: state.current_path_case.case_index
     state = move_vehicle(position, state, current_case_index)
     current_path_case = state.current_path_case
@@ -278,13 +278,13 @@ defmodule Navigation.PathManager do
       cp = Enum.at(path_config_points, best_path_index)
       q3 = Navigation.Utils.Vector.new(:math.cos(next_cp.course), :math.sin(next_cp.course), 0)
 
-      theta1 = Common.Utils.constrain_angle_to_compass(current_cp.course)
-      theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
+      theta1 = Common.Utils.Motion.constrain_angle_to_compass(current_cp.course)
+      theta2 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.Motion.constrain_angle_to_compass()
       skip_case_0 = can_skip_case(theta1, theta2, cp.start_direction)
       # Logger.debug("theta1/theta/skip0?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_0}")
 
-      theta1 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.constrain_angle_to_compass()
-      theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.constrain_angle_to_compass()
+      theta1 = :math.atan2(cp.q1.y, cp.q1.x) |> Common.Utils.Motion.constrain_angle_to_compass()
+      theta2 = :math.atan2(q3.y, q3.x) |> Common.Utils.Motion.constrain_angle_to_compass()
       skip_case_3 = can_skip_case(theta1, theta2, cp.end_direction)
       # Logger.debug("theta1/theta/skip3?: #{Common.Utils.Math.rad2deg(theta1)}/#{Common.Utils.Math.rad2deg(theta2)}/#{skip_case_3}")
       # Logger.debug("start/radius: #{current_cp.start_radius}/#{next_cp.start_radius}")
@@ -403,8 +403,8 @@ defmodule Navigation.PathManager do
 
       {lsle_dx, lsle_dy} = Common.Utils.Location.dx_dy_between_points(line_start, line_end)
       s1 = Common.Utils.Math.hypot(lsle_dx, lsle_dy)
-      s2 = radius1*Common.Utils.constrain_angle_to_compass(v2 - (cp1.course - @pi_2))
-      s3 = radius2*Common.Utils.constrain_angle_to_compass((cp2.course - @pi_2) - v2)
+      s2 = radius1*Common.Utils.Motion.constrain_angle_to_compass(v2 - (cp1.course - @pi_2))
+      s3 = radius2*Common.Utils.Motion.constrain_angle_to_compass((cp2.course - @pi_2) - v2)
       path_distance = s1 + s2 + s3
       # Logger.warn("RR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(lsle_dx/s1, lsle_dy/s1, (line_end.altitude-line_start.altitude)/s1)
@@ -439,13 +439,13 @@ defmodule Navigation.PathManager do
       xL2 = xL*radius2/(radius1 + radius2)
       straight1 = xL1*xL1 - radius1*radius1
       straight2 = xL2*xL2 - radius2*radius2
-      v = Common.Utils.angle_between_points(crs, cle)
+      v = Common.Utils.Motion.angle_between_points(crs, cle)
       # Logger.debug("v: #{v}")
       v2 = v - @pi_2 + :math.asin((radius1 + radius2)/xL)
       # Logger.debug("v2: #{v2}")
       s1 = :math.sqrt(straight1) + :math.sqrt(straight2)
-      s2 = radius1*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(v2) - Common.Utils.constrain_angle_to_compass(cp1.course - @pi_2))
-      s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(v2 + :math.pi) - Common.Utils.constrain_angle_to_compass(cp2.course + @pi_2))
+      s2 = radius1*Common.Utils.Motion.constrain_angle_to_compass(@two_pi + Common.Utils.Motion.constrain_angle_to_compass(v2) - Common.Utils.Motion.constrain_angle_to_compass(cp1.course - @pi_2))
+      s3 = radius2*Common.Utils.Motion.constrain_angle_to_compass(@two_pi + Common.Utils.Motion.constrain_angle_to_compass(v2 + :math.pi) - Common.Utils.Motion.constrain_angle_to_compass(cp2.course + @pi_2))
       path_distance = s1 + s2 + s3
       # Logger.warn("RL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(:math.cos(v2 + @pi_2), :math.sin(v2 + @pi_2), (cle.altitude-crs.altitude)/s1)
@@ -482,13 +482,13 @@ defmodule Navigation.PathManager do
       xL2 = xL*radius2/(radius1 + radius2)
       straight1 = xL1*xL1 - radius1*radius1
       straight2 = xL2*xL2 - radius2*radius2
-      v = Common.Utils.angle_between_points(cls, cre)
+      v = Common.Utils.Motion.angle_between_points(cls, cre)
       # Logger.debug("v: #{v}")
       v2 = :math.acos((radius1 + radius2)/xL)
       # Logger.debug("v2: #{v2}")
       s1 = :math.sqrt(straight1) + :math.sqrt(straight2)
-      s2 = radius1*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(cp1.course + @pi_2) - Common.Utils.constrain_angle_to_compass(v + v2))
-      s3 = radius2*Common.Utils.constrain_angle_to_compass(@two_pi + Common.Utils.constrain_angle_to_compass(cp2.course - @pi_2) - Common.Utils.constrain_angle_to_compass(v + v2 - :math.pi))
+      s2 = radius1*Common.Utils.Motion.constrain_angle_to_compass(@two_pi + Common.Utils.Motion.constrain_angle_to_compass(cp1.course + @pi_2) - Common.Utils.Motion.constrain_angle_to_compass(v + v2))
+      s3 = radius2*Common.Utils.Motion.constrain_angle_to_compass(@two_pi + Common.Utils.Motion.constrain_angle_to_compass(cp2.course - @pi_2) - Common.Utils.Motion.constrain_angle_to_compass(v + v2 - :math.pi))
       path_distance = s1 + s2 + s3
       # Logger.warn("LR s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(:math.cos(v + v2 - @pi_2), :math.sin(v + v2 - @pi_2), (cre.altitude-cls.altitude)/s1)
@@ -547,8 +547,8 @@ defmodule Navigation.PathManager do
 
       {lsle_dx, lsle_dy} = Common.Utils.Location.dx_dy_between_points(line_start, line_end)
       s1 = Common.Utils.Math.hypot(lsle_dx, lsle_dy)
-      s2 = radius1*Common.Utils.constrain_angle_to_compass((cp1.course - @pi_2)- v2)
-      s3 = radius2*Common.Utils.constrain_angle_to_compass(v2 - (cp2.course - @pi_2))
+      s2 = radius1*Common.Utils.Motion.constrain_angle_to_compass((cp1.course - @pi_2)- v2)
+      s3 = radius2*Common.Utils.Motion.constrain_angle_to_compass(v2 - (cp2.course - @pi_2))
       path_distance = s1 + s2 + s3
       # Logger.warn("LL s1/s2/s3/tot: #{s1}/#{s2}/#{s3}/#{path_distance}")
       q1 = Navigation.Utils.Vector.new(lsle_dx/s1, lsle_dy/s1, (cle.altitude - cls.altitude)/s1)

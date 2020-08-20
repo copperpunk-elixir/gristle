@@ -40,9 +40,9 @@ defmodule Simulation.XplaneSend do
     {:noreply, %{state | socket: socket}}
   end
 
-    @impl GenServer
-  def handle_cast({update_actuators, actuators_and_outputs}, state) do
-    cmds = Enum.reduce(actuators_and_outputs, %{}, fn ({actuator_name, {actuator,output}}, acc) ->
+  @impl GenServer
+  def handle_cast({:update_actuators, actuators_and_outputs}, state) do
+    cmds = Enum.reduce(actuators_and_outputs, %{}, fn ({actuator_name, {_actuator,output}}, acc) ->
       case actuator_name do
         :throttle -> Map.put(acc, actuator_name, output)
         name -> Map.put(acc, name, 2*(output - 0.5))

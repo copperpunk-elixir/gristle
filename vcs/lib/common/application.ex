@@ -3,11 +3,11 @@ defmodule Common.Application do
   require Logger
 
   def start(_type, _args) do
-    Common.Utils.common_startup()
+    common_startup()
     Logger.debug("Start Application")
     Comms.System.start_link()
     Process.sleep(200)
-    vehicle_type = Common.Utils.get_vehicle_type()
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
     Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Process.sleep(200)
@@ -15,10 +15,17 @@ defmodule Common.Application do
     # start_remaining_processes()
   end
 
+  @spec common_startup() :: atom()
+  def common_startup() do
+    RingLogger.attach()
+    Common.Utils.File.mount_usb_drive()
+    Cluster.Network.Utils.set_host_name()
+  end
+
   @spec start_remaining_processes() :: atom()
   def start_remaining_processes() do
-    vehicle_type = Common.Utils.get_vehicle_type()
-    node_type = Common.Utils.get_node_type()
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type()
+    node_type = Common.Utils.Configuration.get_node_type()
     Logger.warn("Start remaining processes for #{vehicle_type}/#{node_type}")
     case node_type do
       :gcs -> start_gcs(vehicle_type)

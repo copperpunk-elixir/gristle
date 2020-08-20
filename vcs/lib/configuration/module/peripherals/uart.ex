@@ -2,7 +2,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   require Logger
   @spec get_config(atom(), atom()) :: map()
   def get_config(_vehicle_type, node_type) do
-    peripherals = Common.Utils.get_uart_peripherals()
+    peripherals = Common.Utils.Configuration.get_uart_peripherals()
     Logger.info("peripherals: #{inspect(peripherals)}")
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =

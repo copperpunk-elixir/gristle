@@ -45,7 +45,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    frsky_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+    frsky_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
     Logger.info("open port: #{frsky_port}")
     case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
       {:error, error} ->

@@ -30,7 +30,7 @@ defmodule Vcs.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      # mod: {Common.Application, []},
+      mod: {Common.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end
@@ -47,7 +47,8 @@ defmodule Vcs.MixProject do
       # Dependencies for all targets except :host
       {:nerves_runtime, "~> 0.6", targets: @all_targets},
       {:nerves_pack, "~> 0.2", targets: @all_targets},
-      {:nerves_firmware_ssh, "~> 0.3", targets: @all_targets},
+      # {:nerves_firmware_ssh, "~> 0.3", targets: @all_targets},
+      {:mdns_lite, "~> 0.4"},
 
       # Dependencies for specific targets
       {:nerves_system_rpi0, "~> 1.10", runtime: false, targets: :rpi0},
@@ -55,8 +56,9 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi3a, "~> 1.10", runtime: false, targets: :rpi3a},
       {:nerves_system_rpi4, "~> 1.10", runtime: false, targets: :rpi4},
       # Package dependencies
-      # {:vintage_net_wifi, "~> 0.7.0"},
-      # {:vintage_net_ethernet, "~> 0.7.0"},
+      {:vintage_net, "~> 0.7.0"},
+      {:vintage_net_wifi, "~> 0.7.0"},
+      {:vintage_net_ethernet, "~> 0.7.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.3"},
       #Scenic dependencies

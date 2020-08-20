@@ -79,84 +79,7 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
-  @spec common_startup() :: atom()
-  def common_startup() do
-    RingLogger.attach()
-    mount_usb_drive()
-    set_host_name()
-  end
-
-  @spec get_mount_path() :: binary()
-  def get_mount_path() do
-    "/mnt"
-  end
-
-  @spec mount_usb_drive() :: binary()
-  def mount_usb_drive() do
-    path = get_mount_path()
-    System.cmd("mount", ["/dev/sda1", path])
-  end
-
-  @spec mount_usb_drive() :: binary()
-  def unmount_usb_drive() do
-    path = get_mount_path()
-    System.cmd("umount", [path])
-  end
-
-  @spec set_host_name() :: atom()
-  def set_host_name() do
-    host_name = get_filenames_with_extension(".node") |> Enum.at(0)
-    MdnsLite.set_host(host_name)
-  end
-
-  @spec get_filenames_with_extension(binary(), binary()) :: list()
-  def get_filenames_with_extension(extension, subdirectory \\ "") do
-    path = get_mount_path() <> "/" <> subdirectory
-    {:ok, files} = :file.list_dir(path)
-    filenames = Enum.reduce(files,[], fn (file, acc) ->
-      file = to_string(file)
-      if (String.contains?(file,extension)) do
-        [filename] = String.split(file,extension,[trim: true])
-        acc ++ [filename]
-      else
-        acc
-      end
-    end)
-    if (Enum.empty?(filenames)) do
-      raise "Filename is not available"
-    end
-    filenames
-  end
-
-  @spec get_vehicle_type() :: atom()
-  def get_vehicle_type() do
-    get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
-  end
-
-  @spec get_node_type() :: atom()
-  def get_node_type() do
-    get_filenames_with_extension(".node") |> Enum.at(0) |> String.to_atom()
-  end
-
-  @spec get_model_type() :: atom()
-  def get_model_type() do
-    get_filenames_with_extension(".model") |> Enum.at(0) |> String.to_atom()
-  end
-
-  @spec get_modules() :: list()
-  def get_modules() do
-    get_filenames_with_extension(".module")
-  end
-
-  @spec get_uart_peripherals() :: list()
-  def get_uart_peripherals() do
-    peripherals_bin_list = get_filenames_with_extension(".uart", "peripherals")
-    Enum.map(peripherals_bin_list, fn x ->
-      String.to_atom(x)
-    end)
-  end
-
-  def assert_valid_config(config, config_type) do
+    def assert_valid_config(config, config_type) do
     {verify_fn, default_value} =
       case config_type do
         Map -> {:is_map, %{}}
@@ -192,27 +115,6 @@ defmodule Common.Utils do
     end
   end
 
-  @spec get_uart_devices_containing_string(binary()) :: list()
-  def get_uart_devices_containing_string(device_string) do
-    device_string = String.downcase(device_string)
-    Logger.debug("devicestring: #{device_string}")
-    uart_ports = Circuits.UART.enumerate()
-    Logger.debug("ports: #{inspect(uart_ports)}")
-    matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
-      device_description = Map.get(port, :description,"")
-      Logger.debug("description: #{String.downcase(device_description)}")
-      if String.contains?(String.downcase(device_description), device_string) do
-        acc ++ [port_name]
-      else
-        acc
-      end
-    end)
-    case length(matching_ports) do
-      0 -> nil
-      _ -> Enum.min(matching_ports)
-    end
-  end
-
   # Erlang float_to_binary shorthand
   @spec eftb(float(), integer()) :: binary()
   def eftb(number, num_decimals) do
@@ -229,55 +131,6 @@ defmodule Common.Utils do
     :erlang.float_to_binary(Common.Utils.Math.deg2rad(number), [decimals: num_decimals])
   end
 
-  # Convert North/East velocity to Speed/Course
-  @spec get_speed_course_for_velocity(number(), number(), number(), number()) :: float()
-  def get_speed_course_for_velocity(v_north, v_east, min_speed_for_course, yaw) do
-    speed = Common.Utils.Math.hypot(v_north, v_east)
-    course =
-    if speed >= min_speed_for_course do
-      :math.atan2(v_east, v_north)
-      |> constrain_angle_to_compass()
-    else
-      yaw
-    end
-    {speed, course}
-  end
-
-  @spec adjust_velocity_for_min_speed(map(), number(), number()) :: map()
-    def adjust_velocity_for_min_speed(velocity, min_speed_for_course, yaw) do
-    speed = Common.Utils.Math.hypot(velocity.north, velocity.east)
-    if (speed >= min_speed_for_course) do
-      velocity
-    else
-      %{velocity | north: speed*:math.cos(yaw), east: speed*:math.sin(yaw)}
-    end
-  end
-
-  # Turn correctly left or right using delta Yaw/Course
-  @spec turn_left_or_right_for_correction(number()) :: number()
-  def turn_left_or_right_for_correction(correction) do
-    cond do
-      correction < -:math.pi() -> correction + 2.0*:math.pi()
-      correction > :math.pi() -> correction - 2.0*:math.pi()
-      true -> correction
-    end
-  end
-
-  @spec constrain_angle_to_compass(number()) :: number()
-  def constrain_angle_to_compass(angle) do
-    cond do
-      angle < 0.0 -> angle + 2.0*:math.pi()
-      angle >= 2.0*:math.pi() -> angle - 2.0*:math.pi()
-      true -> angle
-    end
-  end
-
-  @spec angle_between_points(struct(), struct()) :: float()
-  def angle_between_points(lla_1, lla_2) do
-    {dx, dy} = Common.Utils.Location.dx_dy_between_points(lla_1, lla_2)
-    constrain_angle_to_compass(:math.atan2(dy, dx))
-  end
-
   @spec map_rad2deg(map()) :: map()
   def map_rad2deg(values) do
     Enum.reduce(values, %{}, fn ({key, value}, acc) ->
@@ -290,33 +143,6 @@ defmodule Common.Utils do
     Enum.reduce(values, %{}, fn ({key, value}, acc) ->
     Map.put(acc, key, Common.Utils.Math.deg2rad(value))
     end)
-  end
-
-  @spec attitude_to_accel(map()) :: map()
-  def attitude_to_accel(attitude) do
-    cos_theta = :math.cos(attitude.pitch)
-
-    ax = -:math.sin(attitude.pitch)
-    ay = :math.sin(attitude.roll)*cos_theta
-    az = :math.cos(attitude.roll)*cos_theta
-    %{x: ax*Common.Constants.gravity(), y: ay*Common.Constants.gravity(), z: az*Common.Constants.gravity()}
-  end
-
-  @spec inertial_to_body_euler(map(), tuple()) :: tuple()
-  def inertial_to_body_euler(attitude, vector) do
-    cosphi = :math.cos(attitude.roll)
-    sinphi = :math.sin(attitude.roll)
-    costheta = :math.cos(attitude.pitch)
-    sintheta = :math.sin(attitude.pitch)
-    cospsi = :math.cos(attitude.yaw)
-    sinpsi = :math.sin(attitude.yaw)
-
-    {vx,vy,vz} = vector
-
-    bx = costheta*cospsi*vx + costheta*sinpsi*vy - sintheta*vz
-    by = (-cosphi*sinpsi + sinphi*sintheta*cospsi)*vx + (cosphi*cospsi + sinphi*sintheta*sinpsi)*vy + sinphi*costheta*vz
-    bz = (sinphi*sinpsi + cosphi*sintheta*cospsi)*vx - (sinphi*cospsi + cosphi*sintheta*sinpsi)*vy + cosphi*costheta*vz
-    {bx,by,bz}
   end
 
   def list_to_int(x_list, bytes) do
@@ -334,5 +160,10 @@ defmodule Common.Utils do
         true -> acc
       end
     end)
+  end
+
+  @spec power_off() ::tuple()
+  def power_off() do
+    System.cmd("poweroff", ["now"])
   end
 end

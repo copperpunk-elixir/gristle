@@ -44,7 +44,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     Process.sleep(100)
     cmds = MessageSorter.Sorter.get_value({:goals, 3})
     assert_in_delta(cmds.altitude, start_position.altitude, max_pos_delta)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
     assert Enum.at(config_points,0).type == Navigation.Path.Waypoint.landing_type()
     Logger.info("goals 3: #{inspect(cmds)}")
 
@@ -59,7 +59,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     Logger.info("goals 3: #{inspect(cmds)}")
     exp_alt_cmd = 233.3 - 50*(:math.cos(:math.pi*(1-200/1000)) + 1)
     assert_in_delta(cmds.altitude, exp_alt_cmd, max_pos_delta)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
     # Move to the touchdown position
     Logger.info("move to ")
     new_position = Common.Utils.Location.lla_from_point(start_position,1000,0)
@@ -72,7 +72,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     Logger.info("goals 3: #{inspect(cmds)}")
     exp_alt_cmd = 133.3
     assert_in_delta(cmds.altitude, exp_alt_cmd, max_pos_delta)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     assert_in_delta(cmds.speed,35,0.001)
 
     # Move past the touchdown position
@@ -90,7 +90,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     Logger.info("goals 3: #{inspect(cmds)}")
     exp_alt_cmd = 133.3
     assert_in_delta(cmds.altitude, exp_alt_cmd, max_pos_delta)
-    assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
+    assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     assert_in_delta(cmds.speed,0,0.001)
 
 
@@ -103,7 +103,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     # Process.sleep(100)
     # cmds = MessageSorter.Sorter.get_value({:goals, 3})
     # Logger.info("goals 3: #{inspect(cmds)}")
-    # assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
+    # assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_ground),0, max_rad_delta)
     # assert cmds.altitude > 0
     # assert Map.has_key?(cmds, :pitch) == false
     # # Climb above AGL threshold up
@@ -116,7 +116,7 @@ defmodule Navigation.Ground.CreateLandingSegmentTest do
     # Process.sleep(100)
     # cmds = MessageSorter.Sorter.get_value({:goals, 3})
     # Logger.info("goals 3: #{inspect(cmds)}")
-    # assert_in_delta(Common.Utils.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
+    # assert_in_delta(Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight),0, max_rad_delta)
     # assert Map.has_key?(cmds, :pitch) == false
     # assert cmds.altitude > 0
   end

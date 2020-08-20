@@ -87,7 +87,7 @@ defmodule Estimation.Estimator do
       position = Map.put(position, :altitude, position.altitude)
       Watchdog.Active.feed(:pos_vel)
       # If the velocity is below a threshold, we use yaw instead
-      {speed, course} = Common.Utils.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
+      {speed, course} = Common.Utils.Motion.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
       velocity = %{speed: speed, course: course, vertical: -velocity.down}
       {position, velocity}
     end

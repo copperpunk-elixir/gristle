@@ -44,7 +44,6 @@ defmodule Common.Utils.Math do
     :math.sqrt(x*x + y*y + z*z)
   end
 
-
   def cross_product(v1, v2) do
     elem(v1, 0)*elem(v2,1) - elem(v1,1)*elem(v2,0)
   end

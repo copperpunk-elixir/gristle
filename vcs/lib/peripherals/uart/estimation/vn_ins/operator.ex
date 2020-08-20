@@ -52,7 +52,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.debug("VN INS begin with process: #{inspect(self())}")
-    ins_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+    ins_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
     case Circuits.UART.open(state.uart_ref, ins_port,[speed: state.baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")

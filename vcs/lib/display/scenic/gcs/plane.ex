@@ -63,7 +63,7 @@ defmodule Display.Scenic.Gcs.Plane do
     pitch = Map.get(attitude, :pitch,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
     yaw =
       Map.get(attitude, :yaw,0) |>
-      Common.Utils.constrain_angle_to_compass()
+      Common.Utils.Motion.constrain_angle_to_compass()
       |> Common.Utils.Math.rad2deg()
       |> Common.Utils.eftb(1)
 
@@ -79,7 +79,7 @@ defmodule Display.Scenic.Gcs.Plane do
 
     course=
     Map.get(velocity, :course, 0)
-    |> Common.Utils.constrain_angle_to_compass()
+    |> Common.Utils.Motion.constrain_angle_to_compass()
     |> Common.Utils.Math.rad2deg()
     |> Common.Utils.eftb(1)
 

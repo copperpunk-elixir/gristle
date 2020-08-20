@@ -10,7 +10,7 @@ defmodule Configuration.Module do
 
   @spec start_modules(list(), atom(), atom()) :: atom()
   def start_modules(modules, vehicle_type, node_type) do
-    Enum.reduce(modules,nil, fn (module,acc) ->
+    Enum.each(modules, fn module ->
       system_module = Module.concat(module, System)
       Logger.info("system module: #{system_module}")
       apply(system_module, :start_link, [get_config(module, vehicle_type, node_type)])

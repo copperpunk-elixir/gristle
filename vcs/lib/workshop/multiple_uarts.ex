@@ -27,7 +27,7 @@ defmodule Workshop.MultipleUarts do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(state.name)
     Logger.info("uart device: #{state.device_description}")
-    port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+    port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
     Logger.info("port: #{inspect(port)}")
     case Circuits.UART.open(state.uart_ref, port, [speed: @default_baud, active: true]) do
       {:error, error} ->

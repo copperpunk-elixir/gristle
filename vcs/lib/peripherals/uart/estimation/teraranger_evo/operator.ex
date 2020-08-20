@@ -61,7 +61,7 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     unless is_nil(state.device_description) do
-      evo_port = Common.Utils.get_uart_devices_containing_string(state.device_description)
+      evo_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
       case Circuits.UART.open(state.uart_ref, evo_port, [speed: @default_baud, active: true]) do
         {:error, error} ->
           Logger.error("Error opening UART: #{inspect(error)}")
