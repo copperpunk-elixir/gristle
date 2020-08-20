@@ -22,7 +22,7 @@ defmodule Peripherals.Gpio.Logging.Operator do
         initial_value: Map.get(config, :initial_value, 0),
         time_threshold_cycle_mount_ms: config.time_threshold_cycle_mount_ms,
         time_threshold_power_off_ms: config.time_threshold_power_off_ms,
-        falling_time: 0,
+#        falling_time: nil,
      }
     }
   end
@@ -42,22 +42,30 @@ defmodule Peripherals.Gpio.Logging.Operator do
       end
     {:ok, ref} = Circuits.GPIO.open(state.pin_number, state.pin_direction, options)
     Process.sleep(100)
-    Circuits.GPIO.set_interrupts(ref, :both)
+    if state.pin_direction == :input do
+      Circuits.GPIO.set_interrupts(ref, :both,[suppress_glitches: true])
+    end
     {:noreply, %{state | gpio_ref: ref}}
   end
 
   @impl GenServer
   def handle_info({:circuits_gpio, pin_number, timestamp, value}, state) do
-    falling_time = if (value == 0), do: timestamp, else: state.falling_time
-    if (value == 1) do
-      dt = (timestamp - falling_time)*(1.0e-6)
+    falling_time = if (value == 1), do: timestamp, else: Map.get(state, :falling_time, timestamp)
+    if (value == 0) do
+      dt = round((timestamp - falling_time)*(1.0e-6))
+      if (dt > 0) do
       Logger.debug("dt: #{dt}")
       cond do
-        dt > state.time_threshold_power_off_ms -> Logger.warn("Power off!")
-        dt > state.time_threshold_cycle_mount_ms -> Logger.warn("Cycle USB mount")
+        dt > state.time_threshold_power_off_ms -> 
+          Logger.warn("Power off!")
+          Common.Utils.power_off()
+        dt > state.time_threshold_cycle_mount_ms -> 
+          Logger.warn("Cycle USB mount")
+          Common.Utils.File.cycle_mount()
         true -> nil
       end
+      end
     end
-    {:noreply, %{state | falling_time: falling_time}}
+    {:noreply, Map.put(state, :falling_time, falling_time)}
   end
 end
