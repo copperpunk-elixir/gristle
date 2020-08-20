@@ -79,6 +79,13 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
+  @spec common_startup() :: atom()
+  def common_startup() do
+    RingLogger.attach()
+    mount_usb_drive()
+    set_host_name()
+  end
+
   @spec get_mount_path() :: binary()
   def get_mount_path() do
     "/mnt"
@@ -94,6 +101,12 @@ defmodule Common.Utils do
   def unmount_usb_drive() do
     path = get_mount_path()
     System.cmd("umount", [path])
+  end
+
+  @spec set_host_name() :: atom()
+  def set_host_name() do
+    host_name = get_filenames_with_extension(".node") |> Enum.at(0)
+    MdnsLite.set_host(host_name)
   end
 
   @spec get_filenames_with_extension(binary(), binary()) :: list()

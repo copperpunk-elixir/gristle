@@ -106,8 +106,8 @@ defmodule Configuration.Module.Cluster do
          networks: [
            %{
              key_mgmt: :wpa_psk,
-             ssid: "dialup",
-             psk: "binghamplace",
+             ssid: "vcs_air",
+             psk: "nervesofsteel",
            }
          ]
        },

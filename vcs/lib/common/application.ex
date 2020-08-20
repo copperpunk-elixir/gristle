@@ -3,11 +3,10 @@ defmodule Common.Application do
   require Logger
 
   def start(_type, _args) do
+    Common.Utils.common_startup()
     Logger.debug("Start Application")
-    RingLogger.attach()
     Comms.System.start_link()
     Process.sleep(200)
-    Common.Utils.mount_usb_drive()
     vehicle_type = Common.Utils.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
     Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
