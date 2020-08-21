@@ -67,7 +67,12 @@ defmodule Vcs.MixProject do
       {:scenic_driver_glfw, "~> 0.10", targets: :host},
       {:scenic_sensor, "~> 0.7"},
       #Jason
-      {:jason, "~> 1.2"}
+      {:jason, "~> 1.2"},
+      # MessagePack
+      {:msgpax, "~> 2.0"},
+      #Protobufs
+      {:protobuf, "~> 0.7.1"},
+      {:google_protos, "~> 0.1"}
     ]
   end
 

@@ -250,4 +250,29 @@ defmodule Navigation.Path.Mission do
     }
     get_in(model, [model_type, spec])
   end
+
+  @spec encode(struct(), boolean()) :: binary()
+  def encode(mission, confirm) do
+    wps = Enum.reduce(mission.waypoints, [], fn (wp, acc) ->
+      wp_proto = Navigation.Path.Protobuf.Mission.Waypoint.new([
+      name: wp.name,
+      latitude: wp.latitude,
+      longitude: wp.longitude,
+      altitude: wp.altitude,
+      speed: wp.speed,
+      course: wp.course,
+      goto: (if is_nil(wp.goto), do: -1, else: wp.goto),
+      type: to_string(wp.type) |> String.upcase() |> String.to_atom()
+      ])
+      acc ++ [wp_proto]
+    end)
+    mission_proto = Navigation.Path.Protobuf.Mission.new([
+      name: mission.name,
+      vehicle_turn_rate: mission.vehicle_turn_rate,
+      waypoints: wps,
+      confirm: confirm
+    ])
+    # Logger.debug("inspect(#{mission_proto})")
+    Navigation.Path.Protobuf.Mission.encode(mission_proto)
+  end
 end

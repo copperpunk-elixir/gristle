@@ -1,0 +1,30 @@
+syntax = "proto2";
+
+package navigation.path.protobuf;
+
+message Mission {
+  required string name = 1;
+  required float vehicle_turn_rate = 2;
+
+  enum WaypointType {
+    FLIGHT = 0;
+    GROUND = 1;
+    CLIMBOUT = 2;
+    APPROACH = 3;
+    LANDING = 4;
+  }
+
+  message Waypoint {
+    optional string name = 1;
+    required float latitude = 2;
+    required float longitude = 3;
+    required float altitude = 4;
+    required float speed = 5;
+    required float course = 6;
+    optional int32 goto = 7 [default = -1];
+    required WaypointType type = 8;
+  }
+
+  repeated Waypoint waypoints = 3;
+  optional bool confirm = 4 [default = false];
+}
