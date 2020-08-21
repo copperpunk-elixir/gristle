@@ -42,9 +42,8 @@ defmodule Configuration.Vehicle.Plane.Navigation do
     get_goals_sorter_configs()
   end
 
-  @spec get_vehicle_limits() :: map()
-  def get_vehicle_limits() do
-    model_type = Common.Utils.Configuration.get_model_type()
+  @spec get_vehicle_limits(atom()) :: map()
+  def get_vehicle_limits(model_type) do
     model_module =
       Module.concat(Configuration.Vehicle.Plane.Navigation, model_type)
     apply(model_module, :get_vehicle_limits, [])

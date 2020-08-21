@@ -4,7 +4,8 @@ defmodule Configuration.Module.Navigation do
     config_module =
       Module.concat(Configuration.Vehicle, vehicle_type)
       |> Module.concat(Navigation)
-    vehicle_limits = apply(config_module, :get_vehicle_limits, [])
+    model_type = Common.Utils.Configuration.get_model_type()
+    vehicle_limits = apply(config_module, :get_vehicle_limits, [model_type])
 
     %{
       node_type: node_type,

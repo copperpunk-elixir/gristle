@@ -69,7 +69,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    Logger.info("rx'd data: #{inspect(data)}")
+    # Logger.info("rx'd data: #{inspect(data)}")
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
   end
@@ -133,7 +133,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @spec dispatch_message(integer(), integer(), list()) :: atom()
   def dispatch_message(msg_class, msg_id, payload) do
-    Logger.info("Rx'd msg: #{msg_class}/#{msg_id}")
+    # Logger.info("Rx'd msg: #{msg_class}/#{msg_id}")
     # Logger.debug("payload: #{inspect(payload)}")
     case msg_class do
       1 ->
@@ -229,17 +229,17 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Protobuf mission
             Logger.warn("proto mission received!")
             msg_type = :mission_proto
-            # mission_pb = Navigation.Path.Protobuf.Mission.decode(payload)
-            # Logger.info("misson: #{mission_pb.name}")
-            # mission = Navigation.Path.Mission.new_mission(mission_pb.name, mission_pb.waypoints, mission_pb.vehicle_type)
-            # Navigation.Path.PathPlanner.load_mission(mission, __MODULE__)
-            # if mission_pb.confirm do
-            # Logger.warn("send confirmation")
-            #   mission_pb = %{mission_pb | confirm: false}
-            #   construct_and_send_proto_message(msg_type, mission_pb)
-            # else
-            #   Logger.warn("confirmation received")
-            # end
+            mission_pb = Navigation.Path.Protobuf.Mission.decode(:binary.list_to_bin(payload))
+            Logger.info("misson: #{mission_pb.name}")
+            mission = Navigation.Path.Mission.new_mission(mission_pb.name, mission_pb.waypoints, mission_pb.vehicle_turn_rate)
+            Navigation.PathPlanner.load_mission(mission, __MODULE__)
+            if mission_pb.confirm do
+              Logger.warn("send confirmation")
+              pb_encoded = Navigation.Path.Mission.encode(mission, false)
+              construct_and_send_proto_message(:mission_proto, pb_encoded)
+            else
+              Logger.warn("confirmation received")
+            end
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end

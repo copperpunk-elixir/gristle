@@ -24,7 +24,7 @@ defmodule Telemetry.Ublox do
   @spec parse(struct(), integer()) :: struct()
   def parse(ublox, byte) do
     state = ublox.state
-    Logger.info("state/byte/count: #{state}/#{byte}/#{ublox.count}")
+    # Logger.info("state/byte/count: #{state}/#{byte}/#{ublox.count}")
     cond do
       state == @got_none and byte == 0xB5 -> %{ublox | state: @got_sync1}
       state == @got_sync1 ->
@@ -47,7 +47,7 @@ defmodule Telemetry.Ublox do
         %{ublox | state: @got_length1, msg_len: msglen, chka: chka, chkb: chkb}
       state == @got_length1 ->
         msglen = ublox.msg_len + Bitwise.<<<(byte,8)
-        Logger.debug("msglen: #{msglen}")
+        # Logger.debug("msglen: #{msglen}")
         if (msglen <= @max_payload_length) do
           {chka, chkb} = add_to_checksum(ublox, byte)
           %{ublox | state: @got_length2, msg_len: msglen, count: 0, chka: chka, chkb: chkb}
@@ -140,13 +140,12 @@ defmodule Telemetry.Ublox do
     {msg_class, msg_id} = get_class_and_id_for_msg(msg_type)
     payload_list = :binary.bin_to_list(payload)
     payload_length = length(payload_list)
-    Logger.warn("payload len: #{payload_length}")
+    # Logger.warn("payload len: #{payload_length}")
     payload_len_msb = Bitwise.>>>(payload_length,8) |> Bitwise.&&&(0xFF)
     payload_len_lsb = Bitwise.&&&(payload_length, 0xFF)
-    Logger.info("msb/lsb: #{payload_len_msb}/#{payload_len_lsb}")
+    # Logger.info("msb/lsb: #{payload_len_msb}/#{payload_len_lsb}")
     checksum_buffer = [msg_class, msg_id, payload_len_lsb, payload_len_msb] ++ payload_list
     checksum = calculate_ublox_checksum(checksum_buffer)
-    Logger.warn("chk: #{inspect(checksum)}")
     <<0xB5, 0x62>> <> :binary.list_to_bin(checksum_buffer) <> checksum
   end
 
