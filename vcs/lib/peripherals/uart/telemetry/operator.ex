@@ -132,14 +132,14 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   end
 
   @spec dispatch_message(integer(), integer(), list()) :: atom()
-  def dispatch_message(msg_class, msg_id, buffer) do
+  def dispatch_message(msg_class, msg_id, payload) do
     # Logger.info("Rx'd msg: #{msg_class}/#{msg_id}")
-    # Logger.debug("payload: #{inspect(buffer)}")
+    # Logger.debug("payload: #{inspect(payload)}")
     case msg_class do
       1 ->
         case msg_id do
           0x69 ->
-            [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, buffer)
+            [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, payload)
             # Logger.info("accel xyz: #{ax}/#{ay}/#{az}")
             # Logger.info("gyro xyz: #{gx}/#{gy}/#{gz}")
             store_data(%{accel: %{x: ax, y: ay, z: az}, bodyrate: %{roll: gx, pitch: gy, yaw: gz}})
@@ -149,7 +149,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
         case msg_id do
           0x00 ->
             msg_type = {:telemetry, :pvat}
-            [itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             position = %{latitude: lat, longitude: lon, altitude: alt, agl: agl}
             velocity = %{airspeed: airspeed, speed: speed, course: course}
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
@@ -158,45 +158,45 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             send_local({msg_type, position, velocity, attitude})
           0x11 ->
             msg_type = {:tx_goals, 1}
-            [itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_1 = %{rollrate: rollrate, pitchrate: pitchrate, yawrate: yawrate, thrust: thrust}
             send_local({msg_type, level_1}, :tx_goals)
           0x12 ->
             msg_type = {:tx_goals, 2}
-            [itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_2 = %{roll: roll, pitch: pitch, yaw: yaw, thrust: thrust}
             send_local({msg_type, level_2}, :tx_goals)
           0x13 ->
             msg_type = {:tx_goals, 3}
-            [itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_3 = %{speed: speed, course: course, altitude: altitude}
             send_local({msg_type, level_3}, :tx_goals)
           0x14 ->
             msg_type = :control_state
-            [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_local({msg_type, control_state})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
-      0x46  ->
+       0x46  ->
         case msg_id do
           0x00 ->
-            # Set
+            # Msgpax
             msg_type = :set_pid_gain
-            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
             Pids.Pid.set_parameter(process_variable, output_variable, parameter, value)
           0x01 ->
+            # Msgpax
             msg_type = :request_pid_gain
-            [process_variable_code, output_variable_code, parameter_code] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            [process_variable, output_variable, parameter] = Pids.Msgpax.Utils.unpack(msg_type, payload)
             value = Pids.Pid.get_parameter(process_variable, output_variable, parameter)
-            msg = Telemetry.Ublox.construct_message(:get_pid_gain, [process_variable_code, output_variable_code, parameter_code, value])
-            send_message(msg)
+            msg = [process_variable, output_variable, parameter, value] |> Msgpax.pack!(iodata: false)
+            Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:get_pid_gain, msg)
           0x02 ->
+            # Msgpax
             msg_type = :get_pid_gain
-            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
           Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
+
           other -> Logger.warn("Bad message id: #{other}")
         end
 
@@ -204,16 +204,16 @@ defmodule Peripherals.Uart.Telemetry.Operator do
         case msg_id do
           0x00 ->
             msg_type = :rpc
-            [cmd, arg] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [cmd, arg] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             case cmd do
               0x01 -> Logging.Logger.save_log()
               0x02 -> Common.Utils.File.unmount_usb_drive()
-              other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
+              _other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
             end
           0x01 ->
             msg_type = :mission
             Logger.warn("mission received")
-            [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, buffer)
+            [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             airport = Navigation.PathPlanner.get_airport(airport_code)
             runway = Navigation.PathPlanner.get_runway(runway_code)
             model = Navigation.PathPlanner.get_model(model_code)
@@ -225,7 +225,19 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             else
               Logger.warn("confirmation received")
             end
-
+          0x02 ->
+            # Protobuf mission
+            Logger.warn("proto mission received!")
+            msg_type = :mission_proto
+            mission = Navigation.Path.Protobuf.Utils.new_mission(payload)
+            Navigation.PathPlanner.load_mission(mission, __MODULE__)
+            if mission.confirm do
+              Logger.warn("send confirmation")
+              pb_encoded = Navigation.Path.Mission.encode(mission, false)
+              construct_and_send_proto_message(msg_type, pb_encoded)
+            else
+              Logger.warn("confirmation received")
+            end
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
@@ -266,6 +278,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   def construct_and_send_message(msg_type, payload) do
     payload = Common.Utils.assert_list(payload)
     msg = Telemetry.Ublox.construct_message(msg_type, payload)
+    send_message(msg)
+  end
+
+  @spec construct_and_send_proto_message(any(), binary()) :: atom()
+  def construct_and_send_proto_message(msg_type, encoded_payload) do
+    msg = Telemetry.Ublox.construct_proto_message(msg_type, encoded_payload)
     send_message(msg)
   end
 

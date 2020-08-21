@@ -4,13 +4,20 @@ defmodule Navigation.Path.Mission do
 
   defstruct [:name, :waypoints, :vehicle_turn_rate]
 
-  @spec new_mission(binary(), list(), atom()) :: struct()
-  def new_mission(name, waypoints, vehicle_type) do
+  @spec new_mission(binary(), list()) :: struct()
+  def new_mission(name, waypoints) do
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type()
     navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
     |> Module.concat(Navigation)
+    model_type = Common.Utils.Configuration.get_model_type()
     vehicle_turn_rate =
-      apply(navigation_config_module, :get_vehicle_limits,[])
+      apply(navigation_config_module, :get_vehicle_limits,[model_type])
       |> Map.get(:vehicle_turn_rate)
+    new_mission(name, waypoints, vehicle_turn_rate)
+  end
+
+  @spec new_mission(binary(), list(), float()) :: struct()
+  def new_mission(name, waypoints, vehicle_turn_rate) do
     %Navigation.Path.Mission{
       name: name,
       waypoints: waypoints,
@@ -67,7 +74,11 @@ defmodule Navigation.Path.Mission do
     wp3 = Navigation.Path.Waypoint.new_flight(latlon3, speed, :math.pi/2, "wp3",2)
     wp4 = Navigation.Path.Waypoint.new_flight(latlon4, speed, :math.pi, "wp4")
     wp5 = Navigation.Path.Waypoint.new_flight(latlon5, speed, 0, "wp5", 0)
-    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], :Plane)
+
+    model_type = Common.Utils.Configuration.get_model_type()
+    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    |> Map.get(:vehicle_turn_rate)
+    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], vehicle_turn_rate)
   end
 
   @spec get_takeoff_waypoints(struct(), float(), atom()) :: list()
@@ -117,16 +128,16 @@ defmodule Navigation.Path.Mission do
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
       Logger.info("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
-    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, :Plane)
+
+    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    |> Map.get(:vehicle_turn_rate)
+
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, vehicle_turn_rate)
   end
 
   @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
   def get_track_waypoints(airport, runway, track_type, model_type) do
-    wp_speed =
-      case model_type do
-        :Cessna -> 45
-        :EC1500 -> 15
-      end
+    wp_speed = get_model_spec(model_type, :cruise_speed)
     wps = %{
       "seatac" =>  %{},
       "montague" =>
@@ -227,7 +238,8 @@ defmodule Navigation.Path.Mission do
         takeoff_roll: 500,
         climbout_distance: 1200,
         climbout_height: 100,
-        climbout_speed: 45,
+        climbout_speed: 40,
+        cruise_speed: 45,
         landing_distances_heights: [{-1400,100}, {-900,100}, {100,5}, {600,0}],
         landing_speeds: {45, 35},
         flight_speed_range: {35,45},
@@ -240,6 +252,7 @@ defmodule Navigation.Path.Mission do
         climbout_distance: 200,
         climbout_height: 40,
         climbout_speed: 15,
+        cruise_speed: 20,
         landing_distances_heights: [{-250, 40}, {-200,40}, {-50,3}, {1,0}],
         landing_speeds: {15, 10},
         flight_speed_range: {15,20},
@@ -249,5 +262,29 @@ defmodule Navigation.Path.Mission do
       }
     }
     get_in(model, [model_type, spec])
+  end
+
+  @spec encode(struct(), boolean()) :: binary()
+  def encode(mission, confirm) do
+    wps = Enum.reduce(mission.waypoints, [], fn (wp, acc) ->
+      wp_proto = Navigation.Path.Protobuf.Mission.Waypoint.new([
+      name: wp.name,
+      latitude: wp.latitude,
+      longitude: wp.longitude,
+      altitude: wp.altitude,
+      speed: wp.speed,
+      course: wp.course,
+      goto: (if is_nil(wp.goto), do: -1, else: wp.goto),
+      type: to_string(wp.type) |> String.upcase() |> String.to_atom()
+      ])
+      acc ++ [wp_proto]
+    end)
+    mission_proto = Navigation.Path.Protobuf.Mission.new([
+      name: mission.name,
+      vehicle_turn_rate: mission.vehicle_turn_rate,
+      waypoints: wps,
+      confirm: confirm
+    ])
+    Navigation.Path.Protobuf.Mission.encode(mission_proto)
   end
 end

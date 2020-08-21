@@ -27,9 +27,24 @@ defmodule Navigation.PathPlanner do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_cast({:load_mission, mission}, state) do
+    Logger.info("load mission: #{inspect(mission.name)}")
+    Comms.Operator.send_local_msg_to_group(
+      __MODULE__,
+      {:load_mission, mission},
+      :load_mission,
+      self())
+    {:noreply, state}
+  end
+
+  @spec load_mission(struct()) :: atom()
+  def load_mission(mission) do
+    GenServer.cast(__MODULE__, {:load_mission, mission})
+  end
+
   @spec load_mission(struct(), atom()) :: atom()
   def load_mission(mission, module) do
-    Logger.info("load mission: #{inspect(mission.name)}")
     Comms.Operator.send_local_msg_to_group(
       module,
       {:load_mission, mission},
@@ -70,14 +85,16 @@ defmodule Navigation.PathPlanner do
   end
 
   @spec send_path_mission(binary(), binary(), atom(), atom(), integer(), boolean()) :: atom()
-  def send_path_mission(airport, runway, aircraft, track, num_wps, confirmation) do
-    airport_code = get_airport(airport)
-    runway_code = get_runway(runway)
-    aircraft_code = get_model(aircraft)
-    track_code = get_track(track)
-    confirm = if confirmation, do: 1, else: 0
-    payload = [airport_code, runway_code, aircraft_code, track_code, num_wps, confirm]
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:mission, payload)
+  def send_path_mission(airport, runway, model_type, track_type, num_wps, confirmation) do
+    # airport_code = get_airport(airport)
+    # runway_code = get_runway(runway)
+    # aircraft_code = get_model(aircraft)
+    # track_code = get_track(track)
+    # confirm = if confirmation, do: 1, else: 0
+    # payload = [airport_code, runway_code, aircraft_code, track_code, num_wps, confirm]
+    mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model_type, track_type, num_wps)
+    pb_encoded = Navigation.Path.Mission.encode(mission, confirmation)
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
   end
 
   @spec get_airport(any()) :: binary()

@@ -42,9 +42,9 @@ defmodule Common.Utils.File do
         acc
       end
     end)
-    if (Enum.empty?(filenames)) do
-      raise "Filename is not available"
-    end
+    # if (Enum.empty?(filenames)) do
+    #   raise "Filename is not available"
+    # end
     filenames
   end
 end

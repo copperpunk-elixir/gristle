@@ -2,7 +2,7 @@ defmodule Telemetry.Ublox do
   require Logger
   use Bitwise
 
-  @max_payload_length 92
+  @max_payload_length 1000
 
   @got_none 0
 	@got_sync1 1
@@ -24,7 +24,7 @@ defmodule Telemetry.Ublox do
   @spec parse(struct(), integer()) :: struct()
   def parse(ublox, byte) do
     state = ublox.state
-    # Logger.info("state/byte: #{state}/#{byte}")
+    # Logger.info("state/byte/count: #{state}/#{byte}/#{ublox.count}")
     cond do
       state == @got_none and byte == 0xB5 -> %{ublox | state: @got_sync1}
       state == @got_sync1 ->
@@ -47,9 +47,10 @@ defmodule Telemetry.Ublox do
         %{ublox | state: @got_length1, msg_len: msglen, chka: chka, chkb: chkb}
       state == @got_length1 ->
         msglen = ublox.msg_len + Bitwise.<<<(byte,8)
+        # Logger.debug("msglen: #{msglen}")
         if (msglen <= @max_payload_length) do
           {chka, chkb} = add_to_checksum(ublox, byte)
-          %{ublox | state: @got_length2, count: 0, chka: chka, chkb: chkb}
+          %{ublox | state: @got_length2, msg_len: msglen, count: 0, chka: chka, chkb: chkb}
         else
           %{ublox | state: @got_none}
         end
@@ -127,11 +128,25 @@ defmodule Telemetry.Ublox do
       {payload <> value_bin, payload_length + bytes_abs}
     end)
 
-    payload_len_msb = Bitwise.<<<(payload_length,8) |> Bitwise.&&&(0xFF)
+    payload_len_msb = Bitwise.>>>(payload_length,8) |> Bitwise.&&&(0xFF)
     payload_len_lsb = Bitwise.&&&(payload_length, 0xFF)
     checksum_buffer = <<msg_class, msg_id, payload_len_lsb, payload_len_msb>> <> payload
     checksum = calculate_ublox_checksum(:binary.bin_to_list(checksum_buffer))
     <<0xB5, 0x62>> <> checksum_buffer <> checksum
+  end
+
+  @spec construct_proto_message(any(), binary()) :: binary()
+  def construct_proto_message(msg_type, payload) do
+    {msg_class, msg_id} = get_class_and_id_for_msg(msg_type)
+    payload_list = :binary.bin_to_list(payload)
+    payload_length = length(payload_list)
+    # Logger.warn("payload len: #{payload_length}")
+    payload_len_msb = Bitwise.>>>(payload_length,8) |> Bitwise.&&&(0xFF)
+    payload_len_lsb = Bitwise.&&&(payload_length, 0xFF)
+    # Logger.info("msb/lsb: #{payload_len_msb}/#{payload_len_lsb}")
+    checksum_buffer = [msg_class, msg_id, payload_len_lsb, payload_len_msb] ++ payload_list
+    checksum = calculate_ublox_checksum(checksum_buffer)
+    <<0xB5, 0x62>> <> :binary.list_to_bin(checksum_buffer) <> checksum
   end
 
   @spec get_itow() :: integer()
@@ -194,6 +209,7 @@ defmodule Telemetry.Ublox do
       :get_pid_gain -> {0x46, 0x02}
       :rpc  -> {0x50, 0x00}
       :mission -> {0x50, 0x01}
+      :mission_proto -> {0x50, 0x02}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []
