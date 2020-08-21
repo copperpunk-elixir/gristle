@@ -177,26 +177,32 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             send_local({msg_type, control_state})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
-      0x46  ->
+       0x46  ->
         case msg_id do
           0x00 ->
-            # Set
-            msg_type = :set_pid_gain
-            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            # Set Pid Gain (Proto)
+            [process_variable, output_variable, parameter, value] = Msgpax.unpack!(payload)
+            process_variable = String.to_atom(process_variable)
+            output_variable = String.to_atom(output_variable)
+            parameter = String.to_atom(parameter)
             Pids.Pid.set_parameter(process_variable, output_variable, parameter, value)
           0x01 ->
-            msg_type = :request_pid_gain
-            [process_variable_code, output_variable_code, parameter_code] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            # Request Pid Gain (Proto)
+            [process_variable, output_variable, parameter] = Msgpax.unpack!(payload)
+            process_variable = String.to_atom(process_variable)
+            output_variable = String.to_atom(output_variable)
+            parameter = String.to_atom(parameter)
             value = Pids.Pid.get_parameter(process_variable, output_variable, parameter)
-            msg = Telemetry.Ublox.construct_message(:get_pid_gain, [process_variable_code, output_variable_code, parameter_code, value])
-            send_message(msg)
+            msg = [process_variable, output_variable, parameter, value] |> Msgpax.pack!(iodata: false)
+            Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:get_pid_gain, msg)
           0x02 ->
-            msg_type = :get_pid_gain
-            [process_variable_code, output_variable_code, parameter_code, value] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            [process_variable, output_variable, parameter] = Pids.Pid.get_pv_ov_param(process_variable_code, output_variable_code, parameter_code)
+            # Get Pid Gain (Proto)
+            [process_variable, output_variable, parameter, value] = Msgpax.unpack!(payload)
+            process_variable = String.to_atom(process_variable)
+            output_variable = String.to_atom(output_variable)
+            parameter = String.to_atom(parameter)
           Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
+
           other -> Logger.warn("Bad message id: #{other}")
         end
 
