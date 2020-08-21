@@ -37,34 +37,33 @@ defmodule Common.Application do
 
   @spec start_vehicle(atom(), atom()) :: atom()
   def start_vehicle(vehicle_type, node_type) do
-    # RingLogger.attach()
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Peripherals.Gpio], vehicle_type, node_type)
+    modules = [Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Peripherals.Gpio]
+    Configuration.Module.start_modules(modules, vehicle_type, node_type)
   end
 
   @spec start_gcs(binary()) :: atom()
   def start_gcs(vehicle_type) do
-    # Logger.add_backend(:console)
-    # RingLogger.attach
     node_type = :gcs
-    Configuration.Module.start_modules([Display.Scenic, Navigation, Peripherals.Uart], vehicle_type, node_type)
+    modules = [Display.Scenic, Navigation, Peripherals.Uart]
+    Configuration.Module.start_modules(modules, vehicle_type, node_type)
   end
 
 
   @spec start_simulation(atom()) ::atom()
   def start_simulation(vehicle_type) do
-    # RingLogger.attach()
     node_type = :sim
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic], vehicle_type, node_type)
+    modules = [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
+    Configuration.Module.start_modules(modules, vehicle_type, node_type)
   end
 
   @spec start_hil(atom()) ::atom()
   def start_hil(vehicle_type) do
-    # RingLogger.attach()
     node_type = :all
     Logger.info("vehicle/node: #{vehicle_type}/#{node_type}")
-    Configuration.Module.start_modules([Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Display.Scenic, Peripherals.Gpio], vehicle_type, node_type)
+    modules = [Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Display.Scenic, Peripherals.Gpio]
+    Configuration.Module.start_modules(modules, vehicle_type, node_type)
   end
 
 end

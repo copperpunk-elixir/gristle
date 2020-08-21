@@ -174,8 +174,6 @@ defmodule Pids.Pid do
    @spec set_pid_gain(atom(), atom(), atom(), float()) ::atom()
   def set_pid_gain(pv, ov, param, value) do
     msg = [pv, ov, param, value] |> Msgpax.pack!(iodata: false)
-    Logger.info("msg: #{inspect(msg)}")
-    Logger.info("msg len: #{length(:binary.bin_to_list(msg))}")
     Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:set_pid_gain, msg)
   end
 

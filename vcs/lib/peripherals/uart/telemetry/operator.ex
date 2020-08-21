@@ -180,27 +180,21 @@ defmodule Peripherals.Uart.Telemetry.Operator do
        0x46  ->
         case msg_id do
           0x00 ->
-            # Set Pid Gain (Proto)
-            [process_variable, output_variable, parameter, value] = Msgpax.unpack!(payload)
-            process_variable = String.to_atom(process_variable)
-            output_variable = String.to_atom(output_variable)
-            parameter = String.to_atom(parameter)
+            # Msgpax
+            msg_type = :set_pid_gain
+            [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
             Pids.Pid.set_parameter(process_variable, output_variable, parameter, value)
           0x01 ->
-            # Request Pid Gain (Proto)
-            [process_variable, output_variable, parameter] = Msgpax.unpack!(payload)
-            process_variable = String.to_atom(process_variable)
-            output_variable = String.to_atom(output_variable)
-            parameter = String.to_atom(parameter)
+            # Msgpax
+            msg_type = :request_pid_gain
+            [process_variable, output_variable, parameter] = Pids.Msgpax.Utils.unpack(msg_type, payload)
             value = Pids.Pid.get_parameter(process_variable, output_variable, parameter)
             msg = [process_variable, output_variable, parameter, value] |> Msgpax.pack!(iodata: false)
             Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:get_pid_gain, msg)
           0x02 ->
-            # Get Pid Gain (Proto)
-            [process_variable, output_variable, parameter, value] = Msgpax.unpack!(payload)
-            process_variable = String.to_atom(process_variable)
-            output_variable = String.to_atom(output_variable)
-            parameter = String.to_atom(parameter)
+            # Msgpax
+            msg_type = :get_pid_gain
+            [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
           Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
 
           other -> Logger.warn("Bad message id: #{other}")
@@ -214,7 +208,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             case cmd do
               0x01 -> Logging.Logger.save_log()
               0x02 -> Common.Utils.File.unmount_usb_drive()
-              other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
+              _other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
             end
           0x01 ->
             msg_type = :mission
@@ -235,14 +229,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Protobuf mission
             Logger.warn("proto mission received!")
             msg_type = :mission_proto
-            mission_pb = Navigation.Path.Protobuf.Mission.decode(:binary.list_to_bin(payload))
-            Logger.info("misson: #{mission_pb.name}")
-            mission = Navigation.Path.Mission.new_mission(mission_pb.name, mission_pb.waypoints, mission_pb.vehicle_turn_rate)
+            mission = Navigation.Path.Protobuf.Utils.new_mission(payload)
             Navigation.PathPlanner.load_mission(mission, __MODULE__)
-            if mission_pb.confirm do
+            if mission.confirm do
               Logger.warn("send confirmation")
               pb_encoded = Navigation.Path.Mission.encode(mission, false)
-              construct_and_send_proto_message(:mission_proto, pb_encoded)
+              construct_and_send_proto_message(msg_type, pb_encoded)
             else
               Logger.warn("confirmation received")
             end
