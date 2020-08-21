@@ -65,6 +65,15 @@ defmodule Common.Utils do
     end
   end
 
+  @spec safe_call(tuple(), any(), integer(), any()) :: atom()
+  def safe_call(pid, msg, timeout, default) do
+    unless (GenServer.whereis(pid) == nil) do
+      GenServer.call(pid, msg, timeout)
+    else
+      default
+    end
+  end
+
   def assert_list(value_or_list) do
     if is_list(value_or_list) do
       value_or_list

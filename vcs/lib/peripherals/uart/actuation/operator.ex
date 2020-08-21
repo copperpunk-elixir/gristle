@@ -17,7 +17,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
     Logger.warn("Actuation module: #{config.interface_module}")
     {:ok, %{
         interface_module: config.interface_module,
-        driver_config: config.driver_config,
+        # driver_config: config.driver_config,
         interface: nil,
         channels: %{}
      }

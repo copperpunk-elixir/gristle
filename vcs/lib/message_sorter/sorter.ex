@@ -116,19 +116,16 @@ defmodule MessageSorter.Sorter do
   end
 
   def get_value(name, timeout \\ @default_call_timeout) do
-    unless (GenServer.whereis(via_tuple(name)) == nil) do
-      GenServer.call(via_tuple(name), {:get_value, false}, timeout)
-    else
-      nil
-    end
+    Common.Utils.safe_call(via_tuple(name), {:get_value, false}, timeout, nil)
   end
 
   def get_value_with_status(name, timeout \\ @default_call_timeout) do
-    unless (GenServer.whereis(via_tuple(name)) == nil) do
-      GenServer.call(via_tuple(name), {:get_value, true}, timeout)
-    else
-      {nil, :no_sorter}
-    end
+    Common.Utils.safe_call(via_tuple(name),{:get_value, true}, timeout, {nil, :no_sorter})
+    # unless (GenServer.whereis(via_tuple(name)) == nil) do
+    #   GenServer.call(via_tuple(name), {:get_value, true}, timeout)
+    # else
+    #   {nil, :no_sorter}
+    # end
   end
 
   def remove_messages_for_classification(name, classification) do
