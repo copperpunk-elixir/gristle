@@ -18,7 +18,6 @@ defmodule Control.Controller do
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
         pv_cmds: %{},
-        control_loop_timer: nil,
         control_loop_interval_ms: config.process_variable_cmd_loop_interval_ms,
         control_state: -1,
         airspeed: 0,
@@ -36,8 +35,8 @@ defmodule Control.Controller do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    control_loop_timer = Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
-    {:noreply, %{state | control_loop_timer: control_loop_timer}}
+    Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
+    {:noreply, state}
   end
 
   @impl GenServer
