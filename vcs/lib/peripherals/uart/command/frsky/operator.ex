@@ -195,7 +195,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
       (Enum.at(payload,6)>>>7) + (Enum.at(payload,7)<<<1) + (Enum.at(payload,8)<<<9),
       (Enum.at(payload,8)>>>2) + (Enum.at(payload,9)<<<6),
       (Enum.at(payload,9)>>>5) + (Enum.at(payload,10)<<<3),
-      # (Enum.at(payload,11)) + (Enum.at(payload,12)<<<8),
+      (Enum.at(payload,11)) + (Enum.at(payload,12)<<<8),
       # (Enum.at(payload,12)>>>3) + (Enum.at(payload,13)<<<5),
       # (Enum.at(payload,13)>>>6) + (Enum.at(payload,14)<<<2) + (Enum.at(payload,15)<<<10),
       # (Enum.at(payload,15)>>>1) + (Enum.at(payload,16)<<<7),

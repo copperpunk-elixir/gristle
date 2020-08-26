@@ -2,8 +2,8 @@ defmodule Command.Commander do
   use GenServer
   require Logger
 
-  @rx_control_state_channel 4
-  @transmit_channel 5
+  @rx_control_state_channel 8
+  @transmit_channel 7
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
