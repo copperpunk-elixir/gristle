@@ -26,7 +26,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
           attitude: %{roll: 0,pitch: 0,yaw: 0},
           bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
           bodyaccel: %{x: 0, y: 0, z: 0},
-          gps_time: 0,
+          gps_time_ns: 0,
           position: %{latitude: 0, longitude: 0, altitude: 0},
           velocity: %{north: 0, east: 0, down: 0},
           magnetometer: %{x: 0, y: 0, z: 0},
@@ -85,7 +85,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     # end)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
-    # Logger.info("time: #{ins.gps_time}")
+    # Logger.info("time: #{ins.gps_time_ns}")
     # Logger.info("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.info("gps_status: #{ins.gps_status}")
 
@@ -257,12 +257,14 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     field_mask = <<field_mask::unsigned-integer-16>>
     <<_resv_bit::1, _time_gps_pps_bit::1, _sync_in_cnt_bit::1, ins_status_bit::1, _delta_theta_bit::1, mag_pres_bit::1, _imu_bit::1, accel_bit::1,velocity_bit::1, position_bit::1, angular_rate_bit::1, _qtn_bit::1, ypr_bit::1, _time_sync_bit::1, gps_time_bit::1, _time_startup_bit::1>> = field_mask
 
-    {gps_time, buffer} =
+    {gps_time_ns, buffer} =
     if (gps_time_bit == 1) do
       {gps_time_uint64, buffer} = Enum.split(buffer, 8)
-      {list_to_int(gps_time_uint64,8)/1000000000, buffer}
+      gps_time_ns = list_to_int(gps_time_uint64,8)
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {:gps_time_source, gps_time_ns}, self())
+      {gps_time_ns, buffer}
     else
-      {ins.gps_time, buffer}
+      {ins.gps_time_ns, buffer}
     end
 
     {attitude, buffer} = if(ypr_bit == 1) do
@@ -378,14 +380,16 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       {ins.gps_status, buffer}
     end
 
-    %{gps_time: gps_time, attitude: attitude, bodyrate: bodyrate, bodyaccel: bodyaccel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
+    %{gps_time_ns: gps_time_ns, attitude: attitude, bodyrate: bodyrate, bodyaccel: bodyaccel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
   end
 
   def publish_vn_message(bodyaccel, bodyrate, attitude, velocity, position) do
     header = <<0xFA>>
     group = <<0x01>>
     fields_word = <<0xEA, 0x11>>
-    current_time_ns = :os.system_time(:nanosecond) |> Common.Utils.Math.uint_from_fp(64)
+    current_time_ns =
+      DateTime.diff(DateTime.utc_now, ~U[1980-01-01 00:00:00Z], :nanosecond)
+      |> Common.Utils.Math.int_little_bin(64)
     yaw_deg = attitude.yaw |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
     pitch_deg = attitude.pitch |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
     roll_deg = attitude.roll |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
