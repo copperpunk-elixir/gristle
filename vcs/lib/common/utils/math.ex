@@ -210,6 +210,10 @@ defmodule Common.Utils.Math do
     <<x::little-signed-integer-32>>
   end
 
+  def int64_little_bin(x) do
+    <<x::little-signed-integer-64>>
+  end
+
   def int8_little_bin(x) do
     <<x::little-signed-integer-8>>
   end
@@ -219,6 +223,7 @@ defmodule Common.Utils.Math do
       8 -> int8_little_bin(x)
       16 -> int16_little_bin(x)
       32 -> int32_little_bin(x)
+      64 -> int64_little_bin(x)
     end
   end
 
