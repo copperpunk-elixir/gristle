@@ -13,21 +13,25 @@ defmodule Logging.Logger do
   def init(config) do
     root_path = config.root_path
     {:ok, %{
-        root_directory: root_path
+        root_directory: root_path,
+        clock: Time.Clock.new()
      }}
   end
 
   @impl GenServer
   def handle_cast(:begin, state) do
+    Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :gps_time, self())
     # Logger.warn("log directory: #{state.log_directory}")
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:save_log, file_suffix}, state) do
-    path = get_directory(state.root_directory,"log")
+    now = Time.Clock.utc_now(state.clock)
+    path = get_directory(now, state.root_directory, "log")
     :filelib.ensure_dir(path)
-    filename = path <> (get_file_name(file_suffix))
+    filename = path <> (get_file_name(now, file_suffix))
     Logger.info("save filename: #{filename}")
     RingLogger.save(filename)
     {:noreply, state}
@@ -35,12 +39,19 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def handle_cast({:write_to_file, folder, data, file_suffix}, state) do
-    path = get_directory(state.root_directory, folder)
+    now = Time.Clock.utc_now(state.clock)
+    path = get_directory(now, state.root_directory, folder)
     :filelib.ensure_dir(path)
-    filename = path <> get_file_name(file_suffix)
+    filename = path <> get_file_name(now, file_suffix)
     Logger.info("write filename: #{filename}")
     File.write(filename, data)
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:gps_time, gps_time}, state) do
+    clock = Time.Clock.set_datetime(state.clock, gps_time)
+    {:noreply, %{state | clock: clock}}
   end
 
   @impl GenServer
@@ -72,22 +83,21 @@ defmodule Logging.Logger do
     GenServer.call(__MODULE__, :get_log_directory)
   end
 
-  @spec get_directory(binary(), binary()) :: binary()
-  def get_directory(root, directory_name \\ "") do
-    now = DateTime.utc_now
+  @spec get_directory(struct(), binary(), binary()) :: binary()
+  def get_directory(now, root, directory_name \\ "") do
     date_directory = get_date_string(now,"-") <> "/"
     root <> directory_name <> "/" <> date_directory
   end
 
-  @spec get_file_name(binary()) :: binary()
-  def get_file_name(file_suffix) do
+  @spec get_file_name(struct(), binary()) :: binary()
+  def get_file_name(now, file_suffix) do
     file_suffix =
       cond do
       is_atom(file_suffix) -> "_" <> Atom.to_string(file_suffix)
       is_binary(file_suffix) ->
         if String.length(file_suffix) == 0, do: "", else: "_" <> file_suffix
     end
-    time_string = get_time_string(DateTime.utc_now, "-")
+    time_string = get_time_string(now, "-")
     time_string <> file_suffix <> ".txt"
   end
 

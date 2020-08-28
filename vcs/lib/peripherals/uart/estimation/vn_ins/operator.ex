@@ -388,7 +388,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     group = <<0x01>>
     fields_word = <<0xEA, 0x11>>
     current_time_ns =
-      DateTime.diff(DateTime.utc_now, ~U[1980-01-01 00:00:00Z], :nanosecond)
+      DateTime.diff(DateTime.utc_now, Time.Clock.get_epoch(), :nanosecond)
       |> Common.Utils.Math.int_little_bin(64)
     yaw_deg = attitude.yaw |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
     pitch_deg = attitude.pitch |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
