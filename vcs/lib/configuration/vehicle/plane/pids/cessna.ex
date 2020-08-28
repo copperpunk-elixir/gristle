@@ -37,7 +37,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
       pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0},
       yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      thrust: %{output_min: -1, output_max: 1, output_neutral: 0.0},
+      thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       speed: %{output_min: -100, output_max: 100, output_neutral: 0},
