@@ -7,7 +7,7 @@ defmodule Configuration.Module.Time do
   end
   def get_server_config() do
     %{
-      server_loop_interval_ms: 1_000
+      server_loop_interval_ms: 10_000
     }
   end
 end

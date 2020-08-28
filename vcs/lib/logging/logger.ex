@@ -14,8 +14,7 @@ defmodule Logging.Logger do
     root_path = config.root_path
     {:ok, %{
         root_directory: root_path,
-        gps_time: nil,
-        system_time_ms: nil
+        clock: Time.Clock.new()
      }}
   end
 
@@ -29,7 +28,7 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def handle_cast({:save_log, file_suffix}, state) do
-    now = Time.Server.utc_now(state.system_time_ms, state.gps_time)
+    now = Time.Clock.utc_now(state.clock)
     path = get_directory(now, state.root_directory, "log")
     :filelib.ensure_dir(path)
     filename = path <> (get_file_name(now, file_suffix))
@@ -40,7 +39,7 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def handle_cast({:write_to_file, folder, data, file_suffix}, state) do
-    now = Time.Server.utc_now(state.system_time_ms, state.gps_time)
+    now = Time.Clock.utc_now(state.clock)
     path = get_directory(now, state.root_directory, folder)
     :filelib.ensure_dir(path)
     filename = path <> get_file_name(now, file_suffix)
@@ -51,12 +50,8 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def handle_cast({:gps_time, gps_time}, state) do
-    Logger.debug("Logger gps time UTC: #{inspect(gps_time_since_epoch_ns)}")
-    state = %{state |
-              gps_time: gps_time,
-              system_time_ms: :os.system_time(:millisecond)
-             }
-    {:noreply, state}
+    clock = Time.Clock.set_datetime(state.clock, gps_time)
+    {:noreply, %{state | clock: clock}}
   end
 
   @impl GenServer

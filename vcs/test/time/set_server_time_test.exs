@@ -26,8 +26,8 @@ defmodule Time.SetServerTimeTest do
     current_time = Time.Server.get_time()
     assert current_time.second > 0
     # Set GPS Time
-    gps_time_nano = round(3*3600*1.0e9)
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:gps_time, gps_time_nano}, self())
+    gps_time = ~U[1980-01-01 03:00:00Z]
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:gps_time, gps_time}, self())
     Process.sleep(100)
     datetime_exp = ~U[1980-01-01 03:00:00Z]
     datetime = Time.Server.get_time()
