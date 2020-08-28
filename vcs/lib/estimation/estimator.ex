@@ -51,6 +51,7 @@ defmodule Estimation.Estimator do
     Comms.Operator.join_group(__MODULE__, {:watchdog, :range}, self())
     Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
+    Common.Utils.start_loop(self(), state.pv_3_local_loop_interval_ms, :pv_3_local_loop)
     Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:att_rate, state.att_rate_expected_interval_ms))
     Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:pos_vel, state.pos_vel_expected_interval_ms))
     Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:airspeed, state.airspeed_expected_interval_ms))

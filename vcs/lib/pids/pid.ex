@@ -19,13 +19,12 @@ defmodule Pids.Pid do
         ff: Map.get(config, :ff, nil),
         output_min: config.output_min,
         output_max: config.output_max,
-        correction_min: config.input_min,
-        correction_max: config.input_max,
         output_neutral: config.output_neutral,
+        integrator_range_min: Map.get(config, :integrator_range_min, 0),
+        integrator_range_max: Map.get(config, :integrator_range_max, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
-        output: config.output_neutral,
-        feed_forward_prev: 0
+        output: config.output_neutral
      }}
   end
 
@@ -40,10 +39,10 @@ defmodule Pids.Pid do
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
     delta_output_min = state.output_min - state.output_neutral
     delta_output_max = state.output_max - state.output_neutral
-    correction_raw = pv_cmd - pv_value
-    {correction, out_of_range} = Common.Utils.Math.constrain?(correction_raw, state.correction_min, state.correction_max)
+    correction = pv_cmd - pv_value
+    in_range = Common.Utils.Math.in_range?(correction, state.integrator_range_min, state.integrator_range_max)
     pv_integrator =
-      unless out_of_range do
+    if in_range do
       pv_add = correction*dt
       state.pv_integrator + pv_add
     else
@@ -57,7 +56,7 @@ defmodule Pids.Pid do
 
     cmd_d =
     if dt != 0 do
-      -state.kd*(correction_raw - state.pv_correction_prev)/dt
+      -state.kd*(correction- state.pv_correction_prev)/dt
       |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
     else
       0.0
@@ -87,7 +86,7 @@ defmodule Pids.Pid do
     #   Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
     # end
 
-    pv_correction_prev = correction_raw
+    pv_correction_prev = correction
     pv_integrator =
     if (state.ki != 0) do
       cmd_i / state.ki
@@ -95,7 +94,7 @@ defmodule Pids.Pid do
       0.0
     end
     # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
-    {:reply,output, %{state | output: output, feed_forward_prev: feed_forward, pv_correction_prev: pv_correction_prev, pv_integrator: pv_integrator}}
+    {:reply,output, %{state | output: output,  pv_correction_prev: pv_correction_prev, pv_integrator: pv_integrator}}
   end
 
   @impl GenServer

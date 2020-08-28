@@ -50,7 +50,7 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({{:goals, level},classification, time_validity_ms, goals_map}, state) do
-    Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
+    # Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
     MessageSorter.Sorter.add_message({:goals, level}, classification, time_validity_ms, goals_map)
     {:noreply, state}
   end

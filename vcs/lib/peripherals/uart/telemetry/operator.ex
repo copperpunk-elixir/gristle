@@ -229,9 +229,10 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Protobuf mission
             Logger.warn("proto mission received!")
             msg_type = :mission_proto
-            mission = Navigation.Path.Protobuf.Utils.new_mission(payload)
+            mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
+            mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
             Navigation.PathPlanner.load_mission(mission, __MODULE__)
-            if mission.confirm do
+            if mission_pb.confirm do
               Logger.warn("send confirmation")
               pb_encoded = Navigation.Path.Mission.encode(mission, false)
               construct_and_send_proto_message(msg_type, pb_encoded)

@@ -6,9 +6,9 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
     constraints = get_constraints()
 
     pids = %{
-      rollrate: %{aileron: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.00, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
-      pitchrate: %{elevator: Map.merge(%{kp: 0.15, ki: 0.005, kd: 0.00, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
-      yawrate: %{rudder: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.0, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
+      rollrate: %{aileron: Map.merge(%{kp: 0.6, ki: 1.0, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
+      pitchrate: %{elevator: Map.merge(%{kp: 0.6, ki: 1.0, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
+      yawrate: %{rudder: Map.merge(%{kp: 0.3, ki: 0.0, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
       thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
       roll: %{rollrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.rollrate)},
       pitch: %{pitchrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.pitchrate)},
@@ -31,17 +31,17 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
-      rollrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0},
-      yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
+      rollrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0, integrator_range: 0.26},
+      pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0, integrator_range: 0.26},
+      yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0, integrator_range: 0.26},
+      roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0, integrator_range: 0.26},
+      pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0, integrator_range: 0.26},
+      yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0, integrator_range: 0.26},
       thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
-      course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      speed: %{output_min: -100, output_max: 100, output_neutral: 0},
-      altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
+      course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0, integrator_range: 0.26},
+      course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0, integrator_range: 0.26},
+      speed: %{output_min: 0, output_max: 55, output_neutral: 0, integrator_range: 5.0},
+      altitude: %{output_min: -10, output_max: 10, output_neutral: 0, integrator_range: 5.0},
     }
   end
 
