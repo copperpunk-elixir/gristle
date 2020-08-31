@@ -20,8 +20,8 @@ defmodule Pids.Pid do
         output_min: config.output_min,
         output_max: config.output_max,
         output_neutral: config.output_neutral,
-        integrator_range_min: Map.get(config, :integrator_range_min, 0),
-        integrator_range_max: Map.get(config, :integrator_range_max, 0),
+        integrator_range_min: -Map.get(config, :integrator_range, 0),
+        integrator_range_max: Map.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
         output: config.output_neutral
@@ -115,6 +115,12 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
+  def handle_cast({:force_output, output}, state) do
+    {:noreply, %{state | output: output}}
+  end
+
+
+  @impl GenServer
   def handle_cast({:set_parameter, parameter, value}, state) do
     {:noreply, Map.put(state, parameter, value)}
   end
@@ -130,6 +136,10 @@ defmodule Pids.Pid do
 
   def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt) do
     GenServer.call(via_tuple(pv_name, output_variable_name), {:update, pv_cmd, pv_value, airspeed, dt})
+  end
+
+  def force_output(pv_name, output_variable_name, value) do
+    GenServer.cast(via_tuple(pv_name, output_variable_name), {:force_output, value})
   end
 
   def get_output(process_variable, control_variable, weight\\1) do

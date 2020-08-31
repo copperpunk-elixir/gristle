@@ -78,6 +78,7 @@ defmodule Control.Controller do
     # For every PV, get the corresponding command
     control_state = MessageSorter.Sorter.get_value(:control_state)
     pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)
+    # Get Direct Cmds
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 
