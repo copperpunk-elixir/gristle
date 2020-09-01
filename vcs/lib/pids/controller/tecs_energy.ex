@@ -52,21 +52,18 @@ defmodule Pids.Controller.TecsEnergy do
     energy_rate_corr = energy_rate_sp - energy_rate
     # Logger.debug("e/e_sp/edot/edot_sp: #{Common.Utils.eftb(values.energy,3)}/#{Common.Utils.eftb(cmds.energy,3)}/#{Common.Utils.eftb(energy_rate,3)}/#{Common.Utils.eftb(energy_rate_sp, 3)}")
 
-
     cmd_p = energy_corr*energy_rate_scalar
 
     in_range = Common.Utils.Math.in_range?(energy_corr, state.integrator_range_min, state.integrator_range_max)
     pv_integrator =
     if in_range do
       pv_add = energy_corr*dt
-      # Logger.debug("in ragen: #{state.pv_integrator}/ #{pv_add}")
       state.pv_integrator + pv_add*energy_rate_scalar
     else
       0.0
     end
 
     cmd_i = state.ki*pv_integrator
-    # |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
     cmd_d = energy_rate_corr*state.kd*energy_rate_scalar
 
@@ -81,9 +78,8 @@ defmodule Pids.Controller.TecsEnergy do
 
     output = feed_forward + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
-    # cmd_p = cmd_p * state.energy_rate_scalar
-    # # cmd_i = cmd_i * state.energy_rate_scalar
-    # cmd_d = cmd_d * state.energy_rate_scalar
+
+    # Prevent integrator wind-up
     pv_integrator =
     if (state.ki > 0) do
       # Logger.debug("pv_int: #{pv_integrator}/ #{cmd_i/state.ki}")
@@ -96,21 +92,4 @@ defmodule Pids.Controller.TecsEnergy do
     %{state | output: output, speed_prev: speed, pv_correction_prev: energy_corr, pv_integrator: pv_integrator}
 
   end
-
-  # @spec update_height_sp(float(), float(), float(), map()) :: map()
-  # def update_height_sp(height_cmd, height, dt, state) do
-  #   climb_rate_max = state.climb_rate_max
-  #   height_cmd_prev = if is_nil(state.height_cmd_prev), do: height_cmd, else: state.height_cmd_prev
-  #   d_cmd = height_cmd - state.height_cmd_prev
-  #   climb_rate = Common.Utils.Math.constrain(d_cmd/dt, -climb_rate_max, climb_rate_max)
-  #   height_cmd = height + climb_rate*dt
-  #   height_rate_cmd = (height_cmd - height)*state.height_kp + state.height_ff*(height_cmd - height_cmd_prev)/dt
-  #   |> Common.Utils.Math.constrain(-climb_rate_max, climb_rate_max)
-  #   height_cmd_prev = height_cmd
-  #   %{state | height_cmd: height_cmd, height_rate_cmd: height_rate_cmd, height_cmd_prev: height_cmd_prev}
-  # end
-
-  # @spec update_speed_sp() :: map()
-  # def update_speed_sp() do
-  # end
 end
