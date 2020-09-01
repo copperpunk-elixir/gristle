@@ -12,8 +12,8 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
       course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1}, constraints.yaw)},
       tecs: %{
-        thrust: Map.merge(%{type: :TecsEnergy, kp: 0.001, ki: 0.0, kd: 0, ff: get_feed_forward(:tecs, :thrust)}, constraints.thrust),
-        pitch: Map.merge(%{type: :TecsBalance, kp: 0.030, ki: 0.001, kd: 0}, constraints.pitch)
+        thrust: Map.merge(%{type: :TecsEnergy, kp: 0.001, ki: 0.01, kd: 0, integrator_range: 100, ff: get_feed_forward(:tecs, :thrust)}, constraints.thrust),
+        pitch: Map.merge(%{type: :TecsBalance, kp: 0.001, ki: 0.01, kd: 0, balance_rate_scalar: 0.001}, constraints.pitch)
       }
     }
 

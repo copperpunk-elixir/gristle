@@ -12,6 +12,7 @@ defmodule Pids.Controller.TecsEnergy do
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
         ff: Map.get(config, :ff, nil),
+        time_constant: Map.get(config, :tc, 1.0),
         output_min: config.output_min,
         output_max: config.output_max,
         integrator_range_min: -Map.get(config, :integrator_range, 0),
@@ -28,71 +29,59 @@ defmodule Pids.Controller.TecsEnergy do
   end
 
   @spec update(map(), map(), float(), float(), map()) :: map()
-  def update(pv_cmds, pv_values, _airspeed, dt, state) do
-    speed = pv_values.speed
-    vv = pv_values.vertical
-    altitude = pv_values.altitude
+  def update(cmds, values, _airspeed, dt, state) do
+    # speed = values.speed
+    # vv = pv_values.vertical
+    # altitude = pv_values.altitude
 
     speed_dot =
     if is_nil(state.speed_prev) do
       0
     else
-      (speed - state.speed_prev)/dt
+      (values.speed - state.speed_prev)/dt
     end
 
-    # vv_dot =
-    # if is_nil(state.vv_prev) do
-    #   0.0
-    # else
-    # (pv_values.vertical - state.vv_prev)/dt
-    # end
+    kinetic_energy_rate = speed_dot/Common.Constants.gravity()
+    # potential_energy_rate = flight_path_angle
+    energy_rate = kinetic_energy_rate + values.potential_energy_rate
 
-    speed_cmd = pv_cmds.speed
-    alt_cmd = pv_cmds.altitude
+    kinetic_energy_rate_sp = speed_dot/Common.Constants.gravity()
+    energy_rate_sp = kinetic_energy_rate_sp + cmds.potential_energy_rate
 
-    energy= 0.5*speed*speed + Common.Constants.gravity()*altitude
-    energy_sp = 0.5*speed_cmd*speed_cmd + Common.Constants.gravity()*alt_cmd
-
-    flight_path_angle =
-    if (speed > 5.0) do
-      vv/speed
-    else
-      0.0
-    end
-
-    speed_dot_sp = (speed_cmd - speed)/dt
-    flight_path_angle_sp =
-    if (speed_cmd > 1.0) do
-      (alt_cmd - altitude)/speed_cmd
-    else
-      0.0
-    end
-
-    energy_rate = speed_dot/Common.Constants.gravity() + flight_path_angle
-    energy_rate_sp = speed_dot_sp/Common.Constants.gravity() + flight_path_angle_sp
-
-    energy_corr = energy_sp - energy
+    energy_corr = cmds.energy - values.energy
     energy_rate_corr = energy_rate_sp - energy_rate
-    Logger.debug("e/e_sp/edot/edot_sp: #{Common.Utils.eftb(energy,3)}/#{Common.Utils.eftb(energy_sp,3)}/#{Common.Utils.eftb(energy_rate,3)}/#{Common.Utils.eftb(energy_rate_sp, 3)}")
+    Logger.debug("e/e_sp/edot/edot_sp: #{Common.Utils.eftb(values.energy,3)}/#{Common.Utils.eftb(cmds.energy,3)}/#{Common.Utils.eftb(energy_rate,3)}/#{Common.Utils.eftb(energy_rate_sp, 3)}")
 
 
     cmd_p = energy_corr*state.kp
-    cmd_i = 0.0
+
+    in_range = Common.Utils.Math.in_range?(energy_corr, state.integrator_range_min, state.integrator_range_max)
+    pv_integrator =
+    if in_range do
+      pv_add = energy_corr*dt
+      state.pv_integrator + pv_add
+    else
+      0.0
+    end
+
+    cmd_i = state.ki*pv_integrator
+    |> Common.Utils.Math.constrain(state.output_min, state.output_max)
+
     cmd_d = energy_rate_corr*state.kd
 
-    delta_output = cmd_p + cmd_i + cmd_d
+    delta_output = (cmd_p + cmd_i + cmd_d) / state.time_constant
     feed_forward =
       case Map.get(state, :ff) do
         nil -> 0
         f ->
-          f.(energy_rate_sp, energy_rate, speed_cmd)
+          f.(energy_rate_sp, energy_rate, cmds.speed)
           |> Common.Utils.Math.constrain(state.output_min, state.output_max)
       end
 
     output = feed_forward + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
     Logger.debug("p/i/d/ff/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
-    %{state | output: output, speed_prev: speed}
+    %{state | output: output, speed_prev: values.speed, pv_correction_prev: energy_corr, pv_integrator: pv_integrator}
 
   end
 
