@@ -9,24 +9,8 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def init(config) do
-    {process_variable, control_variable} = Map.get(config, :name)
-    {:ok, %{
-        process_variable: process_variable,
-        control_variable: control_variable,
-        kp: Map.get(config, :kp, 0),
-        ki: Map.get(config, :ki, 0),
-        kd: Map.get(config, :kd, 0),
-        ff: Map.get(config, :ff, nil),
-        output_min: config.output_min,
-        output_max: config.output_max,
-        correction_min: config.input_min,
-        correction_max: config.input_max,
-        output_neutral: config.output_neutral,
-        pv_integrator: 0,
-        pv_correction_prev: 0,
-        output: config.output_neutral,
-        feed_forward_prev: 0
-     }}
+    pid_module = Module.concat(Pids.Controller, config.type)
+    apply(pid_module, :init, [config])
   end
 
   @impl GenServer
@@ -37,65 +21,10 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def handle_call({:update, pv_cmd, pv_value, airspeed, dt}, _from, state) do
+    state = apply(state.pid_module, :update, [pv_cmd, pv_value, airspeed, dt, state])
     # Logger.debug("update #{state.process_variable}/#{state.control_variable} with #{pv_cmd}/#{pv_value}")
-    delta_output_min = state.output_min - state.output_neutral
-    delta_output_max = state.output_max - state.output_neutral
-    correction_raw = pv_cmd - pv_value
-    {correction, out_of_range} = Common.Utils.Math.constrain?(correction_raw, state.correction_min, state.correction_max)
-    pv_integrator =
-      unless out_of_range do
-      pv_add = correction*dt
-      state.pv_integrator + pv_add
-    else
-      0.0
-    end
-    cmd_p = state.kp*correction
-    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
-
-    cmd_i = state.ki*pv_integrator
-    |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
-
-    cmd_d =
-    if dt != 0 do
-      -state.kd*(correction_raw - state.pv_correction_prev)/dt
-      |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
-    else
-      0.0
-    end
-    delta_output = cmd_p + cmd_i + cmd_d
-    feed_forward =
-      case Map.get(state, :ff) do
-        nil -> 0
-        f ->
-          f.(pv_value+correction, pv_value, airspeed)
-          |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
-      end
-    # Logger.debug("delta: #{state.process_variable}/#{state.control_variable}: #{delta_output}")
-    output = state.output_neutral + feed_forward + delta_output
-    # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
-    output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
-    output = if state.process_variable == :speed do
-      max_delta_output = 0.02
-      delta_output = output-state.output
-      |> Common.Utils.Math.constrain(-max_delta_output, max_delta_output)
-      # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(state.output+delta_output, 3)}")
-      state.output + delta_output
-    else
-      output
-    end
-    # if state.process_variable == :rollrate do
-    #   Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
-    # end
-
-    pv_correction_prev = correction_raw
-    pv_integrator =
-    if (state.ki != 0) do
-      cmd_i / state.ki
-    else
-      0.0
-    end
     # Logger.debug("post: #{state.process_variable}/#{state.control_variable}: #{output}")
-    {:reply,output, %{state | output: output, feed_forward_prev: feed_forward, pv_correction_prev: pv_correction_prev, pv_integrator: pv_integrator}}
+    {:reply,state.output, state}
   end
 
   @impl GenServer
@@ -116,6 +45,12 @@ defmodule Pids.Pid do
   end
 
   @impl GenServer
+  def handle_cast({:force_output, output}, state) do
+    {:noreply, %{state | output: output}}
+  end
+
+
+  @impl GenServer
   def handle_cast({:set_parameter, parameter, value}, state) do
     {:noreply, Map.put(state, parameter, value)}
   end
@@ -131,6 +66,10 @@ defmodule Pids.Pid do
 
   def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt) do
     GenServer.call(via_tuple(pv_name, output_variable_name), {:update, pv_cmd, pv_value, airspeed, dt})
+  end
+
+  def force_output(pv_name, output_variable_name, value) do
+    GenServer.cast(via_tuple(pv_name, output_variable_name), {:force_output, value})
   end
 
   def get_output(process_variable, control_variable, weight\\1) do
@@ -153,7 +92,8 @@ defmodule Pids.Pid do
 
   @spec filter_parameters(map()) :: map()
   def filter_parameters(state) do
-    Map.take(state, [:kp, :ki, :kd, :output_min, :output_max, :correction_min, :correction_max, :output_neutral])
+    parameters = apply(state.pid_module, :parameters_to_write, [])
+    Map.take(state, parameters)
   end
 
   @spec get_parameter(atom(), atom(), atom()) :: float()

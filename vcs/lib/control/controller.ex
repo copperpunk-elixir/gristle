@@ -60,11 +60,11 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
-    # Logger.warn("Control rx vel/pos/dt: #{inspect(pv_value_map)}/#{dt}")
+    # Logger.warn("Control rx vel/pos/dt: #{inspect(position)}/#{inspect(velocity)}/#{dt}")
     # Logger.warn("cs: #{state.control_state}")
     airspeed = velocity.airspeed
     if (state.control_state == 3) do
-      pv_value_map = %{altitude: position.altitude, speed: velocity.speed, course: velocity.course}
+      pv_value_map = Map.merge(velocity, %{altitude: position.altitude})
       # Logger.warn("pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(state.pv_cmds)}")
       Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, 3}, self())
     end
@@ -78,6 +78,7 @@ defmodule Control.Controller do
     # For every PV, get the corresponding command
     control_state = MessageSorter.Sorter.get_value(:control_state)
     pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)
+    # Get Direct Cmds
     {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
   end
 

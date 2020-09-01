@@ -5,23 +5,28 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
   def get_pids() do
     constraints = get_constraints()
 
-    pids = %{
-      rollrate: %{aileron: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.00, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
-      pitchrate: %{elevator: Map.merge(%{kp: 0.15, ki: 0.005, kd: 0.00, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
-      yawrate: %{rudder: Map.merge(%{kp: 0.3, ki: 0.0, kd: 0.0, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
-      thrust: %{throttle: Map.merge(%{kp: 1.0}, constraints.throttle)},
-      roll: %{rollrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.rollrate)},
-      pitch: %{pitchrate: Map.merge(%{kp: 2.0, kd: 0.025}, constraints.pitchrate)},
-      yaw: %{yawrate: Map.merge(%{kp: 2.0, kd: 0.000}, constraints.yawrate)},
-      course_flight: %{roll: Map.merge(%{kp: 0.0, ki: 0.0, kd: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll),
-                       yaw: Map.merge(%{kp: 0.1}, constraints.yaw)},
-      course_ground: %{roll: Map.merge(%{kp: 0.0}, constraints.roll),
-                       yaw: Map.merge(%{kp: 1.0, ki: 0.1,ff: get_feed_forward(:course_ground, :yaw)}, constraints.yaw)},
-      speed: %{thrust: Map.merge(%{kp: 0.15, ki: 0.01, weight: 1.0}, constraints.thrust)},
-      altitude: %{pitch: Map.merge(%{kp: 0.030, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
+    %{
+      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
+      pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
+      yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.3, ki: 0.0, integrator_range: 0.26, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
+      course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
+      course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1}, constraints.yaw)},
+      tecs: %{
+        thrust: Map.merge(get_tecs_energy(), constraints.thrust),
+        pitch: Map.merge(get_tecs_balance(), constraints.pitch)
+      }
     }
 
-    Configuration.Module.Pids.add_pid_input_constraints(pids, constraints)
+  end
+
+  @spec get_attitude() :: map
+  def get_attitude() do
+    constraints = get_constraints()
+    %{
+      roll_rollrate: Map.merge(%{scale: 2.0}, constraints.rollrate),
+      pitch_pitchrate: Map.merge(%{scale: 2.0}, constraints.pitchrate),
+      yaw_yawrate: Map.merge(%{scale: 2.0}, constraints.yawrate),
+    }
   end
 
   @spec get_constraints() :: map()
@@ -35,15 +40,39 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0},
+      pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
       yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      thrust: %{output_min: -1, output_max: 1, output_neutral: 0.0},
+      thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      speed: %{output_min: -100, output_max: 100, output_neutral: 0},
-      altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
+      speed: %{output_min: 0, output_max: 55, output_neutral: 0},
+      altitude: %{output_min: -10, output_max: 10, output_neutral: 0}
     }
   end
+
+  @spec get_tecs_energy() :: map()
+  def get_tecs_energy() do
+    %{type: :TecsEnergy,
+      ki: 0.1,
+      kd: 0,
+      altitude_kp: 1.0,
+      energy_rate_scalar: 0.001,
+      integrator_range: 300,
+      ff: get_feed_forward(:tecs, :thrust)}
+  end
+
+  @spec get_tecs_balance() :: map()
+  def get_tecs_balance() do
+    %{type: :TecsBalance,
+      ki: 0.01,
+      kd: 1.0,
+      altitude_kp: 0.5,
+      balance_rate_scalar: 0.001,
+      time_constant: 2.0,
+      integrator_range: 300,
+      min_climb_speed: 30
+    }
+    end
 
   @spec get_feed_forward(atom(), atom()) :: function()
   def get_feed_forward(pv, cv) do
@@ -74,10 +103,10 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
             :math.atan(0.5*cmd*airspeed/Common.Constants.gravity())
           end
         },
-        course_ground: %{
-          yaw:
-          fn(cmd, _value, _airspeed) ->
-            cmd
+        tecs: %{
+          thrust:
+          fn (cmd, _value, speed_cmd) ->
+            if (speed_cmd > 0), do: cmd*0.001 + 0.5, else: 0.0
           end
         }
       }
