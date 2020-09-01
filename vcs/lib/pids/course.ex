@@ -10,7 +10,7 @@ defmodule Pids.Course do
       %{roll: 0.0, yaw: yaw_cmd}
     else
       roll_cmd = Pids.Pid.update_pid(:course_flight, :roll, cmds.course_flight, 0.0, airspeed, dt)
-      %{roll: roll_cmd, yaw: 0.0}
+      %{roll: roll_cmd}
     end
     output_str = Common.Utils.eftb_deg(roll_yaw_output.roll,2)
     output_str =

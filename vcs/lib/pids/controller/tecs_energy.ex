@@ -8,21 +8,19 @@ defmodule Pids.Controller.TecsEnergy do
         pid_module: __MODULE__,
         process_variable: process_variable,
         control_variable: control_variable,
-        kp: Map.get(config, :kp, 0),
         ki: Map.get(config, :ki, 0),
         kd: Map.get(config, :kd, 0),
         ff: Map.get(config, :ff, nil),
+        altitude_kp: Map.get(config, :altitude_kp, 0),
         time_constant: Map.get(config, :tc, 1.0),
+        energy_rate_scalar: config.energy_rate_scalar,
         output_min: config.output_min,
         output_max: config.output_max,
         integrator_range_min: -Map.get(config, :integrator_range, 0),
         integrator_range_max: Map.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
-        # vv_prev: nil,
         speed_prev: nil,
-        # climb_rate_max: config.climb_rate_max,
-        # height_cmd_prev: nil,
         output: config.output_neutral
      }}
 
@@ -30,44 +28,47 @@ defmodule Pids.Controller.TecsEnergy do
 
   @spec update(map(), map(), float(), float(), map()) :: map()
   def update(cmds, values, _airspeed, dt, state) do
-    # speed = values.speed
-    # vv = pv_values.vertical
-    # altitude = pv_values.altitude
+    speed = values.speed
+    energy_rate_scalar = state.energy_rate_scalar
 
     speed_dot =
     if is_nil(state.speed_prev) do
       0
     else
-      (values.speed - state.speed_prev)/dt
+      (speed - state.speed_prev)/dt
     end
 
-    kinetic_energy_rate = speed_dot/Common.Constants.gravity()
-    # potential_energy_rate = flight_path_angle
+    altitude_corr = cmds.altitude_corr
+    alt_rate = altitude_corr*state.altitude_kp
+    potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
+
+    kinetic_energy_rate = speed*speed_dot
     energy_rate = kinetic_energy_rate + values.potential_energy_rate
 
-    kinetic_energy_rate_sp = speed_dot/Common.Constants.gravity()
-    energy_rate_sp = kinetic_energy_rate_sp + cmds.potential_energy_rate
+    kinetic_energy_rate_sp = cmds.kinetic_energy_rate
+    energy_rate_sp = kinetic_energy_rate_sp + potential_energy_rate_sp
 
     energy_corr = cmds.energy - values.energy
     energy_rate_corr = energy_rate_sp - energy_rate
-    Logger.debug("e/e_sp/edot/edot_sp: #{Common.Utils.eftb(values.energy,3)}/#{Common.Utils.eftb(cmds.energy,3)}/#{Common.Utils.eftb(energy_rate,3)}/#{Common.Utils.eftb(energy_rate_sp, 3)}")
+    # Logger.debug("e/e_sp/edot/edot_sp: #{Common.Utils.eftb(values.energy,3)}/#{Common.Utils.eftb(cmds.energy,3)}/#{Common.Utils.eftb(energy_rate,3)}/#{Common.Utils.eftb(energy_rate_sp, 3)}")
 
 
-    cmd_p = energy_corr*state.kp
+    cmd_p = energy_corr*energy_rate_scalar
 
     in_range = Common.Utils.Math.in_range?(energy_corr, state.integrator_range_min, state.integrator_range_max)
     pv_integrator =
     if in_range do
       pv_add = energy_corr*dt
-      state.pv_integrator + pv_add
+      # Logger.debug("in ragen: #{state.pv_integrator}/ #{pv_add}")
+      state.pv_integrator + pv_add*energy_rate_scalar
     else
       0.0
     end
 
     cmd_i = state.ki*pv_integrator
-    |> Common.Utils.Math.constrain(state.output_min, state.output_max)
+    # |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    cmd_d = energy_rate_corr*state.kd
+    cmd_d = energy_rate_corr*state.kd*energy_rate_scalar
 
     delta_output = (cmd_p + cmd_i + cmd_d) / state.time_constant
     feed_forward =
@@ -80,8 +81,19 @@ defmodule Pids.Controller.TecsEnergy do
 
     output = feed_forward + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
-    Logger.debug("p/i/d/ff/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
-    %{state | output: output, speed_prev: values.speed, pv_correction_prev: energy_corr, pv_integrator: pv_integrator}
+    # cmd_p = cmd_p * state.energy_rate_scalar
+    # # cmd_i = cmd_i * state.energy_rate_scalar
+    # cmd_d = cmd_d * state.energy_rate_scalar
+    pv_integrator =
+    if (state.ki > 0) do
+      # Logger.debug("pv_int: #{pv_integrator}/ #{cmd_i/state.ki}")
+      Common.Utils.Math.constrain(cmd_i/state.ki, state.output_min, state.output_max)
+    else
+      0.0
+    end
+
+    # Logger.debug("p/i/d/ff/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
+    %{state | output: output, speed_prev: speed, pv_correction_prev: energy_corr, pv_integrator: pv_integrator}
 
   end
 

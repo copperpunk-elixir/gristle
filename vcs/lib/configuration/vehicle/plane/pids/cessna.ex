@@ -12,8 +12,8 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
       course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1}, constraints.yaw)},
       tecs: %{
-        thrust: Map.merge(%{type: :TecsEnergy, kp: 0.001, ki: 0.01, kd: 0, integrator_range: 100, ff: get_feed_forward(:tecs, :thrust)}, constraints.thrust),
-        pitch: Map.merge(%{type: :TecsBalance, kp: 0.001, ki: 0.01, kd: 0, balance_rate_scalar: 0.001}, constraints.pitch)
+        thrust: Map.merge(get_tecs_energy(), constraints.thrust),
+        pitch: Map.merge(get_tecs_balance(), constraints.pitch)
       }
     }
 
@@ -49,6 +49,30 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       altitude: %{output_min: -10, output_max: 10, output_neutral: 0}
     }
   end
+
+  @spec get_tecs_energy() :: map()
+  def get_tecs_energy() do
+    %{type: :TecsEnergy,
+      ki: 0.1,
+      kd: 0,
+      altitude_kp: 1.0,
+      energy_rate_scalar: 0.001,
+      integrator_range: 300,
+      ff: get_feed_forward(:tecs, :thrust)}
+  end
+
+  @spec get_tecs_balance() :: map()
+  def get_tecs_balance() do
+    %{type: :TecsBalance,
+      ki: 0.01,
+      kd: 1.0,
+      altitude_kp: 0.5,
+      balance_rate_scalar: 0.001,
+      time_constant: 2.0,
+      integrator_range: 300,
+      min_climb_speed: 30
+    }
+    end
 
   @spec get_feed_forward(atom(), atom()) :: function()
   def get_feed_forward(pv, cv) do

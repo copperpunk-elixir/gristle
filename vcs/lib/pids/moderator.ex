@@ -92,6 +92,11 @@ defmodule Pids.Moderator do
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
+          pv_cmd_map
+        else
+          Map.put(pv_cmd_map, :yaw, 0)
+        end
         publish_cmds(pv_cmd_map, 2)
         publish_cmds(pv_1_cmd_map, 1)
       1 ->
