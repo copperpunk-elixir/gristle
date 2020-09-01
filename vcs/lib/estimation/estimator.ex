@@ -149,7 +149,7 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_info(:ins_loop, state) do
     position = state.position
-    velocity = Map.take(state.velocity, [:speed, :course])
+    velocity = Map.take(state.velocity, [:speed, :course, :vertical])
     unless Enum.empty?(position) or Enum.empty?(velocity) do
       position = Map.put(position, :agl, state.agl)
       airspeed = state.airspeed

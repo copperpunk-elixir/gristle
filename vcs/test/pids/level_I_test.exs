@@ -10,12 +10,7 @@ defmodule Pids.LevelITest do
 
   test "update PID-controller and check output" do
     vehicle_type = :Plane
-    pid_config = %{
-      actuator_cmds_msg_classification: [0,1],
-      pv_cmds_msg_classification: [0,1]
-    }
-    pids = Configuration.Vehicle.Plane.Pids.Cessna.get_pids()
-    pid_config = Map.merge(pid_config, %{pids: pids})
+    pid_config = Configuration.Vehicle.Plane.Pids.get_config()
     Pids.System.start_link(pid_config)
 
     max_delta = 0.00001
@@ -28,7 +23,6 @@ defmodule Pids.LevelITest do
     airspeed = 10
     dt = 0.05
     rollrate_corr = pv_cmd_map.rollrate - pv_value_map.bodyrate.rollrate
-    rollrate_corr_prev = 0
     Comms.Operator.send_local_msg_to_group(op_name, {{:pv_cmds_values, 1}, pv_cmd_map, pv_value_map,airspeed,dt},{:pv_cmds_values, 1}, self())
     Process.sleep(100)
     rollrate_aileron_output = Pids.Pid.get_output(:rollrate, :aileron)

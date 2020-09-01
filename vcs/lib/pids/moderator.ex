@@ -21,6 +21,7 @@ defmodule Pids.Moderator do
     {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     {:ok, %{
         pids: config.pids,
+        attitude_scalar: config.attitude_scalar,
         pv_output_pids: %{},
         act_msg_class: act_msg_class,
         act_msg_time_ms: act_msg_time_ms,
@@ -67,35 +68,29 @@ defmodule Pids.Moderator do
 
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
         course_cmd = Map.get(pv_cmd_map, course_key)
-        # course_value = Map.get(pv_value_map, course_key)
         course_cmd_constrained = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
-        pv_value_map =
-          Map.put(pv_value_map, course_key, 0)
-          |> Map.delete(:course)
-
         pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd_constrained)
 
-        level_2_output_map = %{}#calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, state.pv_output_pids)
+        roll_yaw_output = Pids.Course.calculate_outputs(pv_cmd_map, airspeed, dt)
+        pitch_thrust_output = Pids.Tecs.calculate_outputs(pv_cmd_map, pv_value_map, airspeed, dt)
+        level_2_output_map = Map.merge(roll_yaw_output, pitch_thrust_output) #calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, state.pv_output_pids)
         # Logger.warn("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
+        pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
+          pv_cmd_map
+        else
+          Map.put(pv_cmd_map, :yaw, 0)
+        end
         publish_cmds(pv_cmd_map, 3)
       2 ->
         # Logger.warn("PID Level 2")
         # Logger.warn("pv_cmd_map/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
-        # pv_cmd_map will always contain yaw, and it was always be a relative command
-        # Therefore set the pv_value yaw to 0
-        # pv_value_map = put_in(pv_value_map, [:attitude, :yaw], 0)
-        # level_1_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.attitude, airspeed, dt, state.pv_output_pids)
-        level_1_output_map = Pids.Attitude.calculate_outputs(pv_cmd_map, pv_value_map.attitude, airspeed, dt)
+        level_1_output_map = Pids.Attitude.calculate_outputs(pv_cmd_map, pv_value_map.attitude, state.attitude_scalar)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt)
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
-        # pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
-        # level_2_thrust_cmd = Map.get(pv_cmd_map, :thrust, 0)
-        # pv_1_cmd_map = Map.put(pv_1_cmd_map, :thrust, level_2_thrust_cmd)
-        # actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.pv_output_pids)
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
         publish_cmds(pv_cmd_map, 2)
         publish_cmds(pv_1_cmd_map, 1)
@@ -135,29 +130,6 @@ defmodule Pids.Moderator do
   def write_pids_to_file() do
     GenServer.cast(__MODULE__, :write_pids_to_file)
   end
-
-  # @spec calculate_outputs_for_pv_cmds_values(map(), map(), float(), float(), map()) :: map()
-  # defp calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, pv_output_pids) do
-  #   Enum.reduce(pv_value_map, %{}, fn ({pv_name, pv_value}, output_variable_list) ->
-  #     # Logger.debug("update cvs: cmds/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
-  #     # If a command does not yet exist, then do not ignore it. Rather pass the pv_value as the cmd
-  #     # i.e., the correction=0
-  #     pv_cmd = Map.get(pv_cmd_map, pv_name, pv_value)
-  #     # Logger.warn("pv_cmd/value: #{pv_name}:#{pv_cmd}/#{pv_value}")
-  #     pv_output_map = Map.get(pv_output_pids, pv_name, %{})
-  #     unless Enum.empty?(pv_output_map) do
-  #       Enum.reduce(pv_output_map, output_variable_list, fn ({output_variable_name, weight}, acc) ->
-  #         # Logger.debug("pv/cv/cmd/value: #{pv_name}/#{output_variable_name}/#{pv_cmd}/#{pv_value}")
-  #         output = Pids.Pid.update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt)
-  #         total_output = output*weight + Map.get(acc, output_variable_name, 0)
-  #         # Logger.debug("output/weight/total: #{output}/#{weight}/#{total_output}")
-  #         Map.put(acc, output_variable_name, total_output)
-  #       end)
-  #     else
-  #       output_variable_list
-  #     end
-  #   end)
-  # end
 
   defp send_cmds(output_map, msg_class, msg_time_ms, cmd_type) do
     MessageSorter.Sorter.add_message(cmd_type, msg_class, msg_time_ms, output_map)

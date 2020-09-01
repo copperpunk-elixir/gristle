@@ -10,8 +10,10 @@ defmodule Pids.System do
 
   @impl Supervisor
   def init(config) do
-    children = get_pids(config.pids)
-    children = [Supervisor.child_spec({Pids.Moderator, config}, id: :pids_moderator)] ++ children
+    pid_children = get_pids(config.pids)
+    children = [
+      {Pids.Moderator, config},
+    ] ++ pid_children
     # Logger.info("pid child specs: #{inspect(children)}")
     Supervisor.init(children, strategy: :one_for_one)
   end
