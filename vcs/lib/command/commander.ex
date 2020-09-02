@@ -126,6 +126,7 @@ defmodule Command.Commander do
         {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
       end)
       # Publish Goals
+
       Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
       {reference_cmds, control_state, transmit_cmds}
     else

@@ -105,13 +105,13 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     end
     control_state = Map.get(state, :control_state, nil)
     unless is_nil(control_state) do
-      values = [iTOW, control_state]
+      values = [iTOW, control_state+1]
       construct_and_send_message(:control_state, values, state.uart_ref)
     end
     {:noreply, state}
   end
 
-  @spec parse(struct(), list()) :: tuple()
+  @spec parse(struct(), list()) :: struct()
   def parse(ublox, buffer) do
     {[byte], buffer} = Enum.split(buffer,1)
     ublox = Telemetry.Ublox.parse(ublox, byte)
@@ -174,7 +174,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
           0x14 ->
             msg_type = :control_state
             [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_local({msg_type, control_state})
+            send_local({msg_type, control_state-1})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
        0x46  ->

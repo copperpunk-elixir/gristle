@@ -7,6 +7,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =
         case module do
+          :Dsm -> {Command.Dsm, get_dsm_rx_config()}
           :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
           :FrskyServo -> {Actuation, get_actuation_config(module)}
           :PololuServo -> {Actuation, get_actuation_config(module)}
@@ -17,6 +18,13 @@ defmodule Configuration.Module.Peripherals.Uart do
         end
       Map.put(acc, module_key, module_config)
     end)
+  end
+
+  @spec get_dsm_rx_config() :: map()
+  def get_dsm_rx_config() do
+    %{
+      device_description: "CP2104"
+    }
   end
 
   @spec get_frsky_rx_config() :: map()
