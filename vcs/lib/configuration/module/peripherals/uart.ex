@@ -15,6 +15,7 @@ defmodule Configuration.Module.Peripherals.Uart do
           :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
           :Xbee -> {Telemetry, get_telemetry_config(module)}
           :Sik -> {Telemetry, get_telemetry_config(module)}
+          :PwmReader -> {PwmReader, get_pwm_reader_config()}
         end
       Map.put(acc, module_key, module_config)
     end)
@@ -117,6 +118,14 @@ defmodule Configuration.Module.Peripherals.Uart do
     %{
       device_description: "FT231X",
       baud: 57_600
+    }
+  end
+
+  @spec get_pwm_reader_config() :: map()
+  def get_pwm_reader_config() do
+    %{
+      device_description: "Feather M0",
+      baud: 115_200
     }
   end
 

@@ -14,7 +14,7 @@ defmodule Peripherals.Uart.System do
       module = Module.concat(Peripherals.Uart, single_module)
       |> Module.concat(Operator)
       Logger.warn("module: #{module}")
-      Logger.info("config: #{inspect(config)}")
+      Logger.info("config: #{inspect(single_config)}")
       acc ++ [{module, single_config}]
     end)
     Supervisor.init(children, strategy: :one_for_one)

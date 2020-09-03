@@ -7,7 +7,8 @@ defmodule Comms.Operator do
     Logger.debug("Start CommsOperator: #{inspect(name)}")
     Process.sleep(100)
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
-    start_refresh_loop(name)
+    # start_refresh_loop(name)
+    GenServer.cast(via_tuple(name), :begin)
     {:ok, pid}
   end
 
@@ -27,22 +28,16 @@ defmodule Comms.Operator do
     state
   end
 
-  def handle_cast(:start_refresh_loop, state) do
-    refresh_groups_timer = Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
-    {:noreply, %{state | refresh_groups_timer: refresh_groups_timer}}
-  end
-
-  @impl GenServer
-  def handle_cast(:stop_refresh_loop, state) do
-    refresh_groups_timer = Common.Utils.stop_loop(state.refresh_groups_timer)
-    {:noreply, %{state | refresh_groups_timer: refresh_groups_timer}}
+  def handle_cast(:begin, state) do
+    Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
+    {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:join_group, group, process_id}, state) do
     # We will be added to our own record of the group during the
     # :refresh_groups cycle
-    Logger.debug("#{inspect(state.name)} is joining group: #{inspect(group)}")
+    # Logger.debug("#{inspect(state.name)} is joining group: #{inspect(group)}")
     :pg2.create(group)
     if !is_in_group?(group, process_id) do
       :pg2.join(group, process_id)
@@ -92,16 +87,8 @@ defmodule Comms.Operator do
         local_group_members = :pg2.get_local_members(group)
         Map.put(acc, group, %{global: all_group_members, local: local_group_members})
       end)
-    # Logger.warn("groups after refresh: #{inspect(groups)}")
+    # Logger.warn("#{inspect(state.name)} groups after refresh: #{inspect(groups)}")
     {:noreply, %{state | groups: groups}}
-  end
-
-  def start_refresh_loop(operator_name) do
-    GenServer.cast(via_tuple(operator_name), :start_refresh_loop)
-  end
-
-  def stop_refresh_loop(operator_name) do
-    GenServer.cast(via_tuple(operator_name), :stop_refresh_loop)
   end
 
   def join_group(operator_name, group, process_id) do
@@ -119,6 +106,7 @@ defmodule Comms.Operator do
 
   @spec send_local_msg_to_group(atom(), tuple(), any()) :: atom()
   def send_local_msg_to_group(operator_name, message, sender) do
+    # Logger.info("send to group: #{elem(message, 0)}: #{inspect(message)}")
     GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, elem(message,0), sender, :local})
   end
 

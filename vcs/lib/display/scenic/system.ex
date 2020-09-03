@@ -43,7 +43,7 @@ defmodule Display.Scenic.System do
 
     viewports = [
       gcs_config,
-      # planner_config
+      planner_config
     ]
     config = %{
       viewports: viewports

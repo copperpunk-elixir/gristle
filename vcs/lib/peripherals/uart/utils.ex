@@ -9,8 +9,6 @@ defmodule Peripherals.Uart.Utils do
           Process.sleep(1000)
           open_interface_connection(interface_module, interface, connection_count+1, connection_count_max)
         else
-          # Check FrSky
-          Logger.warn("#{interface_module} could not be reached. Checking for Frsky interface.")
           raise "#{interface_module} is unavailable"
         end
       interface -> interface

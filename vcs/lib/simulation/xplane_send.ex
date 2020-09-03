@@ -12,7 +12,7 @@ defmodule Simulation.XplaneSend do
   def start_link(config) do
     Logger.debug("Start Simulation.XplaneSend")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :begin)
+    GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
 
@@ -23,6 +23,8 @@ defmodule Simulation.XplaneSend do
         source_port: config.source_port,
         dest_port: config.dest_port,
         vehicle_type: config.vehicle_type,
+        pwm_channels: config.pwm_channels,
+        reversed_channels: config.reversed_channels,
         commands: %{}
      }}
   end
@@ -36,6 +38,7 @@ defmodule Simulation.XplaneSend do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :pwm_input, self())
     {:ok, socket} = :gen_udp.open(state.source_port, [broadcast: false, active: false])
     {:noreply, %{state | socket: socket}}
   end
@@ -53,7 +56,30 @@ defmodule Simulation.XplaneSend do
         send_ail_elev_rud_commands(cmds, state.socket, state.dest_port)
         send_throttle_command(cmds, state.socket, state.dest_port)
     end
-    # Logger.debug("cmds: #{inspect(state.commands)}")
+    Logger.debug("up act cmds: #{inspect(state.commands)}")
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:pwm_input, scaled_values}, state) do
+    pwm_channels = state.pwm_channels
+    reversed_channels = state.reversed_channels
+    # Logger.debug("pwm ch: #{inspect(pwm_channels)}")
+    # Logger.debug("scaled: #{inspect(scaled_values)}")
+    cmds = Enum.reduce(Enum.with_index(scaled_values), %{}, fn ({ch_value, index}, acc) ->
+      actuator_name = Map.get(pwm_channels, index)
+      ch_mult = if (Enum.member?(reversed_channels, actuator_name)), do: -1, else: 1
+      case actuator_name do
+        :throttle -> Map.put(acc, actuator_name, ch_value)
+        name -> Map.put(acc, name, ch_mult*2*(ch_value - 0.5))
+      end
+    end)
+    # Logger.info("cmds: #{inspect(cmds)}")
+    case state.vehicle_type do
+      :Plane ->
+        send_ail_elev_rud_commands(cmds, state.socket, state.dest_port)
+        send_throttle_command(cmds, state.socket, state.dest_port)
+    end
     {:noreply, state}
   end
 
