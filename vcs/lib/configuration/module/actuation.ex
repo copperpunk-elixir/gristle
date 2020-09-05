@@ -19,7 +19,13 @@ defmodule Configuration.Module.Actuation do
 
   @spec get_actuation_sw_config(atom(), atom()) :: map()
   def get_actuation_sw_config(vehicle_type, node_type) do
-    actuator_names = get_actuator_names(vehicle_type, node_type)
+    model_type = Common.Utils.Configuration.get_model_type()
+    model_module =
+      Module.concat(Configuration.Vehicle, vehicle_type)
+      |> Module.concat(Actuation)
+      |> Module.concat(model_type)
+
+    actuator_names = get_actuator_names(vehicle_type, model_type, node_type)
     {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
     actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
@@ -33,12 +39,6 @@ defmodule Configuration.Module.Actuation do
             failsafe_cmd: Enum.at(failsafes, index)
               })
     end)
-
-    model_type = Common.Utils.Configuration.get_model_type()
-    model_module =
-      Module.concat(Configuration.Vehicle, vehicle_type)
-      |> Module.concat(Actuation)
-    |> Module.concat(model_type)
 
     actuators = apply_reversed_actuators(model_module, actuators)
 
@@ -106,20 +106,24 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_all_actuator_names_for_vehicle(atom()) :: list()
-  def get_all_actuator_names_for_vehicle(vehicle_type) do
+  @spec get_all_actuator_names_for_vehicle(atom(), atom()) :: list()
+  def get_all_actuator_names_for_vehicle(vehicle_type, model_type) do
     case vehicle_type do
       :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
       :Car -> [:steering, :throttle]
-      :Plane -> [:aileron,  :elevator, :throttle, :rudder]
+      :Plane ->
+        case model_type do
+          :Cessna -> [:aileron,  :elevator, :throttle, :rudder]
+          :EC1500 -> [:aileron,  :elevator, :throttle, :rudder]
+        end
     end
   end
 
-  @spec get_actuator_names(atom(), atom()) :: list()
-  def get_actuator_names(vehicle_type, node_type) do
+  @spec get_actuator_names(atom(), atom(), atom()) :: list()
+  def get_actuator_names(vehicle_type, model_type, node_type) do
     case node_type do
-      :all -> get_all_actuator_names_for_vehicle(vehicle_type)
-      :sim -> get_all_actuator_names_for_vehicle(vehicle_type)
+      :all -> get_all_actuator_names_for_vehicle(vehicle_type, model_type)
+      :sim -> get_all_actuator_names_for_vehicle(vehicle_type, model_type)
 
       :wing -> [:aileron, :throttle]
       :fuselage -> [:throtle, :elevator, :rudder]
@@ -137,7 +141,8 @@ defmodule Configuration.Module.Actuation do
 
   @spec get_actuation_sorter_configs(atom()) :: list()
   def get_actuation_sorter_configs(vehicle_type) do
-    actuator_names = get_all_actuator_names_for_vehicle(vehicle_type)
+    model_type = Common.Utils.Configuration.get_model_type()
+    actuator_names = get_all_actuator_names_for_vehicle(vehicle_type, model_type)
     {_channels, failsafes} = get_channels_failsafes(actuator_names)
     names_with_index = Enum.with_index(actuator_names)
     failsafe_map = Enum.reduce(names_with_index, %{}, fn({actuator_name, index}, acc) ->

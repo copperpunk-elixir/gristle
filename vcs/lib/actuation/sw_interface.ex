@@ -34,6 +34,10 @@ defmodule Actuation.SwInterface do
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
     actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
+    #
+    #
+    # Loop over actuator_output_map. Only move those actuators with values
+    # This way we can have different MessageSorters for different types of actuation (direct, indirect)
     actuators_and_outputs =
       Enum.reduce(state.actuators,%{}, fn ({actuator_name, actuator}, acc) ->
         output = Map.fetch!(actuator_output_map, actuator_name)

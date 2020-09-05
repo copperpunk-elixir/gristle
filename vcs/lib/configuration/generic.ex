@@ -17,7 +17,7 @@ defmodule Configuration.Generic do
     classification_all = %{
       :actuator_cmds => %{
         Pids.Moderator => [0,1],
-        Navigation.Navigator => [0,2]
+        # Navigation.Navigator => [0,2]
       },
       :pv_cmds => %{
         Pids.Moderator => [0,1],

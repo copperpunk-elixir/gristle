@@ -12,7 +12,8 @@ defmodule Configuration.Vehicle.Plane.Command do
       0 => [:rollrate, :roll, :course_flight],
       1 => [:pitchrate, :pitch, :altitude],
       2 => [:thrust, :speed],
-      3 => [:yawrate, :yaw]
+      3 => [:yawrate, :yaw],
+      4 => [:flaps]
     }
     frozen_channels = %{
       -1 => [:rollrate, :pitchrate, :yawrate, :thrust],

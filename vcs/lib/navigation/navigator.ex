@@ -16,6 +16,8 @@ defmodule Navigation.Navigator do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Vehicle, vehicle_type])
     {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
+
     Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
         vehicle_type: vehicle_type,
@@ -25,6 +27,8 @@ defmodule Navigation.Navigator do
         navigator_loop_interval_ms: config.navigator_loop_interval_ms,
         pv_cmds_msg_classification: pv_cmds_msg_classification,
         pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
+        control_state_msg_classification: control_state_msg_classification,
+        control_state_msg_time_validity_ms: control_state_msg_time_validity_ms
      }}
   end
 
@@ -80,8 +84,8 @@ defmodule Navigation.Navigator do
       {pv_cmds, control_state}
     end
     control_state_pv_cmds = max(1,control_state)
-    MessageSorter.Sorter.add_message(:control_state, [0,1], 2*state.navigator_loop_interval_ms, control_state)
-    MessageSorter.Sorter.add_message({:pv_cmds, control_state_pv_cmds}, [0,1], 2*state.navigator_loop_interval_ms, pv_cmds)
+    MessageSorter.Sorter.add_message(:control_state, state.control_state_msg_classification, state.control_state_msg_time_validity_ms, control_state)
+    MessageSorter.Sorter.add_message({:pv_cmds, control_state_pv_cmds}, state.pv_cmds_msg_classification, state.pv_cmds_msg_time_validity_ms, pv_cmds)
     Peripherals.Uart.Telemetry.Operator.store_data(%{control_state: control_state})
     {:noreply, state}
   end
