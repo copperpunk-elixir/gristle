@@ -86,7 +86,7 @@ defmodule Pids.Moderator do
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt)
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
-        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map
         else
@@ -98,7 +98,7 @@ defmodule Pids.Moderator do
         # Logger.warn("PID Level 1")
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt)
 
-        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         # pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         # actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.pv_output_pids)
         # # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
