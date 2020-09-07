@@ -127,7 +127,7 @@ defmodule Command.Commander do
       end)
       # Publish Goals
 
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_classification, state.goals_time_validity_ms, cmds}, self())
       {reference_cmds, control_state, transmit_cmds}
     else
       {%{}, state.control_state, transmit_cmds}

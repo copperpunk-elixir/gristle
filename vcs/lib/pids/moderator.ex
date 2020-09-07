@@ -2,13 +2,10 @@ defmodule Pids.Moderator do
   use GenServer
   require Logger
 
-  @pv_cmds_values_group :pv_cmds_values
-
   def start_link(config) do
     Logger.debug("Start PIDs.Moderator #{config[:name]}")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :reduce_config)
-    GenServer.cast(pid, :join_pv_cmds_values_groups)
+    GenServer.cast(pid, :begin)
     {:ok, pid}
   end
 
@@ -37,16 +34,13 @@ defmodule Pids.Moderator do
   end
 
   @impl GenServer
-  def handle_cast(:join_pv_cmds_values_groups, state) do
+  def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Enum.each(0..3, fn level ->
-      Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, level}, self())
+    Enum.each(1..3, fn level ->
+      Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, level}, self())
     end)
-    {:noreply, state}
-  end
 
-  @impl GenServer
-  def handle_cast(:reduce_config, state) do
+    # Reduce config
     pv_output_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_reduced) ->
       control_variables_reduced =
         Enum.reduce(control_variables, %{}, fn ({control_variable, pid_config}, acts_red) ->
@@ -55,11 +49,12 @@ defmodule Pids.Moderator do
         end)
       Map.put(config_reduced, process_variable, control_variables_reduced)
     end)
+
     {:noreply, %{state | pv_output_pids: pv_output_pids}}
   end
 
   @impl GenServer
-  def handle_cast({{@pv_cmds_values_group, level}, pv_cmd_map, pv_value_map, airspeed, dt}, state) do
+  def handle_cast({{:pv_cmds_values, level}, pv_cmd_map, pv_value_map, airspeed, dt}, state) do
     # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->

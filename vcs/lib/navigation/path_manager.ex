@@ -43,7 +43,7 @@ defmodule Navigation.PathManager do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Comms.Operator.join_group(__MODULE__, :load_mission, self())
+    # Comms.Operator.join_group(__MODULE__, :load_mission, self())
     {:noreply, state}
   end
 
@@ -581,6 +581,11 @@ defmodule Navigation.PathManager do
   @spec get_current_path_distance() :: float()
   def get_current_path_distance() do
     GenServer.call(__MODULE__, :get_current_path_distance)
+  end
+
+  @spec load_mission(struct()) :: atom()
+  def load_mission(mission) do
+    GenServer.cast(__MODULE__, {:load_mission, mission})
   end
 
 end

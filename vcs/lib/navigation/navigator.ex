@@ -42,18 +42,13 @@ defmodule Navigation.Navigator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     # Start sorters
-    Comms.Operator.join_group(__MODULE__, {:goals, -1}, self())
-    Comms.Operator.join_group(__MODULE__, {:goals, 0}, self())
-    Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())
-    Comms.Operator.join_group(__MODULE__, {:goals, 2}, self())
-    Comms.Operator.join_group(__MODULE__, {:goals, 3}, self())
-    # Comms.Operator.join_group(__MODULE__, {:goals, 4}, self())
+    Comms.Operator.join_group(__MODULE__, :goals_sorter, self())
     navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
     {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
   end
 
   @impl GenServer
-  def handle_cast({{:goals, level},classification, time_validity_ms, goals_map}, state) do
+  def handle_cast({:goals_sorter, level, classification, time_validity_ms, goals_map}, state) do
     # Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
     MessageSorter.Sorter.add_message({:goals, level}, classification, time_validity_ms, goals_map)
     {:noreply, state}

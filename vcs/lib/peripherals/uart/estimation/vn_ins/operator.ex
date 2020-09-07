@@ -102,9 +102,9 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   defp publish_ins_data(ins_data) do
     attitude_bodyrate_value_map = %{attitude: ins_data.attitude, bodyrate: ins_data.bodyrate}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
     position_velocity_value_map = %{position: ins_data.position, velocity: ins_data.velocity}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
