@@ -5,7 +5,7 @@ defmodule Configuration.Vehicle.Plane.Pids.EC1500 do
   def get_pids() do
     constraints = get_constraints()
 
-    pids = %{
+    %{
       rollrate: %{aileron: Map.merge(%{kp: 0.2, ki: 0.0, kd: 0.0, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
       pitchrate: %{elevator: Map.merge(%{kp: 0.1, ki: 0.005, kd: 0.0, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
       yawrate: %{rudder: Map.merge(%{kp: 0.1, ki: 0.0, kd: 0.0, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
@@ -21,7 +21,7 @@ defmodule Configuration.Vehicle.Plane.Pids.EC1500 do
       altitude: %{pitch: Map.merge(%{kp: 0.030, ki: 0.001, kd: 0, weight: 1.0}, constraints.pitch)}
     }
 
-    Configuration.Module.Pids.add_pid_input_constraints(pids, constraints)
+    # Configuration.Module.Pids.add_pid_input_constraints(pids, constraints)
   end
 
   @spec get_constraints() :: map()
@@ -42,6 +42,7 @@ defmodule Configuration.Vehicle.Plane.Pids.EC1500 do
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       speed: %{output_min: -10, output_max: 10, output_neutral: 0},
       altitude: %{output_min: -10, output_max: 10, output_neutral: 0},
+      flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0}
     }
   end
 

@@ -15,9 +15,13 @@ defmodule Configuration.Generic do
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
     Logger.warn("sender: #{inspect(sender)}")
     classification_all = %{
-      :actuator_cmds => %{
+      :indirect_actuator_cmds => %{
         Pids.Moderator => [0,1],
         # Navigation.Navigator => [0,2]
+      },
+      :direct_actuator_cmds => %{
+        Command.Commander => [0,1],
+        Navigation.Navigator => [0,2]
       },
       :pv_cmds => %{
         Pids.Moderator => [0,1],
@@ -34,7 +38,8 @@ defmodule Configuration.Generic do
 
     time_validity_all = %{
       {:hb, :node} => 500,
-      :actuator_cmds => 200,
+      :indirect_actuator_cmds => 200,
+      :direct_actuator_cmds => 200,
       :pv_cmds => 300,
       :goals => 300,
       :control_state => 200

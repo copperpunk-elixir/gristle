@@ -3,16 +3,16 @@ defmodule Configuration.Vehicle.Plane.Command do
 
   @spec get_rx_output_channel_map() :: list()
   def get_rx_output_channel_map() do
-    commands = [:thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
+    commands = [:aileron, :elevator, :throttle, :rudder, :flaps, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
     output_limits = Configuration.Module.Command.get_command_output_limits(:Plane, commands)
     command_multipliers = Configuration.Module.Command.get_command_output_multipliers(:Plane, commands)
     # channel_number, channel, absolute/relative, min, max
     relative_channels = [:course_flight, :altitude]
     channel_assignments = %{
-      0 => [:rollrate, :roll, :course_flight],
-      1 => [:pitchrate, :pitch, :altitude],
-      2 => [:thrust, :speed],
-      3 => [:yawrate, :yaw],
+      0 => [:aileron, :rollrate, :roll, :course_flight],
+      1 => [:elevator, :pitchrate, :pitch, :altitude],
+      2 => [:throttle, :thrust, :speed],
+      3 => [:rudder, :yawrate, :yaw],
       4 => [:flaps]
     }
     frozen_channels = %{
@@ -24,9 +24,12 @@ defmodule Configuration.Vehicle.Plane.Command do
       0 => [:rollrate, :pitchrate, :yawrate, :thrust],
       1 => [:rollrate, :pitchrate, :yawrate, :thrust],
       2 => [:roll, :pitch, :yaw, :thrust],
-      3 => [:course_flight, :speed, :altitude]
+      3 => [:course_flight, :speed, :altitude],
+      100 => [:aileron, :elevator, :rudder, :throttle, :flaps],
+      101 => [:flaps]
     }
-    Enum.reduce(-1..3, %{}, fn (cs, acc) ->
+    cs_values = [-1, 0, 1, 2, 3, 100, 101]
+    Enum.reduce(cs_values, %{}, fn (cs, acc) ->
       channels = Map.get(cs_channels, cs)
       ch_config =
         Enum.reduce(channel_assignments, [], fn ({ch_num, chs}, acc2) ->
@@ -84,13 +87,13 @@ defmodule Configuration.Vehicle.Plane.Command do
   end
 
   @spec get_channel_config(map(), map(), atom(), integer(), atom(), boolean()) :: tuple()
-  def get_channel_config(limits, multipliers, channel_name, channel_number, type, frozen \\ false) do
+  def get_channel_config(limits, multipliers, channel_name, channel_number, rel_abs, frozen \\ false) do
     {output_min, output_max} = if frozen do
       {0.0, 0.0}
     else
       {get_in(limits, [channel_name, :min]), get_in(limits, [channel_name, :max])}
     end
-    {channel_number, channel_name, type, output_min, output_max, Map.get(multipliers, channel_name)}
+    {channel_number, channel_name, rel_abs, output_min, output_max, Map.get(multipliers, channel_name)}
   end
 
 end

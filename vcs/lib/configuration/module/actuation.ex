@@ -1,4 +1,6 @@
 defmodule Configuration.Module.Actuation do
+  require Logger
+
   @spec get_config(atom(), atom()) :: map()
   def get_config(vehicle_type, node_type) do
     # hw_config = %{
@@ -26,17 +28,18 @@ defmodule Configuration.Module.Actuation do
       |> Module.concat(model_type)
 
     actuator_names = get_actuator_names(vehicle_type, model_type, node_type)
-    {channels, failsafes} = get_channels_failsafes(actuator_names)
+    actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
+    # {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
-    actuators = Enum.reduce(0..length(actuator_names)-1, %{}, fn (index, acc) ->
-      Map.put(acc, Enum.at(actuator_names, index), %{
-            channel_number: Enum.at(channels, index),
+    actuators = Enum.reduce(actuator_names, %{}, fn ({channel_number, actuator_name}, acc) ->
+      Map.put(acc, actuator_name, %{
+            channel_number: channel_number,
             reversed: false,
             min_pw_us: min_pw_us,
             max_pw_us: max_pw_us,
             cmd_limit_min: 0.0,
             cmd_limit_max: 1.0,
-            failsafe_cmd: Enum.at(failsafes, index)
+            failsafe_cmd: get_failsafe_for_actuator(actuator_name)
               })
     end)
 
@@ -78,16 +81,16 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_channels_failsafes(list()) :: tuple()
-  def get_channels_failsafes(actuator_names) do
-    {channels_rev, failsafes_rev} = Enum.reduce(actuator_names, {[],[]}, fn (actuator_name, acc) ->
-      {channels, failsafes} = acc
-      channel = Enum.at(channels,0,-1) + 1
-      failsafe = get_failsafe_for_actuator(actuator_name)
-      {[channel | channels], [failsafe | failsafes]}
-    end)
-    {Enum.reverse(channels_rev), Enum.reverse(failsafes_rev)}
-  end
+  # @spec get_channels_failsafes(list()) :: tuple()
+  # def get_channels_failsafes(actuator_names) do
+  #   {channels_rev, failsafes_rev} = Enum.reduce(actuator_names, {[],[]}, fn (actuator_name, acc) ->
+  #     {channels, failsafes} = acc
+  #     channel = Enum.at(channels,0,-1) + 1
+  #     failsafe = get_failsafe_for_actuator(actuator_name)
+  #     {[channel | channels], [failsafe | failsafes]}
+  #   end)
+  #   {Enum.reverse(channels_rev), Enum.reverse(failsafes_rev)}
+  # end
 
   @spec get_failsafe_for_actuator(atom()) :: float()
   def get_failsafe_for_actuator(actuator_name) do
@@ -103,18 +106,35 @@ defmodule Configuration.Module.Actuation do
       :left_direction -> 0.5
       :right_direction -> 0.5
       :throttle -> 0.0
+      :flaps -> 0.0
     end
   end
 
-  @spec get_all_actuator_names_for_vehicle(atom(), atom()) :: list()
-  def get_all_actuator_names_for_vehicle(vehicle_type, model_type) do
+  @spec get_all_actuator_channels_and_names(atom(), atom()) :: map()
+  def get_all_actuator_channels_and_names(vehicle_type, model_type) do
     case vehicle_type do
-      :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
-      :Car -> [:steering, :throttle]
+      # :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
+      :Car -> %{ 0 => :steering, 1 => :throttle}
       :Plane ->
         case model_type do
-          :Cessna -> [:aileron,  :elevator, :throttle, :rudder]
-          :EC1500 -> [:aileron,  :elevator, :throttle, :rudder]
+          :Cessna -> %{
+                     indirect: %{
+                       0 => :aileron,
+                       1 => :elevator,
+                       2 => :throttle,
+                       3 => :rudder},
+                     direct: %{
+                       4 => :flaps}
+                 }
+          :EC1500 -> %{
+                     indirect: %{
+                       0 => :aileron,
+                       1 => :elevator,
+                       2 => :throttle,
+                       3 => :rudder},
+                     direct: %{
+                       4 => :flaps}
+                 }
         end
     end
   end
@@ -122,8 +142,8 @@ defmodule Configuration.Module.Actuation do
   @spec get_actuator_names(atom(), atom(), atom()) :: list()
   def get_actuator_names(vehicle_type, model_type, node_type) do
     case node_type do
-      :all -> get_all_actuator_names_for_vehicle(vehicle_type, model_type)
-      :sim -> get_all_actuator_names_for_vehicle(vehicle_type, model_type)
+      :all -> get_all_actuator_channels_and_names(vehicle_type, model_type)
+      :sim -> get_all_actuator_channels_and_names(vehicle_type, model_type)
 
       :wing -> [:aileron, :throttle]
       :fuselage -> [:throtle, :elevator, :rudder]
@@ -142,18 +162,32 @@ defmodule Configuration.Module.Actuation do
   @spec get_actuation_sorter_configs(atom()) :: list()
   def get_actuation_sorter_configs(vehicle_type) do
     model_type = Common.Utils.Configuration.get_model_type()
-    actuator_names = get_all_actuator_names_for_vehicle(vehicle_type, model_type)
-    {_channels, failsafes} = get_channels_failsafes(actuator_names)
-    names_with_index = Enum.with_index(actuator_names)
-    failsafe_map = Enum.reduce(names_with_index, %{}, fn({actuator_name, index}, acc) ->
-      Map.put(acc, actuator_name, Enum.at(failsafes,index))
+    actuator_names = get_all_actuator_channels_and_names(vehicle_type, model_type)
+    Logger.info("actuator names: #{inspect(actuator_names)}")
+    # {_channels, indirect_failsafes} = get_channels_failsafes(actuator_names.indirect)
+    # {_channels, direct_failsafes} = get_channels_failsafes(actuator_names.direct)
+    # indirect_names_with_index = Enum.with_index(actuator_names)
+    indirect_failsafe_map = Enum.reduce(actuator_names.indirect, %{}, fn({_ch_num, actuator_name}, acc) ->
+      failsafe_value = get_failsafe_for_actuator(actuator_name)
+      Map.put(acc, actuator_name, failsafe_value)
     end)
+    direct_failsafe_map = Enum.reduce(actuator_names.direct, %{}, fn({_ch_num, actuator_name}, acc) ->
+      failsafe_value = get_failsafe_for_actuator(actuator_name)
+      Map.put(acc, actuator_name, failsafe_value)
+    end)
+
     # return config
     [
       %{
-        name: :actuator_cmds,
+        name: :indirect_actuator_cmds,
         default_message_behavior: :default_value,
-        default_value: failsafe_map,
+        default_value: indirect_failsafe_map,
+        value_type: :map
+      },
+      %{
+        name: :direct_actuator_cmds,
+        default_message_behavior: :default_value,
+        default_value: direct_failsafe_map,
         value_type: :map
       }
     ]

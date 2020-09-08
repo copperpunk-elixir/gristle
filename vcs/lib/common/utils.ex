@@ -171,6 +171,11 @@ defmodule Common.Utils do
     end)
   end
 
+  @spec default_to(any(), any()) :: any()
+  def default_to(input, default_value) do
+    if is_nil(input), do: default_value, else: input
+  end
+
   @spec power_off() ::tuple()
   def power_off() do
     System.cmd("poweroff", ["now"])
