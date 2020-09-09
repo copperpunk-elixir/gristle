@@ -232,6 +232,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
             Navigation.PathManager.load_mission(mission)
+            send_global({:load_mission, mission})
             if mission_pb.confirm do
               Logger.warn("send confirmation")
               pb_encoded = Navigation.Path.Mission.encode(mission, false)

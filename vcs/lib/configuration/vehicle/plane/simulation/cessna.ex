@@ -5,7 +5,8 @@ defmodule Configuration.Vehicle.Plane.Simulation.Cessna do
         0 => :aileron,
         1 => :elevator,
         2 => :throttle,
-        3 => :rudder
+        3 => :rudder,
+        4 => :flaps
     }
   end
 end
