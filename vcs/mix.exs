@@ -61,6 +61,7 @@ defmodule Vcs.MixProject do
       {:vintage_net_ethernet, "~> 0.7.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.3"},
+      {:circuits_i2c, "~> 0.1"},
       {:circuits_gpio, "~> 0.4"},
       #Scenic dependencies
       {:scenic, "~> 0.10"},

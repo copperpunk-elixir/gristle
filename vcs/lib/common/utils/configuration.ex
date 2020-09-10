@@ -37,4 +37,11 @@ defmodule Common.Utils.Configuration do
     end)
   end
 
+  @spec get_i2c_peripherals() :: list()
+  def get_i2c_peripherals() do
+    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(".i2c", "peripherals")
+    Enum.map(peripherals_bin_list, fn x ->
+      String.to_atom(x)
+    end)
+  end
 end

@@ -1,6 +1,6 @@
 defmodule Configuration.Module.Time do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(vehicle_type, _node_type) do
+  def get_config(_vehicle_type, _node_type) do
     %{
       server: get_server_config()
     }
