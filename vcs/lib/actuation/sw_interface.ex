@@ -5,7 +5,7 @@ defmodule Actuation.SwInterface do
   def start_link(config) do
     Logger.debug("Start Actuation SwInterface")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :start_actuator_loop)
+    GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
   end
 
@@ -25,20 +25,40 @@ defmodule Actuation.SwInterface do
   end
 
    @impl GenServer
-  def handle_cast(:start_actuator_loop, state) do
-      Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
-      {:noreply, state}
+  def handle_cast(:begin, state) do
+     Comms.System.start_operator(__MODULE__)
+     Comms.Operator.join_group(__MODULE__, :direct_actuator_cmds_sorter, self())
+     Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
+     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:direct_actuator_cmds_sorter, classification, time_validity_ms, cmds}, state) do
+    # Logger.debug("rx direct: #{inspect(cmds)}")
+    MessageSorter.Sorter.add_message(:direct_actuator_cmds, classification, time_validity_ms, cmds)
+    {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
-    actuator_output_map = MessageSorter.Sorter.get_value(:actuator_cmds)
+    direct_actuator_output_map = MessageSorter.Sorter.get_value(:direct_actuator_cmds)
+    |> Common.Utils.default_to([])
+    indirect_actuator_output_map = MessageSorter.Sorter.get_value(:indirect_actuator_cmds)
+    |> Common.Utils.default_to([])
+    # Logger.debug("indirect: #{inspect(indirect_actuator_output_map)}")
+    # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
+    actuator_output_map = Map.merge(indirect_actuator_output_map, direct_actuator_output_map)
+    # Loop over actuator_output_map. Only move those actuators with values
+    # This way we can have different MessageSorters for different types of actuation (direct, indirect)
+    actuators = state.actuators
     actuators_and_outputs =
-      Enum.reduce(state.actuators,%{}, fn ({actuator_name, actuator}, acc) ->
-        output = Map.fetch!(actuator_output_map, actuator_name)
+      Enum.reduce(actuator_output_map,%{}, fn ({actuator_name, output}, acc) ->
+        actuator = Map.fetch!(actuators, actuator_name)
+        # Logger.debug("#{actuator_name}: #{output}")
         Map.put(acc, actuator_name, {actuator,output})
     end)
+    # Logger.debug("actuators_and_outputs: #{inspect(actuators_and_outputs)}")
     Enum.each(state.output_modules, fn module ->
       apply(module, :update_actuators,[actuators_and_outputs])
     end)

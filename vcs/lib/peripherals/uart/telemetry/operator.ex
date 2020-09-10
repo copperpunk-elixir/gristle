@@ -155,26 +155,26 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
             # Logger.debug("roll: #{Common.Utils.eftb_deg(roll,2)}")
             # Logger.debug("agl: #{agl}")
-            send_local({msg_type, position, velocity, attitude})
+            send_global({msg_type, position, velocity, attitude})
           0x11 ->
             msg_type = {:tx_goals, 1}
             [itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_1 = %{rollrate: rollrate, pitchrate: pitchrate, yawrate: yawrate, thrust: thrust}
-            send_local({msg_type, level_1}, :tx_goals)
+            send_global({msg_type, level_1}, :tx_goals)
           0x12 ->
             msg_type = {:tx_goals, 2}
             [itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_2 = %{roll: roll, pitch: pitch, yaw: yaw, thrust: thrust}
-            send_local({msg_type, level_2}, :tx_goals)
+            send_global({msg_type, level_2}, :tx_goals)
           0x13 ->
             msg_type = {:tx_goals, 3}
             [itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             level_3 = %{speed: speed, course: course, altitude: altitude}
-            send_local({msg_type, level_3}, :tx_goals)
+            send_global({msg_type, level_3}, :tx_goals)
           0x14 ->
             msg_type = :control_state
             [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_local({msg_type, control_state-1})
+            send_global({msg_type, control_state-1})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
        0x46  ->
@@ -218,7 +218,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             runway = Navigation.PathPlanner.get_runway(runway_code)
             model = Navigation.PathPlanner.get_model(model_code)
             track= Navigation.PathPlanner.get_track(track_code)
-            Navigation.PathPlanner.load_path_mission(airport, runway, model, track, num_wps)
+            mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
+            send_global({:load_mission, mission})
             if Navigation.PathPlanner.get_confirmation(confirmation) do
               Logger.warn("send confirmation")
               Navigation.PathPlanner.send_path_mission(airport, runway, model, track, num_wps, false)
@@ -231,7 +232,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
-            Navigation.PathPlanner.load_mission(mission, __MODULE__)
+            send_global({:load_mission, mission})
             if mission_pb.confirm do
               Logger.warn("send confirmation")
               pb_encoded = Navigation.Path.Mission.encode(mission, false)
@@ -259,12 +260,20 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     GenServer.call(__MODULE__, {:get_values, keys})
   end
 
-  def send_local(message, group) do
-    Comms.Operator.send_local_msg_to_group(__MODULE__, message, group, self())
+  # def send_local(message, group) do
+  #   Comms.Operator.send_local_msg_to_group(__MODULE__, message, group, self())
+  # end
+
+  # def send_local(message) do
+  #   Comms.Operator.send_local_msg_to_group(__MODULE__, message, elem(message,0), self())
+  # end
+
+  def send_global(message, group) do
+    Comms.Operator.send_global_msg_to_group(__MODULE__, message, group, self())
   end
 
-  def send_local(message) do
-    Comms.Operator.send_local_msg_to_group(__MODULE__, message, elem(message,0), self())
+  def send_global(message) do
+    Comms.Operator.send_global_msg_to_group(__MODULE__, message, elem(message,0), self())
   end
 
   @spec construct_and_send_message(any(), list(), any()) :: atom()

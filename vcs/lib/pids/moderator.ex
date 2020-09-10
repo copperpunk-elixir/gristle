@@ -2,13 +2,10 @@ defmodule Pids.Moderator do
   use GenServer
   require Logger
 
-  @pv_cmds_values_group :pv_cmds_values
-
   def start_link(config) do
     Logger.debug("Start PIDs.Moderator #{config[:name]}")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :reduce_config)
-    GenServer.cast(pid, :join_pv_cmds_values_groups)
+    GenServer.cast(pid, :begin)
     {:ok, pid}
   end
 
@@ -17,7 +14,7 @@ defmodule Pids.Moderator do
   # they are unnessary after startup.
   @impl GenServer
   def init(config) do
-    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :actuator_cmds)
+    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
     {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     {:ok, %{
         pids: config.pids,
@@ -37,16 +34,13 @@ defmodule Pids.Moderator do
   end
 
   @impl GenServer
-  def handle_cast(:join_pv_cmds_values_groups, state) do
+  def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Enum.each(0..3, fn level ->
-      Comms.Operator.join_group(__MODULE__, {@pv_cmds_values_group, level}, self())
+    Enum.each(1..3, fn level ->
+      Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, level}, self())
     end)
-    {:noreply, state}
-  end
 
-  @impl GenServer
-  def handle_cast(:reduce_config, state) do
+    # Reduce config
     pv_output_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_reduced) ->
       control_variables_reduced =
         Enum.reduce(control_variables, %{}, fn ({control_variable, pid_config}, acts_red) ->
@@ -55,11 +49,12 @@ defmodule Pids.Moderator do
         end)
       Map.put(config_reduced, process_variable, control_variables_reduced)
     end)
+
     {:noreply, %{state | pv_output_pids: pv_output_pids}}
   end
 
   @impl GenServer
-  def handle_cast({{@pv_cmds_values_group, level}, pv_cmd_map, pv_value_map, airspeed, dt}, state) do
+  def handle_cast({{:pv_cmds_values, level}, pv_cmd_map, pv_value_map, airspeed, dt}, state) do
     # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->
@@ -91,7 +86,7 @@ defmodule Pids.Moderator do
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt)
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
-        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map
         else
@@ -103,7 +98,7 @@ defmodule Pids.Moderator do
         # Logger.warn("PID Level 1")
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt)
 
-        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :actuator_cmds)
+        send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         # pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         # actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.pv_output_pids)
         # # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")

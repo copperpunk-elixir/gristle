@@ -5,6 +5,12 @@ defmodule Command.Commander do
   @rx_control_state_channel 8
   @transmit_channel 7
 
+  @pilot_manual 0
+  @pilot_semi_auto 1
+  @pilot_auto 2
+  @cs_direct_manual 100
+  @cs_direct_auto 101
+
   def start_link(config) do
     Logger.debug("Start Command.Commander")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
@@ -17,12 +23,16 @@ defmodule Command.Commander do
     vehicle_type = config.vehicle_type
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {direct_cmds_classification, direct_cmds_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :direct_actuator_cmds)
+
     rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
         goals_classification: goals_classification,
         goals_time_validity_ms: goals_time_validity_ms,
+        direct_cmds_classification: direct_cmds_classification,
+        direct_cmds_time_validity_ms: direct_cmds_time_validity_ms,
         control_state: -1,
         transmit_cmds: false,
         reference_cmds: %{},
@@ -58,21 +68,24 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast({:pv_3_local, pv_values}, state) do
-    # Logger.debug("pv_3_local: #{inspect(pv_values)}")
     {:noreply, %{state | pv_values: pv_values}}
   end
 
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
-    # Logger.debug("cs_float: #{control_state_float}")
-    transmit_cmds =
-    if (Enum.at(rx_output, @transmit_channel) > 0) do
-      true
-    else
-      false
+    transmit_value = Enum.at(rx_output, @transmit_channel)
+    pilot_control_mode = cond do
+      transmit_value > 0.9 -> @pilot_auto
+      transmit_value > 0.7 -> @pilot_semi_auto
+      true -> @pilot_manual
     end
-    if (transmit_cmds == true) do
+    # The direct_cmds control_state will determine which actuators are controlled directly from here
+    # Any actuator not under direct control will have its command sent by either the Navigator (primary)
+    # or the Pids.Moderator (secondary)
+    direct_cmds_cs = if (pilot_control_mode == @pilot_manual), do: @cs_direct_manual, else: @cs_direct_auto
+        # Logger.debug("cs_float: #{control_state_float}")
+    if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
         control_state_float < -0.95 -> 0
         control_state_float > -0.80 and control_state_float < -0.70 -> 1
@@ -81,56 +94,77 @@ defmodule Command.Commander do
         true -> -1
       end
       reference_cmds =
-      if (control_state != state.control_state) or (state.transmit_cmds == false) do
+      if (control_state != state.control_state) do
         Logger.info("latch cs: #{control_state}")
         latch_commands(control_state, state.pv_values)
       else
         state.reference_cmds
       end
 
-      {cmds, reference_cmds} = Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
-        channel_index = elem(channel_tuple, 0)
-        channel = elem(channel_tuple, 1)
-        absolute_or_relative = elem(channel_tuple, 2)
-        min_value = elem(channel_tuple, 3)
-        max_value = elem(channel_tuple, 4)
-        mid_value = (min_value + max_value)/2
-        delta_value_each_side = max_value - mid_value
-        inverted_multiplier = elem(channel_tuple, 5)
-        unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
-        scaled_value = mid_value + unscaled_value*delta_value_each_side
-        output_value =
-          case absolute_or_relative do
-            :absolute -> scaled_value
-            :relative ->
-              value_to_add = scaled_value*dt
-              case channel do
-                :yaw ->
-                  reference_cmds.yaw + value_to_add
-                  |> Common.Utils.Math.constrain(min_value, max_value)
-                :course_flight ->
-                  reference_cmds.course_flight + value_to_add
-                  |> Common.Utils.Motion.constrain_angle_to_compass()
-                :course_ground ->
-                  reference_cmds.course_ground + value_to_add
-                  |> Common.Utils.Motion.constrain_angle_to_compass()
-                :speed ->
-                  reference_cmds.speed + value_to_add
-                  |> Common.Utils.Math.constrain(min_value, max_value)
-                :altitude ->
-                  reference_cmds.altitude + value_to_add
-                  |> Common.Utils.Math.constrain(0, 10000)
-                _other -> value_to_add
-              end
-          end
-        {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
+      {indirect_cmds, reference_cmds} =
+        Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
+          {channel, scaled_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
+          output_value =
+            case elem(channel_tuple, 2) do
+              :absolute -> scaled_value
+              :relative -> get_relative_value(channel_tuple, scaled_value, reference_cmds, dt)
+            end
+          {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
+        end)
+      direct_cmds = Enum.reduce(Map.get(state.rx_output_channel_map, direct_cmds_cs), %{}, fn (channel_tuple, acc) ->
+        {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
+        Map.put(acc, channel, output_value)
       end)
-      # Publish Goals
 
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{{:goals, control_state}, state.goals_classification, state.goals_time_validity_ms, cmds}, {:goals, control_state}, self())
-      {reference_cmds, control_state, transmit_cmds}
+      # Publish Goals
+      unless pilot_control_mode == @pilot_manual do
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_classification, state.goals_time_validity_ms, indirect_cmds}, self())
+      end
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_classification, state.direct_cmds_time_validity_ms, direct_cmds}, self())
+      {reference_cmds, control_state, true}
     else
-      {%{}, state.control_state, transmit_cmds}
+      {%{}, state.control_state, false}
+    end
+  end
+
+
+  @spec get_channel_and_scaled_value(list(), tuple()) :: tuple()
+  def get_channel_and_scaled_value(rx_output, channel_tuple) do
+    channel_index = elem(channel_tuple, 0)
+    channel = elem(channel_tuple, 1)
+    min_value = elem(channel_tuple, 3)
+    max_value = elem(channel_tuple, 4)
+    mid_value = (min_value + max_value)/2
+    delta_value_each_side = max_value - mid_value
+    inverted_multiplier = elem(channel_tuple, 5)
+    unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
+    scaled_value = mid_value + unscaled_value*delta_value_each_side
+    {channel, scaled_value}
+  end
+
+  @spec get_relative_value(tuple(), float(), map(), float()) :: float()
+  def get_relative_value(channel_tuple, scaled_value, reference_cmds, dt) do
+    channel = elem(channel_tuple, 1)
+    min_value = elem(channel_tuple, 3)
+    max_value = elem(channel_tuple, 4)
+    value_to_add = scaled_value*dt
+    case channel do
+      :yaw ->
+        reference_cmds.yaw + value_to_add
+        |> Common.Utils.Math.constrain(min_value, max_value)
+      :course_flight ->
+        reference_cmds.course_flight + value_to_add
+        |> Common.Utils.Motion.constrain_angle_to_compass()
+      :course_ground ->
+        reference_cmds.course_ground + value_to_add
+        |> Common.Utils.Motion.constrain_angle_to_compass()
+      :speed ->
+        reference_cmds.speed + value_to_add
+        |> Common.Utils.Math.constrain(min_value, max_value)
+      :altitude ->
+        reference_cmds.altitude + value_to_add
+        |> Common.Utils.Math.constrain(0, 10000)
+      _other -> value_to_add
     end
   end
 

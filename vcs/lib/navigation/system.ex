@@ -10,12 +10,11 @@ defmodule Navigation.System do
 
   @impl Supervisor
   def init(config) do
-    children = [{Navigation.PathPlanner, config.path_planner}]
+    # children = [{Navigation.PathPlanner, config.path_planner}]
     children =
       case config.node_type do
-        :gcs -> children
+        :gcs -> []
         _other ->
-          children ++
             [
               {Navigation.Navigator, config.navigator},
               {Navigation.PathManager, config.path_manager}

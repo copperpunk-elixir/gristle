@@ -51,6 +51,11 @@ defmodule Configuration.Module.Command do
           :course_ground -> :rudder
           :altitude -> :elevator
           :speed -> :throttle
+          :aileron -> :aileron
+          :elevator -> :elevator
+          :throttle -> :throttle
+          :rudder -> :rudder
+          :flaps -> :flaps
         end
       if Enum.member?(reversed_actuators, channel) do
         Map.put(acc, command_name, -1)

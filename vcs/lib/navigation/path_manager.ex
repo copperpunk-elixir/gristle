@@ -582,5 +582,4 @@ defmodule Navigation.PathManager do
   def get_current_path_distance() do
     GenServer.call(__MODULE__, :get_current_path_distance)
   end
-
 end

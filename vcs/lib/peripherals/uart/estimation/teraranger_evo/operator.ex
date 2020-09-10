@@ -87,7 +87,7 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     state = if (state.new_range_data_to_publish) do
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_measured, :range}, state.range}, {:pv_measured, :range}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_measured, :range}, state.range}, {:pv_measured, :range}, self())
       %{state | new_range_data_to_publish: false}
     else
       state
