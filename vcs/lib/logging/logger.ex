@@ -34,6 +34,8 @@ defmodule Logging.Logger do
     filename = path <> (get_file_name(now, file_suffix))
     Logger.info("save filename: #{filename}")
     RingLogger.save(filename)
+    Process.sleep(100)
+    Common.Utils.File.cycle_mount()
     {:noreply, state}
   end
 
@@ -45,6 +47,8 @@ defmodule Logging.Logger do
     filename = path <> get_file_name(now, file_suffix)
     Logger.info("write filename: #{filename}")
     File.write(filename, data)
+    Process.sleep(100)
+    Common.Utils.File.cycle_mount()
     {:noreply, state}
   end
 

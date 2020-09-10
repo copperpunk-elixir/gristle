@@ -55,17 +55,14 @@ defmodule Peripherals.Gpio.Logging.Operator do
     falling_time = if (value == 0), do: timestamp, else: Map.get(state, :falling_time, timestamp)
     if (value == 1) do
       dt = round((timestamp - falling_time)*(1.0e-6))
-      if (dt > 0) do
         Logger.debug("dt: #{dt}")
-        cond do
-          dt > state.time_threshold_power_off_ms ->
-            Logger.warn("Power off!")
-            Common.Utils.power_off()
-          dt > state.time_threshold_cycle_mount_ms ->
-            Logger.warn("Cycle USB mount")
-            Common.Utils.File.cycle_mount()
-          true -> nil
-        end
+      if (dt > state.time_threshold_cycle_mount_ms) do
+        Logger.warn("Cycle USB mount")
+        Common.Utils.File.cycle_mount()
+      end
+      if (dt > state.time_threshold_power_off_ms) do
+        Logger.warn("Power off!")
+        Common.Utils.power_off()
       end
     end
     {:noreply, Map.put(state, :falling_time, falling_time)}
