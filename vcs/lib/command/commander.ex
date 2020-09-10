@@ -68,7 +68,6 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast({:pv_3_local, pv_values}, state) do
-    # Logger.debug("pv_3_local: #{inspect(pv_values)}")
     {:noreply, %{state | pv_values: pv_values}}
   end
 
@@ -81,12 +80,12 @@ defmodule Command.Commander do
       transmit_value > 0.7 -> @pilot_semi_auto
       true -> @pilot_manual
     end
+    # The direct_cmds control_state will determine which actuators are controlled directly from here
+    # Any actuator not under direct control will have its command sent by either the Navigator (primary)
+    # or the Pids.Moderator (secondary)
     direct_cmds_cs = if (pilot_control_mode == @pilot_manual), do: @cs_direct_manual, else: @cs_direct_auto
-    # Logger.debug("pcm: #{pilot_control_mode}")
-    # Logger.debug("dcc: #{direct_cmds_cs}")
-    # Logger.debug("cs_float: #{control_state_float}")
-    transmit_cmds = if (pilot_control_mode == @pilot_manual) or (pilot_control_mode == @pilot_semi_auto), do: true, else: false
-    if (transmit_cmds == true) do
+        # Logger.debug("cs_float: #{control_state_float}")
+    if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
         control_state_float < -0.95 -> 0
         control_state_float > -0.80 and control_state_float < -0.70 -> 1
@@ -95,36 +94,36 @@ defmodule Command.Commander do
         true -> -1
       end
       reference_cmds =
-      if (control_state != state.control_state) or (state.transmit_cmds == false) do
+      if (control_state != state.control_state) do
         Logger.info("latch cs: #{control_state}")
         latch_commands(control_state, state.pv_values)
       else
         state.reference_cmds
       end
 
-    {indirect_cmds, reference_cmds} = Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
-        {channel, scaled_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
-        output_value =
-          case elem(channel_tuple, 2) do
-            :absolute -> scaled_value
-            :relative -> get_relative_value(channel_tuple, scaled_value, reference_cmds, dt)
-          end
-        {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
+      {indirect_cmds, reference_cmds} =
+        Enum.reduce(Map.get(state.rx_output_channel_map, control_state), {%{}, %{}}, fn (channel_tuple, {acc, acc_ref}) ->
+          {channel, scaled_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
+          output_value =
+            case elem(channel_tuple, 2) do
+              :absolute -> scaled_value
+              :relative -> get_relative_value(channel_tuple, scaled_value, reference_cmds, dt)
+            end
+          {Map.put(acc, channel, output_value), Map.put(acc_ref, channel, output_value)}
+        end)
+      direct_cmds = Enum.reduce(Map.get(state.rx_output_channel_map, direct_cmds_cs), %{}, fn (channel_tuple, acc) ->
+        {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
+        Map.put(acc, channel, output_value)
       end)
-    direct_cmds = Enum.reduce(Map.get(state.rx_output_channel_map, direct_cmds_cs), %{}, fn (channel_tuple, acc) ->
-      {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
-      Map.put(acc, channel, output_value)
-    end)
 
-    # Logger.debug("direct: #{inspect(direct_cmds)}")
-    # Publish Goals
-    unless pilot_control_mode == @pilot_manual do
-      Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_classification, state.goals_time_validity_ms, indirect_cmds}, self())
-    end
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_classification, state.direct_cmds_time_validity_ms, direct_cmds}, self())
-    {reference_cmds, control_state, transmit_cmds}
+      # Publish Goals
+      unless pilot_control_mode == @pilot_manual do
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_classification, state.goals_time_validity_ms, indirect_cmds}, self())
+      end
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_classification, state.direct_cmds_time_validity_ms, direct_cmds}, self())
+      {reference_cmds, control_state, true}
     else
-      {%{}, state.control_state, transmit_cmds}
+      {%{}, state.control_state, false}
     end
   end
 

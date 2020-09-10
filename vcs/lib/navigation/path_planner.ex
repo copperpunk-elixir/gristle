@@ -80,11 +80,6 @@ defmodule Navigation.PathPlanner do
     send_path_mission("montague", "18R",:EC1500, track_type, num_wps, true)
   end
 
-  @spec load_path_mission(binary(), binary(), atom(), atom(), integer()) :: atom()
-  def load_path_mission(airport, runway, aircraft_type, track_type, num_wps) do
-    Navigation.PathManager.load_mission(Navigation.Path.Mission.get_complete_mission(airport, runway, aircraft_type, track_type, num_wps))
-  end
-
   @spec send_path_mission(binary(), binary(), atom(), atom(), integer(), boolean()) :: atom()
   def send_path_mission(airport, runway, model_type, track_type, num_wps, confirmation) do
     # airport_code = get_airport(airport)

@@ -35,7 +35,6 @@ defmodule Actuation.SwInterface do
   @impl GenServer
   def handle_cast({:direct_actuator_cmds_sorter, classification, time_validity_ms, cmds}, state) do
     # Logger.debug("rx direct: #{inspect(cmds)}")
-    # Logger.info("class/time: #{inspect(classification)}/#{time_validity_ms}")
     MessageSorter.Sorter.add_message(:direct_actuator_cmds, classification, time_validity_ms, cmds)
     {:noreply, state}
   end
@@ -49,24 +48,13 @@ defmodule Actuation.SwInterface do
     |> Common.Utils.default_to([])
     # Logger.debug("indirect: #{inspect(indirect_actuator_output_map)}")
     # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
-    # actuator_output_map = Enum.reduce(direct_actuator_output_map, indirect_actuator_output_map, fn ({actuator_name, output},acc) ->
-    #   if Map.has_key?(indirect_actuator_output_map, actuator_name) do
-    #     acc
-    #   else
-    #     Map.put(acc, actuator_name, output)
-    #   end
-    # end)
     actuator_output_map = Map.merge(indirect_actuator_output_map, direct_actuator_output_map)
-    # Logger.debug("actuator_output_map: #{inspect(actuator_output_map)}")
-    #
-    #
     # Loop over actuator_output_map. Only move those actuators with values
     # This way we can have different MessageSorters for different types of actuation (direct, indirect)
     actuators = state.actuators
     actuators_and_outputs =
       Enum.reduce(actuator_output_map,%{}, fn ({actuator_name, output}, acc) ->
         actuator = Map.fetch!(actuators, actuator_name)
-        # output = Map.fetch!(actuator_output_map, actuator_name)
         # Logger.debug("#{actuator_name}: #{output}")
         Map.put(acc, actuator_name, {actuator,output})
     end)

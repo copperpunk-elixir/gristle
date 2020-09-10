@@ -218,7 +218,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             runway = Navigation.PathPlanner.get_runway(runway_code)
             model = Navigation.PathPlanner.get_model(model_code)
             track= Navigation.PathPlanner.get_track(track_code)
-            Navigation.PathPlanner.load_path_mission(airport, runway, model, track, num_wps)
+            mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
+            send_global({:load_mission, mission})
             if Navigation.PathPlanner.get_confirmation(confirmation) do
               Logger.warn("send confirmation")
               Navigation.PathPlanner.send_path_mission(airport, runway, model, track, num_wps, false)
@@ -231,7 +232,6 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
-            Navigation.PathManager.load_mission(mission)
             send_global({:load_mission, mission})
             if mission_pb.confirm do
               Logger.warn("send confirmation")
