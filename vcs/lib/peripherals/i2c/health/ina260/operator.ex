@@ -14,7 +14,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
 
   @impl GenServer
   def init(config) do
-    {:ok, i2c_ref} = Circuits.I2c.open_link(@i2c_bus)
+    {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     {:ok, %{
         i2c_ref: i2c_ref,
         read_voltage_interval_ms: config.read_voltage_interval_ms,
@@ -48,8 +48,8 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   end
 
   @impl GenServer
-  def handle_info(:read_voltage, state) do
-    Logger.debug("read voltage")
+  def handle_info(:read_current, state) do
+    Logger.debug("read current")
     {:noreply, state}
   end
 
