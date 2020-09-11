@@ -107,6 +107,7 @@ defmodule Configuration.Module.Actuation do
       :right_direction -> 0.5
       :throttle -> 0.0
       :flaps -> 0.0
+      :select -> 0.0
     end
   end
 
@@ -124,7 +125,9 @@ defmodule Configuration.Module.Actuation do
                        2 => :throttle,
                        3 => :rudder},
                      direct: %{
-                       4 => :flaps}
+                       4 => :flaps,
+                       5 => :select
+                     }
                  }
           :EC1500 -> %{
                      indirect: %{
@@ -133,7 +136,9 @@ defmodule Configuration.Module.Actuation do
                        2 => :throttle,
                        3 => :rudder},
                      direct: %{
-                       4 => :flaps}
+                       4 => :flaps,
+                       5 => :select
+                     }
                  }
         end
     end

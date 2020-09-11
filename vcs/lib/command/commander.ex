@@ -4,6 +4,7 @@ defmodule Command.Commander do
 
   @rx_control_state_channel 8
   @transmit_channel 7
+  @select_secondary_output 1.0
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -76,9 +77,9 @@ defmodule Command.Commander do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
     transmit_value = Enum.at(rx_output, @transmit_channel)
     pilot_control_mode = cond do
-      transmit_value > 0.9 -> @pilot_auto
-      transmit_value > 0.7 -> @pilot_semi_auto
-      true -> @pilot_manual
+      transmit_value > 0.0 -> @pilot_manual
+      transmit_value > -0.5 -> @pilot_semi_auto
+      true -> @pilot_auto
     end
     # The direct_cmds control_state will determine which actuators are controlled directly from here
     # Any actuator not under direct control will have its command sent by either the Navigator (primary)
@@ -115,6 +116,7 @@ defmodule Command.Commander do
         {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
         Map.put(acc, channel, output_value)
       end)
+      |> Map.put(:select, @select_secondary_output)
 
       # Publish Goals
       unless pilot_control_mode == @pilot_manual do
@@ -150,19 +152,19 @@ defmodule Command.Commander do
     value_to_add = scaled_value*dt
     case channel do
       :yaw ->
-        reference_cmds.yaw + value_to_add
+        Map.get(reference_cmds, :yaw, 0) + value_to_add
         |> Common.Utils.Math.constrain(min_value, max_value)
       :course_flight ->
-        reference_cmds.course_flight + value_to_add
+        Map.get(reference_cmds, :course_flight, 0) + value_to_add
         |> Common.Utils.Motion.constrain_angle_to_compass()
       :course_ground ->
-        reference_cmds.course_ground + value_to_add
+        Map.get(reference_cmds, :course_ground, 0) + value_to_add
         |> Common.Utils.Motion.constrain_angle_to_compass()
       :speed ->
-        reference_cmds.speed + value_to_add
+        Map.get(reference_cmds, :speed, 0) + value_to_add
         |> Common.Utils.Math.constrain(min_value, max_value)
       :altitude ->
-        reference_cmds.altitude + value_to_add
+        Map.get(reference_cmds, :altitude, 0) + value_to_add
         |> Common.Utils.Math.constrain(0, 10000)
       _other -> value_to_add
     end
