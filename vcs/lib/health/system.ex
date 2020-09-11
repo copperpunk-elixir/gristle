@@ -12,7 +12,7 @@ defmodule Health.System do
   def init(config) do
     children =
       [
-        {Health.Monitor, config.monitor}
+        {Health.Power, config.power}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

@@ -7,7 +7,7 @@ defmodule Configuration.Module.Health do
         :EC1500 -> [:motor, :cluster]
       end
     %{
-      monitor: %{
+      power: %{
         telemetry_loop_interval_ms: 1000,
         watchdogs: watchdogs,
         watchdog_interval_ms: 1000

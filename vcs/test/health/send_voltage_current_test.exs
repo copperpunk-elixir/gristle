@@ -20,7 +20,7 @@ defmodule Health.SendVoltageCurrentTest do
     Comms.System.start_operator(__MODULE__)
     Process.sleep(100)
     # Ina260 should publish battery information to those who want it
-    battery = Health.Monitor.get_battery(:motor)
+    battery = Health.Power.get_battery(:motor)
     voltage = Health.Hardware.Battery.get_value(battery, :voltage)
     Process.sleep(100)
     assert is_float(voltage)
