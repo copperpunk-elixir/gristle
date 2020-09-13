@@ -47,7 +47,6 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
 
   @impl GenServer
   def handle_info(:read_voltage, state) do
-    # Logger.debug("read voltage")
     voltage = read_voltage(state.i2c_ref)
     battery = Health.Hardware.Battery.update_voltage(state.battery, voltage)
     {:noreply, %{state | battery: battery}}
@@ -55,7 +54,6 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
 
   @impl GenServer
   def handle_info(:read_current, state) do
-    # Logger.debug("read current")
     current = read_current(state.i2c_ref)
     battery = Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms)
     {:noreply, %{state | battery: battery}}
@@ -95,8 +93,6 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
     {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_voltage>>, 2)
-    # [msb, lsb] = [0x17, 0x20]
-    # Logger.debug("msg/lsb: #{msb}/#{lsb}")
     voltage = ((msb<<<8) + lsb)*0.00125
     Logger.info("voltage: #{voltage}")
     voltage
@@ -105,8 +101,6 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
     {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
-    # [msb,lsb ] = [0x07, 0xD0]
-    # Logger.debug("msg/lsb: #{msb}/#{lsb}")
     current = ((msb<<<8) + lsb)*0.00125
     Logger.info("current: #{current}")
     current
