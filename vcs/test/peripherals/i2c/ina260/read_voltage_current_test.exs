@@ -10,10 +10,11 @@ defmodule Peripherals.I2c.Ina260.ReadVoltageCurrentTest do
   end
 
   test "Read Voltage/Current" do
-    config = Configuration.Module.Peripherals.I2c.get_config(nil, nil)
+    config = Configuration.Module.Peripherals.I2c.get_ina260_config("power")
     Logger.info("config: #{inspect(config)}")
-    Peripherals.I2c.Health.Ina260.Operator.start_link(Map.get(config, Health.Ina260))
-    Process.sleep(1500)
+    # Peripherals.I2c.Health.Ina260.Operator.start_link(Map.get(config, Health.Ina260))
+    Peripherals.I2c.Health.Ina260.Operator.start_link(config)
+    Process.sleep(150000)
     voltage = Peripherals.I2c.Health.Ina260.Operator.get_voltage()
     assert voltage > 7.3
     current = Peripherals.I2c.Health.Ina260.Operator.get_current()

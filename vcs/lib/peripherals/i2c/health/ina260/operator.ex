@@ -18,8 +18,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
 
   @impl GenServer
   def init(config) do
-    # {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
-    i2c_ref = nil;
+    {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     {:ok, %{
         i2c_ref: i2c_ref,
         read_voltage_interval_ms: config.read_voltage_interval_ms,
@@ -39,7 +38,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.debug("INA260 begin with process: #{inspect(self())}")
-    # set_mode(state.i2c_ref)
+    set_mode(state.i2c_ref)
     Process.sleep(100)
     Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_voltage)
     Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
@@ -90,26 +89,26 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     shunt_cur_conv = 4 # 1.1ms (default)
     op_mode = 7 # Continuous (default)
     data = <<0::1,6::3,avg_mode::3,bus_volt_conv::3,shunt_cur_conv::3,op_mode::3>>
-    Circuits.I2C.write(i2c_ref, @device_address, data)
+    Circuits.I2C.write(i2c_ref, @device_address, <<@reg_config>> <> data)
   end
 
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
-    # {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_voltage>>, 2)
-    [msb, lsb] = [0x17, 0x20]
+    {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_voltage>>, 2)
+    # [msb, lsb] = [0x17, 0x20]
     # Logger.debug("msg/lsb: #{msb}/#{lsb}")
     voltage = ((msb<<<8) + lsb)*0.00125
-    # Logger.info("voltage: #{voltage}")
+    Logger.info("voltage: #{voltage}")
     voltage
   end
 
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
-    # {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
-    [msb,lsb ] = [0x07, 0xD0]
+    {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
+    # [msb,lsb ] = [0x07, 0xD0]
     # Logger.debug("msg/lsb: #{msb}/#{lsb}")
     current = ((msb<<<8) + lsb)*0.00125
-    # Logger.info("current: #{current}")
+    Logger.info("current: #{current}")
     current
   end
 
