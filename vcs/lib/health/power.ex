@@ -1,4 +1,4 @@
-defmodule Health.Monitor do
+defmodule Health.Power do
   use GenServer
   require Logger
 
@@ -12,7 +12,7 @@ defmodule Health.Monitor do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        telemetry_loop_interval_ms: config.telemetry_loop_interval_ms,
+        status_loop_interval_ms: config.status_loop_interval_ms,
         watchdogs: config.watchdogs,
         watchdog_interval_ms: config.watchdog_interval_ms,
         batteries: %{}
@@ -29,7 +29,7 @@ defmodule Health.Monitor do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :battery_status, self())
-    Common.Utils.start_loop(self(), state.telemetry_loop_interval_ms, :telemetry_loop)
+    Common.Utils.start_loop(self(), state.status_loop_interval_ms, :status_loop)
     Enum.each(state.watchdogs, fn watchdog ->
       Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(watchdog, state.watchdog_interval_ms))
     end)
@@ -37,7 +37,14 @@ defmodule Health.Monitor do
   end
 
   @impl GenServer
-  def handle_info(:telemetry_loop, state) do
+  def handle_cast({:battery_status, battery}, state) do
+    battery_id = Health.Hardware.Battery.get_battery_id(battery)
+    batteries = Map.put(state.batteries, battery_id, battery)
+    {:noreply, %{state | batteries: batteries}}
+  end
+
+  @impl GenServer
+  def handle_info(:status_loop, state) do
     unless Enum.empty?(state.batteries) do
       Peripherals.Uart.Telemetry.Operator.store_data(%{batteries: state.batteries})
     end
@@ -47,7 +54,7 @@ defmodule Health.Monitor do
   @impl GenServer
   def handle_call({:get_battery, battery_id}, _from, state) do
     Logger.info("get battery: #{battery_id}")
-    {:reply, Map.get(state.batteries, :battery_id), state}
+    {:reply, Map.get(state.batteries, battery_id), state}
   end
 
   @spec get_battery(atom) :: map()

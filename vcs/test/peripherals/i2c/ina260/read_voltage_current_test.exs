@@ -15,9 +15,8 @@ defmodule Peripherals.I2c.Ina260.ReadVoltageCurrentTest do
     # Peripherals.I2c.Health.Ina260.Operator.start_link(Map.get(config, Health.Ina260))
     Peripherals.I2c.Health.Ina260.Operator.start_link(config)
     Process.sleep(150000)
-    voltage = Peripherals.I2c.Health.Ina260.Operator.get_voltage()
+    [voltage, current, energy] = Health.Hardware.Battery.get_vie(battery)
     assert voltage > 7.3
-    current = Peripherals.I2c.Health.Ina260.Operator.get_current()
     assert current < 3.0
   end
 end

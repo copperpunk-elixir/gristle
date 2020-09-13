@@ -2,8 +2,6 @@ defmodule Time.Server do
   use GenServer
   require Logger
 
-  # @gps_epoch ~U[1980-01-01 00:00:00Z]
-
   def start_link(config) do
     Logger.debug("Start Time.Server")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
@@ -61,13 +59,25 @@ defmodule Time.Server do
     {:reply, time, state}
   end
 
+  @impl GenServer
+  def handle_call(:get_time_day, _from, state) do
+    time = Time.Clock.utc_now(state.clock)
+    day = Date.from_erl!({time.year, time.month, time.day})
+    {:reply, {time, day}, state}
+  end
+
   @spec get_gps_time_source() :: struct()
   def get_gps_time_source() do
-    Common.Utils.safe_call(__MODULE__, :get_gps_time_source, 1000, nil)
+    Common.Utils.safe_call(__MODULE__, :get_gps_time_source, 100, nil)
   end
 
   @spec get_time() :: struct()
   def get_time() do
-    Common.Utils.safe_call(__MODULE__, :get_time, 1000, nil)
+    Common.Utils.safe_call(__MODULE__, :get_time, 100, nil)
+  end
+
+  @spec get_time_day() :: struct()
+  def get_time_day() do
+    Common.Utils.safe_call(__MODULE__, :get_time_day, 100, nil)
   end
 end

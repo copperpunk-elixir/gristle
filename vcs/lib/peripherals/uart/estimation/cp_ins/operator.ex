@@ -106,7 +106,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     bodyrate = state.bodyrate
     unless (Enum.empty?(accel) or Enum.empty?(bodyrate)) do
       # Send accel/gyro message to IMU
-      accel_gyro = get_accel_gyro(accel, bodyrate, DateTime.utc_now())
+      accel_gyro = get_accel_gyro(accel, bodyrate)
       Circuits.UART.write(state.uart_ref, accel_gyro)
     end
     {:noreply, state}
@@ -117,7 +117,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     position = state.position
     velocity = state.velocity
     unless Enum.empty?(position) or Enum.empty?(velocity) do
-      nav_pvt = get_nav_pvt(position, velocity, DateTime.utc_now())
+      nav_pvt = get_nav_pvt(position, velocity)
       Circuits.UART.write(state.uart_ref, nav_pvt)
     end
     {:noreply, state}
@@ -152,12 +152,13 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     if String.length(cs_str) < 2, do: "0"<>cs_str, else: cs_str
   end
 
-  @spec get_accel_gyro(map(), map(), struct()) :: binary()
-  def get_accel_gyro(accel, bodyrate, now) do
+  @spec get_accel_gyro(map(), map()) :: binary()
+  def get_accel_gyro(accel, bodyrate) do
+    {now, today} = Time.Server.get_time_day()
     {now_us, _} = now.microsecond
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x69,32,0>>
-    iTOW = Telemetry.Ublox.get_itow(now) |> Common.Utils.Math.int32_little_bin()
+    iTOW = Telemetry.Ublox.get_itow(now, today) |> Common.Utils.Math.int32_little_bin()
     nano = now_us*1000 |> Common.Utils.Math.int32_little_bin()
     accel_x = Common.Utils.Math.uint_from_fp(accel.x,32)
     accel_y = Common.Utils.Math.uint_from_fp(accel.y,32)
@@ -179,13 +180,14 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     header <> checksum_buffer <> checksum_bytes
   end
 
-  @spec get_nav_pvt(map(), map(), struct()) :: binary()
-  def get_nav_pvt(position, velocity, now) do
+  @spec get_nav_pvt(map(), map()) :: binary()
+  def get_nav_pvt(position, velocity) do
+    {now, today} = Time.Server.get_time_day()
     {now_us, _} = now.microsecond
 
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x07,92,0>>
-    iTOW = Telemetry.Ublox.get_itow(now) |> Common.Utils.Math.int32_little_bin()
+    iTOW = Telemetry.Ublox.get_itow(now, today) |> Common.Utils.Math.int32_little_bin()
     year = now.year |> Common.Utils.Math.int16_little_bin()
     month = <<now.month>>
     day = <<now.month>>
@@ -241,12 +243,13 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
 
   @spec get_rel_pos_ned(float(), float()) :: binary()
   def get_rel_pos_ned(yaw, ant_offset) do
+    {now, today} = Time.Server.get_time_day()
     header = <<0xB5,0x62>>
     class_id_length = <<0x01, 0x3C,64,0>>
     version = <<0>>
     res1 = <<0>>
     refStationId = <<0,0>>
-    iTOW = Telemetry.Ublox.get_itow() |> Common.Utils.Math.int32_little_bin()
+    iTOW = Telemetry.Ublox.get_itow(now, today) |> Common.Utils.Math.int32_little_bin()
     distance = 1
     relPosN_float = distance*:math.cos(yaw + ant_offset)
     relPosN_cm = relPosN_float * 100 |> trunc()

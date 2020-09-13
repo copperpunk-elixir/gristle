@@ -50,6 +50,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_cast({:store_data, data_map}, state) do
+    Logger.info("store: #{inspect(data_map)}")
     state = Enum.reduce(data_map, state, fn ({key, value}, acc) ->
       Map.put(acc, key, value)
     end)
@@ -76,7 +77,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info(:slow_loop, state) do
-    iTOW = Telemetry.Ublox.get_itow()
+    {now, today} = Time.Server.get_time_day()
+    iTOW = Telemetry.Ublox.get_itow(now, today)
     #pvat
     position = Map.get(state, :position, %{})
     velocity = Map.get(state, :velocity, %{})
@@ -108,6 +110,17 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       values = [iTOW, control_state+1]
       construct_and_send_message(:control_state, values, state.uart_ref)
     end
+    # Power
+    batteries = Map.get(state, :batteries, %{})
+    Enum.each(batteries, fn {battery_id, battery} ->
+      Logger.debug("telem batt id: #{battery_id}")
+      battery_vie = Health.Hardware.Battery.get_vie(battery)
+      # battery_id = Health.Hardware.Battery.get_battery_id(battery)
+      values = [iTOW, battery_id] ++ battery_vie
+      Logger.info("values: #{inspect(values)}")
+      construct_and_send_message(:battery, values, state.uart_ref)
+    end)
+
     {:noreply, state}
   end
 
@@ -175,6 +188,11 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             msg_type = :control_state
             [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, control_state-1})
+          0x15 ->
+            msg_type = :battery
+            [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            Logger.warn("battery #{battery_id} msg rx'd")
+            send_global({msg_type, battery_id, voltage, current, energy_discharged})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
        0x46  ->

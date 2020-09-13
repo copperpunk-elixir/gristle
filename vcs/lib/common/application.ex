@@ -9,9 +9,10 @@ defmodule Common.Application do
     Process.sleep(200)
     vehicle_type = Common.Utils.Configuration.get_vehicle_type()
     MessageSorter.System.start_link(vehicle_type)
-    Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
+    # Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Process.sleep(200)
-    Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
+    # Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
+    Configuration.Module.start_modules([Cluster, Logging, Time], nil, nil)
     # start_remaining_processes()
   end
 

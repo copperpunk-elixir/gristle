@@ -15,8 +15,6 @@ defmodule Peripherals.Uart.Command.Dsm do
 	@got_sync1 1
 	@got_sync2 2
 
-
-
   defstruct [state: @got_none, count: 0, payload_rev: [], payload_ready: false, channel_map: %{}, channel_count: 0]
 
   @spec new() :: struct()
