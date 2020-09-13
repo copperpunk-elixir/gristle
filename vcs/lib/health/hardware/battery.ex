@@ -16,7 +16,7 @@ defmodule Health.Hardware.Battery do
   @spec update_current(struct(), float(), float()) :: struct()
   def update_current(battery, current, dt) do
     dE = current*dt
-    energy_discharged = if is_nil(battery.energy_discharged_As), do: dE, else: battery.energy_discharged + dE
+    energy_discharged = if is_nil(battery.energy_discharged_As), do: dE, else: battery.energy_discharged_As + dE
     %{battery | current_A: current, energy_discharged_As: energy_discharged}
   end
 
