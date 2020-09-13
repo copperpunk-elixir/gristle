@@ -4,7 +4,7 @@ defmodule Command.Commander do
 
   @rx_control_state_channel 8
   @transmit_channel 7
-  @select_secondary_output 1.0
+  @select_retain_control 1.0
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -116,7 +116,7 @@ defmodule Command.Commander do
         {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
         Map.put(acc, channel, output_value)
       end)
-      |> Map.put(:select, @select_secondary_output)
+      |> Map.put(:select, @select_retain_control)
 
       # Publish Goals
       unless pilot_control_mode == @pilot_manual do

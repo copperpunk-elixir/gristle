@@ -107,7 +107,7 @@ defmodule Configuration.Module.Actuation do
       :right_direction -> 0.5
       :throttle -> 0.0
       :flaps -> 0.0
-      :select -> 0.0
+      :select -> 0.0 #Reliquish control to guardian
     end
   end
 

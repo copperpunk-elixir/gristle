@@ -36,9 +36,9 @@ defmodule Pids.Moderator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Enum.each(1..3, fn level ->
-      Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, level}, self())
-    end)
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
 
     # Reduce config
     pv_output_pids = Enum.reduce(state.pids, %{}, fn ({process_variable, control_variables}, config_reduced) ->

@@ -115,6 +115,15 @@ defmodule Navigation.PathManager do
         end
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
+      # Direct Commands
+      flaps_cmd =
+        case path_case_type do
+          :ground -> 0.5
+          :climbout -> 0.3
+          :flight -> 0.0
+          :approach -> 1.0
+          :landing -> 1.0
+        end
     end
     {:noreply, state}
   end

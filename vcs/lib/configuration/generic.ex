@@ -21,7 +21,7 @@ defmodule Configuration.Generic do
       },
       :direct_actuator_cmds => %{
         Command.Commander => [0,1],
-        Navigation.Navigator => [0,2]
+        Navigation.PathManager => [0,2]
       },
       :pv_cmds => %{
         Pids.Moderator => [0,1],
