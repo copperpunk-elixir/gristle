@@ -23,6 +23,10 @@ defmodule Configuration.Generic do
         Command.Commander => [0,1],
         Navigation.PathManager => [0,2]
       },
+      :actuation_selector => %{
+        Command.Commander => [0,1],
+        Pids.Moderator => [0,2]
+      },
       :pv_cmds => %{
         Pids.Moderator => [0,1],
         Navigation.Navigator => [0,2]
@@ -40,6 +44,7 @@ defmodule Configuration.Generic do
       {:hb, :node} => 500,
       :indirect_actuator_cmds => 200,
       :direct_actuator_cmds => 200,
+      :actuation_selector => 200,
       :pv_cmds => 300,
       :goals => 300,
       :control_state => 200
