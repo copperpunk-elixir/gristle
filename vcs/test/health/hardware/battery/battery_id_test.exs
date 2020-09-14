@@ -15,7 +15,7 @@ defmodule Health.Hardware.Battery.BatteryIdTest do
     battery = Health.Hardware.Battery.new(battery_type, battery_channel)
     battery_id = Health.Hardware.Battery.get_battery_id(battery)
     assert battery_id == 33
-    [type, channel] = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
+    {type, channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
     assert type == battery_type
     assert channel == battery_channel
 
@@ -24,7 +24,7 @@ defmodule Health.Hardware.Battery.BatteryIdTest do
     battery = Health.Hardware.Battery.new(battery_type, battery_channel)
     battery_id = Health.Hardware.Battery.get_battery_id(battery)
     assert battery_id == 11
-    [type, channel] = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
+    {type, channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
     assert type == battery_type
     assert channel == battery_channel
 

@@ -29,7 +29,7 @@ defmodule Health.Hardware.Battery do
       case key do
         :voltage -> battery.voltage_V
         :current -> battery.current_A
-        :energy_discharged -> battery.energy_discharged_As/3600
+        :energy_discharged -> battery.energy_discharged_As/3.6
         _other -> nil
       end
     end
@@ -48,11 +48,11 @@ defmodule Health.Hardware.Battery do
     x
   end
 
-  @spec get_type_channel_for_id(integer()) :: list()
+  @spec get_type_channel_for_id(integer()) :: tuple()
   def get_type_channel_for_id(id) do
     type = id >>> 5 |> battery_type_enum()
     channel = id &&& 0x1F
-    [type, channel]
+    {type, channel}
   end
 
   @spec battery_type_enum(atom()) :: integer()

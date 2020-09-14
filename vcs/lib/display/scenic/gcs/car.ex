@@ -38,12 +38,12 @@ defmodule Display.Scenic.Gcs.Car do
     # build the graph
     graph =
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude"], ids: [:lat, :lon, :alt], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 3*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 5*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course"], ids: [:speed_cmd, :course_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "yaw"], ids: [:thrust_2_cmd, :yaw_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "yawrate"], ids: [:thrust_1_cmd, :yawrate_cmd], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude"], ids: [:lat, :lon, :alt], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 3*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 5*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course"], ids: [:speed_cmd, :course_cmd], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "yaw"], ids: [:thrust_2_cmd, :yaw_cmd], font_size: @font_size})
+      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "yawrate"], ids: [:thrust_1_cmd, :yawrate_cmd], font_size: @font_size})
 
     # subscribe to the simulated temperature sensor
     Comms.System.start_operator(__MODULE__)

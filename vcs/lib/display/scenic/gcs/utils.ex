@@ -6,7 +6,7 @@ defmodule Display.Scenic.Gcs.Utils do
 
   @rect_border 6
 
-  def add_label_value_to_graph(graph, config) do
+  def add_columns_to_graph(graph, config) do
     offset_x = config.offset_x
     offset_y = config.offset_y
     width = config.width
@@ -48,11 +48,11 @@ defmodule Display.Scenic.Gcs.Utils do
         translate: {offset_x + 1.5*col + h_spacing, offset_y + row/2},
         button_font_size: 24)
     end)
-    graph
+    {graph, offset_x, offset_y + height}
   end
 
-  def add_goals_to_graph(graph, config) do
-    goal_id = config.goal_id
+  def add_rows_to_graph(graph, config) do
+    id = config.id
     offset_x = config.offset_x
     offset_y = config.offset_y
     width = config.width
@@ -95,13 +95,15 @@ defmodule Display.Scenic.Gcs.Utils do
         button_font_size: 24)
     end)
 
-    graph
-    |> rect(
-      {width+2*h_spacing, height},
-    id: goal_id,
-    translate: {offset_x, offset_y},
-    stroke: {@rect_border, :white}
-    )
+    graph = 
+      rect(
+        graph,
+        {width+2*h_spacing, height},
+        id: id,
+        translate: {offset_x, offset_y},
+        stroke: {@rect_border, :white}
+      )
+    {graph, offset_x, offset_y + height}
   end
 
   @interior_angle 2.677945 #= :math.pi/2 + :math.atan(ratio)
