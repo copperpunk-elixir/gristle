@@ -18,6 +18,7 @@ defmodule Configuration.Module.Actuation do
 
     actuator_names = get_actuator_names(model_type, node_type)
     actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
+    |> Map.merge(actuator_names.selector)
     # {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
     actuators = Enum.reduce(actuator_names, %{}, fn ({channel_number, actuator_name}, acc) ->
@@ -85,7 +86,7 @@ defmodule Configuration.Module.Actuation do
       :right_direction -> 0.5
       :throttle -> 0.0
       :flaps -> 0.0
-      :select -> 0.0 #Reliquish control to guardian
+      :select -> Actuation.SwInterface.guardian_control_value()
     end
   end
 
@@ -102,6 +103,8 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
+                 },
+                 selector: %{
                    5 => :select
                  }
              }
@@ -113,8 +116,11 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
+                 },
+                 selector: %{
                    5 => :select
                  }
+
              }
     end
   end
@@ -169,6 +175,12 @@ defmodule Configuration.Module.Actuation do
         default_message_behavior: :default_value,
         default_value: direct_failsafe_map,
         value_type: :map
+      },
+      %{
+        name: :actuation_selector,
+        default_message_behavior: :default_value,
+        default_value: Actuation.SwInterface.guardian_control_value(),
+        value_type: :number
       }
     ]
   end

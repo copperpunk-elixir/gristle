@@ -43,7 +43,7 @@ defmodule Display.Scenic.Gcs.Plane do
     # build the graph
     offset_x_origin = 10
     offset_y_origin = 10
-    spacer_y = 10
+    spacer_y = 20
 
     graph = Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
     {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})

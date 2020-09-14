@@ -175,7 +175,6 @@ defmodule MessageSorter.Sorter do
   end
 
   defp is_valid_type?(value, desired_type) do
-    # TODO: Implement this function
     case desired_type do
       :number -> is_number(value)
       :map -> is_map(value)

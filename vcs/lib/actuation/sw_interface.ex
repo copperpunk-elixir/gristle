@@ -28,6 +28,7 @@ defmodule Actuation.SwInterface do
   def handle_cast(:begin, state) do
      Comms.System.start_operator(__MODULE__)
      Comms.Operator.join_group(__MODULE__, :direct_actuator_cmds_sorter, self())
+     Comms.Operator.join_group(__MODULE__, :actuation_selector_sorter, self())
      Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
      {:noreply, state}
   end
@@ -40,15 +41,26 @@ defmodule Actuation.SwInterface do
   end
 
   @impl GenServer
+  def handle_cast({:actuation_selector_sorter, classification, time_validity_ms, selector_value}, state) do
+    Logger.debug("actuation selector sorter: #{selector_value}")
+    MessageSorter.Sorter.add_message(:actuation_selector, classification, time_validity_ms, selector_value)
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
     direct_actuator_output_map = MessageSorter.Sorter.get_value(:direct_actuator_cmds)
     |> Common.Utils.default_to([])
     indirect_actuator_output_map = MessageSorter.Sorter.get_value(:indirect_actuator_cmds)
     |> Common.Utils.default_to([])
+    actuation_selector_value = MessageSorter.Sorter.get_value(:actuation_selector)
+    |> Common.Utils.default_to(guardian_control_value())
     # Logger.debug("indirect: #{inspect(indirect_actuator_output_map)}")
     # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
     actuator_output_map = Map.merge(indirect_actuator_output_map, direct_actuator_output_map)
+    |> Map.merge(%{select: actuation_selector_value})
+    # Logger.debug("aom: #{inspect(actuator_output_map)}")
     # Loop over actuator_output_map. Only move those actuators with values
     # This way we can have different MessageSorters for different types of actuation (direct, indirect)
     actuators = state.actuators
@@ -64,4 +76,15 @@ defmodule Actuation.SwInterface do
     end)
     {:noreply, state}
   end
+
+  @spec self_control_value() :: float()
+  def self_control_value do
+    1.0
+  end
+
+  @spec guardian_control_value() :: float()
+  def guardian_control_value() do
+    0.0
+  end
+
 end
