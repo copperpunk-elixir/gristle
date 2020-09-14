@@ -118,7 +118,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       # battery_id = Health.Hardware.Battery.get_battery_id(battery)
       values = [iTOW, battery_id] ++ battery_vie
       Logger.info("values: #{inspect(values)}")
-      construct_and_send_message(:battery, values, state.uart_ref)
+      construct_and_send_message(:tx_battery, values, state.uart_ref)
     end)
 
     {:noreply, state}
@@ -189,7 +189,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, control_state-1})
           0x15 ->
-            msg_type = :battery
+            msg_type = :tx_battery
             [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             Logger.warn("battery #{battery_id} msg rx'd")
             send_global({msg_type, battery_id, voltage, current, energy_discharged})
