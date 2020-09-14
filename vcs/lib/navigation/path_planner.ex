@@ -136,4 +136,11 @@ defmodule Navigation.PathPlanner do
   def get_confirmation(arg) do
     if (arg == 1), do: true, else: false
   end
+
+  @spec clear_mission() :: atom()
+  def clear_mission() do
+    {now, today} = Time.Server.get_time_day()
+    iTOW = Telemetry.Ublox.get_itow(now, today)
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:clear_mission, [iTOW])
+  end
 end

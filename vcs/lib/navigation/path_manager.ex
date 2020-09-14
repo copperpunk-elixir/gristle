@@ -42,6 +42,7 @@ defmodule Navigation.PathManager do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
+    Comms.Operator.join_group(__MODULE__, :clear_mission, self())
     {:noreply, state}
   end
 
@@ -60,6 +61,20 @@ defmodule Navigation.PathManager do
       current_path_case: current_path_case,
       current_path_distance: current_path_distance,
       landing_altitude: landing_altitude
+    }
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:clear_mission, iTOW}, state) do
+    Logger.info("clear mission iTOW: #{iTOW}")
+    state = %{
+      state |
+      config_points: [],
+      current_cp_index: nil,
+      current_path_case: nil,
+      current_path_distance: 0,
+      landing_altitude: 0,
     }
     {:noreply, state}
   end

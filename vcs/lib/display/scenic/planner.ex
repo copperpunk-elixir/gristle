@@ -36,6 +36,7 @@ defmodule Display.Scenic.Planner do
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
+    Comms.Operator.join_group(__MODULE__, :clear_mission, self())
     Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     {:ok, state, push: graph}
   end
@@ -54,6 +55,15 @@ defmodule Display.Scenic.Planner do
       |> draw_path(origin, state.height, config_points)
     state = Map.put(state, :mission, mission)
     |> Map.put(:origin, origin)
+    |> Map.put(:graph, graph)
+    {:noreply, state, push: graph }
+  end
+
+  def handle_cast({:clear_mission, _iTOW}, state) do
+    Logger.warn("planner clear mission")
+    graph = Scenic.Graph.delete(state.graph, @primitive_id)
+    state = Map.put(state, :mission, %{})
+    |> Map.put(:origin, nil)
     |> Map.put(:graph, graph)
     {:noreply, state, push: graph }
   end

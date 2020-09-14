@@ -258,6 +258,11 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             else
               Logger.warn("confirmation received")
             end
+          0x03 ->
+            msg_type = :clear_mission
+            Logger.warn("Clear mission")
+            [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({msg_type, iTOW})
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end

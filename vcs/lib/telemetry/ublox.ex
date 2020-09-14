@@ -188,6 +188,7 @@ defmodule Telemetry.Ublox do
       :get_pid_gain -> [-4, -4, -4, 4]
       :rpc -> [-4, -4]
       :mission -> [-4, -4, -4, -4, -4, -4]
+      :clear_mission -> [-4]
       :tx_battery -> [-4, -4, 4, 4, 4]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [-2] end)
       _other ->
@@ -212,6 +213,7 @@ defmodule Telemetry.Ublox do
       :rpc  -> {0x50, 0x00}
       :mission -> {0x50, 0x01}
       :mission_proto -> {0x50, 0x02}
+      :clear_mission -> {0x50, 0x03}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []
