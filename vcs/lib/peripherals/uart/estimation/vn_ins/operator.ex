@@ -387,7 +387,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     header = <<0xFA>>
     group = <<0x01>>
     fields_word = <<0xEA, 0x11>>
-    now = Time.Server.get_time()
+    now = DateTime.utc_now()
     current_time_ns =
       DateTime.diff(now, Time.Clock.get_epoch(), :nanosecond)
       |> Common.Utils.Math.int_little_bin(64)

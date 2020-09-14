@@ -11,12 +11,7 @@ defmodule Control.Controller do
 
   @impl GenServer
   def init(config) do
-    vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Configuration.Vehicle, vehicle_type, Control])
-    Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
-        vehicle_type: vehicle_type,
-        vehicle_module: vehicle_module,
         pv_cmds: %{},
         control_loop_interval_ms: config.process_variable_cmd_loop_interval_ms,
         control_state: -1,

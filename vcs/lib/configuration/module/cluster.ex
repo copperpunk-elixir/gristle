@@ -1,6 +1,6 @@
 defmodule Configuration.Module.Cluster do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(_vehicle_type, _node_type) do
+  def get_config(_model_type, _node_type) do
     %{
       heartbeat: get_heartbeat_config(),
       network: get_network_config()

@@ -43,7 +43,7 @@ defmodule Time.Server do
   @impl GenServer
   def handle_info(:server_loop, state) do
     time = Time.Clock.utc_now(state.clock)
-    Logger.info("send gps time: #{inspect(time)}")
+    # Logger.info("send gps time: #{inspect(time)}")
     Comms.Operator.send_global_msg_to_group(__MODULE__, {:gps_time, time}, self())
     {:noreply, state}
   end

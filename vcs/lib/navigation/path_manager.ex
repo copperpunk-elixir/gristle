@@ -14,10 +14,8 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def init(config) do
-    vehicle_type = config.vehicle_type
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     {:ok, %{
-        vehicle_type: vehicle_type,
         vehicle_loiter_speed: config.vehicle_loiter_speed,
         vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
         vehicle_takeoff_speed: config.vehicle_takeoff_speed,

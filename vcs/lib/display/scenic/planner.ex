@@ -21,14 +21,11 @@ defmodule Display.Scenic.Planner do
       Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
       |> Display.Scenic.Gcs.Utils.draw_arrow(0,0, 0, 1, :vehicle, true, :clear)
 
-    model = Common.Utils.Configuration.get_model_type()
+    model_type = Common.Utils.Configuration.get_model_type()
     margin =
-      case Common.Utils.Configuration.get_vehicle_type() do
-        :Plane ->
-          case model do
-            :Cessna -> 734
-            :EC1500 -> 100
-          end
+      case model_type do
+        :Cessna -> 734
+        :EC1500 -> 100
         _other -> 734
       end
     state = %{

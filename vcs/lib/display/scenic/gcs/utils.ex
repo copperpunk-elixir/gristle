@@ -48,7 +48,7 @@ defmodule Display.Scenic.Gcs.Utils do
         translate: {offset_x + 1.5*col + h_spacing, offset_y + row/2},
         button_font_size: 24)
     end)
-    {graph, offset_x, offset_y + height}
+    {graph, offset_x, offset_y + height + config.spacer_y}
   end
 
   def add_rows_to_graph(graph, config) do
@@ -103,7 +103,7 @@ defmodule Display.Scenic.Gcs.Utils do
         translate: {offset_x, offset_y},
         stroke: {@rect_border, :white}
       )
-    {graph, offset_x, offset_y + height}
+    {graph, offset_x, offset_y + height + config.spacer_y}
   end
 
   @interior_angle 2.677945 #= :math.pi/2 + :math.atan(ratio)

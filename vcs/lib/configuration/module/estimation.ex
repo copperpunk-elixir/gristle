@@ -1,6 +1,6 @@
 defmodule Configuration.Module.Estimation do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(_vehicle_type, _node_type) do
+  def get_config(_model_type, _node_type) do
     %{
       estimator: %{
         imu_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),

@@ -5,6 +5,7 @@ defmodule Display.Scenic.Gcs.Plane do
   import Scenic.Primitives
   # @body_offset 80
   @font_size 24
+  @battery_font_size 16
   @degrees "°"
   # @radians "rads"
   @dps "°/s"
@@ -45,13 +46,13 @@ defmodule Display.Scenic.Gcs.Plane do
     spacer_y = 10
 
     graph = Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
-    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
-    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
-    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
     goals_offset_x = 60 + label_value_width
-    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
-    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
-    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
     batteries = [:cluster]
     {graph, _offset_x, _offset_y} =
@@ -59,7 +60,7 @@ defmodule Display.Scenic.Gcs.Plane do
         ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]
         battery_str = Atom.to_string(battery)
         labels = [battery_str <> " V", battery_str <> " I", battery_str <> "mAh"]
-        Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, labels: labels, ids: ids, font_size: @font_size})
+        Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, spacer_y: spacer_y, labels: labels, ids: ids, font_size: @battery_font_size})
       end)
 
     # subscribe to the simulated temperature sensor
