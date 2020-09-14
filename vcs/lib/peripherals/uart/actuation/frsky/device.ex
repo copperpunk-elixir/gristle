@@ -2,6 +2,7 @@ defmodule Peripherals.Uart.Actuation.Frsky.Device do
   require Bitwise
   require Logger
 
+  @enforce_keys [:device_description, :interface_ref, :baud, :write_timeout, :read_timeout]
   defstruct [device_description: "", interface_ref: nil, baud: nil, write_timeout: 0, read_timeout: 0]
 
   def new_device(config) do
