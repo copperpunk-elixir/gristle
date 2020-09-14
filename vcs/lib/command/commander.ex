@@ -4,7 +4,6 @@ defmodule Command.Commander do
 
   @rx_control_state_channel 8
   @transmit_channel 7
-  @select_retain_control 1.0
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -24,17 +23,21 @@ defmodule Command.Commander do
     model_type = config.model_type
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
-    {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {direct_cmds_classification, direct_cmds_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :direct_actuator_cmds)
+    {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :direct_actuator_cmds)
+    {actuation_selector_class, actuation_selector_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :actuation_selector)
+
 
     rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [model_type])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,
-        goals_classification: goals_classification,
-        goals_time_validity_ms: goals_time_validity_ms,
-        direct_cmds_classification: direct_cmds_classification,
-        direct_cmds_time_validity_ms: direct_cmds_time_validity_ms,
+        goals_class: goals_class,
+        goals_time_ms: goals_time_ms,
+        direct_cmds_class: direct_cmds_class,
+        direct_cmds_time_ms: direct_cmds_time_ms,
+        actuation_selector_class: actuation_selector_class,
+        actuation_selector_time_ms: actuation_selector_time_ms,
         control_state: -1,
         transmit_cmds: false,
         reference_cmds: %{},
@@ -117,13 +120,17 @@ defmodule Command.Commander do
         {channel, output_value} = get_channel_and_scaled_value(rx_output, channel_tuple)
         Map.put(acc, channel, output_value)
       end)
-      |> Map.put(:select, @select_retain_control)
 
       # Publish Goals
-      unless pilot_control_mode == @pilot_manual do
-        Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_classification, state.goals_time_validity_ms, indirect_cmds}, self())
+      if pilot_control_mode == @pilot_manual do
+        # If under manual control, tell all nodes to retain control
+        # If a node's Actuation process is dead, it will not receive this, and thus it will be
+        # under Guardian control anyway
+        Comms.Operator.send_global_msg_to_group(__MODULE__, {:actuation_selector_sorter, state.actuation_selector_class, state.actuation_selector_time_ms, Actuation.SwInterface.self_control_value()}, self())
+      else
+        Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_class, state.goals_time_ms, indirect_cmds}, self())
       end
-      Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_classification, state.direct_cmds_time_validity_ms, direct_cmds}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_class, state.direct_cmds_time_ms, direct_cmds}, self())
       {reference_cmds, control_state, true}
     else
       {%{}, state.control_state, false}

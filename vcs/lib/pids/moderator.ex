@@ -16,6 +16,8 @@ defmodule Pids.Moderator do
   def init(config) do
     {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
     {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    {actuation_selector_class, actuation_selector_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :actuation_selector)
+
     {:ok, %{
         pids: config.pids,
         attitude_scalar: config.attitude_scalar,
@@ -23,7 +25,9 @@ defmodule Pids.Moderator do
         act_msg_class: act_msg_class,
         act_msg_time_ms: act_msg_time_ms,
         pv_msg_class: pv_msg_class,
-        pv_msg_time_ms: pv_msg_time_ms
+        pv_msg_time_ms: pv_msg_time_ms,
+        actuation_selector_class: actuation_selector_class,
+        actuation_selector_time_ms: actuation_selector_time_ms
      }}
   end
 
@@ -87,6 +91,7 @@ defmodule Pids.Moderator do
         # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
         # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
+        send_cmds(Actuation.SwInterface.self_control_value(), state.actuation_selector_class, state.actuation_selector_time_ms, :actuation_selector)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map
         else
@@ -99,6 +104,7 @@ defmodule Pids.Moderator do
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt)
 
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
+        send_cmds(Actuation.SwInterface.self_control_value(), state.actuation_selector_class, state.actuation_selector_time_ms, :actuation_selector)
         # pv_value_map = put_in(pv_value_map,[:bodyrate, :thrust], 0)
         # actuator_output_map = calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.pv_output_pids)
         # # Logger.debug("actuator output map: #{inspect(actuator_output_map)}")
