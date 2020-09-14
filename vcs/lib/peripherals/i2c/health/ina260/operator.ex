@@ -23,7 +23,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
         i2c_ref: i2c_ref,
         read_voltage_interval_ms: config.read_voltage_interval_ms,
         read_current_interval_ms: config.read_current_interval_ms,
-        battery: Health.Hardware.Battery.new()
+        battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel)
      }
     }
   end

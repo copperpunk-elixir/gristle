@@ -37,21 +37,37 @@ defmodule Display.Scenic.Gcs.Plane do
     label_value_height = 50
     goals_width = 400
     goals_height = 50
+    battery_width = 400
+    battery_height = 50
     # build the graph
-    graph =
-      Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 4*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 4*label_value_height+40, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_label_value_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 7*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_goals_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
+    offset_x_origin = 10
+    offset_y_origin = 10
+    spacer_y = 10
+
+    graph = Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+    goals_offset_x = 60 + label_value_width
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
+
+    batteries = [:cluster]
+    {graph, _offset_x, _offset_y} =
+      Enum.reduce(batteries, {graph, goals_offset_x, offset_y}, fn (battery, {graph, off_x, off_y}) ->
+        ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]
+        battery_str = Atom.to_string(battery)
+        labels = [battery_str <> " V", battery_str <> " I", battery_str <> "mAh"]
+        Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, labels: labels, ids: ids, font_size: @font_size})
+      end)
 
     # subscribe to the simulated temperature sensor
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
     Comms.Operator.join_group(__MODULE__, :control_state, self())
+    Comms.Operator.join_group(__MODULE__, :tx_battery, self())
     {:ok, graph, push: graph}
   end
 
@@ -146,6 +162,20 @@ defmodule Display.Scenic.Gcs.Plane do
         Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :white}))
       end
     end)
+    {:noreply, graph, push: graph}
+  end
+
+  def handle_cast({:tx_battery, battery_id, voltage_V, current_A, energy_mAh}, graph) do
+    voltage = Common.Utils.eftb(voltage_V, 2)
+    current = Common.Utils.eftb(current_A, 2)
+    mAh = Common.Utils.eftb(energy_mAh, 0)
+    {battery_type, _battery_channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
+    Logger.warn("tx battery type: #{battery_type}")
+    graph =
+      graph
+      |> Scenic.Graph.modify({battery_type, :V}, &text(&1,voltage <> "V"))
+      |> Scenic.Graph.modify({battery_type, :I}, &text(&1,current <> "A"))
+      |> Scenic.Graph.modify({battery_type, :mAh}, &text(&1,mAh <> "mAh"))
     {:noreply, graph, push: graph}
   end
 end

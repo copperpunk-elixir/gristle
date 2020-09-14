@@ -149,15 +149,14 @@ defmodule Telemetry.Ublox do
     <<0xB5, 0x62>> <> :binary.list_to_bin(checksum_buffer) <> checksum
   end
 
-  @spec get_itow() :: integer()
-  def get_itow() do
-    get_itow(DateTime.utc_now)
-  end
+  # @spec get_itow() :: integer()
+  # def get_itow() do
+  #   get_itow(DateTime.utc_now)
+  # end
 
-  @spec get_itow(struct()) :: integer()
-  def get_itow(now) do
-    today = Date.utc_today()
-    first_day_str = Date.add(today, - Date.day_of_week(today)) |> Date.to_iso8601()
+  @spec get_itow(struct(), struct()) :: integer()
+  def get_itow(now, today) do
+    first_day_str = Date.add(today, - Date.day_of_week(today)+1) |> Date.to_iso8601()
     |> Kernel.<>("T00:00:00Z")
     {:ok, first_day, 0} = DateTime.from_iso8601(first_day_str)
 
@@ -189,6 +188,7 @@ defmodule Telemetry.Ublox do
       :get_pid_gain -> [-4, -4, -4, 4]
       :rpc -> [-4, -4]
       :mission -> [-4, -4, -4, -4, -4, -4]
+      :tx_battery -> [-4, -4, 4, 4, 4]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [-2] end)
       _other ->
         Logger.error("Non-existent msg_type")
@@ -205,6 +205,7 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 2} -> {0x45, 0x12}
       {:tx_goals, 3} -> {0x45, 0x13}
       :control_state -> {0x45, 0x14}
+      :tx_battery -> {0x45, 0x15}
       :set_pid_gain -> {0x46, 0x00}
       :request_pid_gain -> {0x46, 0x01}
       :get_pid_gain -> {0x46, 0x02}

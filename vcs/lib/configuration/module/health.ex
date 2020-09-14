@@ -8,7 +8,7 @@ defmodule Configuration.Module.Health do
       end
     %{
       power: %{
-        telemetry_loop_interval_ms: 1000,
+        status_loop_interval_ms: 1000,
         watchdogs: watchdogs,
         watchdog_interval_ms: 1000
       }
