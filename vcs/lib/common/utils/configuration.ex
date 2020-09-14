@@ -1,9 +1,14 @@
 defmodule Common.Utils.Configuration do
   require Logger
 
-  @spec get_vehicle_type() :: atom()
-  def get_vehicle_type() do
-    Common.Utils.File.get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
+  @spec get_vehicle_type(atom()) :: atom()
+  def get_vehicle_type(model_type) do
+    # Common.Utils.File.get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
+    case model_type do
+      :Cessna -> :Plane
+      :EC1500 -> :Plane
+      _other -> raise "Unknown model"
+    end
   end
 
   @spec get_node_type() :: atom()

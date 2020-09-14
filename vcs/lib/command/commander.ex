@@ -21,12 +21,13 @@ defmodule Command.Commander do
 
   @impl GenServer
   def init(config) do
-    vehicle_type = config.vehicle_type
+    model_type = config.model_type
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     {direct_cmds_classification, direct_cmds_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :direct_actuator_cmds)
 
-    rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [])
+    rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [model_type])
     {:ok, %{
         vehicle_type: vehicle_type,
         vehicle_module: vehicle_module,

@@ -6,10 +6,10 @@ defmodule Navigation.Path.Mission do
 
   @spec new_mission(binary(), list()) :: struct()
   def new_mission(name, waypoints) do
-    vehicle_type = Common.Utils.Configuration.get_vehicle_type()
+    model_type = Common.Utils.Configuration.get_model_type()
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
     |> Module.concat(Navigation)
-    model_type = Common.Utils.Configuration.get_model_type()
     vehicle_turn_rate =
       apply(navigation_config_module, :get_vehicle_limits,[model_type])
       |> Map.get(:vehicle_turn_rate)

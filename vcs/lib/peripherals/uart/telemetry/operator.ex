@@ -50,7 +50,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_cast({:store_data, data_map}, state) do
-    Logger.info("store: #{inspect(data_map)}")
+    # Logger.info("store: #{inspect(data_map)}")
     state = Enum.reduce(data_map, state, fn ({key, value}, acc) ->
       Map.put(acc, key, value)
     end)

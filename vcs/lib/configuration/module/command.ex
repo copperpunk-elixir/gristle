@@ -1,42 +1,33 @@
 defmodule Configuration.Module.Command do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(vehicle_type, _node_type) do
+  def get_config(model_type, _node_type) do
+    # vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     %{
-      commander: %{vehicle_type: vehicle_type},
+      commander: %{model_type: model_type},
     }
   end
 
-  @spec get_command_output_limits(atom(), list()) :: map()
-  def get_command_output_limits(vehicle_type, channels) do
-    vehicle_module =
-      case vehicle_type do
-        :Plane ->
-          model_type = Common.Utils.Configuration.get_model_type()
-          Module.concat(Configuration.Vehicle.Plane.Pids, model_type)
-        _other ->
-          Module.concat(Configuration.Vehicle, vehicle_type)
-          |> Module.concat(Pids)
-      end
+  @spec get_command_output_limits(atom(), atom(), list()) :: map()
+  def get_command_output_limits(model_type, vehicle_type, channels) do
+    model_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    |> Module.concat(Pids)
+    |> Module.concat(model_type)
 
     Enum.reduce(channels, %{}, fn (channel, acc) ->
       IO.puts("channel: #{channel}")
       constraints =
-        apply(vehicle_module, :get_constraints, [])
+        apply(model_module, :get_constraints, [])
         |> Map.get(channel)
       Map.put(acc, channel, %{min: constraints.output_min, max: constraints.output_max})
     end)
   end
 
-  @spec get_command_output_multipliers(atom(), list()) :: map()
-  def get_command_output_multipliers(vehicle_type, channels) do
-    vehicle_module =
-      case vehicle_type do
-        :Plane ->
-          model_type = Common.Utils.Configuration.get_model_type()
-          Module.concat(Configuration.Vehicle.Plane.Actuation, model_type)
-      end
+  @spec get_command_output_multipliers(atom(), atom(), list()) :: map()
+  def get_command_output_multipliers(model_type, vehicle_type, channels) do
+    vehicle_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    |> Module.concat(Actuation)
 
-    reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [])
+    reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])
     Enum.reduce(channels, %{}, fn (command_name, acc) ->
       channel =
         case command_name do

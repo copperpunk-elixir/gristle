@@ -13,15 +13,10 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def init(config) do
-    vehicle_type = config.vehicle_type
-    vehicle_module = Module.concat([Vehicle, vehicle_type])
     {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
 
-    Logger.debug("Vehicle module: #{inspect(vehicle_module)}")
     {:ok, %{
-        vehicle_type: vehicle_type,
-        vehicle_module: vehicle_module,
         default_pv_cmds_level: Map.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
         navigator_loop_timer: nil,
         navigator_loop_interval_ms: config.navigator_loop_interval_ms,

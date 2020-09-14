@@ -2,32 +2,21 @@ defmodule Configuration.Module.Actuation do
   require Logger
 
   @spec get_config(atom(), atom()) :: map()
-  def get_config(vehicle_type, node_type) do
-    # hw_config = %{
-    #   interface_driver_name: :feather,
-    #   driver_config: %{
-    #     baud: 115_200,
-    #     write_timeout: 1,
-    #     read_timeout: 1
-    #   }
-    # }
-
-    sw_config = get_actuation_sw_config(vehicle_type, node_type)
+  def get_config(model_type, node_type) do
+    sw_config = get_actuation_sw_config(model_type, node_type)
     %{
-      # hw_interface: hw_config,
       sw_interface: sw_config
     }
   end
 
   @spec get_actuation_sw_config(atom(), atom()) :: map()
-  def get_actuation_sw_config(vehicle_type, node_type) do
-    model_type = Common.Utils.Configuration.get_model_type()
-    model_module =
+  def get_actuation_sw_config(model_type, node_type) do
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
+    vehicle_module =
       Module.concat(Configuration.Vehicle, vehicle_type)
       |> Module.concat(Actuation)
-      |> Module.concat(model_type)
 
-    actuator_names = get_actuator_names(vehicle_type, model_type, node_type)
+    actuator_names = get_actuator_names(model_type, node_type)
     actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
     # {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
@@ -43,7 +32,7 @@ defmodule Configuration.Module.Actuation do
               })
     end)
 
-    actuators = apply_reversed_actuators(model_module, actuators)
+    actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
 
     output_modules =
       case node_type do
@@ -58,9 +47,9 @@ defmodule Configuration.Module.Actuation do
     }
   end
 
-  @spec apply_reversed_actuators(atom(), map()) :: map()
-  def apply_reversed_actuators(model_module, actuators) do
-    reversed_actuators = apply(model_module, :get_reversed_actuators, [])
+  @spec apply_reversed_actuators(atom(), atom(), map()) :: map()
+  def apply_reversed_actuators(model_type, vehicle_module, actuators) do
+    reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])
     Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
       if Map.has_key?(acc, actuator_name) do
         put_in(acc, [actuator_name, :reversed], true)
@@ -81,17 +70,6 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  # @spec get_channels_failsafes(list()) :: tuple()
-  # def get_channels_failsafes(actuator_names) do
-  #   {channels_rev, failsafes_rev} = Enum.reduce(actuator_names, {[],[]}, fn (actuator_name, acc) ->
-  #     {channels, failsafes} = acc
-  #     channel = Enum.at(channels,0,-1) + 1
-  #     failsafe = get_failsafe_for_actuator(actuator_name)
-  #     {[channel | channels], [failsafe | failsafes]}
-  #   end)
-  #   {Enum.reverse(channels_rev), Enum.reverse(failsafes_rev)}
-  # end
-
   @spec get_failsafe_for_actuator(atom()) :: float()
   def get_failsafe_for_actuator(actuator_name) do
     case actuator_name do
@@ -111,44 +89,42 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_all_actuator_channels_and_names(atom(), atom()) :: map()
-  def get_all_actuator_channels_and_names(vehicle_type, model_type) do
-    case vehicle_type do
+  @spec get_all_actuator_channels_and_names(atom()) :: map()
+  def get_all_actuator_channels_and_names(model_type) do
+    case model_type do
       # :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
       :Car -> %{ 0 => :steering, 1 => :throttle}
-      :Plane ->
-        case model_type do
-          :Cessna -> %{
-                     indirect: %{
-                       0 => :aileron,
-                       1 => :elevator,
-                       2 => :throttle,
-                       3 => :rudder},
-                     direct: %{
-                       4 => :flaps,
-                       5 => :select
-                     }
+      :Cessna -> %{
+                 indirect: %{
+                   0 => :aileron,
+                   1 => :elevator,
+                   2 => :throttle,
+                   3 => :rudder},
+                 direct: %{
+                   4 => :flaps,
+                   5 => :select
                  }
-          :EC1500 -> %{
-                     indirect: %{
-                       0 => :aileron,
-                       1 => :elevator,
-                       2 => :throttle,
-                       3 => :rudder},
-                     direct: %{
-                       4 => :flaps,
-                       5 => :select
-                     }
+             }
+      :EC1500 -> %{
+                 indirect: %{
+                   0 => :aileron,
+                   1 => :elevator,
+                   2 => :throttle,
+                   3 => :rudder},
+                 direct: %{
+                   4 => :flaps,
+                   5 => :select
                  }
-        end
+             }
     end
   end
 
-  @spec get_actuator_names(atom(), atom(), atom()) :: list()
-  def get_actuator_names(vehicle_type, model_type, node_type) do
+  @spec get_actuator_names(atom(), atom()) :: list()
+  def get_actuator_names(model_type, node_type) do
     case node_type do
-      :all -> get_all_actuator_channels_and_names(vehicle_type, model_type)
-      :sim -> get_all_actuator_channels_and_names(vehicle_type, model_type)
+      :all -> get_all_actuator_channels_and_names(model_type)
+      :sim -> get_all_actuator_channels_and_names(model_type)
+      :hil_server -> get_all_actuator_channels_and_names(model_type)
 
       :wing -> [:aileron, :throttle]
       :fuselage -> [:throtle, :elevator, :rudder]
@@ -165,9 +141,8 @@ defmodule Configuration.Module.Actuation do
   end
 
   @spec get_actuation_sorter_configs(atom()) :: list()
-  def get_actuation_sorter_configs(vehicle_type) do
-    model_type = Common.Utils.Configuration.get_model_type()
-    actuator_names = get_all_actuator_channels_and_names(vehicle_type, model_type)
+  def get_actuation_sorter_configs(model_type) do
+    actuator_names = get_all_actuator_channels_and_names(model_type)
     Logger.info("actuator names: #{inspect(actuator_names)}")
     # {_channels, indirect_failsafes} = get_channels_failsafes(actuator_names.indirect)
     # {_channels, direct_failsafes} = get_channels_failsafes(actuator_names.direct)

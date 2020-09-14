@@ -47,7 +47,7 @@ defmodule Actuation.SwInterface do
     indirect_actuator_output_map = MessageSorter.Sorter.get_value(:indirect_actuator_cmds)
     |> Common.Utils.default_to([])
     # Logger.debug("indirect: #{inspect(indirect_actuator_output_map)}")
-    Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
+    # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
     actuator_output_map = Map.merge(indirect_actuator_output_map, direct_actuator_output_map)
     # Loop over actuator_output_map. Only move those actuators with values
     # This way we can have different MessageSorters for different types of actuation (direct, indirect)

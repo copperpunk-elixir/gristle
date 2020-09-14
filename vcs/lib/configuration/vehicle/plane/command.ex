@@ -1,11 +1,11 @@
 defmodule Configuration.Vehicle.Plane.Command do
   require Logger
 
-  @spec get_rx_output_channel_map() :: list()
-  def get_rx_output_channel_map() do
+  @spec get_rx_output_channel_map(atom()) :: list()
+  def get_rx_output_channel_map(model_type) do
     commands = [:aileron, :elevator, :throttle, :rudder, :flaps, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
-    output_limits = Configuration.Module.Command.get_command_output_limits(:Plane, commands)
-    command_multipliers = Configuration.Module.Command.get_command_output_multipliers(:Plane, commands)
+    output_limits = Configuration.Module.Command.get_command_output_limits(model_type, :Plane, commands)
+    command_multipliers = Configuration.Module.Command.get_command_output_multipliers(model_type, :Plane, commands)
     # channel_number, channel, absolute/relative, min, max
     relative_channels = [:course_flight, :altitude]
     channel_assignments = %{
@@ -50,41 +50,6 @@ defmodule Configuration.Vehicle.Plane.Command do
         end)
       Map.put(acc, cs, ch_config)
     end)
-    # %{
-    #   -1 =>
-    #     channels =
-    #     [
-    #     get_channel_config(output_limits, command_multipliers, :rollrate, 0, :absolute, true),
-    #     get_channel_config(output_limits, command_multipliers, :pitchrate, 1, :absolute, true),
-    #     get_channel_config(output_limits, command_multipliers, :thrust, 2, :absolute, true),
-    #     get_channel_config(output_limits, command_multipliers, :yawrate, 3, :absolute, true)
-    #   ],
-    #   0 => [
-    #     get_channel_config(output_limits, command_multipliers, :rollrate, 0, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :pitchrate, 1, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :thrust, 2, :absolute, true),
-    #     get_channel_config(output_limits, command_multipliers, :yawrate, 3, :absolute)
-    #   ],
-    #   1 => [
-    #     get_channel_config(output_limits, command_multipliers, :rollrate, 0, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :pitchrate, 1, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :thrust, 2, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :yawrate, 3, :absolute)
-    #   ],
-    #   2 => [
-    #     get_channel_config(output_limits, command_multipliers, :roll, 0, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :pitch, 1, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :thrust, 2, :absolute),
-    #     get_channel_config(output_limits, command_multipliers, :yaw, 3, :absolute)
-
-    #   ],
-    #   3 => [
-    #     get_channel_config(output_limits, command_multipliers, :course_flight, 0, :relative),
-    #     get_channel_config(output_limits, command_multipliers, :altitude, 1, :relative),
-    #     get_channel_config(output_limits, command_multipliers, :speed, 2, :absolute)
-
-    #   ]
-    # }
   end
 
   @spec get_channel_config(map(), map(), atom(), integer(), atom(), boolean()) :: tuple()
