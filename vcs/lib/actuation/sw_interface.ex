@@ -28,49 +28,64 @@ defmodule Actuation.SwInterface do
   def handle_cast(:begin, state) do
      Comms.System.start_operator(__MODULE__)
      Comms.Operator.join_group(__MODULE__, :direct_actuator_cmds_sorter, self())
-     Comms.Operator.join_group(__MODULE__, :actuation_selector_sorter, self())
+     Comms.Operator.join_group(__MODULE__, :indirect_override_cmds_sorter, self())
+     # Comms.Operator.join_group(__MODULE__, :actuation_selector_sorter, self())
      Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
      {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:direct_actuator_cmds_sorter, classification, time_validity_ms, cmds}, state) do
-    # Logger.debug("rx direct: #{inspect(cmds)}")
-    MessageSorter.Sorter.add_message(:direct_actuator_cmds, classification, time_validity_ms, cmds)
+    # Logger.debug("rx direct: #{classification}/#{time_validity_ms}")
+    Enum.each(cmds, fn {name, value} ->
+      # Logger.debug("dacs #{name}: #{value}")
+      MessageSorter.Sorter.add_message({:direct_actuator_cmds, name}, classification, time_validity_ms, value)
+    end)
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_cast({:actuation_selector_sorter, classification, time_validity_ms, selector_value}, state) do
-    Logger.debug("actuation selector sorter: #{selector_value}")
-    MessageSorter.Sorter.add_message(:actuation_selector, classification, time_validity_ms, selector_value)
+  def handle_cast({:indirect_override_cmds_sorter, classification, time_validity_ms, cmds}, state) do
+    # Logger.debug("indirect override: #{inspect(cmds)}")
+    MessageSorter.Sorter.add_message(:indirect_override_actuator_cmds, classification, time_validity_ms, cmds)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:actuator_loop, state) do
     # Go through every channel and send an update to the ActuatorInterfaceOutput
-    direct_actuator_output_map = MessageSorter.Sorter.get_value(:direct_actuator_cmds)
-    |> Common.Utils.default_to([])
+    direct_actuators = state.actuators.direct
+    direct_actuator_output_map = Enum.reduce(direct_actuators, %{}, fn ({name, _actuator}, acc) ->
+      value = MessageSorter.Sorter.get_value({:direct_actuator_cmds, name})
+      # Logger.info("name/value: #{name}/#{value}")
+      if is_nil(value) do
+        acc
+      else
+        Map.put(acc, name, value)
+      end
+    end)
+
     indirect_actuator_output_map = MessageSorter.Sorter.get_value(:indirect_actuator_cmds)
-    |> Common.Utils.default_to([])
-    actuation_selector_value = MessageSorter.Sorter.get_value(:actuation_selector)
-    |> Common.Utils.default_to(guardian_control_value())
+    |> Common.Utils.default_to(%{})
+    indirect_override_actuator_output_map = MessageSorter.Sorter.get_value_if_current(:indirect_override_actuator_cmds)
+    |> Common.Utils.default_to(%{})
+    indirect_output_map_all = Map.merge(indirect_actuator_output_map, indirect_override_actuator_output_map)
+
     # Logger.debug("indirect: #{inspect(indirect_actuator_output_map)}")
+    # Logger.debug("indirect override: #{inspect(indirect_override_actuator_output_map)}")
     # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
-    actuator_output_map = Map.merge(indirect_actuator_output_map, direct_actuator_output_map)
-    |> Map.merge(%{select: actuation_selector_value})
+    actuator_output_map = Map.merge(indirect_output_map_all, direct_actuator_output_map)
+
     # Logger.debug("aom: #{inspect(actuator_output_map)}")
     # Loop over actuator_output_map. Only move those actuators with values
     # This way we can have different MessageSorters for different types of actuation (direct, indirect)
-    actuators = state.actuators
+    actuators = Map.merge(state.actuators.direct, state.actuators.indirect)
     actuators_and_outputs =
       Enum.reduce(actuator_output_map,%{}, fn ({actuator_name, output}, acc) ->
         actuator = Map.fetch!(actuators, actuator_name)
         # Logger.debug("#{actuator_name}: #{output}")
         Map.put(acc, actuator_name, {actuator,output})
     end)
-    # Logger.debug("actuators_and_outputs: #{inspect(actuators_and_outputs)}")
     Enum.each(state.output_modules, fn module ->
       apply(module, :update_actuators,[actuators_and_outputs])
     end)

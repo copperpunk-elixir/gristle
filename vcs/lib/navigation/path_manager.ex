@@ -15,6 +15,7 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def init(config) do
     {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {flaps_cmd_class, flaps_cmd_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
     {:ok, %{
         vehicle_loiter_speed: config.vehicle_loiter_speed,
         vehicle_agl_ground_threshold: config.vehicle_agl_ground_threshold,
@@ -22,6 +23,8 @@ defmodule Navigation.PathManager do
         # vehicle_max_ground_speed: config.vehicle_max_ground_speed,
         goals_classification: goals_classification,
         goals_time_validity_ms: goals_time_validity_ms,
+        flaps_cmd_class: flaps_cmd_class,
+        flaps_cmd_time_ms: flaps_cmd_time_ms,
         config_points: [],
         current_cp_index: nil,
         current_path_case: nil,
@@ -132,11 +135,13 @@ defmodule Navigation.PathManager do
       flaps_cmd =
         case path_case_type do
           :ground -> 0.5
-          :climbout -> 0.3
+          :climbout -> 0.5
           :flight -> 0.0
           :approach -> 1.0
           :landing -> 1.0
+          _other -> 0.0
         end
+      MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
     {:noreply, state}
   end

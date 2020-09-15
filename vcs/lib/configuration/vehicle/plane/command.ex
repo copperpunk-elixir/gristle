@@ -26,10 +26,11 @@ defmodule Configuration.Vehicle.Plane.Command do
       1 => [:rollrate, :pitchrate, :yawrate, :thrust],
       2 => [:roll, :pitch, :yaw, :thrust],
       3 => [:course_flight, :speed, :altitude],
-      100 => [:aileron, :elevator, :rudder, :throttle, :flaps],
-      101 => [:flaps]
+      100 => [:aileron, :elevator, :rudder, :throttle],
+      101 => [:flaps],
+      102 => []
     }
-    cs_values = [-1, 0, 1, 2, 3, 100, 101]
+    cs_values = [-1, 0, 1, 2, 3, 100, 101, 102]
     Enum.reduce(cs_values, %{}, fn (cs, acc) ->
       channels = Map.get(cs_channels, cs)
       ch_config =

@@ -128,6 +128,15 @@ defmodule MessageSorter.Sorter do
     # end
   end
 
+  def get_value_if_current(name, timeout \\ @default_call_timeout) do
+    {value, status} = Common.Utils.safe_call(via_tuple(name),{:get_value, true}, timeout, {nil, :no_sorter})
+    if (status == :current) do
+      value
+    else
+      nil
+    end
+  end
+
   def remove_messages_for_classification(name, classification) do
     Logger.debug("remove messages for #{name}/#{inspect(classification)} not implemented yet")
   end
