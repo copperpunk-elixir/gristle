@@ -17,23 +17,20 @@ defmodule Configuration.Module.Actuation do
       |> Module.concat(Actuation)
 
     actuator_names = get_actuator_names(model_type, node_type)
-    actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
-    |> Map.merge(actuator_names.selector)
+    # actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
     # {channels, failsafes} = get_channels_failsafes(actuator_names)
     {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
-    actuators = Enum.reduce(actuator_names, %{}, fn ({channel_number, actuator_name}, acc) ->
-      Map.put(acc, actuator_name, %{
-            channel_number: channel_number,
-            reversed: false,
-            min_pw_us: min_pw_us,
-            max_pw_us: max_pw_us,
-            cmd_limit_min: 0.0,
-            cmd_limit_max: 1.0,
-            failsafe_cmd: get_failsafe_for_actuator(actuator_name)
-              })
+    indirect_actuators = Enum.reduce(actuator_names.indirect, %{}, fn ({channel_number, actuator_name}, acc) ->
+      Map.put(acc, actuator_name, get_default_actuator_config(actuator_name, channel_number, min_pw_us, max_pw_us))
     end)
+    |> apply_reversed_actuators(model_type, vehicle_module)
 
-    actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
+    direct_actuators = Enum.reduce(actuator_names.direct, %{}, fn ({channel_number, actuator_name}, acc) ->
+      Map.put(acc, actuator_name, get_default_actuator_config(actuator_name, channel_number, min_pw_us, max_pw_us))
+    end)
+    |> apply_reversed_actuators(model_type, vehicle_module)
+
+    # actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
 
     output_modules =
       case node_type do
@@ -43,13 +40,29 @@ defmodule Configuration.Module.Actuation do
 
     %{
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
-      actuators: actuators,
+      actuators: %{
+        indirect: indirect_actuators,
+        direct: direct_actuators
+      },
       output_modules: output_modules
     }
   end
 
-  @spec apply_reversed_actuators(atom(), atom(), map()) :: map()
-  def apply_reversed_actuators(model_type, vehicle_module, actuators) do
+  @spec get_default_actuator_config(atom(), integer(), float(), float()) :: map()
+  def get_default_actuator_config(name, channel_number, min_pw_us, max_pw_us) do
+    %{
+      channel_number: channel_number,
+      reversed: false,
+      min_pw_us: min_pw_us,
+      max_pw_us: max_pw_us,
+      cmd_limit_min: 0.0,
+      cmd_limit_max: 1.0,
+      failsafe_cmd: get_failsafe_for_actuator(name)
+    }
+  end
+
+  @spec apply_reversed_actuators(map(), atom(), atom()) :: map()
+  def apply_reversed_actuators(actuators, model_type, vehicle_module) do
     reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])
     Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
       if Map.has_key?(acc, actuator_name) do
@@ -103,8 +116,6 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                 },
-                 selector: %{
                    5 => :select
                  }
              }
@@ -116,8 +127,6 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                 },
-                 selector: %{
                    5 => :select
                  }
 
@@ -157,31 +166,33 @@ defmodule Configuration.Module.Actuation do
       failsafe_value = get_failsafe_for_actuator(actuator_name)
       Map.put(acc, actuator_name, failsafe_value)
     end)
-    direct_failsafe_map = Enum.reduce(actuator_names.direct, %{}, fn({_ch_num, actuator_name}, acc) ->
-      failsafe_value = get_failsafe_for_actuator(actuator_name)
-      Map.put(acc, actuator_name, failsafe_value)
-    end)
 
-    # return config
-    [
-      %{
-        name: :indirect_actuator_cmds,
+    indirect_sorter = %{
+      name: :indirect_actuator_cmds,
+      default_message_behavior: :default_value,
+      default_value: indirect_failsafe_map,
+      value_type: :map
+    }
+
+    indirect_override_sorter = %{
+      name: :indirect_override_actuator_cmds,
+      default_message_behavior: :default_value,
+      default_value: indirect_failsafe_map,
+      value_type: :map
+    }
+
+    direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
+      failsafe_value = get_failsafe_for_actuator(actuator_name)
+      sorter = %{
+        name: {:direct_actuator_cmds, actuator_name},
         default_message_behavior: :default_value,
-        default_value: indirect_failsafe_map,
-        value_type: :map
-      },
-      %{
-        name: :direct_actuator_cmds,
-        default_message_behavior: :default_value,
-        default_value: direct_failsafe_map,
-        value_type: :map
-      },
-      %{
-        name: :actuation_selector,
-        default_message_behavior: :default_value,
-        default_value: Actuation.SwInterface.guardian_control_value(),
+        default_value: failsafe_value,
         value_type: :number
       }
-    ]
+      [sorter] ++ acc
+      # Map.put(acc, actuator_name, failsafe_value)
+    end)
+    # return config
+    [indirect_sorter, indirect_override_sorter] ++ direct_sorters
   end
 end

@@ -19,11 +19,15 @@ defmodule Configuration.Generic do
         Pids.Moderator => [0,1],
         # Navigation.Navigator => [0,2]
       },
-      :direct_actuator_cmds => %{
+      :indirect_override_cmds => %{
+        Command.Commander => [0,1],
+        # Navigation.PathManager => [0,2]
+      },
+      {:direct_actuator_cmds, :flaps} => %{
         Command.Commander => [0,1],
         Navigation.PathManager => [0,2]
       },
-      :actuation_selector => %{
+      {:direct_actuator_cmds, :select} => %{
         Command.Commander => [0,1],
         Pids.Moderator => [0,2]
       },
@@ -40,20 +44,23 @@ defmodule Configuration.Generic do
       }
     }
 
-    time_validity_all = %{
-      {:hb, :node} => 500,
-      :indirect_actuator_cmds => 200,
-      :direct_actuator_cmds => 200,
-      :actuation_selector => 200,
-      :pv_cmds => 300,
-      :goals => 300,
-      :control_state => 200
-    }
+    time_validity =
+    case sorter do
+      {:hb, :node} -> 500
+      :indirect_actuator_cmds -> 200
+      :indirect_override_cmds -> 200
+      {:direct_actuator_cmds, _} -> 200
+      :actuation_selector -> 200
+      :pv_cmds -> 300
+      :goals -> 300
+      :control_state -> 200
+      _other -> 0
+    end
 
     classification =
       Map.get(classification_all, sorter, %{})
       |> Map.get(sender, nil)
-    time_validity = Map.get(time_validity_all, sorter, 0)
+    # time_validity = Map.get(time_validity_all, sorter, 0)
     Logger.warn("class/time: #{inspect(classification)}/#{time_validity}")
     {classification, time_validity}
   end

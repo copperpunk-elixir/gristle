@@ -54,11 +54,11 @@ defmodule Navigation.Navigator do
     # Start with Goals 4, move through goals 1
     # If there a no current commands, then take the command from default_pv_cmds_level
     {pv_cmds, control_state} = Enum.reduce(3..-1, {%{}, nil}, fn (pv_cmd_level, acc) ->
-      {cmd_values, cmd_status} = MessageSorter.Sorter.get_value_with_status({:goals, pv_cmd_level})
-      if (cmd_status == :current) do
-        {cmd_values, pv_cmd_level}
-      else
+      cmd_values = MessageSorter.Sorter.get_value_if_current({:goals, pv_cmd_level})
+      if is_nil(cmd_values) do
         acc
+      else
+        {cmd_values, pv_cmd_level}
       end
     end)
     {pv_cmds, control_state} =
