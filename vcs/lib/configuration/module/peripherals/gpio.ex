@@ -2,8 +2,9 @@ defmodule Configuration.Module.Peripherals.Gpio do
   require Logger
 
   @spec get_config(atom(), atom()) :: map()
-  def get_config(_model_type, _node_type) do
-    peripherals = Common.Utils.Configuration.get_gpio_peripherals()
+  def get_config(_model_type, node_type) do
+    subdirectory = Atom.to_string(node_type)
+    peripherals = Common.Utils.Configuration.get_gpio_peripherals(subdirectory)
     Logger.info("gpio per: #{inspect(peripherals)}")
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =

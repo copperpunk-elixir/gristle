@@ -2,8 +2,10 @@ defmodule Configuration.Module.Peripherals.Uart do
   require Logger
   @spec get_config(atom(), atom()) :: map()
   def get_config(_model_type, node_type) do
-    peripherals = Common.Utils.Configuration.get_uart_peripherals()
+    subdirectory = Atom.to_string(node_type)
+    peripherals = Common.Utils.Configuration.get_uart_peripherals(subdirectory)
     Logger.info("peripherals: #{inspect(peripherals)}")
+    node_type = if Common.Utils.Configuration.is_hil?(), do: :hil, else: node_type
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =
         case module do
@@ -58,6 +60,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     device_description =
       case node_type do
         :sim -> "FT232R"
+        :hil -> "FT232R"
         _other -> "STM32"
       end
     %{
@@ -70,6 +73,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     {device_desc, baud} =
       case node_type do
         :sim -> {"USB Serial", 115_200}
+        :hil -> {"USB Serial", 115_200}
         _other -> {"RedBoard", 115_200}
       end
     %{

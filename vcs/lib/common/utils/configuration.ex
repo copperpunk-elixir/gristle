@@ -26,25 +26,31 @@ defmodule Common.Utils.Configuration do
     Common.Utils.File.get_filenames_with_extension(".module")
   end
 
-  @spec get_uart_peripherals() :: list()
-  def get_uart_peripherals() do
-    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(".uart", "peripherals")
-    Enum.map(peripherals_bin_list, fn x ->
-      String.to_atom(x)
-    end)
+  @spec is_hil?() :: boolean()
+  def is_hil?() do
+    hil = Common.Utils.File.get_filenames_with_extension(".hil")
+    !Enum.empty?(hil)
   end
 
-  @spec get_gpio_peripherals() :: list()
-  def get_gpio_peripherals() do
-    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(".gpio", "peripherals")
-    Enum.map(peripherals_bin_list, fn x ->
-      String.to_atom(x)
-    end)
+  @spec get_uart_peripherals(binary()) :: list()
+  def get_uart_peripherals(subdirectory \\ "") do
+    get_peripherals(".uart", subdirectory)
   end
 
-  @spec get_i2c_peripherals() :: list()
-  def get_i2c_peripherals() do
-    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(".i2c", "peripherals")
+  @spec get_gpio_peripherals(binary()) :: list()
+  def get_gpio_peripherals(subdirectory \\ "") do
+    get_peripherals(".gpio", subdirectory)
+  end
+
+  @spec get_i2c_peripherals(binary()) :: list()
+  def get_i2c_peripherals(subdirectory \\ "") do
+    get_peripherals(".i2c", subdirectory)
+  end
+
+  @spec get_peripherals(binary(), binary()) :: list()
+  def get_peripherals(extension, subdirectory) do
+    directory = "peripherals/" <> subdirectory
+    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(extension, directory)
     Enum.map(peripherals_bin_list, fn x ->
       String.to_atom(x)
     end)
