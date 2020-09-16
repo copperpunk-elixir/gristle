@@ -139,7 +139,7 @@ defmodule Configuration.Module.Actuation do
     case node_type do
       :all -> get_all_actuator_channels_and_names(model_type)
       :sim -> get_all_actuator_channels_and_names(model_type)
-      :hil_server -> get_all_actuator_channels_and_names(model_type)
+      :hil_client -> get_all_actuator_channels_and_names(model_type)
 
       :wing -> [:aileron, :throttle]
       :fuselage -> [:throtle, :elevator, :rudder]

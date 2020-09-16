@@ -1,9 +1,9 @@
 defmodule Configuration.Module.Cluster do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(_model_type, _node_type) do
+  def get_config(_model_type, node_type) do
     %{
       heartbeat: get_heartbeat_config(),
-      network: get_network_config()
+      network: get_network_config(node_type)
     }
   end
 
@@ -20,8 +20,7 @@ defmodule Configuration.Module.Cluster do
       :gcs -> {-1,-1}
       :all -> {0,0}
       :sim -> {0,0}
-      :hil_client -> {0,0}
-      :hil_server -> {0,0}
+      :server -> {0,0}
 
       :wing -> {0,1}
       :fuselage -> {1,2}
@@ -46,10 +45,18 @@ defmodule Configuration.Module.Cluster do
     }
   end
 
-  @spec get_network_config() :: map()
-  def get_network_config() do
+  @spec get_network_config(atom) :: map()
+  def get_network_config(node_type) do
+    connection_required =
+      case node_type do
+        :all -> false
+        :sim -> false
+        :server -> false
+        _other -> true
+      end
     {interface, vintage_net_config} = get_interface_and_config()
     %{
+      connection_required: connection_required,
       interface: interface,
       vintage_net_access: vintage_net_access?(),
       vintage_net_config: vintage_net_config,
