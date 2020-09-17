@@ -15,6 +15,9 @@ defmodule Configuration.Generic do
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
     Logger.warn("sender: #{inspect(sender)}")
     classification_all = %{
+      {:hb, :node} => %{
+        Cluster.Heartbeat => [0,1]
+      },
       :indirect_actuator_cmds => %{
         Pids.Moderator => [0,1],
         # Navigation.Navigator => [0,2]
