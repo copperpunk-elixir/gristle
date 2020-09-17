@@ -26,8 +26,11 @@ defmodule Configuration.Vehicle.Plane.Command do
       1 => [:rollrate, :pitchrate, :yawrate, :thrust],
       2 => [:roll, :pitch, :yaw, :thrust],
       3 => [:course_flight, :speed, :altitude],
+      # Manual only channels
       100 => [:aileron, :elevator, :rudder, :throttle],
+      # Manual and Semi-Auto channels
       101 => [:flaps],
+      # Auto only channels
       102 => []
     }
     cs_values = [-1, 0, 1, 2, 3, 100, 101, 102]

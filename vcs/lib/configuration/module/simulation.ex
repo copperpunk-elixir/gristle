@@ -26,6 +26,7 @@ defmodule Configuration.Module.Simulation do
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
     %{
       vehicle_type: vehicle_type,
+      dest_ip: {127,0,0,1},
       source_port: 49003,
       dest_port: 49000,
       pwm_channels: pwm_channels,

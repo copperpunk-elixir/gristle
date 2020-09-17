@@ -10,7 +10,7 @@ defmodule Command.Commander do
   @pilot_auto 2
   @cs_direct_manual 100
   @cs_direct_semi_auto 101
-  @cs_direct_none 102
+  @cs_direct_auto 102
 
   def start_link(config) do
     Logger.debug("Start Command.Commander")
@@ -92,8 +92,8 @@ defmodule Command.Commander do
     # The direct_cmds control_state will determine which actuators are controlled directly from here
     # Any actuator not under direct control will have its command sent by either the Navigator (primary)
     # or the Pids.Moderator (secondary)
-    indirect_override_cs = if (pilot_control_mode == @pilot_manual), do: @cs_direct_manual, else: @cs_direct_none
-    direct_cmds_cs = if (pilot_control_mode == @pilot_auto), do: @cs_direct_none, else: @cs_direct_semi_auto
+    indirect_override_cs = if (pilot_control_mode == @pilot_manual), do: @cs_direct_manual, else: @cs_direct_auto
+    direct_cmds_cs = if (pilot_control_mode == @pilot_auto), do: @cs_direct_auto, else: @cs_direct_semi_auto
     # Logger.warn("ind cs/ dir cs: #{indirect_override_cs}/#{direct_cmds_cs}")
         # Logger.debug("cs_float: #{control_state_float}")
     if (pilot_control_mode != @pilot_auto) do
