@@ -92,6 +92,7 @@ defmodule Configuration.Module.Cluster do
         interface =
         cond do
           String.contains?(computer_name, "system76") -> "eno1"
+          String.contains?(computer_name, "macmini") -> "enp1s0f0"
           true -> "eth0"
         end
         {interface, get_wired_config()}
