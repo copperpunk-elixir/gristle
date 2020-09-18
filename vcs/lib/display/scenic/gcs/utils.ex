@@ -31,7 +31,7 @@ defmodule Display.Scenic.Gcs.Utils do
         )
       end,
         translate: {offset_x + h_spacing, offset_y},
-        button_font_size: 24)
+        button_font_size: font_size)
     end)
     graph = Enum.reduce(Enum.with_index(ids),graph , fn ({id, index}, acc) ->
       group(acc, fn g ->
@@ -46,7 +46,7 @@ defmodule Display.Scenic.Gcs.Utils do
         )
       end,
         translate: {offset_x + 1.5*col + h_spacing, offset_y + row/2},
-        button_font_size: 24)
+        button_font_size: font_size)
     end)
     {graph, offset_x, offset_y + height + config.spacer_y}
   end
@@ -78,7 +78,7 @@ defmodule Display.Scenic.Gcs.Utils do
         )
       end,
         translate: {offset_x + 0.5*col + h_spacing, offset_y + row/2},
-        button_font_size: 24)
+        button_font_size: font_size)
     end)
     graph = Enum.reduce(Enum.with_index(labels),graph , fn ({label, index}, acc) ->
       group(acc, fn g ->
@@ -92,7 +92,7 @@ defmodule Display.Scenic.Gcs.Utils do
         )
       end,
         translate: {offset_x + h_spacing, offset_y},
-        button_font_size: 24)
+        button_font_size: font_size)
     end)
 
     graph = 

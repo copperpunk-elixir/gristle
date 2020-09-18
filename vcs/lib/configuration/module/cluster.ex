@@ -22,9 +22,8 @@ defmodule Configuration.Module.Cluster do
       :sim -> {0,0}
       :server -> {0,0}
 
-      :wing -> {0,1}
-      :fuselage -> {1,2}
-      :tail -> {2,0}
+      :left_side -> {0,1}
+      :right_side -> {1,0}
 
       :steering -> {0,1}
       :throttle -> {1,0}
@@ -125,6 +124,11 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_wired_config() :: map()
   def get_wired_config() do
-    %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}
+    %{
+      type: VintageNetEthernet,
+      ipv4: %{
+        method: :dhcp
+      }
+    }
   end
 end

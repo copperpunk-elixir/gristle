@@ -191,7 +191,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
           0x15 ->
             msg_type = :tx_battery
             [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            Logger.warn("battery #{battery_id} msg rx'd")
+            # Logger.warn("battery #{battery_id} msg rx'd")
             send_global({msg_type, battery_id, voltage, current, energy_discharged})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end

@@ -141,9 +141,8 @@ defmodule Configuration.Module.Actuation do
       :sim -> get_all_actuator_channels_and_names(model_type)
       :hil_client -> get_all_actuator_channels_and_names(model_type)
 
-      :wing -> [:aileron, :throttle]
-      :fuselage -> [:throtle, :elevator, :rudder]
-      :tail -> [:elevator, :rudder, :aileron]
+      :left_side -> get_all_actuator_channels_and_names(model_type)
+      :right_side -> get_all_actuator_channels_and_names(model_type)
 
       :steering -> [:steering, :throttle]
       :throttle -> [:throttle, :steering]
