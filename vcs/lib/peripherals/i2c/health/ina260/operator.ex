@@ -49,6 +49,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def handle_info(:read_voltage, state) do
     voltage = read_voltage(state.i2c_ref)
     battery = Health.Hardware.Battery.update_voltage(state.battery, voltage)
+    send_battery_status(battery)
     {:noreply, %{state | battery: battery}}
   end
 
@@ -63,6 +64,11 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def handle_call({:get_battery_value, key}, _from, state) do
     value = Health.Hardware.Battery.get_value(state.battery, key)
     {:reply, value, state}
+  end
+
+  @spec send_battery_status(struct()) :: atom()
+  def send_battery_status(battery) do
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:battery_status, battery}, self())
   end
 
   @spec get_voltage() :: float()
@@ -102,7 +108,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def read_current(i2c_ref) do
     {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
     current = ((msb<<<8) + lsb)*0.00125
-    Logger.info("current: #{current}")
+    # Logger.info("current: #{current}")
     current
   end
 

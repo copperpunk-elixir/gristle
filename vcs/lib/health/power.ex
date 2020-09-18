@@ -38,7 +38,9 @@ defmodule Health.Power do
 
   @impl GenServer
   def handle_cast({:battery_status, battery}, state) do
+    # Logger.debug("rx bat: #{inspect(battery)}")
     battery_id = Health.Hardware.Battery.get_battery_id(battery)
+    # Logger.info("battery status id: #{battery_id}")
     batteries = Map.put(state.batteries, battery_id, battery)
     {:noreply, %{state | batteries: batteries}}
   end

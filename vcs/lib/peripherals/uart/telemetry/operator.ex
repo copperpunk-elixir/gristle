@@ -113,11 +113,11 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     # Power
     batteries = Map.get(state, :batteries, %{})
     Enum.each(batteries, fn {battery_id, battery} ->
-      Logger.debug("telem batt id: #{battery_id}")
+      # Logger.debug("telem batt id: #{battery_id}")
       battery_vie = Health.Hardware.Battery.get_vie(battery)
       # battery_id = Health.Hardware.Battery.get_battery_id(battery)
       values = [iTOW, battery_id] ++ battery_vie
-      Logger.info("values: #{inspect(values)}")
+      # Logger.info("values: #{inspect(values)}")
       construct_and_send_message(:tx_battery, values, state.uart_ref)
     end)
 
