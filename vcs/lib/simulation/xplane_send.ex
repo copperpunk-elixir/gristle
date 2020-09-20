@@ -118,6 +118,7 @@ defmodule Simulation.XplaneSend do
     |> Kernel.<>(Common.Utils.Math.uint_from_fp(Map.get(commands, :rudder,-999),32))
     |> Kernel.<>(@zeros_5)
     # Logger.debug("buffer: #{buffer}")
+    # Logger.debug("ail/elev/rud: #{Map.get(commands, :aileron)}/#{Map.get(commands, :elevator)}/#{Map.get(commands, :rudder)}")
     :gen_udp.send(socket, dest_ip, port, buffer)
   end
 
@@ -128,6 +129,7 @@ defmodule Simulation.XplaneSend do
     |> Kernel.<>(@zeros_7)
     # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>)
     # Logger.debug("buffer: #{buffer}")
+    # Logger.debug("thr: #{Map.get(commands, :throttle)}")
     :gen_udp.send(socket, dest_ip, port, buffer)
   end
 

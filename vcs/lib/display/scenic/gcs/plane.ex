@@ -54,7 +54,7 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
-    batteries = [:motor]
+    batteries = [:cluster]
     {graph, _offset_x, _offset_y} =
       Enum.reduce(batteries, {graph, goals_offset_x, offset_y}, fn (battery, {graph, off_x, off_y}) ->
         ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]

@@ -1,19 +1,36 @@
 defmodule Common.Utils.File do
   require Logger
 
+  @mount_count_max 3
+
   @spec get_mount_path() :: binary()
   def get_mount_path() do
     "/mnt"
   end
 
-  @spec mount_usb_drive() :: binary()
+  @spec mount_usb_drive() :: atom()
   def mount_usb_drive() do
     path = get_mount_path()
-    Logger.debug("Mount USB drive to #{path}")
-    System.cmd("mount", ["/dev/sda1", path])
+    mount_usb_drive(path, 1, @mount_count_max)
   end
 
-  @spec unmount_usb_drive() :: binary()
+  @spec mount_usb_drive(binary(), integer(), integer()) :: tuple()
+  def mount_usb_drive(path, count, count_max) do
+    Logger.debug("Mount USB drive to #{path}")
+    {_resp, error_code} = System.cmd("mount", ["/dev/sda1", path])
+    if (error_code == 0) do
+      :ok
+    else
+      Logger.error("USB Drive could not be mounted to #{path}")
+      if (count < count_max) do
+        Logger.info("Retry #{count+1}/#{count_max}")
+        Process.sleep(1000)
+        mount_usb_drive(path, count+1, count_max)
+      end
+    end
+  end
+
+  @spec unmount_usb_drive() :: tuple()
   def unmount_usb_drive() do
     path = get_mount_path()
     Logger.debug("Unmount USB drive from #{path}")

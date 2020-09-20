@@ -53,7 +53,7 @@ defmodule Configuration.Generic do
       :indirect_actuator_cmds -> 200
       :indirect_override_cmds -> 200
       {:direct_actuator_cmds, _} -> 200
-      :actuation_selector -> 200
+      # :actuation_selector -> 200
       :pv_cmds -> 300
       :goals -> 300
       :control_state -> 200

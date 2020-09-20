@@ -18,6 +18,7 @@ defmodule Health.Hardware.Battery do
   def update_current(battery, current, dt) do
     dE = current*dt
     energy_discharged = if is_nil(battery.energy_discharged_As), do: dE, else: battery.energy_discharged_As + dE
+    # Logger.debug("I/dt/dE/E: #{Common.Utils.eftb(current,2)}/#{Common.Utils.eftb(dt,3)}/#{Common.Utils.eftb(dE,3)}/#{Common.Utils.eftb(energy_discharged, 0)}")
     %{battery | current_A: current, energy_discharged_As: energy_discharged}
   end
 

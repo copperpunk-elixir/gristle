@@ -140,11 +140,11 @@ defmodule Command.Commander do
       else
         Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_class, state.goals_time_ms, indirect_cmds}, self())
       end
-      # Direct Cmds
+      # Indirect Override Cmds
       unless Enum.empty?(indirect_override_cmds) do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:indirect_override_cmds_sorter, state.indirect_override_cmds_class, state.indirect_override_cmds_time_ms, indirect_override_cmds}, self())
       end
-      # Indirect Override Cmds
+      # Direct Cmds
       unless Enum.empty?(direct_cmds) do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_class, state.direct_cmds_time_ms, direct_cmds}, self())
       end

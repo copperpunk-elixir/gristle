@@ -20,10 +20,10 @@ defmodule Peripherals.Uart.Utils do
     device_string = String.downcase(device_string)
     Logger.debug("devicestring: #{device_string}")
     uart_ports = Circuits.UART.enumerate()
-    Logger.debug("ports: #{inspect(uart_ports)}")
+    # Logger.debug("ports: #{inspect(uart_ports)}")
     matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
       device_description = Map.get(port, :description,"")
-      Logger.debug("description: #{String.downcase(device_description)}")
+      # Logger.debug("description: #{String.downcase(device_description)}")
       if String.contains?(String.downcase(device_description), device_string) do
         acc ++ [port_name]
       else

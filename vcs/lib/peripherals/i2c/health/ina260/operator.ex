@@ -56,7 +56,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @impl GenServer
   def handle_info(:read_current, state) do
     current = read_current(state.i2c_ref)
-    battery = Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms)
+    battery = Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms*0.001)
     {:noreply, %{state | battery: battery}}
   end
 

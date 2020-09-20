@@ -10,12 +10,10 @@ defmodule Common.Application do
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()
     MessageSorter.System.start_link(model_type)
-    # Cluster.System.start_link(Configuration.Module.get_config(Cluster, nil, nil))
     Process.sleep(200)
-    # Logging.System.start_link(Configuration.Module.get_config(Logging, nil, nil))
     Configuration.Module.start_modules([Cluster, Logging, Time], model_type, node_type)
     Process.sleep(200)
-    # start_remaining_processes()
+    {:ok, self()}
   end
 
   @spec common_startup() :: atom()
@@ -34,53 +32,7 @@ defmodule Common.Application do
     Logger.warn("Start remaining processes for #{model_type}/#{node_type}")
     modules = get_modules_for_node(node_type)
     Configuration.Module.start_modules(modules, model_type, node_type)
-    #   case node_type do
-    #   :gcs -> start_gcs(model_type)
-    #   :sim -> start_simulation(model_type)
-    #   :hil_server -> start_hil_server(model_type)
-    #   :hil_client -> start_hil_client(model_type) 
-    #   _other -> start_vehicle(model_type, node_type)
-    # end
   end
-
-  # @spec start_vehicle(atom(), atom()) :: atom()
-  # def start_vehicle(model_type, node_type) do
-  #   Logger.info("model/node: #{model_type}/#{node_type}")
-  #   modules = [Actuation, Pids, Control, Estimation, Navigation, Command, Peripherals.Uart, Peripherals.Gpio]
-  #   Configuration.Module.start_modules(modules, model_type, node_type)
-  # end
-
-  # @spec start_gcs(binary()) :: atom()
-  # def start_gcs(model_type) do
-  #   node_type = :gcs
-  #   modules = [Display.Scenic, Navigation, Peripherals.Uart]
-  #   Configuration.Module.start_modules(modules, model_type, node_type)
-  # end
-
-  # @spec start_simulation(atom()) ::atom()
-  # def start_simulation(model_type) do
-  #   node_type = :sim
-  #   Logger.info("model/node: #{model_type}/#{node_type}")
-  #   modules = [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
-  #   Configuration.Module.start_modules(modules, model_type, node_type)
-  # end
-
-  # @spec start_hil_server(atom()) ::atom()
-  # def start_hil_server(model_type) do
-  #   node_type = :sim
-  #   Logger.info("model/node: #{model_type}/#{node_type}")
-  #   modules = [Actuation, Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
-  #   Configuration.Module.start_modules(modules, model_type, node_type)
-  # end
-
-
-  # @spec start_hil_client(atom()) ::atom()
-  # def start_hil_client(model_type) do
-  #   node_type = :sim
-  #   Logger.info("model/node: #{model_type}/#{node_type}")
-  #   modules = [Actuation, Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Peripherals.Gpio]
-  #   Configuration.Module.start_modules(modules, model_type, node_type)
-  # end
 
   @spec get_modules_for_node(atom()) :: list()
   def get_modules_for_node(node_type) do
@@ -93,4 +45,15 @@ defmodule Common.Application do
     end
   end
 
+
+  @spec display_greeting(atom(), atom()) :: atom()
+  def display_greeting(model_type, node_type) do
+    Logger.info("------------------------------------")
+    Enum.each(1..10, fn _x ->
+      Logger.info("") end)
+    Logger.warn("Hello! You are starting a #{node_type} node on a #{model_type} model!")
+    Enum.each(1..10, fn _x ->
+      Logger.info("") end)
+    Logger.info("------------------------------------")
+  end
 end
