@@ -30,4 +30,15 @@ defmodule Configuration.Module.Peripherals.I2c do
       read_current_interval_ms: 200
     }
   end
+
+  @spec get_ads1015_config(atom(), integer()) :: map()
+  def get_ads1015_config(battery_type, channel) do
+    %{
+      battery_type: String.to_atom(battery_type),
+      battery_channel: channel,
+      read_voltage_interval_ms: 1000,
+      read_current_interval_ms: 200
+    }
+  end
+
 end
