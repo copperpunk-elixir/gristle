@@ -24,7 +24,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   @channel_current 1
 
   def start_link(config) do
-    Logger.debug("Start INA260 GenServer")
+    Logger.debug("Start Ads1015 GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -35,8 +35,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     {:ok, %{
         i2c_ref: i2c_ref,
-        read_voltage_interval_ms: config.read_voltage_interval_ms,
-        read_current_interval_ms: config.read_current_interval_ms,
+        read_battery_interval_ms: config.read_battery_interval_ms,
         battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel)
      }
     }
@@ -51,28 +50,20 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Logger.debug("INA260 begin with process: #{inspect(self())}")
-    Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_voltage)
-    Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
+    Logger.debug("Ads1015 begin with process: #{inspect(self())}")
+    Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_battery)
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info(:read_voltage, state) do
+  def handle_info(:read_battery, state) do
     voltage = read_voltage(state.i2c_ref)
     # Process.sleep(10)
     current = read_current(state.i2c_ref)
 
     battery = Health.Hardware.Battery.update_voltage(state.battery, voltage)
-    battery = Health.Hardware.Battery.update_current(battery, current, state.read_current_interval_ms*0.001)
+    |> Health.Hardware.Battery.update_current(current, state.read_battery_interval_ms*0.001)
     send_battery_status(battery)
-    {:noreply, %{state | battery: battery}}
-  end
-
-  @impl GenServer
-  def handle_info(:read_current, state) do
-    current = read_current(state.i2c_ref)
-    battery = Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms*0.001)
     {:noreply, %{state | battery: battery}}
   end
 
