@@ -100,7 +100,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def read_voltage(i2c_ref) do
     {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_voltage>>, 2)
     voltage = ((msb<<<8) + lsb)*0.00125
-    Logger.info("voltage: #{voltage}")
+    Logger.info("Ina260 voltage: #{voltage}")
     voltage
   end
 
@@ -108,7 +108,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   def read_current(i2c_ref) do
     {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
     current = ((msb<<<8) + lsb)*0.00125
-    # Logger.info("current: #{current}")
+    Logger.info("Ina260 current: #{current}")
     current
   end
 

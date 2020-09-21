@@ -51,12 +51,13 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Logger.debug("Ads1015 begin with process: #{inspect(self())}")
-    Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_battery)
+    Common.Utils.start_loop(self(), state.read_battery_interval_ms, :read_battery)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:read_battery, state) do
+    Logger.debug("read battery #{state.battery.type}/#{state.battery.channel}")
     voltage = read_voltage(state.i2c_ref)
     # Process.sleep(10)
     current = read_current(state.i2c_ref)
@@ -98,7 +99,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_voltage)
     case result do
       {:ok, output} ->
-        Logger.info("voltage: #{output*@output2volts}")
+        Logger.info("Ads1015 voltage: #{output*@output2volts}")
         output*@output2volts
       _other ->
         Logger.error("Voltage read error")
@@ -111,7 +112,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_current)
     case result do
       {:ok, current} ->
-        Logger.info("current: #{current*@output2amps}")
+        Logger.info("Ads1015 current: #{current*@output2amps}")
         current*@output2amps
       _other ->
         Logger.error("Current read error")
