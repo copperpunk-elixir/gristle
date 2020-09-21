@@ -57,11 +57,13 @@ defmodule Peripherals.Gpio.Logging.Operator do
       dt = round((timestamp - falling_time)*(1.0e-6))
         Logger.debug("dt: #{dt}")
       if (dt > state.time_threshold_cycle_mount_ms) do
-        Logger.warn("Cycle USB mount")
+        Logger.info("Save log")
+        Logging.Logger.save_log("GPIO_intentional")
+        Logger.info("Cycle USB mount")
         Common.Utils.File.cycle_mount()
       end
       if (dt > state.time_threshold_power_off_ms) do
-        Logger.warn("Power off!")
+        Logger.info("Power off!")
         Common.Utils.power_off()
       end
     end
