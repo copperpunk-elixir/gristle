@@ -93,7 +93,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     shunt_cur_conv = 4 # 1.1ms (default)
     op_mode = 7 # Continuous (default)
     data = <<0::1,6::3,avg_mode::3,bus_volt_conv::3,shunt_cur_conv::3,op_mode::3>>
-    Circuits.I2c.write(i2c_ref, @device_address, <<@reg_config>> <> data)
+    Circuits.I2C.write(i2c_ref, @device_address, <<@reg_config>> <> data)
   end
 
   @spec read_voltage(any()) :: float()

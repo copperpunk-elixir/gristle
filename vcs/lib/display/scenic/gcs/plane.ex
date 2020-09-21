@@ -39,7 +39,7 @@ defmodule Display.Scenic.Gcs.Plane do
     goals_width = 400
     goals_height = 50
     battery_width = 400
-    battery_height = 50
+    battery_height = 40
     # build the graph
     offset_x_origin = 10
     offset_y_origin = 10
@@ -54,12 +54,12 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
-    batteries = [:cluster]
+    batteries = [:cluster, :motor]
     {graph, _offset_x, _offset_y} =
       Enum.reduce(batteries, {graph, goals_offset_x, offset_y}, fn (battery, {graph, off_x, off_y}) ->
         ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]
         battery_str = Atom.to_string(battery)
-        labels = [battery_str <> " V", battery_str <> " I", battery_str <> "mAh"]
+        labels = [battery_str <> " V", battery_str <> " I", battery_str <> " mAh"]
         Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, spacer_y: spacer_y, labels: labels, ids: ids, font_size: @battery_font_size})
       end)
 
