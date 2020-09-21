@@ -41,6 +41,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     set_mode(state.i2c_ref)
     Process.sleep(100)
     Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_voltage)
+    Process.sleep(50)
     Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
     {:noreply, state}
   end
@@ -48,7 +49,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @impl GenServer
   def handle_info(:read_voltage, state) do
     voltage = read_voltage(state.i2c_ref)
-    battery = Health.Hardware.Battery.update_voltage(state.battery, voltage)
+    battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
     send_battery_status(battery)
     {:noreply, %{state | battery: battery}}
   end
@@ -56,7 +57,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @impl GenServer
   def handle_info(:read_current, state) do
     current = read_current(state.i2c_ref)
-    battery = Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms*0.001)
+    battery = if is_nil(current), do: state.battery, else: Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms*0.001)
     {:noreply, %{state | battery: battery}}
   end
 
@@ -98,18 +99,44 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
 
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
-    {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_voltage>>, 2)
-    voltage = ((msb<<<8) + lsb)*0.00125
-    Logger.info("Ina260 voltage: #{voltage}")
-    voltage
+    result = read_channel(i2c_ref, @reg_voltage)
+    case result do
+      {:ok, voltage} ->
+        Logger.info("Ina260 voltage: #{voltage}")
+        voltage
+      other ->
+        Logger.error("Ina260 Voltage read error: #{inspect(other)}")
+        nil
+    end
   end
 
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
-    {:ok, <<msb, lsb>>} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@reg_current>>, 2)
-    current = ((msb<<<8) + lsb)*0.00125
-    Logger.info("Ina260 current: #{current}")
-    current
+    result = read_channel(i2c_ref, @reg_current)
+    case result do
+      {:ok, current} ->
+        # Logger.info("Ina260 current: #{current}")
+        current
+      other ->
+        Logger.error("Ina260 Current read error: #{inspect(other)}")
+        nil
+    end
+  end
+
+  @spec read_channel(any(), integer()) :: tuple()
+  def read_channel(i2c_ref, channel) do
+    {msg, result} = Circuits.I2C.write_read(i2c_ref, @device_address, <<channel>>, 2)
+    if msg == :ok do
+      if result == "" do
+        {:error, :bad_ack}
+      else
+        <<msb, lsb>> = result
+        output = ((msb<<<8) + lsb)*0.00125
+        {:ok, output}
+      end
+    else
+      {:error, :bus_not_available}
+    end
   end
 
 end

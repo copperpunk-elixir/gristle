@@ -57,13 +57,13 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
 
   @impl GenServer
   def handle_info(:read_battery, state) do
-    Logger.debug("read battery #{state.battery.type}/#{state.battery.channel}")
+    # Logger.debug("read battery #{state.battery.type}/#{state.battery.channel}")
     voltage = read_voltage(state.i2c_ref)
     # Process.sleep(10)
     current = read_current(state.i2c_ref)
 
-    battery = Health.Hardware.Battery.update_voltage(state.battery, voltage)
-    |> Health.Hardware.Battery.update_current(current, state.read_battery_interval_ms*0.001)
+    battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
+    battery = if is_nil(current), do: battery, else: Health.Hardware.Battery.update_current(battery, current, state.read_battery_interval_ms*0.001)
     send_battery_status(battery)
     {:noreply, %{state | battery: battery}}
   end
@@ -99,7 +99,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_voltage)
     case result do
       {:ok, output} ->
-        Logger.info("Ads1015 voltage: #{output*@output2volts}")
+        # Logger.info("Ads1015 voltage: #{output*@output2volts}")
         output*@output2volts
       _other ->
         Logger.error("Voltage read error")
@@ -112,7 +112,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_current)
     case result do
       {:ok, current} ->
-        Logger.info("Ads1015 current: #{current*@output2amps}")
+        # Logger.info("Ads1015 current: #{current*@output2amps}")
         current*@output2amps
       _other ->
         Logger.error("Current read error")
@@ -125,11 +125,9 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     config = @config_os_single ||| @config_mode_cont ||| @config_rate_128_hz
     config = config ||| @config_pga_1
     config = config ||| (@config_mux_single_0 + (channel <<< 12))
-    IO.puts("config: #{config}")
     # require IEx; IEx.pry
     data = <<@pointer_config, config >>> 8, config &&& 0xFF>>
     # IO.puts("write data: #{data}")
-    # Peripherals.I2c.Utils.write_packet(bus_ref, address, data)
     Circuits.I2C.write(i2c_ref, @device_address, data)
     Process.sleep(20)
     {msg, result} = Circuits.I2C.write_read(i2c_ref, @device_address, <<@pointer_convert>>, 2)
@@ -139,10 +137,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
       {:error, :bad_ack}
       else
         <<msb, lsb>> = result
-        # msb = Enum.at(value, 0) <<< 8
-        # lsb = Enum.at(value, 1)
         output = (((msb <<< 8) + lsb) >>> 4)*@counts2output
-        # IO.puts("msb/lsb/total: #{msb}/#{lsb}/#{total}")
         {:ok, output}
       end
     else

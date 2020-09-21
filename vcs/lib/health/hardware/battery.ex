@@ -30,7 +30,8 @@ defmodule Health.Hardware.Battery do
       case key do
         :voltage -> battery.voltage_V
         :current -> battery.current_A
-        :energy_discharged -> battery.energy_discharged_As/3.6
+        :energy_discharged ->
+          if is_nil(battery.energy_discharged_As), do: nil, else: battery.energy_discharged_As/3.6
         _other -> nil
       end
     end
