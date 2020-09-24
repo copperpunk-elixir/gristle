@@ -28,7 +28,7 @@ defmodule Navigation.Path.PathFollower do
       temp_vector = q.x*dy - q.y*dx
       si1 = dx + q.y*temp_vector
       si2 = dy - q.x*temp_vector
-      # Logger.info("r.alt/ q.z / si1 / si2: #{path_case.r.altitude}/#{q.z}/#{si1}/#{si2}")
+      # Logger.debug("r.alt/ q.z / si1 / si2: #{path_case.r.altitude}/#{q.z}/#{si1}/#{si2}")
       altitude_cmd =
       if path_case.type == Navigation.Path.Waypoint.approach_type() or path_case.type == Navigation.Path.Waypoint.climbout_type() do
         landing_distance =
@@ -37,7 +37,7 @@ defmodule Navigation.Path.PathFollower do
         d_alt_landing = path_case.zi.altitude - path_case.r.altitude
         landing_distance_travelled = Common.Utils.Math.hypot(si1, si2)
         d_alt = 0.5*d_alt_landing*(:math.cos(:math.pi()*(1.0-landing_distance_travelled/landing_distance))+1)
-        # Logger.info("landing: #{landing_distance_travelled}/#{landing_distance}/#{d_alt}")
+        # Logger.debug("landing: #{landing_distance_travelled}/#{landing_distance}/#{d_alt}")
         path_case.r.altitude + d_alt
       else
         path_case.r.altitude + (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))

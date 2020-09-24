@@ -11,7 +11,7 @@ defmodule Simulation.XplaneSend do
   @zeros_7 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
 
   def start_link(config) do
-    Logger.debug("Start Simulation.XplaneSend")
+    Logger.info("Start Simulation.XplaneSend GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -82,7 +82,7 @@ defmodule Simulation.XplaneSend do
         name -> Map.put(acc, name, ch_mult*2*(ch_value - 0.5))
       end
     end)
-    # Logger.info("cmds: #{inspect(cmds)}")
+    # Logger.debug("cmds: #{inspect(cmds)}")
     case state.vehicle_type do
       :Plane ->
         socket = state.socket
@@ -99,8 +99,8 @@ defmodule Simulation.XplaneSend do
   def handle_cast({:send, message_type, message}, state) do
     func = "send_" <> Atom.to_string(message_type)
     |> String.to_atom()
-    Logger.warn("function: #{func}")
-    Logger.warn("message: #{inspect(message)}")
+    Logger.debug("function: #{func}")
+    Logger.debug("message: #{inspect(message)}")
     apply(__MODULE__, func, [message, state.socket, state.dest_port])
     {:noreply, state}
   end
@@ -148,7 +148,7 @@ defmodule Simulation.XplaneSend do
 
  #  @spec send_attitude(map(), any(), integer()) :: atom()
  #  def send_attitude(values, socket, port) do
- #    Logger.info("send attitude: #{inspect(values)} to #{port}")
+ #    Logger.debug("send attitude: #{inspect(values)} to #{port}")
  #    buffer = @cmd_header <> <<17, 0, 0, 0>>
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.pitch,32))
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.roll,32))
@@ -160,7 +160,7 @@ defmodule Simulation.XplaneSend do
 
  #  @spec send_bodyrate(map(), any(), integer()) :: atom()
  #  def send_bodyrate(values, socket, port) do
- #    Logger.info("send bodyrate: #{inspect(values)}")
+ #    Logger.debug("send bodyrate: #{inspect(values)}")
  #    buffer = @cmd_header <> <<16, 0, 0, 0>>
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.pitchrate,32))
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.rollrate,32))
@@ -172,7 +172,7 @@ defmodule Simulation.XplaneSend do
 
  #  @spec send_accel(map(), any(), integer()) :: atom()
  #  def send_accel(values, socket, port) do
- #    Logger.info("send accel: #{inspect(values)}")
+ #    Logger.debug("send accel: #{inspect(values)}")
  #    buffer = @cmd_header <> <<4, 0, 0, 0>>
  #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>)
  #    |> Kernel.<>(@zeros_4)
@@ -185,7 +185,7 @@ defmodule Simulation.XplaneSend do
 
  #  @spec send_position(map(), any(), integer()) :: atom()
  #  def send_position(values, socket, port) do
- #    Logger.info("send position: #{inspect(values)}")
+ #    Logger.debug("send position: #{inspect(values)}")
  #    buffer = @cmd_header <> <<20, 0, 0, 0>>
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(Common.Utils.Math.rad2deg(values.latitude),32))
  #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(Common.Utils.Math.rad2deg(values.longitude),32))
@@ -197,7 +197,7 @@ defmodule Simulation.XplaneSend do
 
  # @spec send_velocity(map(), any(), integer()) :: atom()
  #  def send_velocity(values, socket, port) do
- #    Logger.info("send velocity: #{inspect(values)}")
+ #    Logger.debug("send velocity: #{inspect(values)}")
  #    buffer = @cmd_header <> <<21, 0, 0, 0>>
  #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0>>)
  #    |> Kernel.<>(@zeros_5)

@@ -5,7 +5,7 @@ defmodule Navigation.Navigator do
   @default_pv_cmds_level 2
 
   def start_link(config) do
-    Logger.debug("Start Navigation.Navigator")
+    Logger.info("Start Navigation.Navigator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(pid, :begin)
     {:ok, pid}
@@ -44,7 +44,7 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({:goals_sorter, level, classification, time_validity_ms, goals_map}, state) do
-    # Logger.warn("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
+    # Logger.debug("rx goals #{level} from #{inspect(classification)}: #{inspect(goals_map)}")
     MessageSorter.Sorter.add_message({:goals, level}, classification, time_validity_ms, goals_map)
     {:noreply, state}
   end
@@ -65,7 +65,7 @@ defmodule Navigation.Navigator do
     if Enum.empty?(pv_cmds) do
       # If we are flying, send orbit command to Path Manager
       # if true do
-      #   Logger.warn("We are flying and need an orbit. Send request to PathManager.")
+      #   Logger.debug("We are flying and need an orbit. Send request to PathManager.")
       #   Navigation.PathManager.begin_orbit()
       # end
       control_state = state.default_pv_cmds_level

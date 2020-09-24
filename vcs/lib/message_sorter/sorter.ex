@@ -5,7 +5,7 @@ defmodule MessageSorter.Sorter do
   @default_call_timeout 50
 
   def start_link(config) do
-    Logger.debug("Start MessageSorter: #{inspect(config.name)}")
+    Logger.info("Start MessageSorter: #{inspect(config.name)} GenServer")
     Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config.name))
     # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
   end

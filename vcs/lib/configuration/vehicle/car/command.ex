@@ -4,7 +4,7 @@
 #   @spec get_rx_output_channel_map() :: map()
 #   def get_rx_output_channel_map() do
 #     output_limits = Configuration.Module.Command.get_command_output_limits(:Car, [:thrust, :yawrate, :yaw, :course_flight, :speed])
-#     Logger.info("output limits: #{inspect(output_limits)}")
+#     Logger.debug("output limits: #{inspect(output_limits)}")
 #     # channel_number, channel, absolute/relative, min, max
 #     %{
 #       -1 => [

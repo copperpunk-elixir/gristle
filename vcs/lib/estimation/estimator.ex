@@ -4,7 +4,7 @@ defmodule Estimation.Estimator do
   @min_speed_for_course 2
 
   def start_link(config) do
-    Logger.debug("Start Estimation.Estimator")
+    Logger.info("Start Estimation.Estimator GenServer")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
@@ -119,9 +119,9 @@ defmodule Estimation.Estimator do
     else
       Estimation.LaserAltimeterEkf.update(state.laser_alt_ekf, range)
     end
-    # Logger.info("rx range: #{range}")
+    # Logger.debug("rx range: #{range}")
     Watchdog.Active.feed(:range)
-    # Logger.info("agl: #{Estimation.LaserAltimeterEkf.agl(ekf)}")
+    # Logger.debug("agl: #{Estimation.LaserAltimeterEkf.agl(ekf)}")
     {:noreply, %{state | laser_alt_ekf: ekf}}
   end
 

@@ -4,7 +4,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_config(_model_type, node_type) do
     subdirectory = Atom.to_string(node_type)
     peripherals = Common.Utils.Configuration.get_uart_peripherals(subdirectory)
-    Logger.info("peripherals: #{inspect(peripherals)}")
+    Logger.debug("peripherals: #{inspect(peripherals)}")
     node_type = if Common.Utils.Configuration.is_hil?(), do: :hil, else: node_type
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =

@@ -4,7 +4,7 @@ defmodule Comms.Operator do
 
   def start_link(config) do
     name = config.name
-    Logger.debug("Start CommsOperator: #{inspect(name)}")
+    Logger.info("Start Comms.Operator: #{inspect(name)}")
     Process.sleep(100)
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
     # start_refresh_loop(name)
@@ -87,7 +87,7 @@ defmodule Comms.Operator do
         local_group_members = :pg2.get_local_members(group)
         Map.put(acc, group, %{global: all_group_members, local: local_group_members})
       end)
-    # Logger.warn("#{inspect(state.name)} groups after refresh: #{inspect(groups)}")
+    # Logger.debug("#{inspect(state.name)} groups after refresh: #{inspect(groups)}")
     {:noreply, %{state | groups: groups}}
   end
 
@@ -106,7 +106,7 @@ defmodule Comms.Operator do
 
   @spec send_local_msg_to_group(atom(), tuple(), any()) :: atom()
   def send_local_msg_to_group(operator_name, message, sender) do
-    # Logger.info("send to group: #{elem(message, 0)}: #{inspect(message)}")
+    # Logger.debug("send to group: #{elem(message, 0)}: #{inspect(message)}")
     GenServer.cast(via_tuple(operator_name), {:send_msg_to_group, message, elem(message,0), sender, :local})
   end
 

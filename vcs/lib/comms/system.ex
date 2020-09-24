@@ -3,7 +3,7 @@ defmodule Comms.System do
   require Logger
 
   def start_link() do
-    Logger.debug("Start Comms DynamicSupervisor")
+    Logger.info("Start Comms DynamicSupervisor")
     {:ok, pid} = Common.Utils.start_link_redundant(DynamicSupervisor, __MODULE__, nil, __MODULE__)
     start_registry()
     {:ok, pid}

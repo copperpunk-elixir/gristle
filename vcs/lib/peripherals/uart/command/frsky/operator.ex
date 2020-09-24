@@ -14,7 +14,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
 
 
   def start_link(config) do
-    Logger.info("Start FrskyRx GenServer")
+    Logger.info("Start Uart.Command.FrskyRx.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -46,7 +46,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     frsky_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.info("open port: #{frsky_port}")
+    Logger.debug("open port: #{frsky_port}")
     case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -67,7 +67,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.info("data: #{inspect(data)}")
+    # Logger.debug("data: #{inspect(data)}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     state =

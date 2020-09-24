@@ -6,7 +6,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
 
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    Logger.debug("Start Actuation Operator")
+    Logger.info("Start Uart.Actuation.Operator GenServer")
     GenServer.cast(__MODULE__, {:begin, config.driver_config})
     {:ok, pid}
   end
@@ -14,7 +14,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
   @impl GenServer
   def init(config) do
     # Start the low-level actuator driver
-    Logger.warn("Actuation module: #{config.interface_module}")
+    Logger.debug("Actuation module: #{config.interface_module}")
     {:ok, %{
         interface_module: config.interface_module,
         # driver_config: config.driver_config,
@@ -40,7 +40,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
   @impl GenServer
   def handle_cast({:update_actuators, actuators_and_outputs}, state) do
     channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({_actuator_name, {actuator, output}}, acc) ->
-      # Logger.info("op #{actuator_name}: #{output}")
+      # Logger.debug("op #{actuator_name}: #{output}")
       pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
       Map.put(acc, actuator.channel_number, pulse_width_us)
     end)

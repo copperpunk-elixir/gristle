@@ -5,7 +5,7 @@ defmodule Peripherals.Uart.Utils do
     case apply(interface_module, :open_port, [interface]) do
       nil ->
         if (connection_count < connection_count_max) do
-          Logger.warn("#{interface_module} is unavailable. Retrying in 1 second.")
+          Logger.debug("#{interface_module} is unavailable. Retrying in 1 second.")
           Process.sleep(1000)
           open_interface_connection(interface_module, interface, connection_count+1, connection_count_max)
         else

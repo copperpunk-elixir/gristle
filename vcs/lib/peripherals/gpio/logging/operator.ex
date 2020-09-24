@@ -4,7 +4,7 @@ defmodule Peripherals.Gpio.Logging.Operator do
 
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    Logger.debug("Start Logging Gpio Operator")
+    Logger.info("Start Gpio.Logging.Operator GenServer")
     initial_value = Map.get(config, :initial_value, 0)
     gpio_config = Map.take(config, [:pin_number, :pin_direction, :pull_mode])
     |> Map.put(:initial_value, initial_value)
@@ -57,13 +57,13 @@ defmodule Peripherals.Gpio.Logging.Operator do
       dt = round((timestamp - falling_time)*(1.0e-6))
         Logger.debug("dt: #{dt}")
       if (dt > state.time_threshold_cycle_mount_ms) do
-        Logger.info("Save log")
+        Logger.debug("Save log")
         Logging.Logger.save_log("GPIO_intentional")
-        Logger.info("Cycle USB mount")
+        Logger.debug("Cycle USB mount")
         Common.Utils.File.cycle_mount()
       end
       if (dt > state.time_threshold_power_off_ms) do
-        Logger.info("Power off!")
+        Logger.debug("Power off!")
         Common.Utils.power_off()
       end
     end

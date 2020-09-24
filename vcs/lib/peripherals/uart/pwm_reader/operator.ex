@@ -7,7 +7,7 @@ defmodule Peripherals.Uart.PwmReader.Operator do
 
 
   def start_link(config) do
-    Logger.debug("Start PwmReader.Operator")
+    Logger.info("Start Uart.PwmReader.Operator GenServer")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
@@ -35,9 +35,9 @@ defmodule Peripherals.Uart.PwmReader.Operator do
     Comms.System.start_operator(__MODULE__)
 
     Comms.Operator.join_group(__MODULE__, :pwm_input, self())
-    Logger.info("pwm_reader device: #{state.device_description}")
+    Logger.debug("pwm_reader device: #{state.device_description}")
     port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.info("pwm_Reader port: #{inspect(port)}")
+    Logger.debug("pwm_Reader port: #{inspect(port)}")
     case Circuits.UART.open(state.uart_ref, port, [speed: state.baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -50,7 +50,7 @@ defmodule Peripherals.Uart.PwmReader.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.info("rx'd data: #{inspect(data)}")
+    # Logger.debug("rx'd data: #{inspect(data)}")
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
   end
@@ -61,7 +61,7 @@ defmodule Peripherals.Uart.PwmReader.Operator do
     ublox = Telemetry.Ublox.parse(ublox, byte)
     ublox =
     if ublox.payload_ready == true do
-      # Logger.warn("ready")
+      # Logger.debug("ready")
       {msg_class, msg_id} = Telemetry.Ublox.msg_class_and_id(ublox)
       dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox))
       Telemetry.Ublox.clear(ublox)
@@ -83,10 +83,10 @@ defmodule Peripherals.Uart.PwmReader.Operator do
         case msg_id do
           0x00 ->
             num_chs = round(length(payload)/2)
-            # Logger.info("num chs: #{num_chs}")
+            # Logger.debug("num chs: #{num_chs}")
             msg_type = {:pwm_reader, num_chs}
             all_channels = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            # Logger.info("all: channels: #{inspect(all_channels)}")
+            # Logger.debug("all: channels: #{inspect(all_channels)}")
             scaled_values = Enum.map(all_channels, fn x ->
               Common.Utils.Math.constrain((x-@pwm_min_us)/@pwm_range_us,0.0, 1.0)
             end)

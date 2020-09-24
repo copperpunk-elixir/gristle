@@ -34,21 +34,21 @@ defmodule Cluster.Network.NodeConnection do
       [msg_type, node] = String.split(msg,":")
       case msg_type do
         "connect" ->
-          # Logger.warn("node #{node} wants to connect")
+          # Logger.debug("node #{node} wants to connect")
           if (src_ip != dest_ip) or (src_port != dest_port) do
             Logger.debug("Connect to node #{node}")
             Node.connect(String.to_atom(node))
             node
           else
-            # Logger.warn("This is us. Do not connect")
+            # Logger.debug("This is us. Do not connect")
             nil
           end
         _unknown ->
-          Logger.warn("unknown msg_type: #{inspect(msg_type)}")
+          Logger.debug("unknown msg_type: #{inspect(msg_type)}")
           nil
       end
     else
-      Logger.warn("Unknown msg: #{inspect(msg)}")
+      Logger.debug("Unknown msg: #{inspect(msg)}")
       nil
     end
   end

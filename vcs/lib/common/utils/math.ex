@@ -107,7 +107,7 @@ defmodule Common.Utils.Math do
   def uint_from_fp(x, bits) do
     # abs_x = abs(x)
     # int_x = floor(abs_x)
-    # dec_x = abs_x-int_x
+    # dec_x = abs_x-:int_x
     # dec_x = Enum.reduce()
     # significand = :erlang.integer_to_list(int_x, 2)
     # exp = length(significand)-1 + 127
@@ -119,9 +119,9 @@ defmodule Common.Utils.Math do
         64 -> {1023, 1.0e300, <<0,0,0,0,0,0,0,0>>, 52}
       end
     x = x + 1-1
-    # Logger.info("x: #{x}")
+    # Logger.debug("x: #{x}")
     if x == 0 or (x > max_value) or (x < -max_value) do
-      # Logger.warn("use default")
+      # Logger.debug("use default")
       default_value
     else
       abs_x = abs(x)
@@ -139,11 +139,11 @@ defmodule Common.Utils.Math do
         exponent_bin
       end
       exp_mult = :math.pow(2,exponent)
-      # Logger.info("exp/exp_mult: #{exponent}/#{exp_mult}")
+      # Logger.debug("exp/exp_mult: #{exponent}/#{exp_mult}")
       {_mantissa, mantissa_string} =
         Enum.reduce(1..exp_min_index, {1,""}, fn (ctr, {mantissa, mantissa_string}) ->
           mantissa_temp = mantissa + 1.0/Bitwise.<<<(1,ctr)
-          # Logger.info("ctr/mtemp/mult: #{ctr}/#{mantissa_temp}/#{mantissa_temp*exp_mult}")
+          # Logger.debug("ctr/mtemp/mult: #{ctr}/#{mantissa_temp}/#{mantissa_temp*exp_mult}")
           if mantissa_temp*exp_mult <= abs_x do
             {mantissa_temp, mantissa_string <> "1"}
           else
@@ -162,7 +162,7 @@ defmodule Common.Utils.Math do
       # Logger.debug("mantissa str: #{mantissa_string}")
       # Logger.debug("number: #{number}")
       num_int = :erlang.binary_to_integer(number,2)
-      # Logger.info("num_int: #{num_int}")
+      # Logger.debug("num_int: #{num_int}")
       case bits do
         32 -> <<num_int :: little-unsigned-32>>
             64 -> <<num_int :: little-unsigned-64>>

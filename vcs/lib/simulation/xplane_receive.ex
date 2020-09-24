@@ -10,7 +10,7 @@ defmodule Simulation.XplaneReceive do
 
 
   def start_link(config) do
-    Logger.debug("Start Simulation.XplaneReceive")
+    Logger.info("Start Simulation.XplaneReceive GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(pid, :begin)
     {:ok, pid}
@@ -62,7 +62,7 @@ defmodule Simulation.XplaneReceive do
 
   @impl GenServer
   def handle_info({:udp, _socket, _src_ip, _src_port, msg}, state) do
-    # Logger.info("received data from #{inspect(src_ip)} on port #{src_port} with length #{length(msg)}")
+    # Logger.debug("received data from #{inspect(src_ip)} on port #{src_port} with length #{length(msg)}")
     state = parse_data_buffer(msg, state)
     state =
     if state.new_simulation_data_to_publish == true do

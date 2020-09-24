@@ -9,7 +9,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @rad2deg 57.295779513
 
   def start_link(config) do
-    Logger.debug("Start VectorNav INS GenServer")
+    Logger.info("Start Uart.Estimation.VsIns.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -66,7 +66,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @impl GenServer
   def handle_cast(:close, state) do
     result = Circuits.UART.close(state.uart_ref)
-    Logger.warn("Closing UART port with result: #{inspect(result)}")
+    Logger.debug("Closing UART port with result: #{inspect(result)}")
     {:noreply, state}
   end
 
@@ -81,17 +81,17 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   def handle_info({:circuits_uart, _port, data}, state) do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     # Enum.each(data_list, fn x->
-    #   Logger.info("#{x}")
+    #   Logger.debug("#{x}")
     # end)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
-    # Logger.info("time: #{ins.gps_time_ns}")
-    # Logger.info("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
-    # Logger.info("gps_status: #{ins.gps_status}")
+    # Logger.debug("time: #{ins.gps_time_ns}")
+    # Logger.debug("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
+    # Logger.debug("gps_status: #{ins.gps_status}")
 
     state = if (state.new_ins_data_to_publish) do
 
-      # Logger.info("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
+      # Logger.debug("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
       publish_ins_data(ins)
       %{state | new_ins_data_to_publish: false}
     else
@@ -247,7 +247,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       |> Bitwise.&&&(0xFFFF)
       # |> Bitwise.<<<(5)
       # |> Bitwise.^^^(crc)
-      # Logger.info("x/crc: #{x}/#{crc}")
+      # Logger.debug("x/crc: #{x}/#{crc}")
       crc
     end)
   end
@@ -443,7 +443,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   @spec close() :: atom()
   def close() do
-    Logger.info("close port")
+    Logger.debug("close port")
     GenServer.cast(__MODULE__, :close)
   end
 end

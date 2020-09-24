@@ -23,7 +23,7 @@ defmodule Common.Utils.File do
     else
       Logger.error("USB Drive could not be mounted to #{path}")
       if (count < count_max) do
-        Logger.info("Retry #{count+1}/#{count_max}")
+        Logger.debug("Retry #{count+1}/#{count_max}")
         Process.sleep(1000)
         mount_usb_drive(path, count+1, count_max)
       end

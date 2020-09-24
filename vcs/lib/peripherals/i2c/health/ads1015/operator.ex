@@ -24,7 +24,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   @channel_current 1
 
   def start_link(config) do
-    Logger.debug("Start Ads1015 GenServer")
+    Logger.info("Start I2c.Health.Ads1015.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -99,7 +99,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_voltage)
     case result do
       {:ok, output} ->
-        # Logger.info("Ads1015 voltage: #{output*@output2volts}")
+        # Logger.debug("Ads1015 voltage: #{output*@output2volts}")
         output*@output2volts
       _other ->
         Logger.error("Voltage read error")
@@ -112,7 +112,7 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     result = read_channel(i2c_ref, @channel_current)
     case result do
       {:ok, current} ->
-        # Logger.info("Ads1015 current: #{current*@output2amps}")
+        # Logger.debug("Ads1015 current: #{current*@output2amps}")
         current*@output2amps
       _other ->
         Logger.error("Current read error")

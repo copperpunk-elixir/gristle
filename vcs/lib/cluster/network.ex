@@ -3,7 +3,7 @@ defmodule Cluster.Network do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start Cluster Network")
+    Logger.info("Start Cluster.Network GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -44,7 +44,7 @@ defmodule Cluster.Network do
     if state.connection_required do
       GenServer.cast(__MODULE__, :connect_to_network)
     else
-      Logger.warn("Network connection not required.")
+      Logger.debug("Network connection not required.")
       Common.Application.start_remaining_processes()
     end
     {:noreply, state}
@@ -55,11 +55,11 @@ defmodule Cluster.Network do
     connected = VintageNet.get(["interface", state.interface, "lower_up"])
     connected =  if (connected), do: true, else: false
     if connected == true do
-      Logger.warn("Network connected.")
+      Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
       Common.Application.start_remaining_processes()
     else
-      Logger.warn("No network connection. Retrying in 1 second.")
+      Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
       GenServer.cast(__MODULE__, :connect_to_network)
     end
@@ -79,7 +79,7 @@ defmodule Cluster.Network do
           state
         ip_address->
           unique_node_name_with_domain = Cluster.Network.NodeConnection.get_unique_node_name_with_domain(ip_address)
-          Logger.warn("#{unique_node_name_with_domain}")
+          Logger.debug("#{unique_node_name_with_domain}")
           Cluster.Network.NodeConnection.start_node(unique_node_name_with_domain, state.cookie)
           {socket, src_port} =  open_socket(state.src_port, 0)
           GenServer.cast(__MODULE__, :start_broadcast_ip_loop)
@@ -98,7 +98,7 @@ defmodule Cluster.Network do
 
   @impl GenServer
   def handle_info(:broadcast_ip_loop, state) do
-    # Logger.info("node list: #{inspect(Node.list)}")
+    # Logger.debug("node list: #{inspect(Node.list)}")
     broadcast_ip_loop_timer =
     if Node.list == [] and state.socket != nil do
       Cluster.Network.NodeConnection.broadcast_node(state.socket, state.ip_address, state.node_name_with_domain, state.dest_port)

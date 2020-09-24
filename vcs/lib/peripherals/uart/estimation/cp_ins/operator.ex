@@ -67,22 +67,22 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
 
     velocity_prev = if Enum.empty?(state.velocity), do: %{north: 0.0, east: 0.0, down: 0.0}, else: state.velocity
     velocity = values.velocity
-    # Logger.info("v_prev: #{inspect(velocity_prev)}")
-    # Logger.info("v_curr: #{inspect(velocity)}")
-    # Logger.info("dt: #{dt}")
+    # Logger.debug("v_prev: #{inspect(velocity_prev)}")
+    # Logger.debug("v_curr: #{inspect(velocity)}")
+    # Logger.debug("dt: #{dt}")
     dv_north =velocity.north - velocity_prev.north
     dv_east =velocity.east - velocity_prev.east
     dv_down =velocity.down - velocity_prev.down
 
     accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity()}
     # {ax_i, ay_i, az_i} = accel_inertial
-    # Logger.info("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
+    # Logger.debug("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
     {ax, ay, az}= Common.Utils.Motion.inertial_to_body_euler(values.attitude, accel_inertial)
     bodyaccel = %{x: ax, y: ay, z: az}
     # bodyaccel = values.bodyaccel
-    # Logger.warn("body_accel: #{Common.Utils.eftb(ax,3)}/#{Common.Utils.eftb(ay,3)}/#{Common.Utils.eftb(az,3)}")
-    # Logger.info("accel mag: #{:math.sqrt(ax*ax+ay*ay+az*az)}")
-    # Logger.info("gyro: #{Common.Utils.map_rad2deg}")
+    # Logger.debug("body_accel: #{Common.Utils.eftb(ax,3)}/#{Common.Utils.eftb(ay,3)}/#{Common.Utils.eftb(az,3)}")
+    # Logger.debug("accel mag: #{:math.sqrt(ax*ax+ay*ay+az*az)}")
+    # Logger.debug("gyro: #{Common.Utils.map_rad2deg}")
     state = %{state |
               attitude: values.attitude,
               bodyrate: values.bodyrate,
@@ -128,7 +128,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     attitude = state.attitude
     unless Enum.empty?(attitude) do
       rel_pos_ned = get_rel_pos_ned(attitude.yaw, state.antenna_offset)
-      # Logger.info("send relposned: #{length(:binary.bin_to_list(rel_pos_ned))}")
+      # Logger.debug("send relposned: #{length(:binary.bin_to_list(rel_pos_ned))}")
       Circuits.UART.write(state.uart_ref, rel_pos_ned)
     end
     {:noreply, state}

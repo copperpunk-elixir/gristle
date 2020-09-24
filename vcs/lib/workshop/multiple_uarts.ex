@@ -26,9 +26,9 @@ defmodule Workshop.MultipleUarts do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(state.name)
-    Logger.info("uart device: #{state.device_description}")
+    Logger.debug("uart device: #{state.device_description}")
     port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.info("port: #{inspect(port)}")
+    Logger.debug("port: #{inspect(port)}")
     case Circuits.UART.open(state.uart_ref, port, [speed: @default_baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -41,7 +41,7 @@ defmodule Workshop.MultipleUarts do
 
   @impl GenServer
   def handle_cast({:write, data}, state) do
-    Logger.info("#{state.name} writing data: #{inspect(data)}")
+    Logger.debug("#{state.name} writing data: #{inspect(data)}")
     Circuits.UART.write(state.uart_ref, data)
     Circuits.UART.drain(state.uart_ref)
     {:noreply, state}
@@ -49,7 +49,7 @@ defmodule Workshop.MultipleUarts do
 
   @impl GenServer
   def handle_info({:circuits_uart, port, data}, state) do
-    Logger.info("#{state.name} rx'd data on port: #{port}: #{inspect(data)}")
+    Logger.debug("#{state.name} rx'd data on port: #{port}: #{inspect(data)}")
     {:noreply, state}
   end
 

@@ -3,7 +3,7 @@ defmodule Pids.Moderator do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start PIDs.Moderator #{config[:name]}")
+    Logger.info("Start Pids.Moderator GenServer")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(pid, :begin)
     {:ok, pid}
@@ -62,7 +62,7 @@ defmodule Pids.Moderator do
     # Logger.debug("PID pv_cmds_values level #{level}: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
     case level do
       3 ->
-        # Logger.warn("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # Logger.debug("pv_cmd_map/value: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
         # pv_cmd_map will always contain course
 
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
@@ -73,7 +73,7 @@ defmodule Pids.Moderator do
         roll_yaw_output = Pids.Course.calculate_outputs(pv_cmd_map, airspeed, dt)
         pitch_thrust_output = Pids.Tecs.calculate_outputs(pv_cmd_map, pv_value_map, airspeed, dt)
         level_2_output_map = Map.merge(roll_yaw_output, pitch_thrust_output) #calculate_outputs_for_pv_cmds_values(pv_cmd_map, pv_value_map, airspeed, dt, state.pv_output_pids)
-        # Logger.warn("PID Level 3")
+        # Logger.debug("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map
@@ -82,14 +82,14 @@ defmodule Pids.Moderator do
         end
         publish_cmds(pv_cmd_map, 3)
       2 ->
-        # Logger.warn("PID Level 2")
-        # Logger.warn("pv_cmd_map/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
+        # Logger.debug("PID Level 2")
+        # Logger.debug("pv_cmd_map/values: #{inspect(pv_cmd_map)}/#{inspect(pv_value_map)}")
         level_1_output_map = Pids.Attitude.calculate_outputs(pv_cmd_map, pv_value_map.attitude, state.attitude_scalar)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt)
-        # Logger.warn("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
-        # Logger.warn("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
+        # Logger.debug("new pv_cmd_map: #{inspect(pv_1_cmd_map)}")
+        # Logger.debug("pv_value_map, bodyrate: #{inspect(pv_value_map.bodyrate)}")
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         send_cmds(Actuation.SwInterface.self_control_value(), state.direct_cmds_select_class, state.direct_cmds_select_time_ms, {:direct_actuator_cmds, :select})
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
@@ -100,7 +100,7 @@ defmodule Pids.Moderator do
         publish_cmds(pv_cmd_map, 2)
         publish_cmds(pv_1_cmd_map, 1)
       1 ->
-        # Logger.warn("PID Level 1")
+        # Logger.debug("PID Level 1")
         actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt)
 
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)

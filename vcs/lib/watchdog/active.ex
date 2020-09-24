@@ -4,7 +4,7 @@ defmodule Watchdog.Active do
 
   def start_link(config) do
     name = config.name
-    Logger.debug("Start Watchdog.Active: #{name}")
+    Logger.info("Start Watchdog.Active: #{name} GenServer")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
     GenServer.cast(via_tuple(name), :begin)
     {:ok, process_id}
@@ -60,13 +60,13 @@ defmodule Watchdog.Active do
     if (fed != state.fed) do
       send_status(state.name, state.local_or_global, fed)
     end
-    # Logger.info("#{state.name} count: #{state.count}")
+    # Logger.debug("#{state.name} count: #{state.count}")
     {:noreply, %{state | count: state.count + state.loop_interval_ms, fed: fed}}
   end
 
   @spec send_status(atom(), atom(), boolean()) ::atom()
   def send_status(name, local_or_global, is_fed) do
-    Logger.warn("#{name} watchdog is fed?: #{is_fed}")
+    Logger.debug("#{name} watchdog is fed?: #{is_fed}")
     function =
       case local_or_global do
         :local -> :send_local_msg_to_group
