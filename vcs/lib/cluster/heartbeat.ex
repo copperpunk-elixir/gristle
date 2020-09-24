@@ -5,7 +5,7 @@ defmodule Cluster.Heartbeat do
   @node_sorter {:hb, :node}
 
   def start_link(config) do
-    Logger.debug("Start HB")
+    Logger.info("Start Cluster.Heartbeat GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -42,7 +42,7 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_cast({:add_heartbeat, heartbeat_map, time_validity_ms}, state) do
-    Logger.info("add heartbeat: #{inspect(heartbeat_map)}")
+    Logger.debug("add heartbeat: #{inspect(heartbeat_map)}")
     MessageSorter.Sorter.add_message(@node_sorter, [heartbeat_map.node], time_validity_ms, heartbeat_map)
     {:noreply, state}
   end
@@ -55,7 +55,7 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_cast(msg, state) do
-    Logger.warn("msg: #{inspect(msg)}")
+    Logger.debug("msg: #{inspect(msg)}")
     {:noreply, state}
   end
 

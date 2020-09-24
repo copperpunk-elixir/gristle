@@ -38,7 +38,7 @@ defmodule Estimation.LaserAltimeterEkf do
     current_time = :os.system_time(:microsecond)
     dt = if (ekf.time_prev_us < 0), do: 0, else: (current_time - ekf.time_prev_us)*(1.0e-6)
     z = ekf.z + ekf.zdot*dt
-    # Logger.info("zdot/zprev/z/dt: #{zdot}/#{ekf.z}/#{z}/#{dt}")
+    # Logger.debug("zdot/zprev/z/dt: #{zdot}/#{ekf.z}/#{z}/#{dt}")
     p33 = ekf.p33 + ekf.p22*dt*dt + ekf.q33
     %{ekf | phi: phi, theta: theta, zdot: zdot, z: z, p33: p33, time_prev_us: current_time}
   end

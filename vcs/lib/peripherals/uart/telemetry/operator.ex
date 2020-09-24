@@ -3,7 +3,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start Telemetry.Operator")
+    Logger.info("Start Uart.Telemetry.Operator GenServer")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
@@ -32,9 +32,9 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Logger.info("telemetry device: #{state.device_description}")
+    Logger.debug("telemetry device: #{state.device_description}")
     telemetry_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.info("telemetry port: #{inspect(telemetry_port)}")
+    Logger.debug("telemetry port: #{inspect(telemetry_port)}")
     case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: state.baud, active: true]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -50,7 +50,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_cast({:store_data, data_map}, state) do
-    # Logger.info("store: #{inspect(data_map)}")
+    # Logger.debug("store: #{inspect(data_map)}")
     state = Enum.reduce(data_map, state, fn ({key, value}, acc) ->
       Map.put(acc, key, value)
     end)
@@ -70,7 +70,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.info("rx'd data: #{inspect(data)}")
+    # Logger.debug("rx'd data: #{inspect(data)}")
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
   end
@@ -85,7 +85,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     attitude = Map.get(state, :attitude, %{})
     unless (Enum.empty?(position) or Enum.empty?(velocity) or Enum.empty?(attitude)) do
       values = [iTOW, position.latitude, position.longitude, position.altitude, position.agl, velocity.airspeed, velocity.speed, velocity.course, attitude.roll, attitude.pitch, attitude.yaw]
-      # Logger.info("send pvat message")
+      # Logger.debug("send pvat message")
       construct_and_send_message({:telemetry, :pvat}, values, state.uart_ref)
     end
     #tx_goals
@@ -118,7 +118,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       unless Enum.member?(battery_vie, nil) do
         # battery_id = Health.Hardware.Battery.get_battery_id(battery)
         values = [iTOW, battery_id] ++ battery_vie
-        # Logger.info("values: #{inspect(values)}")
+        # Logger.debug("values: #{inspect(values)}")
         construct_and_send_message(:tx_battery, values, state.uart_ref)
       end
     end)
@@ -132,7 +132,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     ublox = Telemetry.Ublox.parse(ublox, byte)
     ublox =
     if ublox.payload_ready == true do
-      # Logger.warn("ready")
+      # Logger.debug("ready")
       {msg_class, msg_id} = Telemetry.Ublox.msg_class_and_id(ublox)
       dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox))
       Telemetry.Ublox.clear(ublox)
@@ -148,15 +148,15 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @spec dispatch_message(integer(), integer(), list()) :: atom()
   def dispatch_message(msg_class, msg_id, payload) do
-    # Logger.info("Rx'd msg: #{msg_class}/#{msg_id}")
+    # Logger.debug("Rx'd msg: #{msg_class}/#{msg_id}")
     # Logger.debug("payload: #{inspect(payload)}")
     case msg_class do
       1 ->
         case msg_id do
           0x69 ->
             [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, payload)
-            # Logger.info("accel xyz: #{ax}/#{ay}/#{az}")
-            # Logger.info("gyro xyz: #{gx}/#{gy}/#{gz}")
+            # Logger.debug("accel xyz: #{ax}/#{ay}/#{az}")
+            # Logger.debug("gyro xyz: #{gx}/#{gy}/#{gz}")
             store_data(%{accel: %{x: ax, y: ay, z: az}, bodyrate: %{roll: gx, pitch: gy, yaw: gz}})
           _other -> Logger.warn("Bad message id: #{msg_id}")
         end
@@ -193,7 +193,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
           0x15 ->
             msg_type = :tx_battery
             [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            # Logger.warn("battery #{battery_id} msg rx'd")
+            # Logger.debug("battery #{battery_id} msg rx'd")
             send_global({msg_type, battery_id, voltage, current, energy_discharged})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
@@ -215,7 +215,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Msgpax
             msg_type = :get_pid_gain
             [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
-          Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
+          Logger.debug("#{process_variable}->#{output_variable} #{parameter} = #{value}")
 
           other -> Logger.warn("Bad message id: #{other}")
         end
@@ -232,7 +232,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             end
           0x01 ->
             msg_type = :mission
-            Logger.warn("mission received")
+            Logger.debug("mission received")
             [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             airport = Navigation.PathPlanner.get_airport(airport_code)
             runway = Navigation.PathPlanner.get_runway(runway_code)
@@ -241,28 +241,28 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
             send_global({:load_mission, mission})
             if Navigation.PathPlanner.get_confirmation(confirmation) do
-              Logger.warn("send confirmation")
+              Logger.debug("send confirmation")
               Navigation.PathPlanner.send_path_mission(airport, runway, model, track, num_wps, false)
             else
-              Logger.warn("confirmation received")
+              Logger.debug("confirmation received")
             end
           0x02 ->
             # Protobuf mission
-            Logger.warn("proto mission received!")
+            Logger.debug("proto mission received!")
             msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
             send_global({:load_mission, mission})
             if mission_pb.confirm do
-              Logger.warn("send confirmation")
+              Logger.debug("send confirmation")
               pb_encoded = Navigation.Path.Mission.encode(mission, false)
               construct_and_send_proto_message(msg_type, pb_encoded)
             else
-              Logger.warn("confirmation received")
+              Logger.debug("confirmation received")
             end
           0x03 ->
             msg_type = :clear_mission
-            Logger.warn("Clear mission")
+            Logger.debug("Clear mission")
             [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, iTOW})
         end

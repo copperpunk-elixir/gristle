@@ -2,7 +2,7 @@ defmodule Comms.ProcessRegistry do
   require Logger
 
   def start_link do
-    Logger.debug("Start ProcessRegistry")
+    Logger.info("Start ProcessRegistry")
     Common.Utils.start_link_redundant(Registry, Registry, [keys: :unique, name: __MODULE__])
   end
 

@@ -7,7 +7,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   @stop_bits 1
 
   def start_link(config) do
-    Logger.info("Start Dsm GenServer")
+    Logger.info("Start Uart.Command.Dsm.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -36,7 +36,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     uart_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.info("open port: #{uart_port}")
+    Logger.debug("open port: #{uart_port}")
     case Circuits.UART.open(state.uart_ref, uart_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
       {:error, error} ->
         Logger.error("Error opening UART: #{inspect(error)}")
@@ -57,15 +57,15 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.info("data: #{inspect(data)}")
+    # Logger.debug("data: #{inspect(data)}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     dsm = parse(state.dsm, data_list)
     {dsm, channel_values} =
     if dsm.payload_ready == true do
-      # Logger.warn("ready")
+      # Logger.debug("ready")
       channel_values = Peripherals.Uart.Command.Dsm.get_channels(dsm)
-      # Logger.info("omap: #{inspect(dsm.channel_map)}")
-      # Logger.info("channels: #{inspect(channel_values)}")
+      # Logger.debug("omap: #{inspect(dsm.channel_map)}")
+      # Logger.debug("channels: #{inspect(channel_values)}")
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, channel_values, false}, :rx_output, self())
       {Peripherals.Uart.Command.Dsm.clear(dsm), channel_values}
     else
@@ -97,7 +97,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
 
   @spec parse(struct(), list()) :: struct()
   def parse(dsm, buffer) do
-    # Logger.info("buffer/dsm: #{inspect(buffer)}/#{inspect(dsm)}")
+    # Logger.debug("buffer/dsm: #{inspect(buffer)}/#{inspect(dsm)}")
     {[byte], buffer} = Enum.split(buffer,1)
     dsm = Peripherals.Uart.Command.Dsm.parse(dsm, byte)
     if (Enum.empty?(buffer)) do

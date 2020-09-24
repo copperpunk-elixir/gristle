@@ -3,7 +3,7 @@ defmodule Actuation.SwInterface do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start Actuation SwInterface")
+    Logger.info("Start Actuation SwInterface GenServer")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, process_id}
@@ -36,7 +36,7 @@ defmodule Actuation.SwInterface do
 
   @impl GenServer
   def handle_cast({:direct_actuator_cmds_sorter, classification, time_validity_ms, cmds}, state) do
-    # Logger.debug("rx direct: #{classification}/#{time_validity_ms}")
+    # Logger.debug("rx direct: #{inspect(classification)}/#{time_validity_ms}: #{inspect(cmds)}")
     Enum.each(cmds, fn {name, value} ->
       # Logger.debug("dacs #{name}: #{value}")
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, name}, classification, time_validity_ms, value)

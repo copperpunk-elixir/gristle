@@ -29,7 +29,7 @@ defmodule Common.Application do
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()
 
-    Logger.warn("Start remaining processes for #{model_type}/#{node_type}")
+    Logger.debug("Start remaining processes for #{model_type}/#{node_type}")
     modules = get_modules_for_node(node_type)
     Configuration.Module.start_modules(modules, model_type, node_type)
   end
@@ -51,7 +51,7 @@ defmodule Common.Application do
     Logger.info("------------------------------------")
     Enum.each(1..10, fn _x ->
       Logger.info("") end)
-    Logger.warn("Hello! You are starting a #{node_type} node on a #{model_type} model!")
+    Logger.debug("Hello! You are starting a #{node_type} node on a #{model_type} model!")
     Enum.each(1..10, fn _x ->
       Logger.info("") end)
     Logger.info("------------------------------------")

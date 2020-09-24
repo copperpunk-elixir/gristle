@@ -8,7 +8,7 @@ defmodule Peripherals.Uart.Estimation.IsIns.Operator do
 @default_baud 1_000_000
 
   def start_link(config) do
-    Logger.debug("Start VectorNav INS GenServer")
+    Logger.info("Start Uart.Estimation.IsIns GenServer")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -36,7 +36,7 @@ defmodule Peripherals.Uart.Estimation.IsIns.Operator do
 
   @impl GenServer
   def handle_cast(:begin, state) do
-    Logger.debug("VN INS begin with process: #{inspect(self())}")
+    Logger.debug("IS INS begin with process: #{inspect(self())}")
     Circuits.UART.open(state.uart_ref, state.port, [speed: state.baud, active: true])
     {:noreply, state}
   end

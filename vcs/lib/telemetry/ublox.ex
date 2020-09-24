@@ -24,7 +24,7 @@ defmodule Telemetry.Ublox do
   @spec parse(struct(), integer()) :: struct()
   def parse(ublox, byte) do
     state = ublox.state
-    # Logger.info("state/byte/count: #{state}/#{byte}/#{ublox.count}")
+    # Logger.debug("state/byte/count: #{state}/#{byte}/#{ublox.count}")
     cond do
       state == @got_none and byte == 0xB5 -> %{ublox | state: @got_sync1}
       state == @got_sync1 ->
@@ -140,10 +140,10 @@ defmodule Telemetry.Ublox do
     {msg_class, msg_id} = get_class_and_id_for_msg(msg_type)
     payload_list = :binary.bin_to_list(payload)
     payload_length = length(payload_list)
-    # Logger.warn("payload len: #{payload_length}")
+    # Logger.debug("payload len: #{payload_length}")
     payload_len_msb = Bitwise.>>>(payload_length,8) |> Bitwise.&&&(0xFF)
     payload_len_lsb = Bitwise.&&&(payload_length, 0xFF)
-    # Logger.info("msb/lsb: #{payload_len_msb}/#{payload_len_lsb}")
+    # Logger.debug("msb/lsb: #{payload_len_msb}/#{payload_len_lsb}")
     checksum_buffer = [msg_class, msg_id, payload_len_lsb, payload_len_msb] ++ payload_list
     checksum = calculate_ublox_checksum(checksum_buffer)
     <<0xB5, 0x62>> <> :binary.list_to_bin(checksum_buffer) <> checksum

@@ -4,7 +4,7 @@ defmodule Configuration.Module.Peripherals.I2c do
   def get_config(_model_type, node_type) do
     subdirectory = Atom.to_string(node_type)
     peripherals = Common.Utils.Configuration.get_i2c_peripherals(subdirectory)
-    Logger.info("peripherals: #{inspect(peripherals)}")
+    Logger.debug("peripherals: #{inspect(peripherals)}")
     Enum.reduce(peripherals, %{}, fn (name, acc) ->
       peripheral_string = Atom.to_string(name)
       device_and_metadata = String.split(peripheral_string, "_")

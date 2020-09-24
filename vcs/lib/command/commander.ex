@@ -13,7 +13,7 @@ defmodule Command.Commander do
   @cs_direct_auto 102
 
   def start_link(config) do
-    Logger.debug("Start Command.Commander")
+    Logger.info("Start Command.Commander GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -94,7 +94,7 @@ defmodule Command.Commander do
     # or the Pids.Moderator (secondary)
     indirect_override_cs = if (pilot_control_mode == @pilot_manual), do: @cs_direct_manual, else: @cs_direct_auto
     direct_cmds_cs = if (pilot_control_mode == @pilot_auto), do: @cs_direct_auto, else: @cs_direct_semi_auto
-    # Logger.warn("ind cs/ dir cs: #{indirect_override_cs}/#{direct_cmds_cs}")
+    # Logger.debug("ind cs/ dir cs: #{indirect_override_cs}/#{direct_cmds_cs}")
         # Logger.debug("cs_float: #{control_state_float}")
     if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
@@ -106,7 +106,7 @@ defmodule Command.Commander do
       end
       reference_cmds =
       if (control_state != state.control_state) do
-        Logger.info("latch cs: #{control_state}")
+        Logger.debug("latch cs: #{control_state}")
         latch_commands(control_state, state.pv_values)
       else
         state.reference_cmds

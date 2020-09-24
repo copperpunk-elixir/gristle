@@ -3,7 +3,7 @@ defmodule Logging.Logger do
   require Logger
 
   def start_link(config) do
-    Logger.debug("Start Logging.Logger")
+    Logger.info("Start Logging.Logger GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -22,7 +22,7 @@ defmodule Logging.Logger do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :gps_time, self())
-    # Logger.warn("log directory: #{state.log_directory}")
+    # Logger.debug("log directory: #{state.log_directory}")
     {:noreply, state}
   end
 
@@ -32,7 +32,7 @@ defmodule Logging.Logger do
     path = get_directory(now, state.root_directory, "log")
     :filelib.ensure_dir(path)
     filename = path <> (get_file_name(now, file_suffix))
-    Logger.info("save filename: #{filename}")
+    Logger.debug("save filename: #{filename}")
     RingLogger.save(filename)
     Process.sleep(100)
     Common.Utils.File.cycle_mount()
@@ -45,7 +45,7 @@ defmodule Logging.Logger do
     path = get_directory(now, state.root_directory, folder)
     :filelib.ensure_dir(path)
     filename = path <> get_file_name(now, file_suffix)
-    Logger.info("write filename: #{filename}")
+    Logger.debug("write filen;ame: #{filename}")
     File.write(filename, data)
     Process.sleep(100)
     Common.Utils.File.cycle_mount()
@@ -66,7 +66,7 @@ defmodule Logging.Logger do
 
   @spec save_log(binary()) ::atom()
   def save_log(file_suffix \\ "") do
-    Logger.info("save log: #{file_suffix}")
+    Logger.debug("save log: #{file_suffix}")
     GenServer.cast(__MODULE__, {:save_log, file_suffix})
   end
 
@@ -126,7 +126,7 @@ defmodule Logging.Logger do
   @spec log_terminate(tuple(), map(), atom()) :: atom()
   def log_terminate(reason, state, module) do
     Logger.error("trap: #{inspect(reason)}")
-    Logger.info("state: #{inspect(state)}")
+    Logger.debug("state: #{inspect(state)}")
     save_log(module)
   end
 

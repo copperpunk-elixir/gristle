@@ -10,7 +10,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
   @reg_voltage 0x02
 
   def start_link(config) do
-    Logger.debug("Start INA260 GenServer")
+    Logger.info("Start I2c.Health.INA260.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -102,7 +102,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     result = read_channel(i2c_ref, @reg_voltage)
     case result do
       {:ok, voltage} ->
-        Logger.info("Ina260 voltage: #{voltage}")
+        Logger.debug("Ina260 voltage: #{voltage}")
         voltage
       other ->
         Logger.error("Ina260 Voltage read error: #{inspect(other)}")
@@ -115,7 +115,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     result = read_channel(i2c_ref, @reg_current)
     case result do
       {:ok, current} ->
-        # Logger.info("Ina260 current: #{current}")
+        # Logger.debug("Ina260 current: #{current}")
         current
       other ->
         Logger.error("Ina260 Current read error: #{inspect(other)}")

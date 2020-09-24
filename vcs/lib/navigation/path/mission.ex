@@ -36,7 +36,7 @@ defmodule Navigation.Path.Mission do
     if (index >= -1) do
       List.insert_at(mission.waypoints, index, waypoint)
     else
-      Logger.warn("Index cannot be less than -1")
+      Logger.debug("Index cannot be less than -1")
       mission.waypoints
     end
     %{mission | waypoints: waypoints }
@@ -48,7 +48,7 @@ defmodule Navigation.Path.Mission do
     if (index >= -1) do
       List.delete_at(mission.waypoints, index)
     else
-      Logger.warn("Index cannot be less than -1")
+      Logger.debug("Index cannot be less than -1")
       mission.waypoints
     end
     %{mission | waypoints: waypoints }
@@ -126,7 +126,7 @@ defmodule Navigation.Path.Mission do
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     Enum.each(wps, fn wp ->
       {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
-      Logger.info("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
+      Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
 
     vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
@@ -209,7 +209,7 @@ defmodule Navigation.Path.Mission do
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*flight_speed_range + min_flight_speed
         alt = :rand.uniform()*flight_agl_range + min_flight_agl + ground_wp.altitude
-        # Logger.info(Navigation.Utils.LatLonAlt.to_string(last_wp))
+        # Logger.debug(Navigation.Utils.LatLonAlt.to_string(last_wp))
         # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)
@@ -218,9 +218,9 @@ defmodule Navigation.Path.Mission do
       end)
       |> Enum.reverse()
     |> Enum.drop(1)
-    Logger.warn("before loop")
+    Logger.debug("before loop")
     # Enum.each(wps, fn wp ->
-    #   Logger.info("wp: #{wp.name}/#{wp.altitude}m")
+    #   Logger.debug("wp: #{wp.name}/#{wp.altitude}m")
     # end)
     if loop do
       first_wp = Enum.at(wps,0)
