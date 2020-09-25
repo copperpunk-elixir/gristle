@@ -31,7 +31,7 @@ defmodule Peripherals.Uart.Actuation.Pololu.Device do
     # See Pololu Maestro Servo Controller User's Guide for explanation
     message = get_message_for_channel_and_output_ms(channel, output_ms)
     # Logger.debug("set #{channel} to #{Common.Utils.eftb(output_ms,0)}")
-    Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
+    :ok = Circuits.UART.write(device.interface_ref, :binary.list_to_bin(message), device.write_timeout)
   end
 
   def get_message_for_channel_and_output_ms(channel, output_ms) do

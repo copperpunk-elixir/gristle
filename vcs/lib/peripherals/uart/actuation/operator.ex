@@ -43,11 +43,10 @@ defmodule Peripherals.Uart.Actuation.Operator do
   @impl GenServer
   def handle_cast({:update_actuators, actuators_and_outputs}, state) do
     channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({_actuator_name, {actuator, output}}, acc) ->
-      # Logger.debug("op #{actuator_name}: #{output}")
+      # Logger.debug("op #{actuator.channel_number}: #{output}")
       pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
       Map.put(acc, actuator.channel_number, pulse_width_us)
     end)
-
     apply(state.interface_module, :write_channels, [state.interface, channels])
     {:noreply, %{state | channels: channels}}
   end
@@ -71,5 +70,4 @@ defmodule Peripherals.Uart.Actuation.Operator do
       end
     end
   end
-
 end
