@@ -33,18 +33,10 @@ defmodule Peripherals.Uart.PwmReader.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-
     Comms.Operator.join_group(__MODULE__, :pwm_input, self())
-    Logger.debug("pwm_reader device: #{state.device_description}")
-    port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.debug("pwm_Reader port: #{inspect(port)}")
-    case Circuits.UART.open(state.uart_ref, port, [speed: state.baud, active: true]) do
-      {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}")
-        raise "#{port} is unavailable"
-      _success ->
-        Logger.debug("PWM reader opened #{port}")
-    end
+    port_options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    Logger.debug("Uart.PwmReader.Operator setup complete!")
     {:noreply, state}
   end
 

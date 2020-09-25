@@ -3,8 +3,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   use GenServer
   require Logger
 
-  @default_baud 115_200
-  @stop_bits 1
+  # @default_baud 115_200
 
   def start_link(config) do
     Logger.info("Start Uart.Command.Dsm.Operator GenServer")
@@ -19,6 +18,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
+        baud: config.baud,
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
@@ -35,15 +35,9 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    uart_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.debug("open port: #{uart_port}")
-    case Circuits.UART.open(state.uart_ref, uart_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
-      {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}")
-        raise "#{uart_port} is unavailable"
-      _success ->
-        Logger.debug("DSM opened #{uart_port}")
-    end
+    port_options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    Logger.debug("Uart.Command.Dsm setup complete!")
     {:noreply, state}
   end
 

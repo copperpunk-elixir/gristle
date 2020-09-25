@@ -3,7 +3,6 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   use GenServer
   require Logger
 
-
   @start_byte 250
   @deg2rad 0.017453293
   @rad2deg 57.295779513
@@ -20,7 +19,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.vn_device_description,
+        device_description: config.device_description,
         baud: config.baud,
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
@@ -51,15 +50,9 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Logger.debug("VN INS begin with process: #{inspect(self())}")
-    ins_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    case Circuits.UART.open(state.uart_ref, ins_port,[speed: state.baud, active: true]) do
-      {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}")
-        raise "#{ins_port} is unavailable"
-      _success ->
-        Logger.debug("VN INS opened #{ins_port}")
-    end
+    port_options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    Logger.debug("Uart.Estimation.VnIns.Operator setup complete!")
     {:noreply, state}
   end
 
@@ -80,18 +73,12 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
-    # Enum.each(data_list, fn x->
-    #   Logger.debug("#{x}")
-    # end)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
     # Logger.debug("time: #{ins.gps_time_ns}")
     # Logger.debug("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.debug("gps_status: #{ins.gps_status}")
-
     state = if (state.new_ins_data_to_publish) do
-
-      # Logger.debug("rpy: #{eftb(ins.attitude.roll*@rad2deg,2)}/#{eftb(ins.attitude.pitch*@rad2deg,2)}/#{eftb(ins.attitude.yaw*@rad2deg,2)}")
       publish_ins_data(ins)
       %{state | new_ins_data_to_publish: false}
     else

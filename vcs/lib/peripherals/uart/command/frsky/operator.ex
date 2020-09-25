@@ -3,8 +3,6 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
   use GenServer
   require Logger
 
-  @default_baud 115_200
-  @stop_bits 1
   @start_byte 0x0F
   @end_byte 0x00
   @end_byte_index 24
@@ -26,6 +24,7 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
+        baud: config.baud,
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
@@ -45,15 +44,9 @@ defmodule Peripherals.Uart.Command.Frsky.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    frsky_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.debug("open port: #{frsky_port}")
-    case Circuits.UART.open(state.uart_ref, frsky_port, [speed: @default_baud, active: true, stop_bits: @stop_bits]) do
-      {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}")
-        raise "#{frsky_port} is unavailable"
-      _success ->
-        Logger.debug("FrskyRx opened #{frsky_port}")
-    end
+    options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
+    Logger.debug("Uart.Command.Frsky setup complete!")
     {:noreply, state}
   end
 

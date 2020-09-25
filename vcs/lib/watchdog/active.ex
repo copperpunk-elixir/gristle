@@ -66,13 +66,13 @@ defmodule Watchdog.Active do
 
   @spec send_status(atom(), atom(), boolean()) ::atom()
   def send_status(name, local_or_global, is_fed) do
-    Logger.debug("#{name} watchdog is fed?: #{is_fed}")
+    Logger.warn("#{name} watchdog is fed?: #{is_fed}")
     function =
       case local_or_global do
         :local -> :send_local_msg_to_group
         :global -> :send_global_msg_to_group
     end
-    apply(Comms.Operator, function,[{__MODULE__, name}, {{:watchdog_status, name}, is_fed}, {:watchdog, name}, self()])
+    apply(Comms.Operator, function,[{__MODULE__, name}, {{:watchdog_status, name}, is_fed}, self()])
   end
 
   @spec feed(atom()) :: atom()

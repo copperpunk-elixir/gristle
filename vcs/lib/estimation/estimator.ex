@@ -20,7 +20,7 @@ defmodule Estimation.Estimator do
         pos_vel_expected_interval_ms: config.pos_vel_expected_interval_ms,
         range_expected_interval_ms: config.range_expected_interval_ms,
         airspeed_expected_interval_ms: config.airspeed_expected_interval_ms,
-        watchdog_fed: %{attrate: false, pos_vel: false, range: false, airspeed: false},
+        watchdog_fed: %{att_rate: false, pos_vel: false, range: false, airspeed: false},
         estimator_health: :unknown,
         min_speed_for_course: @min_speed_for_course,
         bodyrate: %{},
@@ -48,7 +48,10 @@ defmodule Estimation.Estimator do
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :airspeed}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_measured, :range}, self())
-    Comms.Operator.join_group(__MODULE__, {:watchdog, :range}, self())
+    Comms.Operator.join_group(__MODULE__, {:watchdog_status, :range}, self())
+    Comms.Operator.join_group(__MODULE__, {:watchdog_status, :att_rate}, self())
+    Comms.Operator.join_group(__MODULE__, {:watchdog_status, :pos_vel}, self())
+    Comms.Operator.join_group(__MODULE__, {:watchdog_status, :airspeed}, self())
     Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
     Common.Utils.start_loop(self(), state.pv_3_local_loop_interval_ms, :pv_3_local_loop)
@@ -128,39 +131,42 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast({{:watchdog_status, name}, is_fed}, state) do
     watchdog_fed = Map.put(state.watchdog_fed, name, is_fed)
+    Logger.info("rx watchdog state for #{name}: #{is_fed}")
     {:noreply, %{state | watchdog_fed: watchdog_fed}}
   end
 
   @impl GenServer
   def handle_info(:imu_loop, state) do
-    attitude = state.attitude
-    bodyrate = state.bodyrate
-    unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
-      Peripherals.Uart.Telemetry.Operator.store_data(%{attitude: attitude})
-      Comms.Operator.send_local_msg_to_group(
-        __MODULE__,
-        {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
-        {:pv_values, :attitude_bodyrate},
-        self())
+    if (state.watchdog_fed.att_rate == true) do
+      attitude = state.attitude
+      bodyrate = state.bodyrate
+      unless (Enum.empty?(attitude) or Enum.empty?(bodyrate)) do
+        Peripherals.Uart.Telemetry.Operator.store_data(%{attitude: attitude})
+        Comms.Operator.send_local_msg_to_group(
+          __MODULE__,
+          {{:pv_values, :attitude_bodyrate}, attitude, bodyrate, state.imu_loop_interval_ms/1000},
+          self())
+      end
     end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:ins_loop, state) do
-    position = state.position
-    velocity = Map.take(state.velocity, [:speed, :course, :vertical])
-    unless Enum.empty?(position) or Enum.empty?(velocity) do
-      position = Map.put(position, :agl, state.agl)
-      airspeed = state.airspeed
-      airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
-      velocity = Map.put(velocity, :airspeed, airspeed)
-      Peripherals.Uart.Telemetry.Operator.store_data(%{position: position, velocity: velocity})
-      Comms.Operator.send_local_msg_to_group(
-        __MODULE__,
-        {{:pv_values, :position_velocity}, position, velocity, state.ins_loop_interval_ms/1000},
-        {:pv_values, :position_velocity},
-        self())
+    if (state.watchdog_fed.pos_vel == true) do
+      position = state.position
+      velocity = Map.take(state.velocity, [:speed, :course, :vertical])
+      unless Enum.empty?(position) or Enum.empty?(velocity) do
+        position = Map.put(position, :agl, state.agl)
+        airspeed = state.airspeed
+        airspeed = if (airspeed > 1.0), do: airspeed, else: velocity.speed
+        velocity = Map.put(velocity, :airspeed, airspeed)
+        Peripherals.Uart.Telemetry.Operator.store_data(%{position: position, velocity: velocity})
+        Comms.Operator.send_local_msg_to_group(
+          __MODULE__,
+          {{:pv_values, :position_velocity}, position, velocity, state.ins_loop_interval_ms/1000},
+          self())
+      end
     end
     {:noreply, state}
   end

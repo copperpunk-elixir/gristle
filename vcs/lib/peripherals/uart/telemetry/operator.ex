@@ -32,19 +32,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    Logger.debug("telemetry device: #{state.device_description}")
-    telemetry_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-    Logger.debug("telemetry port: #{inspect(telemetry_port)}")
-    case Circuits.UART.open(state.uart_ref, telemetry_port, [speed: state.baud, active: true]) do
-      {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}")
-        raise "#{telemetry_port} is unavailable"
-      _success ->
-        Logger.debug("TelemetryRx opened #{telemetry_port}")
-    end
-    # fast_loop_timer = Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
+    port_options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+     # fast_loop_timer = Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
     # medium_loop_timer = Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
     Common.Utils.start_loop(self(), state.slow_loop_interval_ms, :slow_loop)
+    Logger.debug("Uart.Telemetry.Operator setup complete!")
     {:noreply, state}
   end
 

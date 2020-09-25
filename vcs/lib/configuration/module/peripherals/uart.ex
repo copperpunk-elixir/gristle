@@ -7,26 +7,31 @@ defmodule Configuration.Module.Peripherals.Uart do
     Logger.debug("peripherals: #{inspect(peripherals)}")
     node_type = if Common.Utils.Configuration.is_hil?(), do: :hil, else: node_type
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
-      {module_key, module_config} =
-        case module do
-          :Dsm -> {Command.Dsm, get_dsm_rx_config()}
-          :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
-          :FrskyServo -> {Actuation, get_actuation_config(module)}
-          :PololuServo -> {Actuation, get_actuation_config(module)}
-          :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
-          :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
-          :Xbee -> {Telemetry, get_telemetry_config(module)}
-          :Sik -> {Telemetry, get_telemetry_config(module)}
-          :PwmReader -> {PwmReader, get_pwm_reader_config()}
-        end
+      {module_key, module_config} = get_module_key_and_config_for_module(module, node_type)
       Map.put(acc, module_key, module_config)
     end)
+  end
+
+  @spec get_module_key_and_config_for_module(atom(), atom()) :: tuple()
+  def get_module_key_and_config_for_module(module, node_type\\nil) do
+    case module do
+      :Dsm -> {Command.Dsm, get_dsm_rx_config()}
+      :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
+      :FrskyServo -> {Actuation, get_actuation_config(module)}
+      :PololuServo -> {Actuation, get_actuation_config(module)}
+      :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
+      :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
+      :Xbee -> {Telemetry, get_telemetry_config(module)}
+      :Sik -> {Telemetry, get_telemetry_config(module)}
+      :PwmReader -> {PwmReader, get_pwm_reader_config()}
+    end
   end
 
   @spec get_dsm_rx_config() :: map()
   def get_dsm_rx_config() do
     %{
-      device_description: "CP2104"
+      device_description: "CP2104",
+      baud: 115_200
     }
   end
 
@@ -34,6 +39,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_frsky_rx_config() do
     %{
       device_description: "Feather M0",
+      baud: 115_200
     }
   end
 
@@ -46,12 +52,10 @@ defmodule Configuration.Module.Peripherals.Uart do
       end
     %{
       interface_module: interface_module,
-      driver_config: %{
-        device_description: device_desc,
-        baud: 115_200,
-        write_timeout: 1,
-        read_timeout: 1
-      }
+      device_description: device_desc,
+      baud: 115_200
+      # write_timeout: 1,
+      # read_timeout: 1
     }
   end
 
@@ -64,7 +68,8 @@ defmodule Configuration.Module.Peripherals.Uart do
         _other -> "STM32"
       end
     %{
-      device_description: device_description
+      device_description: device_description,
+      baud: 115_200
     }
   end
 
@@ -77,7 +82,7 @@ defmodule Configuration.Module.Peripherals.Uart do
         _other -> {"RedBoard", 115_200}
       end
     %{
-      vn_device_description: device_desc,
+      device_description: device_desc,
       baud: baud
     }
   end

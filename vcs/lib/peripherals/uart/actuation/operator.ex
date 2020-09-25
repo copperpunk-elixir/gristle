@@ -2,22 +2,23 @@ defmodule Peripherals.Uart.Actuation.Operator do
   use GenServer
   require Logger
 
-@connection_count_max 10
-
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     Logger.info("Start Uart.Actuation.Operator GenServer")
-    GenServer.cast(__MODULE__, {:begin, config.driver_config})
+    GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
     # Start the low-level actuator driver
+    {:ok, uart_ref} = Circuits.UART.start_link()
     Logger.debug("Actuation module: #{config.interface_module}")
     {:ok, %{
         interface_module: config.interface_module,
-        # driver_config: config.driver_config,
+        uart_ref: uart_ref,
+        device_description: config.device_description,
+        baud: config.baud,
         interface: nil,
         channels: %{}
      }
@@ -31,9 +32,11 @@ defmodule Peripherals.Uart.Actuation.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:begin, driver_config}, state) do
-    interface = apply(state.interface_module, :new_device, [driver_config])
-    interface = Peripherals.Uart.Utils.open_interface_connection(state.interface_module, interface, 0, @connection_count_max)
+  def handle_cast(:begin, state) do
+    interface = apply(state.interface_module, :new_device, [state.uart_ref])
+    options = [speed: state.baud, active: false]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
+    Logger.debug("Uart.Actuation.Operator setup complete!")
     {:noreply, %{state | interface: interface}}
   end
 

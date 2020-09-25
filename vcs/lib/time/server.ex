@@ -73,11 +73,13 @@ defmodule Time.Server do
 
   @spec get_time() :: struct()
   def get_time() do
-    Common.Utils.safe_call(__MODULE__, :get_time, 100, nil)
+    Common.Utils.safe_call(__MODULE__, :get_time, 100, Time.Clock.get_epoch())
   end
 
   @spec get_time_day() :: struct()
   def get_time_day() do
-    Common.Utils.safe_call(__MODULE__, :get_time_day, 100, nil)
+    default_time = Time.Clock.get_epoch()
+    default_day = Date.from_erl!({default_time.year, default_time.month, default_time.day})
+    Common.Utils.safe_call(__MODULE__, :get_time_day, 100, {default_time, default_day})
   end
 end
