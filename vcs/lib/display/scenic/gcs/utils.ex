@@ -106,6 +106,42 @@ defmodule Display.Scenic.Gcs.Utils do
     {graph, offset_x, offset_y + height + config.spacer_y}
   end
 
+  def add_rectangle_to_graph(graph, config) do
+    graph =
+      rect(
+        graph,
+        {config.width, config.height},
+        id: config.id,
+        translate: {config.offset_x, config.offset_y},
+        fill: config.fill
+      )
+    {graph, config.offset_x, config.offset_y}
+  end
+
+  def add_save_log_to_graph(graph, config) do
+    graph =
+      button(
+        graph,
+        "Save Log",
+        id: config.button_id,
+        width: config.button_width,
+        height: config.button_height,
+        theme: :primary,
+        button_font_size: config.font_size,
+        translate: {config.offset_x, config.offset_y}
+      )
+    |>
+      text_field(
+        "",
+        id: config.text_id,
+        translate: {config.offset_x+config.button_width+10, config.offset_y},
+        font_size: config.font_size,
+        text_align: :left,
+        width: config.text_width
+      )
+    {graph, config.offset_x, config.offset_y}
+  end
+
   @interior_angle 2.677945 #= :math.pi/2 + :math.atan(ratio)
   @ratio_sq 4
   @spec draw_arrow(map(), float(), float(), float(), float(), atom(), boolean(), atom()) :: Scenic.Graph.t()

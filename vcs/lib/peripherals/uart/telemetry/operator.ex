@@ -115,7 +115,13 @@ defmodule Peripherals.Uart.Telemetry.Operator do
         construct_and_send_message(:tx_battery, values, state.uart_ref)
       end
     end)
-
+    # Cluster Healthy
+    cluster_healthy = Map.get(state, :cluster_healthy)
+    if (cluster_healthy == true) do
+      construct_and_send_message(:cluster_healthy, [iTOW,1], state.uart_ref)
+    else
+      construct_and_send_message(:cluster_healthy, [iTOW,0], state.uart_ref)
+    end
     {:noreply, state}
   end
 
@@ -188,6 +194,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             # Logger.debug("battery #{battery_id} msg rx'd")
             send_global({msg_type, battery_id, voltage, current, energy_discharged})
+          0x16 ->
+            msg_type = :cluster_healthy
+            [itow, cluster_healthy_base2] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            # Logger.debug("battery #{battery_id} msg rx'd")
+            cluster_healthy = if (cluster_healthy_base2 == 1), do: true, else: false
+            send_global({msg_type, cluster_healthy})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
        0x46  ->
@@ -258,6 +270,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             Logger.debug("Clear mission")
             [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, iTOW})
+          0x04 ->
+            msg_type = :save_log_proto
+            Logger.debug("save log proto received")
+            save_log_pb = Display.Scenic.Gcs.Protobuf.SaveLog.decode(:binary.list_to_bin(payload))
+            filename =  save_log_pb.filename
+            Logging.Logger.save_log(filename)
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
@@ -318,5 +336,10 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   @spec send_message(binary()) :: atom()
   def send_message(message) do
     GenServer.cast(__MODULE__, {:send_message, message})
+  end
+
+  @spec send_message_now(any(), binary()) :: atom()
+  def send_message_now(uart_ref, message) do
+    Circuits.UART.write(uart_ref, message)
   end
 end

@@ -12,7 +12,7 @@ defmodule Display.Scenic.System do
 
     gcs_config = %{
       name: :gcs,
-      size: {800, 600},
+      size: {800, 700},
       default_scene: {gcs_scene, nil},
       drivers: [
         %{

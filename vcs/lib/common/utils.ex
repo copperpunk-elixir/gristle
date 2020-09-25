@@ -88,7 +88,7 @@ defmodule Common.Utils do
     |> Map.new()
   end
 
-    def assert_valid_config(config, config_type) do
+  def assert_valid_config(config, config_type) do
     {verify_fn, default_value} =
       case config_type do
         Map -> {:is_map, %{}}

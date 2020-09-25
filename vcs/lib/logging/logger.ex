@@ -45,7 +45,7 @@ defmodule Logging.Logger do
     path = get_directory(now, state.root_directory, folder)
     :filelib.ensure_dir(path)
     filename = path <> get_file_name(now, file_suffix)
-    Logger.debug("write filen;ame: #{filename}")
+    Logger.debug("write filename: #{filename}")
     File.write(filename, data)
     Process.sleep(100)
     Common.Utils.File.cycle_mount()
@@ -66,7 +66,7 @@ defmodule Logging.Logger do
 
   @spec save_log(binary()) ::atom()
   def save_log(file_suffix \\ "") do
-    Logger.debug("save log: #{file_suffix}")
+    Logger.debug("Logging.Logger save log: #{file_suffix}")
     GenServer.cast(__MODULE__, {:save_log, file_suffix})
   end
 
