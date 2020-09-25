@@ -208,7 +208,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Msgpax
             msg_type = :get_pid_gain
             [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
-          Logger.debug("#{process_variable}->#{output_variable} #{parameter} = #{value}")
+          Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
 
           other -> Logger.warn("Bad message id: #{other}")
         end

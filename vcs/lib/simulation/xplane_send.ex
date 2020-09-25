@@ -63,7 +63,7 @@ defmodule Simulation.XplaneSend do
         send_throttle_command(cmds, socket, dest_ip, dest_port)
         send_flap_command(cmds, socket, dest_ip, dest_port)
     end
-    Logger.debug("up act cmds: #{inspect(state.commands)}")
+    # Logger.debug("up act cmds: #{inspect(cmds)}")
     {:noreply, state}
   end
 
