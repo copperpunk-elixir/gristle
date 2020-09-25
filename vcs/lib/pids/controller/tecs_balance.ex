@@ -40,14 +40,14 @@ defmodule Pids.Controller.TecsBalance do
 
 
     altitude_corr = cmds.altitude_corr
-    alt_rate = altitude_corr*state.altitude_kp
-    # Logger.debug("alt_rate: #{Common.Utils.eftb(alt_rate,2)}")
+    alt_rate_sp = altitude_corr*state.altitude_kp
+    # Logger.debug("alt_rate_sp: #{Common.Utils.eftb(alt_rate_sp,2)}")
     # Currently the KE weighting is not used. Maybe in the future I can figure that out.
-    {ke_weighting, alt_rate} =
+    {ke_weighting, alt_rate_sp} =
       cond do
       # speed < state.min_climb_speed -> {2.0, 0.087}
-      # abs(alt_rate) < 3.0 -> {0.0, alt_rate}
-      true -> {0.0, alt_rate}
+      # abs(alt_rate) < 3.0 -> {0.0, alt_rate_sp}
+      true -> {0.0, alt_rate_sp}
     end
 
     pe_weighting = 2.0 - ke_weighting
@@ -60,7 +60,7 @@ defmodule Pids.Controller.TecsBalance do
     potential_energy_rate = values.potential_energy_rate
 
     kinetic_energy_rate_sp = cmds.kinetic_energy_rate
-    potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
+    potential_energy_rate_sp = alt_rate_sp*Common.Constants.gravity()
 
     kinetic_energy_sp = cmds.kinetic_energy
     potential_energy_sp = values.potential_energy + potential_energy_rate_sp*dt
@@ -97,7 +97,7 @@ defmodule Pids.Controller.TecsBalance do
     output = (cmd_p + cmd_i + cmd_d + cmd_rate) / state.time_constant * state.balance_rate_scalar
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    # Logger.debug("p/i/d/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(output, 3)}")
+    # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb(output, 3)}")
 
     %{state | output: output, speed_prev: speed}
   end

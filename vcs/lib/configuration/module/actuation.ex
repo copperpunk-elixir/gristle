@@ -34,7 +34,7 @@ defmodule Configuration.Module.Actuation do
 
     output_modules =
       case node_type do
-        :sim -> [Peripherals.Uart.Actuation.Operator]
+        :sim -> [Simulation.XplaneSend]
         _other -> [Peripherals.Uart.Actuation.Operator]
       end
 

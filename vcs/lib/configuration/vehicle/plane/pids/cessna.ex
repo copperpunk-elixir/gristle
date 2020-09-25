@@ -42,7 +42,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      pitch: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
+      pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
       thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
@@ -58,7 +58,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       ki: 0.1,
       kd: 0,
       altitude_kp: 1.0,
-      energy_rate_scalar: 0.001,
+      energy_rate_scalar: 0.002,
       integrator_range: 300,
       ff: get_feed_forward(:tecs, :thrust)}
   end
@@ -66,10 +66,10 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
   @spec get_tecs_balance() :: map()
   def get_tecs_balance() do
     %{type: :TecsBalance,
-      ki: 0.01,
-      kd: 1.0,
-      altitude_kp: 0.5,
-      balance_rate_scalar: 0.001,
+      ki: 0.1,
+      kd: 0.0,
+      altitude_kp: 0.25,
+      balance_rate_scalar: 0.002,
       time_constant: 2.0,
       integrator_range: 300,
       min_climb_speed: 30
