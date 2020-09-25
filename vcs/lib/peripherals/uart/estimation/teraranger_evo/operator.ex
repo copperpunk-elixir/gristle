@@ -5,7 +5,6 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
 
   @max_range_expected 40.0
   @start_byte 84
-  @default_baud 115_200
 
   @crc_table {
  0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15, 0x38, 0x3f, 0x36, 0x31,
@@ -44,6 +43,7 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
+        baud: config.baud,
         range: nil,
         start_byte_found: false,
         remaining_buffer: [],
@@ -60,16 +60,9 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    unless is_nil(state.device_description) do
-      evo_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(state.device_description)
-      case Circuits.UART.open(state.uart_ref, evo_port, [speed: @default_baud, active: true]) do
-        {:error, error} ->
-          Logger.error("Error opening UART: #{inspect(error)}")
-          raise "#{evo_port} is unavailable"
-        _success ->
-          Logger.debug("Teraranger Evo opened #{evo_port}")
-      end
-    end
+    options = [speed: state.baud, active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
+    Logger.debug("Uart.Estimation.TerarangerEvo.Operator setup complete!")
     {:noreply, state}
   end
 

@@ -15,10 +15,24 @@ defmodule Peripherals.Uart.Utils do
     end
   end
 
+  @spec open_interface_connection_infinite(any(), binary(), list(), integer) :: atom()
+  def open_interface_connection_infinite(interface_ref, device_description, options, num_tries \\ 1) do
+    port = Peripherals.Uart.Utils.get_uart_devices_containing_string(device_description)
+    Logger.debug("Opening #{device_description}. Attempt #{num_tries}")
+    case Circuits.UART.open(interface_ref,port, options) do
+      {:error, error} ->
+        Logger.error("Error opening UART: #{inspect(error)}. Retrying in 1s")
+        Process.sleep(1000)
+        open_interface_connection_infinite(interface_ref, device_description, options, num_tries + 1)
+      _success ->
+        Logger.debug("#{device_description} opened UART")
+    end
+  end
+
   @spec get_uart_devices_containing_string(binary()) :: list()
   def get_uart_devices_containing_string(device_string) do
     device_string = String.downcase(device_string)
-    Logger.debug("devicestring: #{device_string}")
+    # Logger.debug("devicestring: #{device_string}")
     uart_ports = Circuits.UART.enumerate()
     # Logger.debug("ports: #{inspect(uart_ports)}")
     matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
