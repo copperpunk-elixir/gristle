@@ -35,14 +35,14 @@ defmodule Cluster.Heartbeat do
   def handle_cast(:begin , state) do
     Process.sleep(100)
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, @node_sorter, self())
+    Comms.Operator.join_group(__MODULE__, :add_heartbeat, self())
     heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
     {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
   end
 
   @impl GenServer
   def handle_cast({:add_heartbeat, heartbeat_map, time_validity_ms}, state) do
-    Logger.debug("add heartbeat: #{inspect(heartbeat_map)}")
+    # Logger.debug("add heartbeat: #{inspect(heartbeat_map)}")
     MessageSorter.Sorter.add_message(@node_sorter, [heartbeat_map.node], time_validity_ms, heartbeat_map)
     {:noreply, state}
   end
@@ -73,16 +73,21 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_info(:heartbeat_loop, state) do
-    MessageSorter.Sorter.add_message(@node_sorter, [state.node], state.heartbeat_time_validity_ms, state.hb_map)
+    # MessageSorter.Sorter.add_message(@node_sorter, [state.node], state.heartbeat_time_validity_ms, state.hb_map)
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {:add_heartbeat,state.hb_map, state.heartbeat_time_validity_ms}, self())
     # Get Heartbeat status
-    all_nodes = unpack_heartbeats()
-    all_nodes = update_ward_status(all_nodes)
+    all_nodes = unpack_heartbeats(state.hb_map)
+    |> update_ward_status()
+    # all_nodes = update_ward_status(all_nodes)
     cluster_status = get_cluster_status(all_nodes)
+    Logger.debug("#{inspect(state.hb_map)} status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end
 
-  def unpack_heartbeats() do
+  @spec unpack_heartbeats(map()) :: map()
+  def unpack_heartbeats(self_hb) do
     node_messages = MessageSorter.Sorter.get_all_messages(@node_sorter)
+    |> Kernel.++([%{value: self_hb}])
     Enum.reduce(node_messages, %{}, fn (node_msg, acc) ->
       hb = node_msg.value
       node = %{ward: hb.ward}
