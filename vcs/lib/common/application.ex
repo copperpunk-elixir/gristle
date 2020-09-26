@@ -18,7 +18,7 @@ defmodule Common.Application do
 
   @spec common_startup() :: atom()
   def common_startup() do
-    # RingLogger.attach()
+    RingLogger.attach()
     Common.Utils.File.mount_usb_drive()
     Cluster.Network.Utils.set_host_name()
   end

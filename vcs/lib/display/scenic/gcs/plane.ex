@@ -29,7 +29,7 @@ defmodule Display.Scenic.Gcs.Plane do
   # ============================================================================
   def init(_, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
-    {:ok, %Scenic.ViewPort.Status{size: {_vp_width, _}}} =
+    {:ok, %Scenic.ViewPort.Status{size: {_vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
 
@@ -40,6 +40,7 @@ defmodule Display.Scenic.Gcs.Plane do
     goals_height = 50
     battery_width = 400
     battery_height = 40
+    cluster_status_side = 100
     # build the graph
     offset_x_origin = 10
     offset_y_origin = 10
@@ -53,6 +54,14 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
+
+    cluster_status_offset_x = 200
+    cluster_status_offset_y = 20
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_status, width: cluster_status_side, height: cluster_status_side, offset_x: cluster_status_offset_x, offset_y: cluster_status_offset_y, fill: :red})
+
+    # Save Log
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
+
 
     batteries = [:cluster, :motor]
     {graph, _offset_x, _offset_y} =
@@ -69,12 +78,17 @@ defmodule Display.Scenic.Gcs.Plane do
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
     Comms.Operator.join_group(__MODULE__, :control_state, self())
     Comms.Operator.join_group(__MODULE__, :tx_battery, self())
-    {:ok, graph, push: graph}
+    Comms.Operator.join_group(__MODULE__, :cluster_status, self())
+    state = %{
+      graph: graph,
+      save_log_file: ""
+    }
+    {:ok, state, push: graph}
   end
 
   # --------------------------------------------------------
   # receive PV updates from the vehicle
-  def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, graph) do
+  def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
     # Logger.debug("position: #{Navigation.Utils.LatLonAlt.to_string(position)}")
     roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
     pitch = Map.get(attitude, :pitch,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
@@ -100,7 +114,7 @@ defmodule Display.Scenic.Gcs.Plane do
     |> Common.Utils.Math.rad2deg()
     |> Common.Utils.eftb(1)
 
-    graph = Scenic.Graph.modify(graph, :lat, &text(&1, lat <> @degrees))
+    graph = Scenic.Graph.modify(state.graph, :lat, &text(&1, lat <> @degrees))
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
     |> Scenic.Graph.modify(:alt, &text(&1, alt <> @meters))
     |> Scenic.Graph.modify(:agl, &text(&1, agl <> @meters))
@@ -110,10 +124,11 @@ defmodule Display.Scenic.Gcs.Plane do
     |> Scenic.Graph.modify(:roll, &text(&1, roll <> @degrees))
     |> Scenic.Graph.modify(:pitch, &text(&1, pitch <> @degrees))
     |> Scenic.Graph.modify(:yaw, &text(&1, yaw <> @degrees))
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
 
-  def handle_cast({{:tx_goals, level}, cmds}, graph) do
+  def handle_cast({{:tx_goals, level}, cmds}, state) do
+    graph = state.graph
     graph =
       cond do
       level <=1 ->
@@ -146,11 +161,11 @@ defmodule Display.Scenic.Gcs.Plane do
         |> Scenic.Graph.modify(:altitude_cmd, &text(&1,altitude <> @meters))
       true -> graph
       end
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
 
-  def handle_cast({:control_state, control_state}, graph) do
-    graph = Enum.reduce(3..-1, graph, fn (goal_level, acc) ->
+  def handle_cast({:control_state, control_state}, state) do
+    graph = Enum.reduce(3..-1, state.graph, fn (goal_level, acc) ->
       if goal_level == control_state do
         {stroke_color, display_level} =
           case goal_level do
@@ -163,20 +178,49 @@ defmodule Display.Scenic.Gcs.Plane do
         Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :white}))
       end
     end)
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
 
-  def handle_cast({:tx_battery, battery_id, voltage_V, current_A, energy_mAh}, graph) do
+  def handle_cast({:tx_battery, battery_id, voltage_V, current_A, energy_mAh}, state) do
     voltage = Common.Utils.eftb(voltage_V, 2)
     current = Common.Utils.eftb(current_A, 2)
     mAh = Common.Utils.eftb(energy_mAh, 0)
     {battery_type, _battery_channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
     # Logger.debug("tx battery type: #{battery_type}")
     graph =
-      graph
+      state.graph
       |> Scenic.Graph.modify({battery_type, :V}, &text(&1,voltage <> "V"))
       |> Scenic.Graph.modify({battery_type, :I}, &text(&1,current <> "A"))
       |> Scenic.Graph.modify({battery_type, :mAh}, &text(&1,mAh <> "mAh"))
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
+
+  def handle_cast({:cluster_status, cluster_status}, state) do
+    fill = if (cluster_status == 1), do: :green, else: :red
+    graph =
+      state.graph
+    |> Scenic.Graph.modify(:cluster_status, &update_opts(&1, fill: fill))
+    {:noreply, %{state | graph: graph}, push: graph}
+  end
+
+  @impl Scenic.Scene
+  def filter_event({:click, :save_log}, _from, state) do
+    Logger.debug("Save Log to file: #{state.save_log_file}")
+    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_filename])
+    save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:save_log_proto, save_log_encoded)
+    {:cont, :event, state}
+  end
+
+  @impl Scenic.Scene
+  def filter_event({:click, _other}, _from, state) do
+    {:cont, :event, state}
+  end
+
+
+  @impl Scenic.Scene
+  def filter_event({:value_changed, :save_log_filename, filename}, _from, state) do
+    {:cont, :event, %{state | save_log_file: filename}}
+  end
+
 end

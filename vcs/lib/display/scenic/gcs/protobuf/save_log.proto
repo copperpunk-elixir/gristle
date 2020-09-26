@@ -1,0 +1,7 @@
+syntax = "proto2";
+
+package display.scenic.gcs.protobuf;
+
+message SaveLog {
+  required string filename = 1;
+}

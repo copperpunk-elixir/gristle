@@ -20,7 +20,7 @@ defmodule Cluster.Heartbeat do
         heartbeat_loop_interval_ms: config.heartbeat_loop_interval_ms,
         heartbeat_loop_timer: nil,
         heartbeat_time_validity_ms: heartbeat_time_validity_ms,
-        cluster_status: 0,
+        cluster_status: -1,
         all_nodes: %{}
      }}
   end
@@ -61,7 +61,7 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_call(:is_cluster_healthy, _from, state) do
-    cluster_healthy = state.cluster_status == 1
+    cluster_healthy = (state.cluster_status == 1)
     {:reply, cluster_healthy , state}
   end
 
@@ -80,6 +80,7 @@ defmodule Cluster.Heartbeat do
     |> update_ward_status()
     # all_nodes = update_ward_status(all_nodes)
     cluster_status = get_cluster_status(all_nodes)
+    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
     Logger.debug("#{inspect(state.hb_map)} status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end

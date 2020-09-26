@@ -14,7 +14,6 @@ defmodule Configuration.Module.Command do
     |> Module.concat(model_type)
 
     Enum.reduce(channels, %{}, fn (channel, acc) ->
-      IO.puts("channel: #{channel}")
       constraints =
         apply(model_module, :get_constraints, [])
         |> Map.get(channel)
