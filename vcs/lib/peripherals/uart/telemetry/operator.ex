@@ -115,13 +115,9 @@ defmodule Peripherals.Uart.Telemetry.Operator do
         construct_and_send_message(:tx_battery, values, state.uart_ref)
       end
     end)
-    # Cluster Healthy
-    cluster_healthy = Map.get(state, :cluster_healthy)
-    if (cluster_healthy == true) do
-      construct_and_send_message(:cluster_healthy, [iTOW,1], state.uart_ref)
-    else
-      construct_and_send_message(:cluster_healthy, [iTOW,0], state.uart_ref)
-    end
+    # Cluster Status
+    cluster_status = Map.get(state, :cluster_status,0)
+    construct_and_send_message(:cluster_status, [iTOW,cluster_status], state.uart_ref)
     {:noreply, state}
   end
 
@@ -195,11 +191,10 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Logger.debug("battery #{battery_id} msg rx'd")
             send_global({msg_type, battery_id, voltage, current, energy_discharged})
           0x16 ->
-            msg_type = :cluster_healthy
-            [itow, cluster_healthy_base2] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            # Logger.debug("battery #{battery_id} msg rx'd")
-            cluster_healthy = if (cluster_healthy_base2 == 1), do: true, else: false
-            send_global({msg_type, cluster_healthy})
+            msg_type = :cluster_status
+            [itow, cluster_status] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            # cluster_healthy = if (cluster_healthy_base2 == 1), do: true, else: false
+            send_global({msg_type, cluster_status})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
        0x46  ->
@@ -275,7 +270,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             Logger.debug("save log proto received")
             save_log_pb = Display.Scenic.Gcs.Protobuf.SaveLog.decode(:binary.list_to_bin(payload))
             filename =  save_log_pb.filename
-            Logging.Logger.save_log(filename)
+            # Logging.Logger.save_log(filename)
+            send_global({:save_log, filename})
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end

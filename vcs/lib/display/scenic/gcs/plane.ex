@@ -40,7 +40,7 @@ defmodule Display.Scenic.Gcs.Plane do
     goals_height = 50
     battery_width = 400
     battery_height = 40
-    cluster_healthy_side = 100
+    cluster_status_side = 100
     # build the graph
     offset_x_origin = 10
     offset_y_origin = 10
@@ -55,9 +55,9 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
-    cluster_healthy_offset_x = 200
-    cluster_healthy_offset_y = 20
-    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_healthy, width: cluster_healthy_side, height: cluster_healthy_side, offset_x: cluster_healthy_offset_x, offset_y: cluster_healthy_offset_y, fill: :red})
+    cluster_status_offset_x = 200
+    cluster_status_offset_y = 20
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_status, width: cluster_status_side, height: cluster_status_side, offset_x: cluster_status_offset_x, offset_y: cluster_status_offset_y, fill: :red})
 
     # Save Log
     {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
@@ -78,7 +78,7 @@ defmodule Display.Scenic.Gcs.Plane do
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
     Comms.Operator.join_group(__MODULE__, :control_state, self())
     Comms.Operator.join_group(__MODULE__, :tx_battery, self())
-    Comms.Operator.join_group(__MODULE__, :cluster_healthy, self())
+    Comms.Operator.join_group(__MODULE__, :cluster_status, self())
     state = %{
       graph: graph,
       save_log_file: ""
@@ -195,23 +195,28 @@ defmodule Display.Scenic.Gcs.Plane do
     {:noreply, %{state | graph: graph}, push: graph}
   end
 
-  def handle_cast({:cluster_healthy, cluster_healthy}, state) do
-    fill = if (cluster_healthy == true), do: :green, else: :red
+  def handle_cast({:cluster_status, cluster_status}, state) do
+    fill = if (cluster_status == 1), do: :green, else: :red
     graph =
       state.graph
-    |> Scenic.Graph.modify(:cluster_healthy, &update_opts(&1, fill: fill))
+    |> Scenic.Graph.modify(:cluster_status, &update_opts(&1, fill: fill))
     {:noreply, %{state | graph: graph}, push: graph}
   end
 
   @impl Scenic.Scene
   def filter_event({:click, :save_log}, _from, state) do
     Logger.debug("Save Log to file: #{state.save_log_file}")
-    save_log_filename = state.save_log_file <> ".txt"
-    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: save_log_filename])
+    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_filename])
     save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
     Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:save_log_proto, save_log_encoded)
     {:cont, :event, state}
   end
+
+  @impl Scenic.Scene
+  def filter_event({:click, _other}, _from, state) do
+    {:cont, :event, state}
+  end
+
 
   @impl Scenic.Scene
   def filter_event({:value_changed, :save_log_filename, filename}, _from, state) do

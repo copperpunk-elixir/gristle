@@ -22,11 +22,11 @@ defmodule Display.Scenic.ClusterStatusTest do
   test "load gcs", context do
     Comms.System.start_operator(__MODULE__)
     Process.sleep(100)
-    cluster_healthy= false
-    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_healthy: cluster_healthy})
+    cluster_status= 0
+    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
     Process.sleep(2000)
-    cluster_healthy= true
-    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_healthy: cluster_healthy})
+    cluster_status= 1
+    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
     Process.sleep(20000000)
   end
 end

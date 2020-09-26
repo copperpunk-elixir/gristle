@@ -22,6 +22,7 @@ defmodule Logging.Logger do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :gps_time, self())
+    Comms.Operator.join_group(__MODULE__, :save_log, self())
     # Logger.debug("log directory: #{state.log_directory}")
     {:noreply, state}
   end

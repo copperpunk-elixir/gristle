@@ -191,7 +191,7 @@ defmodule Telemetry.Ublox do
       :clear_mission -> [-4]
       :tx_battery -> [-4, -4, 4, 4, 4]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [-2] end)
-      :cluster_healthy -> [-4, -1]
+      :cluster_status -> [-4, -1]
       _other ->
         Logger.error("Non-existent msg_type")
         []
@@ -208,7 +208,7 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 3} -> {0x45, 0x13}
       :control_state -> {0x45, 0x14}
       :tx_battery -> {0x45, 0x15}
-      :cluster_healthy -> {0x45, 0x16}
+      :cluster_status -> {0x45, 0x16}
       :set_pid_gain -> {0x46, 0x00}
       :request_pid_gain -> {0x46, 0x01}
       :get_pid_gain -> {0x46, 0x02}
