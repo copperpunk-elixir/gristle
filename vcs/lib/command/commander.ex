@@ -3,7 +3,7 @@ defmodule Command.Commander do
   require Logger
 
   @rx_control_state_channel 8
-  @transmit_channel 7
+  @pilot_control_mode_channel 7
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -43,7 +43,7 @@ defmodule Command.Commander do
         direct_select_class: direct_select_class,
         direct_select_time_ms: direct_select_time_ms,
         control_state: -1,
-        transmit_cmds: false,
+        pilot_control_mode: -1,
         reference_cmds: %{},
         rx_output_time_prev: 0,
         pv_values: %{},
@@ -71,8 +71,8 @@ defmodule Command.Commander do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
     current_time = :erlang.monotonic_time(:millisecond)
     dt = (current_time - state.rx_output_time_prev)/1000.0
-    {reference_cmds, control_state, transmit_cmds} = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
-    {:noreply, %{state | rx_output_time_prev: current_time, reference_cmds: reference_cmds, control_state: control_state, transmit_cmds: transmit_cmds}}
+    state = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
+    {:noreply, %{state | rx_output_time_prev: current_time}}
   end
 
   @impl GenServer
@@ -83,10 +83,10 @@ defmodule Command.Commander do
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
-    transmit_value = Enum.at(rx_output, @transmit_channel)
+    pilot_control_mode_value = Enum.at(rx_output, @pilot_control_mode_channel)
     pilot_control_mode = cond do
-      transmit_value > 0.0 -> @pilot_manual
-      transmit_value > -0.5 -> @pilot_semi_auto
+      pilot_control_mode_value > 0.0 -> @pilot_manual
+      pilot_control_mode_value > -0.5 -> @pilot_semi_auto
       true -> @pilot_auto
     end
     # The direct_cmds control_state will determine which actuators are controlled directly from here
@@ -96,6 +96,7 @@ defmodule Command.Commander do
     direct_cmds_cs = if (pilot_control_mode == @pilot_auto), do: @cs_direct_auto, else: @cs_direct_semi_auto
     # Logger.debug("ind cs/ dir cs: #{indirect_override_cs}/#{direct_cmds_cs}")
         # Logger.debug("cs_float: #{control_state_float}")
+    {reference_cmds, control_state} =
     if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
         control_state_float < -0.95 -> 0
@@ -105,7 +106,7 @@ defmodule Command.Commander do
         true -> -1
       end
       reference_cmds =
-      if (control_state != state.control_state) do
+      if (control_state != state.control_state) or (pilot_control_mode != state.pilot_control_mode) do
         Logger.debug("latch cs: #{control_state}")
         latch_commands(control_state, state.pv_values)
       else
@@ -148,10 +149,12 @@ defmodule Command.Commander do
       unless Enum.empty?(direct_cmds) do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_class, state.direct_cmds_time_ms, direct_cmds}, self())
       end
-      {reference_cmds, control_state, true}
+      {reference_cmds, control_state}
     else
-      {%{}, state.control_state, false}
+      {%{}, state.control_state}
     end
+
+    %{state | reference_cmds: reference_cmds, control_state: control_state, pilot_control_mode: pilot_control_mode}
   end
 
 

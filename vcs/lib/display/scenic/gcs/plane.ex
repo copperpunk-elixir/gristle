@@ -29,7 +29,7 @@ defmodule Display.Scenic.Gcs.Plane do
   # ============================================================================
   def init(_, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
-    {:ok, %Scenic.ViewPort.Status{size: {_vp_width, vp_height}}} =
+    {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
 
@@ -55,8 +55,8 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "rollrate", "pitchrate", "yawrate"], ids: [:thrust_1_cmd, :rollrate_cmd, :pitchrate_cmd, :yawrate_cmd], font_size: @font_size})
 
-    cluster_status_offset_x = 200
-    cluster_status_offset_y = 20
+    cluster_status_offset_x = vp_width - cluster_status_side - 40
+    cluster_status_offset_y = vp_height - cluster_status_side - 20
     {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_status, width: cluster_status_side, height: cluster_status_side, offset_x: cluster_status_offset_x, offset_y: cluster_status_offset_y, fill: :red})
 
     # Save Log

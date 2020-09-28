@@ -21,7 +21,7 @@ defmodule Peripherals.Uart.Utils do
     Logger.debug("Opening #{device_description}. Attempt #{num_tries}")
     case Circuits.UART.open(interface_ref,port, options) do
       {:error, error} ->
-        Logger.error("Error opening UART: #{inspect(error)}. Retrying in 1s")
+        Logger.error("Error opening UART #{device_description}: #{inspect(error)}. Retrying in 1s")
         Process.sleep(1000)
         open_interface_connection_infinite(interface_ref, device_description, options, num_tries + 1)
       _success ->
