@@ -16,8 +16,8 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   # @config_pga_2 0x0400
 
   @counts2output 2.0 #output is in mV
-  @output2volts 0.00412712
-  @output2amps 0.0136612
+  # @output2volts 0.00412712
+  # @output2amps 0.0136612
 
 
   @channel_voltage 0
@@ -36,7 +36,9 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     {:ok, %{
         i2c_ref: i2c_ref,
         read_battery_interval_ms: config.read_battery_interval_ms,
-        battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel)
+        battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel),
+        voltage_mult: config.voltage_mult,
+        current_mult: config.current_mult
      }
     }
   end
@@ -58,9 +60,9 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
   @impl GenServer
   def handle_info(:read_battery, state) do
     # Logger.debug("read battery #{state.battery.type}/#{state.battery.channel}")
-    voltage = read_voltage(state.i2c_ref)
+    voltage = read_voltage(state.i2c_ref, state.voltage_mult)
     # Process.sleep(10)
-    current = read_current(state.i2c_ref)
+    current = read_current(state.i2c_ref, state.current_mult)
 
     battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
     battery = if is_nil(current), do: battery, else: Health.Hardware.Battery.update_current(battery, current, state.read_battery_interval_ms*0.001)
@@ -94,26 +96,26 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     Common.Utils.safe_call(__MODULE__, {:get_battery_value, :energy_discharged}, 200, -1)
   end
 
-  @spec read_voltage(any()) :: float()
-  def read_voltage(i2c_ref) do
+  @spec read_voltage(any(), float()) :: float()
+  def read_voltage(i2c_ref, output2volts) do
     result = read_channel(i2c_ref, @channel_voltage)
     case result do
       {:ok, output} ->
-        # Logger.debug("Ads1015 voltage: #{output*@output2volts}")
-        output*@output2volts
+        # Logger.debug("Ads1015 voltage: #{output*output2volts}")
+        output*output2volts
       _other ->
         Logger.error("Voltage read error")
         nil
     end
   end
 
-  @spec read_current(any()) :: float()
-  def read_current(i2c_ref) do
+  @spec read_current(any(), float()) :: float()
+  def read_current(i2c_ref, output2amps) do
     result = read_channel(i2c_ref, @channel_current)
     case result do
       {:ok, current} ->
-        # Logger.debug("Ads1015 current: #{current*@output2amps}")
-        current*@output2amps
+        # Logger.debug("Ads1015 current: #{current*output2amps}")
+        current*output2amps
       _other ->
         Logger.error("Current read error")
         nil

@@ -16,11 +16,16 @@ defmodule Configuration.Module.Peripherals.I2c do
             [type, channel] = String.split(metadata,"-")
             channel = String.to_integer(channel)
             {Health.Ina260, get_ina260_config(type, channel)}
-          "Ads1015" ->
+          "Ads1015-45" ->
             metadata = Enum.at(device_and_metadata,1)
             [type, channel] = String.split(metadata,"-")
             channel = String.to_integer(channel)
-            {Health.Ads1015, get_ads1015_config(type, channel)}
+            {Health.Ads1015, get_ads1015_config(type, channel, 45)}
+          "Ads1015-90" ->
+            metadata = Enum.at(device_and_metadata,1)
+            [type, channel] = String.split(metadata,"-")
+            channel = String.to_integer(channel)
+            {Health.Ads1015, get_ads1015_config(type, channel, 90)}
 
         end
       Map.put(acc, module_key, module_config)
@@ -37,12 +42,21 @@ defmodule Configuration.Module.Peripherals.I2c do
     }
   end
 
-  @spec get_ads1015_config(atom(), integer()) :: map()
-  def get_ads1015_config(battery_type, channel) do
+  @spec get_ads1015_config(atom(), integer(), integer()) :: map()
+  def get_ads1015_config(battery_type, channel, version) do
+    {voltage_mult, current_mult} =
+      case version do
+      180 -> {1.0/63.69, 1.0 / 18.3}
+      90 -> {1.0/63.69, 1.0/36.6}
+      45 -> {1.0/242.3, 1.0/73.2}
+      _other -> raise "Incorrect Voltage/Current measurement settings for Ads1015"
+    end
     %{
       battery_type: String.to_atom(battery_type),
       battery_channel: channel,
       read_battery_interval_ms: 1000,
+      voltage_mult: voltage_mult,
+      current_mult: current_mult
     }
   end
 
