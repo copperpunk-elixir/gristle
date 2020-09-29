@@ -46,11 +46,13 @@ defmodule Configuration.Module.Peripherals.I2c do
   def get_ads1015_config(battery_type, channel, version) do
     {voltage_mult, current_mult} =
       case version do
-      180 -> {1.0/63.69, 1.0 / 18.3}
-      90 -> {1.0/63.69, 1.0/36.6}
-      45 -> {1.0/242.3, 1.0/73.2}
-      _other -> raise "Incorrect Voltage/Current measurement settings for Ads1015"
-    end
+        180 -> {1.0/63.69, 1.0/18.3}
+        90 -> {1.0/63.69, 1.0/36.6}
+        45 -> {1.0/242.3, 1.0/73.2}
+        _other -> raise "Incorrect Voltage/Current measurement settings for Ads1015"
+      end
+    Logger.debug("Ads1015 version: #{version}")
+    Logger.debug("V/I mults: #{voltage_mult}/#{current_mult}")
     %{
       battery_type: String.to_atom(battery_type),
       battery_channel: channel,
