@@ -9,6 +9,7 @@ defmodule Common.Application do
     Process.sleep(200)
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()
+    attach_ringlogger(node_type)
     MessageSorter.System.start_link(model_type)
     Process.sleep(200)
     Configuration.Module.start_modules([Cluster, Logging, Time], model_type, node_type)
@@ -18,9 +19,18 @@ defmodule Common.Application do
 
   @spec common_startup() :: atom()
   def common_startup() do
-    RingLogger.attach()
     Common.Utils.File.mount_usb_drive()
     Cluster.Network.Utils.set_host_name()
+  end
+
+  @spec attach_ringlogger(atom()) :: atom()
+  def attach_ringlogger(node_type) do
+    case node_type do
+      :all -> RingLogger.attach()
+      :left_side -> RingLogger.attach()
+      :right_side -> RingLogger.attach()
+      _other -> nil
+    end
   end
 
   @spec start_remaining_processes() :: atom()

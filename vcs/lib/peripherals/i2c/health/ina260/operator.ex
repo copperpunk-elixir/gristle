@@ -102,7 +102,7 @@ defmodule Peripherals.I2c.Health.Ina260.Operator do
     result = read_channel(i2c_ref, @reg_voltage)
     case result do
       {:ok, voltage} ->
-        Logger.debug("Ina260 voltage: #{voltage}")
+        # Logger.debug("Ina260 voltage: #{voltage}")
         voltage
       other ->
         Logger.error("Ina260 Voltage read error: #{inspect(other)}")

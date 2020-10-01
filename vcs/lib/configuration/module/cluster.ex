@@ -48,6 +48,7 @@ defmodule Configuration.Module.Cluster do
   def get_network_config(node_type) do
     connection_required =
       case node_type do
+        :gcs -> false
         :all -> false
         :sim -> false
         :server -> false
