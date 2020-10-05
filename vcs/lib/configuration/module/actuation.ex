@@ -98,7 +98,7 @@ defmodule Configuration.Module.Actuation do
       :left_direction -> 0.5
       :right_direction -> 0.5
       :throttle -> 0.0
-      :flaps -> 0.0
+      :flaps -> 0.5
       :select -> Actuation.SwInterface.guardian_control_value()
     end
   end
