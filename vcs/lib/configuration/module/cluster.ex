@@ -38,7 +38,7 @@ defmodule Configuration.Module.Cluster do
   @spec get_heartbeat_config(integer(), integer()) :: map()
   def get_heartbeat_config(node, ward) do
     %{
-      heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+      heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:extra_slow),
       node: node,
       ward: ward
     }

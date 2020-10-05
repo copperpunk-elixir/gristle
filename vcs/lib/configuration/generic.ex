@@ -8,6 +8,7 @@ defmodule Configuration.Generic do
       :fast -> 20
       :medium -> 100
       :slow -> 200
+      :extra_slow -> 1000
     end
   end
 

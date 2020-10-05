@@ -57,7 +57,7 @@ defmodule Cluster.Network do
     if connected == true do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      # Common.Application.start_remaining_processes()
+      Common.Application.start_remaining_processes()
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
