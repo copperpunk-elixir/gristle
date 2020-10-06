@@ -67,11 +67,12 @@ defmodule Configuration.Vehicle.Plane.Pids.EC1500 do
     %{type: :TecsBalance,
       ki: 0.1,
       kd: 0.0,
-      altitude_kp: 0.25,
+      # altitude_kp: 0.25,
       balance_rate_scalar: 0.002,
       time_constant: 2.0,
       integrator_range: 300,
-      min_climb_speed: 30
+      min_climb_speed: 30,
+      max_climb_rate: 2.0
     }
   end
 
