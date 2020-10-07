@@ -9,6 +9,7 @@ defmodule Common.Utils.Configuration do
     case model_type do
       :Cessna -> :Plane
       :EC1500 -> :Plane
+      :RV4 -> :Plane
       _other -> raise "Unknown model"
     end
   end

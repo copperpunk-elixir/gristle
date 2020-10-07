@@ -26,6 +26,7 @@ defmodule Display.Scenic.Planner do
       case model_type do
         :Cessna -> 734
         :EC1500 -> 100
+        :RV4 -> 100
         _other -> 734
       end
     state = %{

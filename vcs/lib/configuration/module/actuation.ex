@@ -131,6 +131,19 @@ defmodule Configuration.Module.Actuation do
                  }
 
              }
+      :RV4 -> %{
+              indirect: %{
+                0 => :aileron,
+                1 => :elevator,
+                2 => :throttle,
+                3 => :rudder},
+              direct: %{
+                4 => :flaps,
+                5 => :select
+              }
+
+          }
+
     end
   end
 

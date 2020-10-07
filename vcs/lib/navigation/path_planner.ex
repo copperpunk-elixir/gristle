@@ -65,7 +65,8 @@ defmodule Navigation.PathPlanner do
   def get_model(arg) do
     aircraft = %{
       0 => :Cessna,
-      1 => :EC1500
+      1 => :EC1500,
+      2 => :RV4
     }
     Common.Utils.get_key_or_value(aircraft, arg)
   end

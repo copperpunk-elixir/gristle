@@ -259,6 +259,19 @@ defmodule Navigation.Path.Mission do
         flight_agl_range: {50, 100},
         wp_dist_range: {200, 400},
         planning_turn_rate: 0.80
+      },
+      RV4: %{
+        takeoff_roll: 30,
+        climbout_distance: 200,
+        climbout_height: 40,
+        climbout_speed: 15,
+        cruise_speed: 20,
+        landing_distances_heights: [{-250, 40}, {-200,40}, {-50,3}, {1,0}],
+        landing_speeds: {15, 10},
+        flight_speed_range: {15,20},
+        flight_agl_range: {50, 100},
+        wp_dist_range: {200, 400},
+        planning_turn_rate: 0.80
       }
     }
     get_in(model, [model_type, spec])

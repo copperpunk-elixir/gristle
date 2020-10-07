@@ -5,6 +5,7 @@ defmodule Configuration.Module.Health do
       case model_type do
         :Cessna -> [:motor, :cluster]
         :EC1500 -> [:motor, :cluster]
+        :RV4 -> {:motor, :cluster}
       end
     %{
       power: %{
