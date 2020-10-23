@@ -99,7 +99,8 @@ defmodule Configuration.Module.Peripherals.Uart do
       end
     %{
       device_description: device_desc,
-      baud: baud
+      baud: baud,
+      publishing_pos_vel: true
     }
   end
 
@@ -113,7 +114,8 @@ defmodule Configuration.Module.Peripherals.Uart do
       end
     %{
       device_description: device_desc,
-      baud: baud
+      baud: baud,
+      publishing_pos_vel: false
     }
   end
 
