@@ -13,12 +13,13 @@ defmodule Configuration.Module.Peripherals.Uart do
   end
 
   @spec get_module_key_and_config_for_module(atom(), atom()) :: tuple()
-  def get_module_key_and_config_for_module(module, node_type\\nil) do
+  def get_module_key_and_config_for_module(module, node_type \\ nil) do
     case module do
       :Dsm -> {Command.Dsm, get_dsm_rx_config()}
       :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
       :FrskyServo -> {Actuation, get_actuation_config(module)}
       :PololuServo -> {Actuation, get_actuation_config(module)}
+      :DsmRxFrskyServo -> {ActuationCommand, get_actuation_command_config(module)}
       :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
       :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
       :Xbee -> {Telemetry, get_telemetry_config(module)}
@@ -58,6 +59,20 @@ defmodule Configuration.Module.Peripherals.Uart do
       # read_timeout: 1
     }
   end
+
+  @spec get_actuation_command_config(atom()) :: map()
+  def get_actuation_command_config(module) do
+    {interface_module, device_desc} =
+      case module do
+        :DsmRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0"}
+      end
+    %{
+      interface_module: interface_module,
+      device_description: device_desc,
+      baud: 115_200
+    }
+  end
+
 
   @spec get_teraranger_evo_config(atom()) :: map()
   def get_teraranger_evo_config(node_type) do

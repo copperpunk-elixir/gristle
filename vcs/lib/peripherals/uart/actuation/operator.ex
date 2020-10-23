@@ -34,7 +34,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     interface = apply(state.interface_module, :new_device, [state.uart_ref])
-    options = [speed: state.baud, active: false]
+    options = [speed: state.baud, active: true]
     Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
     Logger.debug("Uart.Actuation.Operator setup complete!")
     {:noreply, %{state | interface: interface}}
@@ -49,6 +49,12 @@ defmodule Peripherals.Uart.Actuation.Operator do
     end)
     apply(state.interface_module, :write_channels, [state.interface, channels])
     {:noreply, %{state | channels: channels}}
+  end
+
+  @impl GenServer
+  def handle_info({:circuits_uart, _port, data}, state) do
+    Logger.debug("data: #{inspect(data)}")
+    {:noreply, state}
   end
 
   @spec update_actuators(map()) :: atom()

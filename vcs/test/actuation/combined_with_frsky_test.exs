@@ -9,7 +9,7 @@ defmodule Actuation.CombinedWithFrskyTest do
 
   test "Combined with FrSky test" do
     # config = Configuration.Vehicle.get_actuation_config(:Plane, :all)
-    config = Configuration.Module.get_config(Actuation, :Plane, :all)
+    config = Configuration.Module.get_config(Actuation, :Cessna, :all)
     Actuation.HwInterface.start_link(config.hw_interface)
 
     Process.sleep(500)

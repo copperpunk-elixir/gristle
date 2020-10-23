@@ -41,7 +41,12 @@ defmodule Watchdog.Active do
   @impl GenServer
   def handle_cast(:feed, state) do
     count = Common.Utils.Math.constrain(state.count-2*state.expected_interval_ms, 0, 2*state.loop_interval_ms)
-    {:noreply, %{state | count: count}}
+    fed = check_fed(count, state.loop_interval_ms)
+    # Only send watchdog status if there was a change of state
+    if (fed != state.fed) do
+      send_status(state.name, state.local_or_global, fed)
+    end
+    {:noreply, %{state | count: count, fed: fed}}
   end
 
   @impl GenServer
@@ -51,11 +56,7 @@ defmodule Watchdog.Active do
 
   @impl GenServer
   def handle_info(:loop, state) do
-    fed = if (state.count >= state.loop_interval_ms) do
-      false
-    else
-      true
-    end
+    fed = check_fed(state.count, state.loop_interval_ms)
     # Only send watchdog status if there was a change of state
     if (fed != state.fed) do
       send_status(state.name, state.local_or_global, fed)
@@ -87,6 +88,10 @@ defmodule Watchdog.Active do
 
   def via_tuple(name) do
     Comms.ProcessRegistry.via_tuple(__MODULE__,name)
+  end
+
+  def check_fed(current, expected) do
+    if current < expected, do: true, else: false
   end
 
 end

@@ -17,6 +17,7 @@ defmodule Pids.Controller.Generic do
         output_neutral: config.output_neutral,
         integrator_range_min: -Map.get(config, :integrator_range, 0),
         integrator_range_max: Map.get(config, :integrator_range, 0),
+        integrator_airspeed_min: Map.get(config, :integrator_airspeed_min, 10000),
         pv_integrator: 0,
         pv_correction_prev: 0,
         output: config.output_neutral
@@ -30,13 +31,20 @@ defmodule Pids.Controller.Generic do
     delta_output_max = state.output_max - state.output_neutral
     correction = pv_cmd - pv_value
     in_range = Common.Utils.Math.in_range?(correction, state.integrator_range_min, state.integrator_range_max)
-    pv_integrator =
+    pv_add =
     if in_range do
-      pv_add = correction*dt
+      correction*dt
+    else
+      0.0
+    end
+
+    pv_integrator =
+    if airspeed > state.integrator_airspeed_min do
       state.pv_integrator + pv_add
     else
       0.0
     end
+
     cmd_p = state.kp*correction
     |> Common.Utils.Math.constrain(delta_output_min, delta_output_max)
 

@@ -134,12 +134,12 @@ defmodule Navigation.PathManager do
       # Direct Commands
       flaps_cmd =
         case path_case_type do
-          :ground -> 0.75
-          :climbout -> 0.75
-          :flight -> 0.5
+          :ground -> 0.5
+          :climbout -> 0.5
+          :flight -> 0.0
           :approach -> 1.0
           :landing -> 1.0
-          _other -> 0.5
+          _other -> 0.0
         end
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
