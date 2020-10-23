@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.Command.Dsm.Operator do
+defmodule Peripherals.Uart.ActuationCommand.Operator do
   use Bitwise
   use GenServer
   require Logger
@@ -6,7 +6,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   # @default_baud 115_200
 
   def start_link(config) do
-    Logger.info("Start Uart.Command.Dsm.Operator GenServer")
+    Logger.info("Start Uart.ActuationCommand.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -22,7 +22,10 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
-        dsm: Peripherals.Uart.Command.Dsm.new()
+        dsm: Peripherals.Uart.Command.Dsm.new(),
+        interface: nil,
+        interface_module: config.interface_module,
+        channels: %{}
      }}
   end
 
@@ -35,10 +38,22 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
+    interface = apply(state.interface_module, :new_device, [state.uart_ref])
     port_options = [speed: state.baud, active: true]
     Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
-    Logger.debug("Uart.Command.Dsm setup complete!")
-    {:noreply, state}
+    Logger.debug("Uart.ActuationCommand setup complete!")
+    {:noreply, %{state | interface: interface}}
+  end
+
+  @impl GenServer
+  def handle_cast({:update_actuators, actuators_and_outputs}, state) do
+    channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({_actuator_name, {actuator, output}}, acc) ->
+      # Logger.debug("op #{actuator.channel_number}: #{output}")
+      pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
+      Map.put(acc, actuator.channel_number, pulse_width_us)
+    end)
+    apply(state.interface_module, :write_channels, [state.interface, channels])
+    {:noreply, %{state | channels: channels}}
   end
 
   @impl GenServer
@@ -80,7 +95,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   end
 
   @impl GenServer
-  def handle_call(:get_channel_value, _from, state) do
+  def handle_call(:get_all_channel_values, _from, state) do
     {:reply, state.channel_values, state}
   end
 
@@ -96,12 +111,32 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
     end
   end
 
+  @spec update_actuators(map()) :: atom()
+  def update_actuators(actuators_and_outputs) do
+    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
+  end
+
+  def output_to_us(output, reversed, min_pw_us, max_pw_us) do
+    # Output will arrive in range [-1,1]
+    if (output < 0) || (output > 1) do
+      nil
+    else
+      # output = 0.5*(output + 1.0)
+      case reversed do
+        false ->
+          min_pw_us + output*(max_pw_us - min_pw_us)
+        true ->
+          max_pw_us - output*(max_pw_us - min_pw_us)
+      end
+    end
+  end
+
   def get_value_for_channel(channel) do
     GenServer.call(__MODULE__, {:get_channel_value, channel})
   end
 
   def get_values_for_all_channels() do
-    GenServer.call(__MODULE__, {:get_all_channel_value})
+    GenServer.call(__MODULE__, :get_all_channel_values)
   end
 
   def get_uart_ref() do

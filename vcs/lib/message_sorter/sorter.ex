@@ -2,7 +2,7 @@ defmodule MessageSorter.Sorter do
   use GenServer
   require Logger
 
-  @default_call_timeout 50
+  @default_call_timeout 10
 
   def start_link(config) do
     Logger.info("Start MessageSorter: #{inspect(config.name)} GenServer")

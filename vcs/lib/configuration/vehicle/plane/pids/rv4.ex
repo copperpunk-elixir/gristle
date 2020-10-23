@@ -4,13 +4,13 @@ defmodule Configuration.Vehicle.Plane.Pids.RV4 do
   @spec get_pids() :: map()
   def get_pids() do
     constraints = get_constraints()
-
+    integrator_airspeed_min = 5.0
     %{
-      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.2, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
-      pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
-      yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.1, ki: 0.0, integrator_range: 0.26, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
-      course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
-      course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1}, constraints.yaw)},
+      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.2, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
+      pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
+      yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.1, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
+      course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
+      course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min}, constraints.yaw)},
       tecs: %{
         thrust: Map.merge(get_tecs_energy(), constraints.thrust),
         pitch: Map.merge(get_tecs_balance(), constraints.pitch)
@@ -40,10 +40,10 @@ defmodule Configuration.Vehicle.Plane.Pids.RV4 do
       rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
+      roll: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
       yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
+      thrust: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       speed: %{output_min: 0, output_max: 20, output_neutral: 0},
