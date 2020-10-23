@@ -22,6 +22,7 @@ defmodule Configuration.Module.Peripherals.Uart do
       :DsmRxFrskyServo -> {ActuationCommand, get_actuation_command_config(module)}
       :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
       :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
+      :VnImu -> {Estimation.VnIns, get_vn_imu_config(node_type)}
       :Xbee -> {Telemetry, get_telemetry_config(module)}
       :Sik -> {Telemetry, get_telemetry_config(module)}
       :PwmReader -> {PwmReader, get_pwm_reader_config()}
@@ -98,7 +99,23 @@ defmodule Configuration.Module.Peripherals.Uart do
       end
     %{
       device_description: device_desc,
-      baud: baud
+      baud: baud,
+      publishing_pos_vel: true
+    }
+  end
+
+  @spec get_vn_imu_config(atom()) :: map()
+  def get_vn_imu_config(node_type) do
+    {device_desc, baud} =
+      case node_type do
+        :sim -> {"USB Serial", 115_200}
+        :hil -> {"USB Serial", 115_200}
+        _other -> {"Feather M0", 115_200}
+      end
+    %{
+      device_description: device_desc,
+      baud: baud,
+      publishing_pos_vel: false
     }
   end
 
