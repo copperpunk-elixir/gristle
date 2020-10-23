@@ -75,6 +75,8 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
+    # Logger.debug("rpy/rate: #{eftb_deg_sign(ins.attitude.roll,1)}/#{eftb_deg_sign(ins.attitude.pitch,1)}/#{eftb_deg_sign(ins.attitude.yaw,1)}/#{eftb_deg_sign(ins.bodyrate.rollrate,1)}/#{eftb_deg_sign(ins.bodyrate.pitchrate,1)}/#{eftb_deg_sign(ins.bodyrate.yawrate,1)}")
+
     # Logger.debug("time: #{ins.gps_time_ns}")
     # Logger.debug("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.debug("gps_status: #{ins.gps_status}")
@@ -331,7 +333,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
           z: accel_z_mpss
        }, buffer}
     else
-      {ins.accel_body, buffer}
+      {ins.bodyaccel, buffer}
     end
 
     {magnetometer, baro_pressure, temperature, buffer} = if(mag_pres_bit == 1) do
@@ -426,6 +428,10 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   def eftb(num, dec) do
     Common.Utils.eftb(num,dec)
+  end
+
+  def eftb_deg_sign(num, dec) do
+    Common.Utils.eftb_deg_sign(num, dec)
   end
 
   @spec close() :: atom()

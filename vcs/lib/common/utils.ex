@@ -131,8 +131,14 @@ defmodule Common.Utils do
   end
 
   @spec eftb_deg(float(), integer()) ::binary()
-  def eftb_deg(number, num_decimals\\1) do
+  def eftb_deg(number, num_decimals) do
     :erlang.float_to_binary(Common.Utils.Math.rad2deg(number), [decimals: num_decimals])
+  end
+
+  @spec eftb_deg_sign(float(), integer()) :: binary()
+  def eftb_deg_sign(number, num_decimals) do
+    str = eftb_deg(number, num_decimals)
+    if (number >= 0), do: "+" <> str, else: str
   end
 
   @spec eftb_rad(float(), integer()) ::binary()
