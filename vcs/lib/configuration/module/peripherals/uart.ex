@@ -15,11 +15,12 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_module_key_and_config_for_module(atom(), atom()) :: tuple()
   def get_module_key_and_config_for_module(module, node_type \\ nil) do
     case module do
-      :Dsm -> {Command.Dsm, get_dsm_rx_config()}
-      :FrskyRx -> {Command.Frsky, get_frsky_rx_config()}
+      :Dsm -> {Command.Rx, get_dsm_rx_config()}
+      :FrskyRx -> {Command.Rx, get_frsky_rx_config()}
       :FrskyServo -> {Actuation, get_actuation_config(module)}
       :PololuServo -> {Actuation, get_actuation_config(module)}
       :DsmRxFrskyServo -> {ActuationCommand, get_actuation_command_config(module)}
+      :FrskyRxFrskyServo -> {ActuationCommand, get_actuation_command_config(module)}
       :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
       :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
       :VnImu -> {Estimation.VnIns, get_vn_imu_config(node_type)}
@@ -33,7 +34,8 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_dsm_rx_config() do
     %{
       device_description: "CP2104",
-      baud: 115_200
+      baud: 115_200,
+      rx_module: :Dsm
     }
   end
 
@@ -41,7 +43,8 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_frsky_rx_config() do
     %{
       device_description: "Feather M0",
-      baud: 115_200
+      baud: 115_200,
+      rx_module: :Frsky
     }
   end
 
@@ -63,14 +66,16 @@ defmodule Configuration.Module.Peripherals.Uart do
 
   @spec get_actuation_command_config(atom()) :: map()
   def get_actuation_command_config(module) do
-    {interface_module, device_desc} =
+    {interface_module, device_desc, rx_module} =
       case module do
-        :DsmRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0"}
+        :DsmRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0", :Dsm}
+        :FrskyRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0", :Frsky}
       end
     %{
       interface_module: interface_module,
       device_description: device_desc,
-      baud: 115_200
+      baud: 115_200,
+      rx_module: rx_module
     }
   end
 
