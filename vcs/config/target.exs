@@ -34,7 +34,7 @@ if keys == [],
     See your project's config.exs for this error message.
     """)
 
-config :nerves_firmware_ssh,
+config :nerves_ssh,
   authorized_keys: Enum.map(keys, &File.read!/1)
 
 # Configure nerves_init_gadget.
@@ -45,21 +45,21 @@ config :nerves_firmware_ssh,
 node_name = if Mix.env() != :prod, do: "vcs"
 
 # config :vintage_net,
-#   regulatory_domain: "US",
-#   config: [
-#     # {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
-#     {"wlan0", %{type: VintageNetWiFi,
-#                 vintage_net_wifi: %{
-#                   networks: [
-#                     %{
-#                       key_mgmt: :wpa_psk,
-#                       ssid: "vcs_ground",
-#                       psk: "8052156247",
-#                     }
-#                   ]
-#                 },
-#                 ipv4: %{method: :dhcp}}}
-#   ]
+  # regulatory_domain: "US",
+  # config: [
+    # {"eth0", %{type: VintageNetEthernet, ipv4: %{method: :dhcp}}},
+    # {"wlan0", %{type: VintageNetWiFi,
+    #             vintage_net_wifi: %{
+    #               networks: [
+    #                 %{
+    #                   key_mgmt: :wpa_psk,
+    #                   ssid: "vcs_air",
+    #                   psk: "nervesofsteel",
+    #                 }
+    #               ]
+    #             },
+    #             ipv4: %{method: :dhcp}}}
+  # ]
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 # Uncomment to use target specific configurations
