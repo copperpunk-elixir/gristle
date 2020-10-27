@@ -4,25 +4,25 @@ defmodule Command.GetValuesFromRxTest do
 
   setup do
     RingLogger.attach()
-    vehicle_type = :Plane
+    model_type = :Cessna
     node_type = :all
     Comms.System.start_link()
     Process.sleep(100)
     # MessageSorter.System.start_link(vehicle_type)
-    navigation_config = Configuration.Module.get_config(Navigation, vehicle_type, node_type)
+    navigation_config = Configuration.Module.get_config(Navigation, model_type, node_type)
     # Navigation.System.start_link(navigation_config)
-    command_config = Configuration.Module.get_config(Command, vehicle_type, node_type)
+    command_config = Configuration.Module.get_config(Command, model_type, node_type)
     Logger.info("Command config: #{inspect(command_config)}")
     # Command.System.start_link(command_config)
     Process.sleep(300)
-    {:ok, [vehicle_type: vehicle_type]}
+    {:ok, []}
   end
 
   test "Get Channel 0 from FrSky interface" do
-    Command.System.start_link(%{commander: %{vehicle_type: :Plane}})
+    Command.System.start_link(%{commander: %{model_type: :Cessna}})
     config = Configuration.Module.Peripherals.Uart.get_frsky_rx_config()
     Peripherals.Uart.Command.Frsky.Operator.start_link(config)
-    Process.sleep(4000)
+    Process.sleep(400000)
   end
 
   # # This test is only required if something changes with the FrSky receiver

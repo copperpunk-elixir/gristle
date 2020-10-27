@@ -1,4 +1,4 @@
-defmodule ActuationCommand.DsmrxFrskyservoReadWriteTest do
+defmodule ActuationCommand.FrskyrxFrskyservoReadWriteTest do
   use ExUnit.Case
   require Logger
 
@@ -16,7 +16,7 @@ defmodule ActuationCommand.DsmrxFrskyservoReadWriteTest do
     node_type = :all
     act_config = Configuration.Module.Actuation.get_config(model_type, node_type)
     Actuation.System.start_link(act_config)
-    {act_module, act_op_config} = Configuration.Module.Peripherals.Uart.get_module_key_and_config_for_module(:DsmRxFrskyServo, node_type)
+    {act_module, act_op_config} = Configuration.Module.Peripherals.Uart.get_module_key_and_config_for_module(:FrskyRxFrskyServo, node_type)
     module = Module.concat(Peripherals.Uart, act_module)
     |> Module.concat(Operator)
     apply(module, :start_link, [act_op_config])
@@ -41,7 +41,7 @@ defmodule ActuationCommand.DsmrxFrskyservoReadWriteTest do
               Map.put(acc, name, {actuator, value})
             end
           end)
-        Logger.debug("output: #{inspect(output)}")
+        # Logger.debug("output: #{inspect(output)}")
         apply(module, :update_actuators, [output])
       end
       # value = index/10000

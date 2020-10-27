@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.Command.Dsm.Operator do
+defmodule Peripherals.Uart.Command.Rx.Operator do
   use Bitwise
   use GenServer
   require Logger
@@ -6,7 +6,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   # @default_baud 115_200
 
   def start_link(config) do
-    Logger.info("Start Uart.Command.Dsm.Operator GenServer")
+    Logger.info("Start Uart.Command.Rx.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
@@ -15,14 +15,16 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   @impl GenServer
   def init(config) do
     {:ok, uart_ref} = Circuits.UART.start_link()
+    rx_module = Module.concat(Peripherals.Uart.Command.Rx, config.rx_module)
+    Logger.debug("Rx module: #{rx_module}")
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
         baud: config.baud,
-        start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
-        dsm: Peripherals.Uart.Command.Dsm.new()
+        rx_module: rx_module,
+        rx: apply(rx_module, :new, [])
      }}
   end
 
@@ -37,15 +39,7 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
     Comms.System.start_operator(__MODULE__)
     port_options = [speed: state.baud, active: true]
     Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
-    Logger.debug("Uart.Command.Dsm setup complete!")
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_info(:publish_rx_output_loop, state) do
-    if (state.new_dsm_data_to_publish and !state.frame_lost) do
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, state.channel_values, state.failsafe_active}, :rx_output, self())
-    end
+    Logger.debug("Uart.Command.Rx setup complete!")
     {:noreply, state}
   end
 
@@ -53,19 +47,20 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
   def handle_info({:circuits_uart, _port, data}, state) do
     # Logger.debug("data: #{inspect(data)}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
-    dsm = parse(state.dsm, data_list)
-    {dsm, channel_values} =
-    if dsm.payload_ready == true do
+    rx_module = state.rx_module
+    rx = parse(rx_module, state.rx, data_list)
+    {rx, channel_values} =
+    if rx.payload_ready == true do
       # Logger.debug("ready")
-      channel_values = Peripherals.Uart.Command.Dsm.get_channels(dsm)
-      # Logger.debug("omap: #{inspect(dsm.channel_map)}")
+      channel_values = apply(rx_module, :get_channels, [rx])
+      # Logger.debug("omap: #{inspect(rx.channel_map)}")
       # Logger.debug("channels: #{inspect(channel_values)}")
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, channel_values, false}, :rx_output, self())
-      {Peripherals.Uart.Command.Dsm.clear(dsm), channel_values}
+      {apply(rx_module, :clear, [rx]), channel_values}
     else
-      {dsm, state.channel_values}
+      {rx, state.channel_values}
     end
-    {:noreply, %{state | dsm: dsm, channel_values: channel_values}}
+    {:noreply, %{state | rx: rx, channel_values: channel_values}}
   end
 
   @impl GenServer
@@ -84,15 +79,16 @@ defmodule Peripherals.Uart.Command.Dsm.Operator do
     {:reply, state.channel_values, state}
   end
 
-  @spec parse(struct(), list()) :: struct()
-  def parse(dsm, buffer) do
-    # Logger.debug("buffer/dsm: #{inspect(buffer)}/#{inspect(dsm)}")
+  @spec parse(atom(), struct(), list()) :: struct()
+  def parse(rx_module, rx, buffer) do
+    # Logger.debug("buffer/rx: #{inspect(buffer)}/#{inspect(rx)}")
     {[byte], buffer} = Enum.split(buffer,1)
-    dsm = Peripherals.Uart.Command.Dsm.parse(dsm, byte)
+    # rx = Peripherals.Uart.Command.Dsm.parse(dsm, byte)
+    rx = apply(rx_module, :parse, [rx, byte])
     if (Enum.empty?(buffer)) do
-      dsm
+      rx
     else
-      parse(dsm, buffer)
+      parse(rx_module, rx, buffer)
     end
   end
 

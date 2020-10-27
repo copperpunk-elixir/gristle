@@ -1,4 +1,4 @@
-defmodule Peripherals.Uart.Command.Dsm do
+defmodule Peripherals.Uart.Command.Rx.Dsm do
   require Logger
   use Bitwise
 
@@ -19,7 +19,7 @@ defmodule Peripherals.Uart.Command.Dsm do
 
   @spec new() :: struct()
   def new() do
-    %Peripherals.Uart.Command.Dsm{}
+    %Peripherals.Uart.Command.Rx.Dsm{}
   end
 
   @spec parse(struct(), integer()) :: struct()
