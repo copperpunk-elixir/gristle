@@ -4,16 +4,6 @@ defmodule Common.Application do
 
   def start(_type, _args) do
     common_startup()
-    Logger.debug("Start Application")
-    Comms.System.start_link()
-    Process.sleep(200)
-    model_type = Common.Utils.Configuration.get_model_type()
-    node_type = Common.Utils.Configuration.get_node_type()
-    attach_ringlogger(node_type)
-    MessageSorter.System.start_link(model_type)
-    Process.sleep(200)
-    Configuration.Module.start_modules([Cluster, Logging, Time], model_type, node_type)
-    Process.sleep(200)
     {:ok, self()}
   end
 
@@ -21,20 +11,29 @@ defmodule Common.Application do
   def common_startup() do
     Common.Utils.File.mount_usb_drive()
     Cluster.Network.Utils.set_host_name()
+    Comms.System.start_link()
+    Process.sleep(200)
+    model_type = Common.Utils.Configuration.get_model_type()
+    node_type = Common.Utils.Configuration.get_node_type()
+    attach_ringlogger(node_type)
+    Logger.debug("Start Application")
+    MessageSorter.System.start_link(model_type)
+    Process.sleep(200)
+    Configuration.Module.start_modules([Cluster, Logging, Time], model_type, node_type)
+    Process.sleep(200)
   end
 
   @spec attach_ringlogger(atom()) :: atom()
   def attach_ringlogger(node_type) do
     case node_type do
-      :all -> RingLogger.attach()
-      :left_side -> RingLogger.attach()
-      :right_side -> RingLogger.attach()
-      _other -> nil
+      :gcs -> nil
+      :sim -> nil
+      _other -> RingLogger.attach()
     end
   end
 
-  @spec start_remaining_processes() :: atom()
-  def start_remaining_processes() do
+  @spec start_node_processes() :: atom()
+  def start_node_processes() do
     # vehicle_type = Common.Utils.Configuration.get_vehicle_type()
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()

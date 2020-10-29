@@ -12,7 +12,7 @@ defmodule Cluster.Network do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        connection_required: config.connection_required,
+        # connection_required: config.connection_required,
         node_name_with_domain: nil,
         ip_address: nil,
         socket: nil,
@@ -35,16 +35,18 @@ defmodule Cluster.Network do
   end
 
   @impl GenServer
-  def handle_cast(:begin , state) do
+  def handle_cast(:begin, state) do
+    Logger.debug("cluster.network begin")
     Process.sleep(100)
     Comms.System.start_operator(__MODULE__)
-
-    if state.vintage_net_access and state.connection_required do
+    Logger.debug("cluster.network if statement")
+    if state.vintage_net_access and !is_nil(state.interface) do
+      Logger.debug("Connect to network interface: #{inspect(state.interface)}")
       VintageNet.configure(state.interface, state.vintage_net_config)
       GenServer.cast(__MODULE__, :connect_to_network)
     else
       Logger.debug("Network connection not required.")
-      Common.Application.start_remaining_processes()
+      Common.Application.start_node_processes()
     end
     {:noreply, state}
   end
@@ -56,7 +58,7 @@ defmodule Cluster.Network do
     if connected == true do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      Common.Application.start_remaining_processes()
+      Common.Application.start_node_processes()
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)

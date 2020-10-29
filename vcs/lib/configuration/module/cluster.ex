@@ -1,9 +1,9 @@
 defmodule Configuration.Module.Cluster do
   @spec get_config(atom(), atom()) :: map()
-  def get_config(_model_type, node_type) do
+  def get_config(_model_type, _node_type) do
     %{
       heartbeat: get_heartbeat_config(),
-      network: get_network_config(node_type)
+      network: get_network_config()
     }
   end
 
@@ -44,19 +44,18 @@ defmodule Configuration.Module.Cluster do
     }
   end
 
-  @spec get_network_config(atom) :: map()
-  def get_network_config(node_type) do
-    connection_required =
-      case node_type do
-        :gcs -> false
-        :all -> false
-        :sim -> false
-        :server -> false
-        _other -> true
-      end
+  @spec get_network_config() :: map()
+  def get_network_config() do
+    # connection_required =
+    #   case node_type do
+    #     :gcs -> false
+    #     :all -> false
+    #     :sim -> false
+    #     :server -> false
+    #     _other -> true
+    #   end
     {interface, vintage_net_config} = get_interface_and_config()
     %{
-      connection_required: connection_required,
       interface: interface,
       vintage_net_access: vintage_net_access?(),
       vintage_net_config: vintage_net_config,
@@ -105,6 +104,7 @@ defmodule Configuration.Module.Cluster do
           true -> raise "Unknown Computer Type: #{computer_name}"
         end
         {interface, get_wireless_config()}
+      _none -> {nil, nil}
     end
   end
 

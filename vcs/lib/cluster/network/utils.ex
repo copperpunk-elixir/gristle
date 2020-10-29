@@ -5,6 +5,7 @@ defmodule Cluster.Network.Utils do
   def set_host_name() do
     # host_name = Common.Utils.File.get_filenames_with_extension(".node") |> Enum.at(0)
     host_name = Common.Utils.Configuration.get_node_type_string()
+    Logger.debug("Set Mdns host_name: #{host_name}")
     MdnsLite.set_host(host_name)
   end
 end

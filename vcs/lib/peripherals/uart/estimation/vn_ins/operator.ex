@@ -37,7 +37,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
         remaining_buffer: [],
         field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
         new_ins_data_to_publish: false,
-        publishing_pos_vel: config.publishing_pos_vel
+        expecting_pos_vel: config.expecting_pos_vel
      }
     }
   end
@@ -82,7 +82,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     # Logger.debug("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.debug("gps_status: #{ins.gps_status}")
     state = if (state.new_ins_data_to_publish) do
-      publish_ins_data(ins, state.publishing_pos_vel)
+      publish_ins_data(ins, state.expecting_pos_vel)
       %{state | new_ins_data_to_publish: false}
     else
       state
@@ -90,13 +90,16 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     {:noreply, state}
   end
 
-  defp publish_ins_data(ins_data, publishing_pos_vel) do
+  defp publish_ins_data(ins_data, expecting_pos_vel) do
     attitude_bodyrate_value_map = %{attitude: ins_data.attitude, bodyrate: ins_data.bodyrate}
     Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
-    if (publishing_pos_vel) do
-      position_velocity_value_map = %{position: ins_data.position, velocity: ins_data.velocity}
-      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
+    position_velocity_value_map =
+    if (expecting_pos_vel) do
+      %{position: ins_data.position, velocity: ins_data.velocity}
+    else
+      %{position: %{latitude: 0.0, longitude: 0.0, altitude: 0.0}, velocity: %{north: 0.0, east: 0.0, down: 0.0}}
     end
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
