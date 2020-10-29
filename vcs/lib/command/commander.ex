@@ -68,7 +68,7 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
-    Logger.debug("rx_output: #{inspect(channel_output)}")
+    # Logger.debug("rx_output: #{inspect(channel_output)}")
     current_time = :erlang.monotonic_time(:millisecond)
     dt = (current_time - state.rx_output_time_prev)/1000.0
     state = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)

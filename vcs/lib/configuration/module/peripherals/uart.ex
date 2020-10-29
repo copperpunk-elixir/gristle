@@ -105,7 +105,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     %{
       device_description: device_desc,
       baud: baud,
-      publishing_pos_vel: true
+      expecting_pos_vel: true
     }
   end
 
@@ -115,12 +115,12 @@ defmodule Configuration.Module.Peripherals.Uart do
       case node_type do
         :sim -> {"USB Serial", 115_200}
         :hil -> {"USB Serial", 115_200}
-        _other -> {"Feather M0", 115_200}
+        _other -> {"Qwiic Micro", 115_200}
       end
     %{
       device_description: device_desc,
       baud: baud,
-      publishing_pos_vel: false
+      expecting_pos_vel: false
     }
   end
 

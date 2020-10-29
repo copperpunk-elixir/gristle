@@ -184,6 +184,7 @@ defmodule Common.Utils do
 
   @spec power_off() ::tuple()
   def power_off() do
-    System.cmd("poweroff", ["now"])
+    # System.cmd("poweroff", ["now"])
+    Nerves.Runtime.poweroff()
   end
 end
