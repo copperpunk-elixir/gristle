@@ -143,15 +143,13 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     send_command(i2c_ref, msg)
     Process.sleep(@default_response_delay)
     result = receive_command(i2c_ref, @command_size_for_int32)
-    case result do
-      {:ok, msg} ->
-        Logger.debug("Sixfab voltage msg: #{inspect(msg)}")
-        voltage = process_message(msg, 4, 0.001)
-        Logger.debug("Sixfab voltage: #{voltage}")
-        voltage
-      other ->
-        Logger.error("Sixfab Voltage read error: #{inspect(other)}")
-        nil
+    unless is_nil(result) do
+      Logger.debug("Sixfab voltage msg: #{inspect(result)}")
+      voltage = process_message(result, 4, 0.001)
+      Logger.debug("Sixfab voltage: #{voltage}")
+      voltage
+    else
+      nil
     end
   end
 
@@ -161,18 +159,16 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     send_command(i2c_ref, msg)
     Process.sleep(@default_response_delay)
     result = receive_command(i2c_ref, @command_size_for_int32)
-    case result do
-      {:ok, msg} ->
-        Logger.debug("Sixfab current msg: #{inspect(msg)}")
-        current_unsigned = process_message(msg, 4, 1)
-        # Convert to signed integer
-        <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
-        current = current_signed*0.001
-        Logger.debug("Sixfab current: #{current}")
-        current
-      other ->
-        Logger.error("Sixfab Current read error: #{inspect(other)}")
-        nil
+    unless is_nil(result) do
+      Logger.debug("Sixfab current msg: #{inspect(result)}")
+      current_unsigned = process_message(result, 4, 1)
+      # Convert to signed integer
+      <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
+    current = current_signed*0.001
+      Logger.debug("Sixfab current: #{current}")
+      current
+    else
+       nil
     end
 
   end
@@ -207,7 +203,9 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   def receive_command(i2c_ref, num_bytes) do
     case Circuits.I2C.read(i2c_ref, @device_address, num_bytes) do
       {:ok, result} -> :binary.bin_to_list(result)
-      _other -> nil
+      other ->
+        Logger.error("Sixfab read error: #{inspect(other)}")
+        nil
     end
   end
 
@@ -231,7 +229,9 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec process_message(list(), integer()) :: integer()
   def process_message(msg, num_bytes, multiplier\\1) do
+    Logger.debug("msg: #{inspect(msg)}")
     result = Enum.slice(msg, @protocol_header_size, num_bytes)
+    Logger.debug("slice: #{inspect(result)}")
     case convert_result_to_integer(result, num_bytes) do
       nil ->
         Logger.error("Result conversion error: #{inspect(result)}")
