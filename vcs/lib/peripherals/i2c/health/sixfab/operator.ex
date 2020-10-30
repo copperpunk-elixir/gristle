@@ -139,21 +139,16 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
-    # result = read_channel(i2c_ref, @reg_bus_voltage)
-    msg = create_command(:get_battery_value)
+    msg = create_command(:get_battery_voltage)
     send_command(i2c_ref, msg)
     Process.sleep(@default_response_delay)
     result = receive_command(i2c_ref, @command_size_for_int32)
     case result do
       {:ok, msg} ->
         Logger.debug("Sixfab voltage msg: #{inspect(msg)}")
-        voltage_list = Enum.slice(msg, @protocol_header_size, 4)
-        case convert_result_to_integer(voltage_list, 4) do
-          nil ->
-            Logger.error("Result conversion error: #{inspect(voltage_list)}")
-            nil
-          result -> result
-        end
+        voltage = process_message(msg, 4, 0.001)
+        Logger.debug("Sixfab voltage: #{voltage}")
+        voltage
       other ->
         Logger.error("Sixfab Voltage read error: #{inspect(other)}")
         nil
@@ -162,34 +157,25 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
-    # result = read_channel(i2c_ref, @reg_current)
-    result = nil
+    msg = create_command(:get_battery_current)
+    send_command(i2c_ref, msg)
+    Process.sleep(@default_response_delay)
+    result = receive_command(i2c_ref, @command_size_for_int32)
     case result do
-      {:ok, current} ->
-        Logger.debug("Sixfab current (raw): #{current}")
+      {:ok, msg} ->
+        Logger.debug("Sixfab current msg: #{inspect(msg)}")
+        current_unsigned = process_message(msg, 4, 1)
+        # Convert to signed integer
+        <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
+        current = current_signed*0.001
+        Logger.debug("Sixfab current: #{current}")
         current
       other ->
         Logger.error("Sixfab Current read error: #{inspect(other)}")
         nil
     end
-  end
 
-  # @spec read_channel(any(), integer()) :: tuple()
-  # def read_channel(i2c_ref, channel) do
-  #   {msg, result} = Circuits.I2C.write_read(i2c_ref, @device_address, <<channel>>, 2)
-  #   if msg == :ok do
-  #     if result == "" do
-  #       {:error, :bad_ack}
-  #     else
-  #       <<msb, lsb>> = result
-  #       Logger.debug("msb/lsb: #{msb}/#{lsb}")
-  #       output = ((msb<<<8) + lsb)
-  #       {:ok, output}
-  #     end
-  #   else
-  #     {:error, :bus_not_available}
-  #   end
-  # end
+  end
 
   @spec request_read(integer()) :: atom()
   def request_read(channel)  do
@@ -241,6 +227,17 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
         |> Bitwise.^^^(term1)
       end)
      crc &&& 0xFFFF
+  end
+
+  @spec process_message(list(), integer()) :: integer()
+  def process_message(msg, num_bytes, multiplier\\1) do
+    result = Enum.slice(msg, @protocol_header_size, num_bytes)
+    case convert_result_to_integer(result, num_bytes) do
+      nil ->
+        Logger.error("Result conversion error: #{inspect(result)}")
+        nil
+      result -> result*multiplier
+    end
   end
 
   @spec convert_result_to_integer(list(), integer()) :: integer()

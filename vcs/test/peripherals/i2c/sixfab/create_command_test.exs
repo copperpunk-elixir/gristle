@@ -20,6 +20,9 @@ defmodule Peripherals.I2c.Sixfab.CreateCommandTest do
     value = Peripherals.I2c.Health.Sixfab.Operator.convert_result_to_integer(voltage_list, 4)
     <<exp_value::32>> = <<6,7,8,9>>
     assert value == exp_value
+    mult = 0.001
+    result = Peripherals.I2c.Health.Sixfab.Operator.process_message(msg, 4, mult)
+    assert result == exp_value*0.001
     Process.sleep(200)
   end
 end
