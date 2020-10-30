@@ -195,7 +195,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     checksum = calculate_checksum(msg)
     # Logger.debug("checksum: 0x#{Integer.to_string(checksum, 16)}")
     <<msb, lsb>> = <<checksum::16>>
-    # Logger.debug("msb/lsb: #{msb}/#{lsb}")
     msg ++ [msb, lsb]
   end
 
