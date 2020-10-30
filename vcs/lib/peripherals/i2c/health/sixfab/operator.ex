@@ -89,15 +89,16 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     Logger.debug("Sixfab begin with process: #{inspect(self())}")
     Process.sleep(100)
     Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_voltage)
-    # Process.sleep(50)
-    # Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
+    Process.sleep(50)
+    Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:read_voltage, state) do
     voltage = read_voltage(state.i2c_ref)
-    battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage*0.001)
+    Logger.debug("voltage: #{voltage}")
+    battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
     send_battery_status(battery)
     {:noreply, %{state | battery: battery}}
   end
@@ -105,9 +106,17 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   @impl GenServer
   def handle_info(:read_current, state) do
     current = read_current(state.i2c_ref)
-    current = if is_nil(current), do: nil, else: current/state.current_divider
     Logger.info("current: #{current}")
-    battery = if is_nil(current), do: state.battery, else: Health.Hardware.Battery.update_current(state.battery, current, state.read_current_interval_ms*0.001)
+    battery =
+      cond do
+      is_nil(current) -> state.battery
+      current < 0 ->
+        # Battery is discharging
+        Health.Hardware.Battery.update_current(state.battery, -current, state.read_current_interval_ms*0.001)
+      true ->
+        # Battery is charging
+        Health.Hardware.Battery.update_current(state.battery, -current, state.read_current_interval_ms*0.001)
+    end
     {:noreply, %{state | battery: battery}}
   end
 
@@ -139,15 +148,13 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
-    msg = create_command(:get_battery_voltage)
-    send_command(i2c_ref, msg)
+    command_msg = create_command(:get_battery_voltage)
+    send_command(i2c_ref, command_msg)
     Process.sleep(@default_response_delay)
-    result = receive_command(i2c_ref, @command_size_for_int32)
-    unless is_nil(result) do
-      Logger.debug("Sixfab voltage msg: #{inspect(result)}")
-      voltage = process_message(result, 4, 0.001)
-      Logger.debug("Sixfab voltage: #{voltage}")
-      voltage
+    response = receive_command_response(i2c_ref, @command_size_for_int32)
+    unless is_nil(response) do
+      # Logger.debug("Sixfab voltage msg: #{inspect(response)}")
+      process_response(response, 4, 0.001)
     else
       nil
     end
@@ -155,18 +162,16 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
-    msg = create_command(:get_battery_current)
-    send_command(i2c_ref, msg)
+    command_msg = create_command(:get_battery_current)
+    send_command(i2c_ref, command_msg)
     Process.sleep(@default_response_delay)
-    result = receive_command(i2c_ref, @command_size_for_int32)
-    unless is_nil(result) do
-      Logger.debug("Sixfab current msg: #{inspect(result)}")
-      current_unsigned = process_message(result, 4, 1)
+    response = receive_command_response(i2c_ref, @command_size_for_int32)
+    unless is_nil(response) do
+      # Logger.debug("Sixfab current msg: #{inspect(response)}")
+      current_unsigned = process_response(response, 4, 1)
       # Convert to signed integer
       <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
-    current = current_signed*0.001
-      Logger.debug("Sixfab current: #{current}")
-      current
+      current_signed*0.001
     else
        nil
     end
@@ -188,9 +193,9 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
       end
     msg = [@start_byte_sent, command_id, @command_type_request, 0x00, 0x00]
     checksum = calculate_checksum(msg)
-    Logger.debug("checksum: 0x#{Integer.to_string(checksum, 16)}")
+    # Logger.debug("checksum: 0x#{Integer.to_string(checksum, 16)}")
     <<msb, lsb>> = <<checksum::16>>
-    Logger.debug("msb/lsb: #{msb}/#{lsb}")
+    # Logger.debug("msb/lsb: #{msb}/#{lsb}")
     msg ++ [msb, lsb]
   end
 
@@ -199,10 +204,23 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     Circuits.I2C.write(i2c_ref, @device_address, <<0x01>> <> :binary.list_to_bin(msg))
   end
 
-  @spec receive_command(any(), integer()) :: list()
-  def receive_command(i2c_ref, num_bytes) do
-    case Circuits.I2C.read(i2c_ref, @device_address, num_bytes) do
-      {:ok, result} -> :binary.bin_to_list(result)
+  @spec receive_command_response(any(), integer()) :: list()
+  def receive_command_response(i2c_ref, num_bytes) do
+    response = read_byte(i2c_ref, [], 0, num_bytes)
+    if is_valid_response?(response), do: response, else: nil
+  end
+
+  @spec read_byte(any(), list(), integer(), integer()) :: list()
+  def read_byte(i2c_ref, buffer, byte_count, num_bytes_to_read) do
+    case Circuits.I2C.read(i2c_ref, @device_address, 1) do
+      {:ok, <<result>>} ->
+        # Logger.info("read byte: #{result}")
+        buffer = buffer ++ [result]
+        if (byte_count + 1 < num_bytes_to_read) do
+          read_byte(i2c_ref, buffer, byte_count+1, num_bytes_to_read)
+        else
+          buffer
+        end
       other ->
         Logger.error("Sixfab read error: #{inspect(other)}")
         nil
@@ -213,7 +231,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   def calculate_checksum(message) do
     crc =
       Enum.reduce(message, 0, fn (byte, crc) ->
-        Logger.debug("byte/crc: #{byte}/#{crc}")
+        # Logger.debug("byte/crc: #{byte}/#{crc}")
         term1 = (crc <<< 8)
         |> Bitwise.&&&(0xFF00)
 
@@ -227,11 +245,11 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
      crc &&& 0xFFFF
   end
 
-  @spec process_message(list(), integer()) :: integer()
-  def process_message(msg, num_bytes, multiplier\\1) do
-    Logger.debug("msg: #{inspect(msg)}")
+  @spec process_response(list(), integer()) :: integer()
+  def process_response(msg, num_bytes, multiplier\\1) do
+    # Logger.debug("msg: #{inspect(msg)}")
     result = Enum.slice(msg, @protocol_header_size, num_bytes)
-    Logger.debug("slice: #{inspect(result)}")
+    # Logger.debug("slice: #{inspect(result)}")
     case convert_result_to_integer(result, num_bytes) do
       nil ->
         Logger.error("Result conversion error: #{inspect(result)}")
@@ -248,6 +266,36 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
       x
     else
       nil
+    end
+  end
+
+  @spec is_valid_response?(list()) :: boolean()
+  def is_valid_response?(msg) do
+    {header, buffer_rem} = Enum.split(msg, 5)
+    unless Enum.empty?(buffer_rem) do
+      [start_byte, _, _, data_len_msb, data_len_lsb] = header
+      data_len =
+      if start_byte == @start_byte_received do
+        (data_len_msb<<<8) + data_len_lsb
+      else
+        0
+      end
+      {data,checksum} = Enum.split(buffer_rem, data_len)
+      unless Enum.empty?(checksum) do
+        case Enum.take(checksum, 2) do
+          [checksum_msb, checksum_lsb] ->
+            checksum_received = (checksum_msb <<< 8) + checksum_lsb
+            checksum_calc = calculate_checksum(header ++ data)
+            (checksum_received == checksum_calc)
+          _other ->
+            Logger.warn("checksum bytes not available")
+            false
+        end
+      else
+        false
+      end
+    else
+      false
     end
   end
 
