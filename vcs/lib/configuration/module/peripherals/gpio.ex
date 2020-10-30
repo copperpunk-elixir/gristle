@@ -18,7 +18,7 @@ defmodule Configuration.Module.Peripherals.Gpio do
   @spec get_log_power_button_config() :: map()
   def get_log_power_button_config do
     %{
-      pin_number: 17,
+      pin_number: 27,
       pin_direction: :input,
       pull_mode: :pullup,
       time_threshold_cycle_mount_ms: 250,

@@ -84,7 +84,12 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_interface_and_config() :: tuple()
   def get_interface_and_config() do
-    [interface_type] = Common.Utils.File.get_filenames_with_extension(".network")
+    interface_type=
+      case Common.Utils.File.get_filenames_with_extension(".network") do
+        [interface_type] -> interface_type
+        _other -> nil
+      end
+
     computer_name = get_computer_name()
     case interface_type do
       "wired" ->
