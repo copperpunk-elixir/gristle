@@ -19,12 +19,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   # @command_type_response 0x02
 
   @default_response_delay 10
-  # COMMAND_SIZE_FOR_FLOAT = 11
-  # COMMAND_SIZE_FOR_DOUBLE = 13
-  # COMMAND_SIZE_FOR_INT16 = 9
-  # COMMAND_SIZE_FOR_INT32 = 11
-  # COMMAND_SIZE_FOR_UINT8 = 8
-  # COMMAND_SIZE_FOR_INT64 = 15
 
   @crc_table {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -196,7 +190,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     Process.sleep(@default_response_delay)
     response = receive_command_response(i2c_ref, @command_size_for_int32)
     unless is_nil(response) do
-      # Logger.debug("Sixfab current msg: #{inspect(response)}")
       current_unsigned = process_response(response, 4, 1)
       # Convert to signed integer
       <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
@@ -213,7 +206,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     Process.sleep(@default_response_delay)
     response = receive_command_response(i2c_ref, get_command_size_for_bytes(num_bytes))
     unless is_nil(response) do
-      # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
       Logger.info("fan response: #{inspect(response)}")
       process_response(response, num_bytes, 1)
     else
@@ -233,60 +225,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
       Logger.debug("set_fan status: #{inspect(status)}")
     end
   end
-
-  # @spec get_fan_speed(any()) :: integer()
-  # def get_fan_speed(i2c_ref) do
-  #   command_msg = create_get_command(:get_fan_speed)
-  #   send_command(i2c_ref, command_msg)
-  #   Process.sleep(@default_response_delay)
-  #   response = receive_command_response(i2c_ref, @command_size_for_int32)
-  #   unless is_nil(response) do
-  #     # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
-  #     process_response(response, 4, 1)
-  #   else
-  #     nil
-  #   end
-  # end
-
-  # @spec set_fan_speed(any(), integer()) :: atom()
-  # def set_fan_speed(i2c_ref, rpm) do
-  #   command_msg = create_set_command(:set_fan_speed, rpm, 4)
-  #   send_command(i2c_ref, command_msg)
-  #   Process.sleep(@default_response_delay)
-  #   response = receive_command_response(i2c_ref, @command_size_for_int32)
-  #   Logger.debug("set_fan_speed response: #{inspect(response)}")
-  #   unless is_nil(response) do
-  #     status = process_response(response,1,1)
-  #     Logger.debug("set_fan_speed status: #{inspect(status)}")
-  #   end
-  # end
-
-  # @spec get_fan_mode(any()) :: integer()
-  # def get_fan_mode(i2c_ref) do
-  #   command_msg = create_get_command(:get_fan_mode)
-  #   send_command(i2c_ref, command_msg)
-  #   Process.sleep(@default_response_delay)
-  #   response = receive_command_response(i2c_ref, @command_size_for_uint8)
-  #   unless is_nil(response) do
-  #     # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
-  #     process_response(response, 1, 1)
-  #   else
-  #     nil
-  #   end
-  # end
-
-  # @spec set_fan_mode(any(), integer()) :: atom()
-  # def set_fan_mode(i2c_ref, mode) do
-  #   command_msg = create_set_command(:set_fan_mode, mode, 1)
-  #   send_command(i2c_ref, command_msg)
-  #   Process.sleep(@default_response_delay)
-  #   response = receive_command_response(i2c_ref, @command_size_for_uint8)
-  #   Logger.debug("set_fan_mode response: #{inspect(response)}")
-  #   unless is_nil(response) do
-  #     status = process_response(response, 1,1)
-  #     Logger.debug("set_fan_mode status: #{inspect(status)}")
-  #   end
-  # end
 
   @spec request_read(integer()) :: atom()
   def request_read(channel)  do
@@ -370,7 +308,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
       Common.Utils.Math.int_little_bin(value, command_length*8) |> :binary.bin_to_list()
     end
     msg = [@start_byte_sent, command_id, command_type, len_high, len_low] ++ value
-    Logger.debug("set command: #{inspect(msg)}")
+    # Logger.debug("set command: #{inspect(msg)}")
     checksum = calculate_checksum(msg)
     # Logger.debug("checksum: 0x#{Integer.to_string(checksum, 16)}")
     <<msb, lsb>> = <<checksum::16>>
@@ -426,7 +364,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec process_response(list(), integer()) :: integer()
   def process_response(msg, num_bytes, multiplier\\1) do
-    Logger.debug("process response: #{inspect(msg)}")
+    # Logger.debug("process response: #{inspect(msg)}")
     result = Enum.slice(msg, @protocol_header_size, num_bytes)
     # Logger.debug("slice: #{inspect(result)}")
     case convert_result_to_integer(result, num_bytes) do
@@ -450,7 +388,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec is_valid_response?(list()) :: boolean()
   def is_valid_response?(msg) do
-    Logger.debug("validate response: #{inspect(msg)}")
+    # Logger.debug("validate response: #{inspect(msg)}")
     {header, buffer_rem} = Enum.split(msg, 5)
     unless Enum.empty?(buffer_rem) do
       [start_byte, _, _, data_len_msb, data_len_lsb] = header
