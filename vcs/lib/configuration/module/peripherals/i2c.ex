@@ -25,7 +25,7 @@ defmodule Configuration.Module.Peripherals.I2c do
             metadata = Enum.at(device_and_metadata,1)
             [type, channel] = String.split(metadata,"-")
             channel = String.to_integer(channel)
-            {Health.Sixfab, get_ina260_config(type, channel)}
+            {Health.Sixfab, get_sixfab_config(type, channel)}
           "Ads1015-45" ->
             metadata = Enum.at(device_and_metadata,1)
             [type, channel] = String.split(metadata,"-")
@@ -67,8 +67,8 @@ defmodule Configuration.Module.Peripherals.I2c do
     %{
       battery_type: String.to_atom(battery_type),
       battery_channel: channel,
-      read_voltage_interval_ms: 1000,
-      read_current_interval_ms: 1000
+      read_voltage_interval_ms: 60000,
+      read_current_interval_ms: 60000
     }
   end
 

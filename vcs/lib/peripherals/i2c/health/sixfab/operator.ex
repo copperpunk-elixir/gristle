@@ -10,10 +10,13 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   @start_byte_sent 0xCD
   @protocol_header_size 5
   @protocol_frame_size 7
+  @command_size_for_uint8 8
+  @command_size_for_uint16 9
   @command_size_for_int32 11
 
+
   @command_type_request 0x01
-  @command_type_response 0x02
+  # @command_type_response 0x02
 
   @default_response_delay 10
   # COMMAND_SIZE_FOR_FLOAT = 11
@@ -95,9 +98,35 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   end
 
   @impl GenServer
+  def handle_cast({:set_parameter, parameter, value}, state) do
+    num_bytes =
+      case parameter do
+        :fan_mode -> 1
+        :fan_speed -> 4
+        :fan_automation -> 2
+      end
+    set_fan_parameter(state.i2c_ref, parameter, value, num_bytes)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:get_parameter, parameter}, state) do
+    num_bytes =
+      case parameter do
+        :fan_mode -> 1
+        :fan_speed -> 4
+        :fan_health -> 4
+        :fan_automation -> 2
+      end
+    result = get_fan_parameter(state.i2c_ref, parameter, num_bytes)
+    Logger.debug("#{parameter} value: #{inspect(result)}")
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info(:read_voltage, state) do
     voltage = read_voltage(state.i2c_ref)
-    Logger.debug("voltage: #{voltage}")
+    # Logger.debug("voltage: #{voltage}")
     battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
     send_battery_status(battery)
     {:noreply, %{state | battery: battery}}
@@ -106,7 +135,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   @impl GenServer
   def handle_info(:read_current, state) do
     current = read_current(state.i2c_ref)
-    Logger.info("current: #{current}")
+    # Logger.info("current: #{current}")
     battery =
       cond do
       is_nil(current) -> state.battery
@@ -148,7 +177,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
-    command_msg = create_command(:get_battery_voltage)
+    command_msg = create_get_command(:get_battery_voltage)
     send_command(i2c_ref, command_msg)
     Process.sleep(@default_response_delay)
     response = receive_command_response(i2c_ref, @command_size_for_int32)
@@ -162,7 +191,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec read_current(any()) :: float()
   def read_current(i2c_ref) do
-    command_msg = create_command(:get_battery_current)
+    command_msg = create_get_command(:get_battery_current)
     send_command(i2c_ref, command_msg)
     Process.sleep(@default_response_delay)
     response = receive_command_response(i2c_ref, @command_size_for_int32)
@@ -175,21 +204,146 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     else
        nil
     end
-
   end
+
+  @spec get_fan_parameter(any(), atom(), integer()) :: integer()
+  def get_fan_parameter(i2c_ref, command, num_bytes) do
+    command_msg = create_get_command(command)
+    send_command(i2c_ref, command_msg)
+    Process.sleep(@default_response_delay)
+    response = receive_command_response(i2c_ref, get_command_size_for_bytes(num_bytes))
+    unless is_nil(response) do
+      # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
+      Logger.info("fan response: #{inspect(response)}")
+      process_response(response, num_bytes, 1)
+    else
+      nil
+    end
+  end
+
+  @spec set_fan_parameter(any(), atom(), any(), integer()) :: atom()
+  def set_fan_parameter(i2c_ref, command, value, num_bytes) do
+    command_msg = create_set_command(command, value, num_bytes)
+    send_command(i2c_ref, command_msg)
+    Process.sleep(@default_response_delay)
+    response = receive_command_response(i2c_ref, get_command_size_for_bytes(num_bytes))
+    Logger.debug("set_fan response: #{inspect(response)}")
+    unless is_nil(response) do
+      status = process_response(response,num_bytes,1)
+      Logger.debug("set_fan status: #{inspect(status)}")
+    end
+  end
+
+  # @spec get_fan_speed(any()) :: integer()
+  # def get_fan_speed(i2c_ref) do
+  #   command_msg = create_get_command(:get_fan_speed)
+  #   send_command(i2c_ref, command_msg)
+  #   Process.sleep(@default_response_delay)
+  #   response = receive_command_response(i2c_ref, @command_size_for_int32)
+  #   unless is_nil(response) do
+  #     # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
+  #     process_response(response, 4, 1)
+  #   else
+  #     nil
+  #   end
+  # end
+
+  # @spec set_fan_speed(any(), integer()) :: atom()
+  # def set_fan_speed(i2c_ref, rpm) do
+  #   command_msg = create_set_command(:set_fan_speed, rpm, 4)
+  #   send_command(i2c_ref, command_msg)
+  #   Process.sleep(@default_response_delay)
+  #   response = receive_command_response(i2c_ref, @command_size_for_int32)
+  #   Logger.debug("set_fan_speed response: #{inspect(response)}")
+  #   unless is_nil(response) do
+  #     status = process_response(response,1,1)
+  #     Logger.debug("set_fan_speed status: #{inspect(status)}")
+  #   end
+  # end
+
+  # @spec get_fan_mode(any()) :: integer()
+  # def get_fan_mode(i2c_ref) do
+  #   command_msg = create_get_command(:get_fan_mode)
+  #   send_command(i2c_ref, command_msg)
+  #   Process.sleep(@default_response_delay)
+  #   response = receive_command_response(i2c_ref, @command_size_for_uint8)
+  #   unless is_nil(response) do
+  #     # Logger.debug("Sixfab get_fan_mode msg: #{inspect(response)}")
+  #     process_response(response, 1, 1)
+  #   else
+  #     nil
+  #   end
+  # end
+
+  # @spec set_fan_mode(any(), integer()) :: atom()
+  # def set_fan_mode(i2c_ref, mode) do
+  #   command_msg = create_set_command(:set_fan_mode, mode, 1)
+  #   send_command(i2c_ref, command_msg)
+  #   Process.sleep(@default_response_delay)
+  #   response = receive_command_response(i2c_ref, @command_size_for_uint8)
+  #   Logger.debug("set_fan_mode response: #{inspect(response)}")
+  #   unless is_nil(response) do
+  #     status = process_response(response, 1,1)
+  #     Logger.debug("set_fan_mode status: #{inspect(status)}")
+  #   end
+  # end
 
   @spec request_read(integer()) :: atom()
   def request_read(channel)  do
     GenServer.cast(__MODULE__, {:read_channel, channel})
   end
 
+  @spec turn_fan_on() :: atom()
+  def turn_fan_on do
+    GenServer.cast(__MODULE__, {:set_parameter, :fan_mode, 1})
+  end
 
-  @spec create_command(atom()) :: list()
-  def create_command(command) do
+  @spec turn_fan_off() :: atom()
+  def turn_fan_off do
+    GenServer.cast(__MODULE__, {:set_parameter, :fan_mode, 2})
+  end
+
+  @spec set_fan_automation(list()) :: atom()
+  def set_fan_automation([slow_threshold, fast_threshold]) do
+    GenServer.cast(__MODULE__, {:set_parameter, :fan_automation, [slow_threshold, fast_threshold]})
+  end
+
+  @spec set_fan_speed(integer()) :: atom()
+  def set_fan_speed(rpm) do
+    GenServer.cast(__MODULE__, {:set_parameter, :fan_speed, rpm})
+  end
+
+  @spec get_fan_mode() :: atom()
+  def get_fan_mode() do
+    GenServer.cast(__MODULE__, {:get_parameter, :fan_mode})
+  end
+
+  @spec get_fan_speed() :: atom()
+  def get_fan_speed() do
+    GenServer.cast(__MODULE__, {:get_parameter, :fan_speed})
+  end
+
+  @spec get_fan_health() :: atom()
+  def get_fan_health() do
+    GenServer.cast(__MODULE__, {:get_parameter, :fan_health})
+  end
+
+  @spec get_fan_automation() :: atom()
+  def get_fan_automation() do
+    GenServer.cast(__MODULE__, {:get_parameter, :fan_automation})
+  end
+
+
+  @spec create_get_command(atom()) :: list()
+  def create_get_command(command) do
     command_id =
       case command do
         :get_battery_voltage -> 10
         :get_battery_current -> 11
+        :fan_speed -> 15
+        :fan_automation -> 22
+        :fan_health -> 23
+        :fan_mode -> 50
       end
     msg = [@start_byte_sent, command_id, @command_type_request, 0x00, 0x00]
     checksum = calculate_checksum(msg)
@@ -197,6 +351,32 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     <<msb, lsb>> = <<checksum::16>>
     msg ++ [msb, lsb]
   end
+
+  @spec create_set_command(atom(), any(), integer(), integer()) :: list()
+  def create_set_command(command, value, command_length, command_type\\@command_type_request) do
+    command_id =
+      case command do
+        :fan_speed -> 20
+        :fan_automation -> 21
+        :fan_mode -> 49
+      end
+    len_high = (command_length >>> 8) &&& 0xFF
+    len_low = command_length &&& 0xFF
+
+    value =
+    if is_list(value) do
+      value
+    else
+      Common.Utils.Math.int_little_bin(value, command_length*8) |> :binary.bin_to_list()
+    end
+    msg = [@start_byte_sent, command_id, command_type, len_high, len_low] ++ value
+    Logger.debug("set command: #{inspect(msg)}")
+    checksum = calculate_checksum(msg)
+    # Logger.debug("checksum: 0x#{Integer.to_string(checksum, 16)}")
+    <<msb, lsb>> = <<checksum::16>>
+    msg ++ [msb, lsb]
+  end
+
 
   @spec send_command(any(), list()) :: atom()
   def send_command(i2c_ref, msg) do
@@ -246,7 +426,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec process_response(list(), integer()) :: integer()
   def process_response(msg, num_bytes, multiplier\\1) do
-    # Logger.debug("msg: #{inspect(msg)}")
+    Logger.debug("process response: #{inspect(msg)}")
     result = Enum.slice(msg, @protocol_header_size, num_bytes)
     # Logger.debug("slice: #{inspect(result)}")
     case convert_result_to_integer(result, num_bytes) do
@@ -270,6 +450,7 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
 
   @spec is_valid_response?(list()) :: boolean()
   def is_valid_response?(msg) do
+    Logger.debug("validate response: #{inspect(msg)}")
     {header, buffer_rem} = Enum.split(msg, 5)
     unless Enum.empty?(buffer_rem) do
       [start_byte, _, _, data_len_msb, data_len_lsb] = header
@@ -296,6 +477,16 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     else
       false
     end
+  end
+
+  @spec get_command_size_for_bytes(integer()) :: integer()
+  def get_command_size_for_bytes(num_bytes) do
+    @protocol_frame_size + num_bytes
+    # case num_bytes do
+    #   1 -> @command_size_for_uint8
+    #   2 -> @command_
+    #   4 -> @command_size_for_int32
+    # end
   end
 
 end
