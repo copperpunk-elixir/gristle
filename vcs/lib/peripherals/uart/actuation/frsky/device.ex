@@ -54,7 +54,8 @@ defmodule Peripherals.Uart.Actuation.Frsky.Device do
     channels = Enum.reduce(channels, %{}, fn ({key, value},acc) ->
       if (is_nil(value)), do: acc, else: Map.put(acc, key, round(value))
     end)
-    # Logger.debug("ail: #{Map.get(channels,0)}")
+    # Logger.debug("update flap: #{Map.get(channels,4)}")
+    # Logger.debug("update gear: #{Map.get(channels,5)}")
     header = 0x0F
     b1 = Bitwise.&&&(Map.get(channels,0,0), 0xFF)
 

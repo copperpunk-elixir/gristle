@@ -3,7 +3,7 @@ defmodule Configuration.Vehicle.Plane.Command do
 
   @spec get_rx_output_channel_map(atom()) :: list()
   def get_rx_output_channel_map(model_type) do
-    commands = [:aileron, :elevator, :throttle, :rudder, :flaps, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
+    commands = [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
     output_limits = Configuration.Module.Command.get_command_output_limits(model_type, :Plane, commands)
     command_multipliers = Configuration.Module.Command.get_command_output_multipliers(model_type, :Plane, commands)
     # channel_number, channel, absolute/relative, min, max
@@ -14,7 +14,8 @@ defmodule Configuration.Vehicle.Plane.Command do
       2 => [:throttle, :thrust, :speed],
       3 => [:rudder, :yawrate, :yaw],
       4 => [:flaps],
-      7 => [:select]
+      5 => [:gear],
+      # 7 => [:select]
     }
     frozen_channels = %{
       -1 => [:rollrate, :pitchrate, :yawrate, :thrust],
@@ -29,7 +30,7 @@ defmodule Configuration.Vehicle.Plane.Command do
       # Manual only channels
       100 => [:aileron, :elevator, :rudder, :throttle],
       # Manual and Semi-Auto channels
-      101 => [:flaps],
+      101 => [:flaps, :gear],
       # Auto only channels
       102 => []
     }

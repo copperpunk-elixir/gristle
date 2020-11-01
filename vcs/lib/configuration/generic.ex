@@ -31,10 +31,17 @@ defmodule Configuration.Generic do
         Command.Commander => [0,1],
         Navigation.PathManager => [0,2]
       },
-      {:direct_actuator_cmds, :select} => %{
+      {:direct_actuator_cmds, :gear} => %{
         Command.Commander => [0,1],
-        Pids.Moderator => [0,2]
+        Navigation.PathManager => [0,2]
       },
+      {:direct_actuator_cmds, :all} => %{
+        Command.Commander => [0,1],
+      },
+      # {:direct_actuator_cmds, :select} => %{
+      #   Command.Commander => [0,1],
+      #   Pids.Moderator => [0,2]
+      # },
       :pv_cmds => %{
         Pids.Moderator => [0,1],
         Navigation.Navigator => [0,2]

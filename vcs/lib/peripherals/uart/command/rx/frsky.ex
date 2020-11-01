@@ -4,8 +4,6 @@ defmodule Peripherals.Uart.Command.Rx.Frsky do
 
   @pw_mid 991
   @pw_half_range 819
-  @pw_min 172
-  @pw_max 1810
 
   @start_byte 0x0F
   @end_byte 0x00

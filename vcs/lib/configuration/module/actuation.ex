@@ -103,8 +103,9 @@ defmodule Configuration.Module.Actuation do
       :left_direction -> 0.5
       :right_direction -> 0.5
       :throttle -> 0.0
-      :flaps -> 0.5
-      :select -> Actuation.SwInterface.guardian_control_value()
+      :flaps -> 0.0
+      :gear -> 0.0
+      # :select -> Actuation.SwInterface.guardian_control_value()
     end
   end
 
@@ -121,7 +122,7 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   7 => :select
+                   # 7 => :select
                  }
              }
       :T28 -> %{
@@ -132,7 +133,7 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   7 => :select
+                   # 7 => :select
                  }
 
              }
@@ -144,7 +145,8 @@ defmodule Configuration.Module.Actuation do
                 3 => :rudder},
               direct: %{
                 4 => :flaps,
-                7 => :select
+                5 => :gear,
+                # 7 => :select
               }
 
           }

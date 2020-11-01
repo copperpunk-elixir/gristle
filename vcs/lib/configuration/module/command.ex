@@ -46,6 +46,7 @@ defmodule Configuration.Module.Command do
           :throttle -> :throttle
           :rudder -> :rudder
           :flaps -> :flaps
+          :gear -> :gear
         end
       if Enum.member?(reversed_actuators, channel) do
         Map.put(acc, command_name, -1)

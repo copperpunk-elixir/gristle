@@ -25,8 +25,8 @@ defmodule Command.Commander do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
-    {direct_select_class, direct_select_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :select})
+    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
+    # {direct_select_class, direct_select_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :select})
     {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
 
 
@@ -40,8 +40,8 @@ defmodule Command.Commander do
         direct_cmds_time_ms: direct_cmds_time_ms,
         indirect_override_cmds_class: indirect_override_class,
         indirect_override_cmds_time_ms: indirect_override_time_ms,
-        direct_select_class: direct_select_class,
-        direct_select_time_ms: direct_select_time_ms,
+        # direct_select_class: direct_select_class,
+        # direct_select_time_ms: direct_select_time_ms,
         control_state: -1,
         pilot_control_mode: -1,
         reference_cmds: %{},
@@ -133,12 +133,12 @@ defmodule Command.Commander do
       end)
 
       # Publish Goals
-      if pilot_control_mode == @pilot_manual do
+      unless pilot_control_mode == @pilot_manual do
         # If under manual control, tell all nodes to retain control
         # If a node's Actuation process is dead, it will not receive this, and thus it will be
         # under Guardian control anyway
-        Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_select_class, state.direct_select_time_ms, %{select: Actuation.SwInterface.self_control_value()}}, self())
-      else
+        # Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_select_class, state.direct_select_time_ms, %{select: Actuation.SwInterface.self_control_value()}}, self())
+      # else
         Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_class, state.goals_time_ms, indirect_cmds}, self())
       end
       # Indirect Override Cmds
@@ -146,6 +146,7 @@ defmodule Command.Commander do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:indirect_override_cmds_sorter, state.indirect_override_cmds_class, state.indirect_override_cmds_time_ms, indirect_override_cmds}, self())
       end
       # Direct Cmds
+      # Logger.debug("dir cmds: #{inspect(direct_cmds)}")
       unless Enum.empty?(direct_cmds) do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_class, state.direct_cmds_time_ms, direct_cmds}, self())
       end

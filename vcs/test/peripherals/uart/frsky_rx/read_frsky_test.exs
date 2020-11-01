@@ -1,4 +1,4 @@
-defmodule Peripherals.Uarft.FrskyRx.ReadFrskyTest do
+defmodule Peripherals.Uart.FrskyRx.ReadFrskyTest do
   use ExUnit.Case
   require Logger
 

@@ -42,8 +42,10 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_frsky_rx_config() :: map()
   def get_frsky_rx_config() do
     %{
-      device_description: "Feather M0",
-      baud: 115_200,
+      device_description: "CP2104",
+      baud: 100_000,
+      stop_bits: 2,
+      rx_framing_timeout: 7,
       rx_module: :Frsky
     }
   end

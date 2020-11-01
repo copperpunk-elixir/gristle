@@ -6,11 +6,11 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
     constraints = get_constraints()
     integrator_airspeed_min = 5.0
     %{
-      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.2, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
-      pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
-      yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.1, ki: 0.0, integrator_range: 0.26, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
-      course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
-      course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1}, constraints.yaw)},
+      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.2, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
+      pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
+      yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.1, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
+      course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
+      course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min}, constraints.yaw)},
       tecs: %{
         thrust: Map.merge(get_tecs_energy(), constraints.thrust),
         pitch: Map.merge(get_tecs_balance(), constraints.pitch)
@@ -36,7 +36,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+      # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},

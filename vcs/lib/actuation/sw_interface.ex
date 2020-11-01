@@ -73,7 +73,7 @@ defmodule Actuation.SwInterface do
 
     # Logger.debug("indirect: #{inspect(indirect_output_map_all)}")
     # Logger.debug("indirect override: #{inspect(indirect_override_actuator_output_map)}")
-    # Logger.debug("direct: #{inspect(direct_actuator_output_map)}")
+    # Logger.debug("act direct: #{inspect(direct_actuator_output_map)}")
     actuator_output_map = Map.merge(indirect_output_map_all, direct_actuator_output_map)
 
     # Logger.debug("aom: #{inspect(actuator_output_map)}")

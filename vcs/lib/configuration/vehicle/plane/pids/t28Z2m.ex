@@ -31,12 +31,13 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
   @spec get_constraints() :: map()
   def get_constraints() do
     %{
-     aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+      aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+      # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+      gear: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},

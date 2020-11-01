@@ -53,7 +53,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    Logger.debug("data: #{inspect(data)}")
+    # Logger.debug("data: #{inspect(data)}")
     {:noreply, state}
   end
 
