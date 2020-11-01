@@ -8,8 +8,8 @@ defmodule Common.Utils.Configuration do
     # Common.Utils.File.get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
     case model_type do
       :Cessna -> :Plane
-      :EC1500 -> :Plane
-      :RV4 -> :Plane
+      :T28 -> :Plane
+      :T28Z2m -> :Plane
       _other -> raise "Unknown model"
     end
   end

@@ -247,7 +247,7 @@ defmodule Navigation.Path.Mission do
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
       },
-      EC1500: %{
+      T28: %{
         takeoff_roll: 30,
         climbout_distance: 200,
         climbout_height: 40,
@@ -260,7 +260,7 @@ defmodule Navigation.Path.Mission do
         wp_dist_range: {200, 400},
         planning_turn_rate: 0.80
       },
-      RV4: %{
+      T28Z2m: %{
         takeoff_roll: 30,
         climbout_distance: 200,
         climbout_height: 40,

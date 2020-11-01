@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Plane.Navigation.RV4 do
+defmodule Configuration.Vehicle.Plane.Navigation.T28 do
   require Logger
 
   @spec get_vehicle_limits() :: map()

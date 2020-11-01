@@ -15,7 +15,7 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    send_path_mission("montague", "36L",:EC1500, track_type, num_wps, true)
+    send_path_mission("montague", "36L",:T28, track_type, num_wps, true)
   end
 
   @spec load_montague_18R(any()) :: atom()
@@ -26,7 +26,7 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    send_path_mission("montague", "18R",:EC1500, track_type, num_wps, true)
+    send_path_mission("montague", "18R",:T28, track_type, num_wps, true)
   end
 
   @spec send_path_mission(binary(), binary(), atom(), atom(), integer(), boolean()) :: atom()
@@ -65,8 +65,8 @@ defmodule Navigation.PathPlanner do
   def get_model(arg) do
     aircraft = %{
       0 => :Cessna,
-      1 => :EC1500,
-      2 => :RV4
+      1 => :T28,
+      2 => :T28Z2m
     }
     Common.Utils.get_key_or_value(aircraft, arg)
   end

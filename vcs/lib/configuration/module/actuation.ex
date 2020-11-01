@@ -35,7 +35,12 @@ defmodule Configuration.Module.Actuation do
     output_modules =
       case node_type do
         :sim -> [Simulation.XplaneSend]
-        _other -> [Peripherals.Uart.Actuation.Operator]
+        _other ->
+          case model_type do
+            :Cessna -> [Peripherals.Uart.Actuation.Operator]
+            :T28Z2m -> [Peripherals.Uart.Actuation.Operator]
+            :T28 -> [Peripherals.Uart.ActuationCommand.Operator]
+          end
       end
 
     %{
@@ -116,10 +121,10 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   5 => :select
+                   7 => :select
                  }
              }
-      :EC1500 -> %{
+      :T28 -> %{
                  indirect: %{
                    0 => :aileron,
                    1 => :elevator,
@@ -127,11 +132,11 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   5 => :select
+                   7 => :select
                  }
 
              }
-      :RV4 -> %{
+      :T28Z2m -> %{
               indirect: %{
                 0 => :aileron,
                 1 => :elevator,
@@ -139,7 +144,7 @@ defmodule Configuration.Module.Actuation do
                 3 => :rudder},
               direct: %{
                 4 => :flaps,
-                5 => :select
+                7 => :select
               }
 
           }

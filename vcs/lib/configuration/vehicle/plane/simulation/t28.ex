@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Plane.Simulation.EC1500 do
+defmodule Configuration.Vehicle.Plane.Simulation.T28 do
   @spec get_pwm_channels() :: map()
   def get_pwm_channels() do
     %{

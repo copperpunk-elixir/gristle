@@ -13,16 +13,18 @@ defmodule Command.GetValuesFromRxTest do
     # Navigation.System.start_link(navigation_config)
     command_config = Configuration.Module.get_config(Command, model_type, node_type)
     Logger.info("Command config: #{inspect(command_config)}")
+    {act_module, act_op_config} = Configuration.Module.Peripherals.Uart.get_module_key_and_config_for_module(:FrskyRxFrskyServo, node_type)
+    module = Module.concat(Peripherals.Uart, act_module)
+    |> Module.concat(Operator)
+    apply(module, :start_link, [act_op_config])
+
     # Command.System.start_link(command_config)
     Process.sleep(300)
     {:ok, []}
   end
-
   test "Get Channel 0 from FrSky interface" do
     Command.System.start_link(%{commander: %{model_type: :Cessna}})
-    config = Configuration.Module.Peripherals.Uart.get_frsky_rx_config()
-    Peripherals.Uart.Command.Frsky.Operator.start_link(config)
-    Process.sleep(400000)
+        Process.sleep(400000)
   end
 
   # # This test is only required if something changes with the FrSky receiver

@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Plane.Pids.RV4 do
+defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
   require Logger
 
   @spec get_pids() :: map()

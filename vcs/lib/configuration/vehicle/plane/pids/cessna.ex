@@ -4,7 +4,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
   @spec get_pids() :: map()
   def get_pids() do
     constraints = get_constraints()
-
+    integrator_airspeed_min = 5.0
     %{
       rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
       pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
