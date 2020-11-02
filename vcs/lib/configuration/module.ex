@@ -13,7 +13,10 @@ defmodule Configuration.Module do
     Enum.each(modules, fn module ->
       system_module = Module.concat(module, System)
       Logger.debug("system module: #{system_module}")
-      apply(system_module, :start_link, [get_config(module, model_type, node_type)])
+      case apply(system_module, :start_link, [get_config(module, model_type, node_type)]) do
+        {:ok, pid} -> Logger.debug("#{system_module} successfully started")
+        other -> Logger.warn("#{system_module} did not start successfully: #{inspect(other)}")
+      end
     end)
   end
 end
