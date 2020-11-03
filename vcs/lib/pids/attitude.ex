@@ -10,7 +10,7 @@ defmodule Pids.Attitude do
     if Map.has_key?(cmds, :yaw) do
       get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
     else
-      cmds.roll*0.1
+      cmds.roll*0.2
     end
     thrust_output = cmds.thrust
     # output_str =
