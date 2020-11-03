@@ -43,7 +43,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
      yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
      roll: %{output_min: -1.05, output_max: 1.05, output_neutral: 0.0},
      pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
-     yaw: %{output_min: -0.26., output_max: 0.26, output_neutral: 0.0},
+     yaw: %{output_min: -0.26, output_max: 0.26, output_neutral: 0.0},
      thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
      course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
      course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
