@@ -32,22 +32,23 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
   def get_constraints() do
     %{
      aileron: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
-      throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
-      flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
-      pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
-      roll: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
-      yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
-      thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
-      course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      speed: %{output_min: 0, output_max: 20, output_neutral: 0},
-      altitude: %{output_min: -10, output_max: 10, output_neutral: 0}
+     elevator: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+     rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
+     throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
+     flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+     gear: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+     # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+     rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
+     pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
+     yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
+     roll: %{output_min: -1.05, output_max: 1.05, output_neutral: 0.0},
+     pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
+     yaw: %{output_min: -0.26, output_max: 0.26, output_neutral: 0.0},
+     thrust: %{output_min: 0, output_max: 1, output_neutral: 0.0},
+     course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
+     course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
+     speed: %{output_min: 0, output_max: 20, output_neutral: 0},
+     altitude: %{output_min: -10, output_max: 10, output_neutral: 0}
     }
   end
 

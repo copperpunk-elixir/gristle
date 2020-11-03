@@ -29,7 +29,6 @@ defmodule Command.Commander do
     # {direct_select_class, direct_select_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :select})
     {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
 
-
     rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [model_type])
     {:ok, %{
         vehicle_type: vehicle_type,
