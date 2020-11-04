@@ -206,7 +206,7 @@ defmodule Display.Scenic.Gcs.Plane do
   @impl Scenic.Scene
   def filter_event({:click, :save_log}, _from, state) do
     Logger.debug("Save Log to file: #{state.save_log_file}")
-    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_filename])
+    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_file])
     save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
     Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:save_log_proto, save_log_encoded)
     {:cont, :event, state}

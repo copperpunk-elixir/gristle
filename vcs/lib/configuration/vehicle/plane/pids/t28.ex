@@ -6,7 +6,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
     constraints = get_constraints()
     integrator_airspeed_min = 5.0
     %{
-      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.2, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
+      rollrate: %{aileron: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)}, constraints.aileron)},
       pitchrate: %{elevator: Map.merge(%{type: :Generic, kp: 0.1, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)}, constraints.elevator)},
       yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.1, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
       course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
@@ -23,7 +23,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
     constraints = get_constraints()
     %{
       roll_rollrate: Map.merge(%{scale: 2.0}, constraints.rollrate),
-      pitch_pitchrate: Map.merge(%{scale: 2.0}, constraints.pitchrate),
+      pitch_pitchrate: Map.merge(%{scale: 2.5}, constraints.pitchrate),
       yaw_yawrate: Map.merge(%{scale: 2.0}, constraints.yawrate),
     }
   end

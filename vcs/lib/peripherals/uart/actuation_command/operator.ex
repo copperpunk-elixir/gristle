@@ -68,8 +68,14 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    Logger.debug("data: #{inspect(data)}")
-    data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
+    # Logger.debug("data: #{inspect(data)}")
+    data_list =
+    if is_binary(data) do
+      state.remaining_buffer ++ :binary.bin_to_list(data)
+    else
+      state.remaining_buffer
+    end
+
     rx_module = state.rx_module
     rx = parse(rx_module, state.rx, data_list)
     {rx, channel_values} =

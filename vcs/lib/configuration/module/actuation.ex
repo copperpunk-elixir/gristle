@@ -19,7 +19,7 @@ defmodule Configuration.Module.Actuation do
     actuator_names = get_actuator_names(model_type, node_type)
     # actuator_names = Map.merge(actuator_names.direct, actuator_names.indirect)
     # {channels, failsafes} = get_channels_failsafes(actuator_names)
-    {min_pw_us, max_pw_us} = get_min_max_pw(node_type)
+    {min_pw_us, max_pw_us} = get_min_max_pw(model_type)
     indirect_actuators = Enum.reduce(actuator_names.indirect, %{}, fn ({channel_number, actuator_name}, acc) ->
       Map.put(acc, actuator_name, get_default_actuator_config(actuator_name, channel_number, min_pw_us, max_pw_us))
     end)
@@ -35,12 +35,8 @@ defmodule Configuration.Module.Actuation do
     output_modules =
       case node_type do
         :sim -> [Simulation.XplaneSend]
-        _other ->
-          case model_type do
-            :Cessna -> [Peripherals.Uart.Actuation.Operator]
-            :T28Z2m -> [Peripherals.Uart.Actuation.Operator]
-            :T28 -> [Peripherals.Uart.ActuationCommand.Operator]
-          end
+        :all -> [Peripherals.Uart.ActuationCommand.Operator]
+        _other -> [Peripherals.Uart.Actuation.Operator]
       end
 
     %{
@@ -79,12 +75,10 @@ defmodule Configuration.Module.Actuation do
   end
 
   @spec get_min_max_pw(atom()) :: tuple()
-  def get_min_max_pw(node_type) do
-    case node_type do
-      :front_right -> {64, 4080}
-      :rear_right -> {64, 4080}
-      :rear_left  -> {64, 4080}
-      :front_left -> {64, 4080}
+  def get_min_max_pw(model_type) do
+    case model_type do
+      :T28Z2m -> {1000, 2000}
+      :T28 -> {1100, 1900}
       _other -> {1100, 1900}
     end
   end
