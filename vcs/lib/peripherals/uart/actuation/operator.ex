@@ -27,6 +27,8 @@ defmodule Peripherals.Uart.Actuation.Operator do
 
   @impl GenServer
   def terminate(reason, state) do
+    result = Circuits.UART.close(state.uart_ref)
+    Logger.debug("Closing UART port with result: #{inspect(result)}")
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
   end

@@ -25,6 +25,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def terminate(reason, state) do
+    Circuits.UART.close(state.uart_ref)
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
   end

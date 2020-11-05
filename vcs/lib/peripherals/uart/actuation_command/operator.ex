@@ -33,6 +33,8 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
 
   @impl GenServer
   def terminate(reason, state) do
+    result = Circuits.UART.close(state.uart_ref)
+    Logger.debug("Closing UART port with result: #{inspect(result)}")
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
   end
@@ -77,7 +79,12 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
     end
 
     rx_module = state.rx_module
-    rx = parse(rx_module, state.rx, data_list)
+    rx =
+    if Enum.empty?(data_list) do
+      state.rx
+    else
+      parse(rx_module, state.rx, data_list)
+    end
     {rx, channel_values} =
     if rx.payload_ready == true do
       channel_values = apply(rx_module, :get_channels, [rx])

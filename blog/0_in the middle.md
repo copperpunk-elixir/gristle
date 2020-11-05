@@ -1,6 +1,6 @@
 # In the beginning, there was the middle...
 
-You're jumping into a novel at about Chapter 6. And no, that's not because you missed the earlier chapters. I am only writing it now, because I think it has finally become something worth reading about. But as they say, there's no use wilting over crushed tomatoes. Now let us catch up.<br><br>
+You're jumping into a novel at about Chapter 6. And no, that's not because you missed the earlier chapters. I am only writing it now, because I think it has finally become something worth reading about. There will be plenty of pictures, I promise.<br><br>
 This project started out as somewhat of an experiment, or rather, it was a means to scratch an itch that had been bothering me for a few years:
 >What does it take to make an autopilot sufficiently reliable, affordable, maintanable, and integratable enough to be extremely useful?
 

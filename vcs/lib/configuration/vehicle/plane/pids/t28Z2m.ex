@@ -47,7 +47,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
       thrust: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
-      speed: %{output_min: 0, output_max: 20, output_neutral: 0},
+      speed: %{output_min: 0, output_max: 30, output_neutral: 0},
       altitude: %{output_min: -10, output_max: 10, output_neutral: 0}
     }
   end
