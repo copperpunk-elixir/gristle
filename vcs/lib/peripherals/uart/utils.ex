@@ -31,22 +31,27 @@ defmodule Peripherals.Uart.Utils do
 
   @spec get_uart_devices_containing_string(binary()) :: list()
   def get_uart_devices_containing_string(device_string) do
-    device_string = String.downcase(device_string)
-    # Logger.debug("devicestring: #{device_string}")
-    uart_ports = Circuits.UART.enumerate()
-    # Logger.debug("ports: #{inspect(uart_ports)}")
-    matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
-      device_description = Map.get(port, :description,"")
-      # Logger.debug("description: #{String.downcase(device_description)}")
-      if String.contains?(String.downcase(device_description), device_string) do
-        acc ++ [port_name]
-      else
-        acc
+    if String.contains?(device_string, "ttyAMA") do
+      # open port directly
+      device_string
+    else
+      device_string = String.downcase(device_string)
+      # Logger.debug("devicestring: #{device_string}")
+      uart_ports = Circuits.UART.enumerate()
+      # Logger.debug("ports: #{inspect(uart_ports)}")
+      matching_ports = Enum.reduce(uart_ports, [], fn ({port_name, port}, acc) ->
+        device_description = Map.get(port, :description,"")
+        # Logger.debug("description: #{String.downcase(device_description)}")
+        if String.contains?(String.downcase(device_description), device_string) do
+          acc ++ [port_name]
+        else
+          acc
+        end
+      end)
+      case length(matching_ports) do
+        0 -> nil
+        _ -> Enum.min(matching_ports)
       end
-    end)
-    case length(matching_ports) do
-      0 -> nil
-      _ -> Enum.min(matching_ports)
     end
   end
 end

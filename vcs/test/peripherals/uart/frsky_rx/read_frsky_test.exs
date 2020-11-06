@@ -24,7 +24,7 @@ defmodule Peripherals.Uart.FrskyRx.ReadFrskyTest do
   test "Alternate UART" do
     Logger.info("Receive Single Message test")
     frsky_rx_config =   %{
-      device_description: "ttyAMA3",
+      device_description: "ttyAMA0",
       baud: 100_000,
       stop_bits: 2,
       rx_framing_timeout: 7,
