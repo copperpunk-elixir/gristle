@@ -20,4 +20,23 @@ defmodule Peripherals.Uart.FrskyRx.ReadFrskyTest do
     #   Process.sleep(20)
     # end)
   end
+
+  test "Alternate UART" do
+    Logger.info("Receive Single Message test")
+    frsky_rx_config =   %{
+      device_description: "ttyAMA3",
+      baud: 100_000,
+      stop_bits: 2,
+      rx_framing_timeout: 7,
+      rx_module: :Frsky
+    }
+
+    Peripherals.Uart.Command.Rx.Operator.start_link(frsky_rx_config)
+    Process.sleep(50000)
+    # Enum.each(0..10000, fn _index ->
+    #   Logger.debug("#{Peripherals.Uart.FrskyRx.get_value_for_channel(4)}")
+    #   Process.sleep(20)
+    # end)
+  end
+
 end

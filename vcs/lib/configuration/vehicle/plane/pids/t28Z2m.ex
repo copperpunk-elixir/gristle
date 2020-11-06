@@ -23,7 +23,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
     constraints = get_constraints()
     %{
       roll_rollrate: Map.merge(%{scale: 2.0}, constraints.rollrate),
-      pitch_pitchrate: Map.merge(%{scale: 2.5}, constraints.pitchrate),
+      pitch_pitchrate: Map.merge(%{scale: 2.0}, constraints.pitchrate),
       yaw_yawrate: Map.merge(%{scale: 2.0}, constraints.yawrate),
     }
   end
@@ -43,7 +43,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       roll: %{output_min: -1.05, output_max: 1.05, output_neutral: 0.0},
       pitch: %{output_min: -0.52, output_max: 0.52, output_neutral: 0.0},
-      yaw: %{output_min: -0.26, output_max: 0.26, output_neutral: 0.0},
+      yaw: %{output_min: -0.78, output_max: 0.78, output_neutral: 0.0},
       thrust: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       course_ground: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
       course_flight: %{output_min: -0.52, output_max: 0.52, output_neutral: 0},
@@ -68,7 +68,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
     %{type: :TecsBalance,
       ki: 0.1,
       kd: 0.0,
-      altitude_kp: 0.25,
+      altitude_kp: 0.5,
       balance_rate_scalar: 0.002,
       time_constant: 2.0,
       integrator_range: 300,
@@ -108,7 +108,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
         tecs: %{
           thrust:
           fn (cmd, _value, speed_cmd) ->
-            if (speed_cmd > 0), do: cmd*0.001 + 0.5, else: 0.0
+            if (speed_cmd > 0), do: speed_cmd/30.0, else: 0.0
           end
         }
       }
