@@ -20,7 +20,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
     {:ok, %{
         uart_ref: uart_ref,
         device_description: config.device_description,
-        baud: config.baud,
+        port_options: config.port_options,
         remaining_buffer: [],
         channel_values: [],
         rx_module: rx_module,
@@ -37,7 +37,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = [speed: state.baud, active: true]
+    port_options = state.port_options ++ [active: true]
     Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
     Logger.debug("Uart.Command.Rx setup complete!")
     {:noreply, state}
