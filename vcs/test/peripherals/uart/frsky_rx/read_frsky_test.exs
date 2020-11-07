@@ -24,12 +24,14 @@ defmodule Peripherals.Uart.FrskyRx.ReadFrskyTest do
   test "Alternate UART" do
     Logger.info("Receive Single Message test")
     frsky_rx_config =   %{
-      device_description: "ttyAMA0",
-      rx_module: :Frsky
+      device_description: "ttyAMA3",
+#device_description: "Feather M0",
+      rx_module: :Frsky,
       port_options: [
-        baud: 100_000,
+        speed: 100000,
         stop_bits: 2,
-        rx_framing_timeout: 7
+parity: :even,
+#        rx_framing_timeout: 7
       ]
     }
 
