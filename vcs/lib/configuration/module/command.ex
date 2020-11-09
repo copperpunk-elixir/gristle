@@ -1,19 +1,28 @@
 defmodule Configuration.Module.Command do
+  require Logger
+
   @spec get_config(atom(), atom()) :: map()
   def get_config(model_type, _node_type) do
-    # vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
+    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
+    vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
+    commands = apply(vehicle_module, :get_commands, [])
+    output_limits = get_command_output_limits(model_type, vehicle_type, commands)
+    command_multipliers = get_command_output_multipliers(model_type, vehicle_type, commands)
+    rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [output_limits, command_multipliers])
     %{
-      commander: %{model_type: model_type},
+      commander: %{
+        rx_output_channel_map: rx_output_channel_map
+      }
     }
   end
 
   @spec get_command_output_limits(atom(), atom(), list()) :: map()
-  def get_command_output_limits(model_type, vehicle_type, channels) do
+  def get_command_output_limits(model_type, vehicle_type, commands) do
     model_module = Module.concat(Configuration.Vehicle, vehicle_type)
     |> Module.concat(Pids)
     |> Module.concat(model_type)
 
-    Enum.reduce(channels, %{}, fn (channel, acc) ->
+    Enum.reduce(commands, %{}, fn (channel, acc) ->
       constraints =
         apply(model_module, :get_constraints, [])
         |> Map.get(channel)
@@ -22,12 +31,12 @@ defmodule Configuration.Module.Command do
   end
 
   @spec get_command_output_multipliers(atom(), atom(), list()) :: map()
-  def get_command_output_multipliers(model_type, vehicle_type, channels) do
+  def get_command_output_multipliers(model_type, vehicle_type, commands) do
     vehicle_module = Module.concat(Configuration.Vehicle, vehicle_type)
     |> Module.concat(Actuation)
 
     reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])
-    Enum.reduce(channels, %{}, fn (command_name, acc) ->
+    Enum.reduce(commands, %{}, fn (command_name, acc) ->
       channel =
         case command_name do
           :rollrate -> :aileron

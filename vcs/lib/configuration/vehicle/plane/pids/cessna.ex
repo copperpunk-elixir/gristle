@@ -38,7 +38,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
+      gear: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       rollrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
       yawrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},

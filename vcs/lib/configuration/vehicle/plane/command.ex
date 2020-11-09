@@ -1,11 +1,13 @@
 defmodule Configuration.Vehicle.Plane.Command do
   require Logger
 
-  @spec get_rx_output_channel_map(atom()) :: list()
-  def get_rx_output_channel_map(model_type) do
-    commands = [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
-    output_limits = Configuration.Module.Command.get_command_output_limits(model_type, :Plane, commands)
-    command_multipliers = Configuration.Module.Command.get_command_output_multipliers(model_type, :Plane, commands)
+  @spec get_commands() :: list()
+  def get_commands() do
+    [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
+  end
+
+  @spec get_rx_output_channel_map(map(), map()) :: list()
+  def get_rx_output_channel_map(output_limits, command_multipliers) do
     # channel_number, channel, absolute/relative, min, max
     relative_channels = [:course_flight, :altitude]
     channel_assignments = %{

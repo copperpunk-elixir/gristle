@@ -21,18 +21,12 @@ defmodule Command.Commander do
 
   @impl GenServer
   def init(config) do
-    model_type = config.model_type
-    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
     {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
     {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
     # {direct_select_class, direct_select_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :select})
     {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
 
-    rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [model_type])
     {:ok, %{
-        vehicle_type: vehicle_type,
-        vehicle_module: vehicle_module,
         goals_class: goals_class,
         goals_time_ms: goals_time_ms,
         direct_cmds_class: direct_cmds_class,
@@ -46,7 +40,7 @@ defmodule Command.Commander do
         reference_cmds: %{},
         rx_output_time_prev: 0,
         pv_values: %{},
-        rx_output_channel_map: rx_output_channel_map
+        rx_output_channel_map: config.rx_output_channel_map
      }}
   end
 
