@@ -2,13 +2,16 @@ defmodule Configuration.UseStringsTest do
   use ExUnit.Case
   require Logger
 
-
-  test "Uart configurations" do
+  setup do
     RingLogger.attach()
     Comms.ProcessRegistry.start_link()
     Comms.System.start_link()
     Process.sleep(200)
-    devices_modules_speeds = [
+    {:ok, []}
+  end
+
+  test "Uart configurations" do
+       devices_modules_speeds = [
       # {"Dsm", Command.Rx, 115_200},
       # {"FrskyRx", Command.Rx, 100_000},
       # {"FrskyServo", Actuation, 115_200},
@@ -20,7 +23,7 @@ defmodule Configuration.UseStringsTest do
       # {"VnImu", Estimation.VnIns, 115_200},
       # {"Xbee", Telemetry, 57_600},
       # {"Sik", Telemetry, 57_600},
-      {"PwmReader", PwmReader, 115_200}
+      # {"PwmReader", PwmReader, 115_200}
     ]
 
 
@@ -36,5 +39,46 @@ defmodule Configuration.UseStringsTest do
       apply(module, :start_link, [config])
     end)
     Process.sleep(500)
+  end
+
+  test "GPIO configurations" do
+    devices_modules_pins = [
+      {"LogPowerButton", Logging, 27}
+    ]
+
+    node_type = "all"
+    config = Configuration.Module.Peripherals.Gpio.get_config(nil, node_type)
+    Enum.each(devices_modules_pins, fn {device, module, exp_pin} ->
+      single_config = get_in(config, [module])
+      assert single_config.pin_number == exp_pin
+      module = Module.concat(Peripherals.Gpio, module)
+      |> Module.concat(Operator)
+      # apply(module, :start_link, [single_config])
+    end)
+
+    Process.sleep(500)
+  end
+
+  test "I2C configuraitons" do
+    devices_modules_channels = [
+      {"Ina260", Health.Ina260, 0},
+      {"Ina219", Health.Ina219, 0},
+      {"Sixfab", Health.Sixfab, 0},
+      {"Ads1015-45", Health.Ads1015, 0},
+      {"Ads1015-90", Health.Ads1015, 0}
+    ]
+
+    node_type = "all"
+    config = Configuration.Module.Peripherals.I2c.get_config(nil, node_type)
+    Enum.each(devices_modules_channels, fn {device, module, exp_channel} ->
+      single_config = get_in(config, [module])
+      assert single_config.battery_channel== exp_channel
+      # module = Module.concat(Peripherals.I2c, module)
+      # |> Module.concat(Operator)
+      # apply(module, :start_link, [single_config])
+    end)
+
+    Process.sleep(500)
+
   end
 end
