@@ -16,7 +16,7 @@ defmodule Common.Utils.Configuration do
 
   @spec get_node_type() :: atom()
   def get_node_type() do
-    get_file_safely(".node", 1, @file_lookup_count_max) |> String.to_atom()
+    get_file_safely(".node", 1, @file_lookup_count_max)# |> String.to_atom()
   end
 
   def get_node_type_string() do
@@ -82,9 +82,9 @@ defmodule Common.Utils.Configuration do
   @spec get_peripherals(binary(), binary()) :: list()
   def get_peripherals(extension, subdirectory) do
     directory = "peripherals/" <> subdirectory
-    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(extension, directory)
-    Enum.map(peripherals_bin_list, fn x ->
-      String.to_atom(x)
-    end)
+    Common.Utils.File.get_filenames_with_extension(extension, directory)
+    # Enum.map(peripherals_bin_list, fn x ->
+    #   String.to_atom(x)
+    # end)
   end
 end
