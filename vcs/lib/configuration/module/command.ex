@@ -1,10 +1,10 @@
 defmodule Configuration.Module.Command do
   require Logger
 
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(model_type, _node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    vehicle_module = Module.concat([Configuration.Vehicle,vehicle_type,Command])
+    vehicle_module = Module.concat([Configuration.Vehicle, String.to_existing_atom(vehicle_type),Command])
     commands = apply(vehicle_module, :get_commands, [])
     output_limits = get_command_output_limits(model_type, vehicle_type, commands)
     command_multipliers = get_command_output_multipliers(model_type, vehicle_type, commands)
@@ -16,11 +16,11 @@ defmodule Configuration.Module.Command do
     }
   end
 
-  @spec get_command_output_limits(atom(), atom(), list()) :: map()
+  @spec get_command_output_limits(binary(), binary(), list()) :: map()
   def get_command_output_limits(model_type, vehicle_type, commands) do
-    model_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    model_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Pids)
-    |> Module.concat(model_type)
+    |> Module.concat(String.to_existing_atom(model_type))
 
     Enum.reduce(commands, %{}, fn (channel, acc) ->
       constraints =
@@ -30,9 +30,9 @@ defmodule Configuration.Module.Command do
     end)
   end
 
-  @spec get_command_output_multipliers(atom(), atom(), list()) :: map()
+  @spec get_command_output_multipliers(binary(), binary(), list()) :: map()
   def get_command_output_multipliers(model_type, vehicle_type, commands) do
-    vehicle_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    vehicle_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Actuation)
 
     reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])

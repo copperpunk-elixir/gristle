@@ -11,13 +11,11 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       yawrate: %{rudder: Map.merge(%{type: :Generic, kp: 0.3, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)}, constraints.rudder)},
       course_flight: %{roll: Map.merge(%{type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)}, constraints.roll)},
       course_ground: %{yaw: Map.merge(%{type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min}, constraints.yaw)},
-
       tecs: %{
         thrust: Map.merge(get_tecs_energy(), constraints.thrust),
         pitch: Map.merge(get_tecs_balance(), constraints.pitch)
       }
     }
-
   end
 
   @spec get_attitude() :: map

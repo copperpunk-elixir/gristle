@@ -1,5 +1,5 @@
 defmodule Configuration.Module.Estimation do
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(_model_type, _node_type) do
     %{
       estimator: %{

@@ -1,7 +1,7 @@
 defmodule Configuration.Module.Actuation do
   require Logger
 
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(model_type, node_type) do
     sw_config = get_actuation_sw_config(model_type, node_type)
     %{
@@ -9,11 +9,11 @@ defmodule Configuration.Module.Actuation do
     }
   end
 
-  @spec get_actuation_sw_config(atom(), atom()) :: map()
+  @spec get_actuation_sw_config(binary(), binary()) :: map()
   def get_actuation_sw_config(model_type, node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module =
-      Module.concat(Configuration.Vehicle, vehicle_type)
+      Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
       |> Module.concat(Actuation)
 
     actuator_names = get_actuator_names(model_type, node_type)
@@ -34,8 +34,8 @@ defmodule Configuration.Module.Actuation do
 
     output_modules =
       case node_type do
-        :sim -> [Simulation.XplaneSend]
-        :all -> [Peripherals.Uart.ActuationCommand.Operator]
+        "sim" -> [Simulation.XplaneSend]
+        "all" -> [Peripherals.Uart.ActuationCommand.Operator]
         _other -> [Peripherals.Uart.Actuation.Operator]
       end
 
@@ -62,7 +62,7 @@ defmodule Configuration.Module.Actuation do
     }
   end
 
-  @spec apply_reversed_actuators(map(), atom(), atom()) :: map()
+  @spec apply_reversed_actuators(map(), binary(), atom()) :: map()
   def apply_reversed_actuators(actuators, model_type, vehicle_module) do
     reversed_actuators = apply(vehicle_module, :get_reversed_actuators, [model_type])
     Enum.reduce(reversed_actuators, actuators, fn (actuator_name, acc) ->
@@ -74,11 +74,11 @@ defmodule Configuration.Module.Actuation do
     end)
   end
 
-  @spec get_min_max_pw(atom()) :: tuple()
+  @spec get_min_max_pw(binary()) :: tuple()
   def get_min_max_pw(model_type) do
     case model_type do
-      :T28Z2m -> {1000, 2000}
-      :T28 -> {1100, 1900}
+      "T28Z2m" -> {1000, 2000}
+      "T28" -> {1100, 1900}
       _other -> {1100, 1900}
     end
   end
@@ -103,12 +103,12 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_all_actuator_channels_and_names(atom()) :: map()
+  @spec get_all_actuator_channels_and_names(binary()) :: map()
   def get_all_actuator_channels_and_names(model_type) do
     case model_type do
       # :FourWheelRobot -> [:front_right, :rear_right, :rear_left, :front_left, :left_direction, :right_direction]
-      :Car -> %{ 0 => :steering, 1 => :throttle}
-      :Cessna -> %{
+      "Car" -> %{ 0 => :steering, 1 => :throttle}
+      "Cessna" -> %{
                  indirect: %{
                    0 => :aileron,
                    1 => :elevator,
@@ -119,7 +119,7 @@ defmodule Configuration.Module.Actuation do
                    # 7 => :select
                  }
              }
-      :T28 -> %{
+      "T28" -> %{
                  indirect: %{
                    0 => :aileron,
                    1 => :elevator,
@@ -131,7 +131,7 @@ defmodule Configuration.Module.Actuation do
                  }
 
              }
-      :T28Z2m -> %{
+      "T28Z2m" -> %{
               indirect: %{
                 0 => :aileron,
                 1 => :elevator,
@@ -148,27 +148,21 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_actuator_names(atom(), atom()) :: list()
+  @spec get_actuator_names(binary(), binary()) :: list()
   def get_actuator_names(model_type, node_type) do
     case node_type do
-      :all -> get_all_actuator_channels_and_names(model_type)
-      :sim -> get_all_actuator_channels_and_names(model_type)
-      :hil_client -> get_all_actuator_channels_and_names(model_type)
+      "all" -> get_all_actuator_channels_and_names(model_type)
+      "sim" -> get_all_actuator_channels_and_names(model_type)
 
-      :left_side -> get_all_actuator_channels_and_names(model_type)
-      :right_side -> get_all_actuator_channels_and_names(model_type)
+      "left_side" -> get_all_actuator_channels_and_names(model_type)
+      "right_side" -> get_all_actuator_channels_and_names(model_type)
 
-      :steering -> [:steering, :throttle]
-      :throttle -> [:throttle, :steering]
-
-      :front_right -> [:front_right, :rear_right, :right_direction]
-      :rear_right -> [:rear_right, :right_direction, :rear_left, :left_direction]
-      :rear_left -> [:rear_left, :front_left, :left_direction]
-      :front_left -> [:front_left, :left_direction, :front_right, :right_direction]
+      "steering" -> get_all_actuator_channels_and_names(model_type)
+      "throttle" -> get_all_actuator_channels_and_names(model_type)
     end
   end
 
-  @spec get_actuation_sorter_configs(atom()) :: list()
+  @spec get_actuation_sorter_configs(binary()) :: list()
   def get_actuation_sorter_configs(model_type) do
     actuator_names = get_all_actuator_channels_and_names(model_type)
     Logger.debug("actuator names: #{inspect(actuator_names)}")

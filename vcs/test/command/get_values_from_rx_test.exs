@@ -4,8 +4,8 @@ defmodule Command.GetValuesFromRxTest do
 
   setup do
     RingLogger.attach()
-    model_type = :Cessna
-    node_type = :all
+    model_type = "Cessna"
+    node_type = "all"
     Comms.System.start_link()
     Process.sleep(100)
     # MessageSorter.System.start_link(vehicle_type)
@@ -22,7 +22,7 @@ defmodule Command.GetValuesFromRxTest do
     {:ok, []}
   end
   test "Get Channel 0 from FrSky interface" do
-    command_config = Configuration.Module.Command.get_config(:Cessna, nil)
+    command_config = Configuration.Module.Command.get_config("Cessna", nil)
     Command.System.start_link(command_config)
     Process.sleep(400000)
   end

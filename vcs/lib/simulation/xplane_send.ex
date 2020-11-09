@@ -24,7 +24,6 @@ defmodule Simulation.XplaneSend do
         dest_ip: config.dest_ip,
         source_port: config.source_port,
         dest_port: config.dest_port,
-        vehicle_type: config.vehicle_type,
         pwm_channels: config.pwm_channels,
         reversed_channels: config.reversed_channels,
         commands: %{}
@@ -54,15 +53,13 @@ defmodule Simulation.XplaneSend do
         name -> Map.put(acc, name, 2*(output - 0.5))
       end
     end)
-    case state.vehicle_type do
-      :Plane ->
-        socket = state.socket
-        dest_ip = state.dest_ip
-        dest_port = state.dest_port
-        send_ail_elev_rud_commands(cmds, socket, dest_ip, dest_port)
-        send_throttle_command(cmds, socket, dest_ip, dest_port)
-        send_flap_command(cmds, socket, dest_ip, dest_port)
-    end
+
+    socket = state.socket
+    dest_ip = state.dest_ip
+    dest_port = state.dest_port
+    send_ail_elev_rud_commands(cmds, socket, dest_ip, dest_port)
+    send_throttle_command(cmds, socket, dest_ip, dest_port)
+    send_flap_command(cmds, socket, dest_ip, dest_port)
     # Logger.debug("up act cmds: #{inspect(cmds)}")
     {:noreply, state}
   end
@@ -83,15 +80,12 @@ defmodule Simulation.XplaneSend do
       end
     end)
     # Logger.debug("cmds: #{inspect(cmds)}")
-    case state.vehicle_type do
-      :Plane ->
-        socket = state.socket
-        dest_ip = state.dest_ip
-        dest_port = state.dest_port
-        send_ail_elev_rud_commands(cmds, socket, dest_ip, dest_port)
-        send_throttle_command(cmds, socket, dest_ip, dest_port)
-        send_flap_command(cmds, socket, dest_ip, dest_port)
-    end
+    socket = state.socket
+    dest_ip = state.dest_ip
+    dest_port = state.dest_port
+    send_ail_elev_rud_commands(cmds, socket, dest_ip, dest_port)
+    send_throttle_command(cmds, socket, dest_ip, dest_port)
+    send_flap_command(cmds, socket, dest_ip, dest_port)
     {:noreply, state}
   end
 

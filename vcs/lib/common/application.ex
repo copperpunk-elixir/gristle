@@ -9,6 +9,7 @@ defmodule Common.Application do
 
   @spec common_startup() :: atom()
   def common_startup() do
+    define_atoms()
     Common.Utils.File.mount_usb_drive()
     Cluster.Network.Utils.set_host_name()
     Comms.System.start_link()
@@ -16,6 +17,8 @@ defmodule Common.Application do
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()
     attach_ringlogger(node_type)
+
+    Logger.warn("model/node: #{model_type}/#{node_type}")
     Logger.debug("Start Application")
     MessageSorter.System.start_link(model_type)
     Process.sleep(200)
@@ -26,8 +29,8 @@ defmodule Common.Application do
   @spec attach_ringlogger(atom()) :: atom()
   def attach_ringlogger(node_type) do
     case node_type do
-      :gcs -> nil
-      :sim -> nil
+      "gcs" -> nil
+      "sim" -> nil
       _other -> RingLogger.attach()
     end
   end
@@ -43,13 +46,13 @@ defmodule Common.Application do
     Configuration.Module.start_modules(modules, model_type, node_type)
   end
 
-  @spec get_modules_for_node(atom()) :: list()
+  @spec get_modules_for_node(binary()) :: list()
   def get_modules_for_node(node_type) do
     case node_type do
-      :gcs -> [Display.Scenic, Navigation, Peripherals.Uart]
-      :sim -> [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
-      :server -> [Simulation, Peripherals.Uart, Display.Scenic]
-      :all -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c, Peripherals.Leds]
+      "gcs" -> [Display.Scenic, Navigation, Peripherals.Uart]
+      "sim" -> [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
+      "server" -> [Simulation, Peripherals.Uart, Display.Scenic]
+      "all" -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c]#,Peripherals.Leds]
       _vehicle -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c, Peripherals.Leds]
     end
   end
@@ -64,5 +67,14 @@ defmodule Common.Application do
     Enum.each(1..10, fn _x ->
       Logger.info("") end)
     Logger.info("------------------------------------")
+  end
+
+  @spec define_atoms() :: atom()
+  def define_atoms() do
+    _ = :Plane
+    _ = :Cessna
+    _ = :T28
+    _ = :T28Z2m
+    Process.sleep(100)
   end
 end

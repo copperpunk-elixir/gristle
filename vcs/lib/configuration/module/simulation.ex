@@ -1,5 +1,5 @@
 defmodule Configuration.Module.Simulation do
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(model_type, _node_type) do
     %{
       receive: get_simulation_xplane_receive_config(),
@@ -14,18 +14,17 @@ defmodule Configuration.Module.Simulation do
     }
   end
 
-  @spec get_simulation_xplane_send_config(atom()) :: map()
+  @spec get_simulation_xplane_send_config(binary()) :: map()
   def get_simulation_xplane_send_config(model_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    sim_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    sim_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Simulation)
     pwm_channels = apply(sim_module, :get_pwm_channels, [model_type])
 
-    actuation_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    actuation_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Actuation)
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
     %{
-      vehicle_type: vehicle_type,
       dest_ip: {127,0,0,1},
       source_port: 49003,
       dest_port: 49000,
