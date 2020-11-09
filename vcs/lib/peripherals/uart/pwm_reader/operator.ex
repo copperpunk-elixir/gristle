@@ -18,8 +18,8 @@ defmodule Peripherals.Uart.PwmReader.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         ublox: Telemetry.Ublox.new()
      }}
   end
@@ -34,8 +34,8 @@ defmodule Peripherals.Uart.PwmReader.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :pwm_input, self())
-    port_options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    port_options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
     Logger.debug("Uart.PwmReader.Operator setup complete!")
     {:noreply, state}
   end

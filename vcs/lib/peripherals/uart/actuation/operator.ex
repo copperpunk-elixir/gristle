@@ -17,8 +17,8 @@ defmodule Peripherals.Uart.Actuation.Operator do
     {:ok, %{
         interface_module: config.interface_module,
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         interface: nil,
         channels: %{}
      }
@@ -36,8 +36,8 @@ defmodule Peripherals.Uart.Actuation.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     interface = apply(state.interface_module, :new_device, [state.uart_ref])
-    options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
+    options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.uart_port, options)
     Logger.debug("Uart.Actuation.Operator setup complete!")
     {:noreply, %{state | interface: interface}}
   end

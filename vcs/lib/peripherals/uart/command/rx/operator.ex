@@ -19,7 +19,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
     Logger.debug("Rx module: #{rx_module}")
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
+        uart_port: config.uart_port,
         port_options: config.port_options,
         remaining_buffer: [],
         channel_values: [],
@@ -38,7 +38,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     port_options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
     Logger.debug("Uart.Command.Rx setup complete!")
     {:noreply, state}
   end

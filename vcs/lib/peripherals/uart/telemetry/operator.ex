@@ -14,8 +14,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         ublox: Telemetry.Ublox.new(),
         fast_loop_interval_ms: config.fast_loop_interval_ms,
         medium_loop_interval_ms: config.medium_loop_interval_ms,
@@ -33,8 +33,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    port_options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
      # fast_loop_timer = Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
     # medium_loop_timer = Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
     Common.Utils.start_loop(self(), state.slow_loop_interval_ms, :slow_loop)

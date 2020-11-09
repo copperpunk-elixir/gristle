@@ -19,8 +19,8 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
           bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
@@ -51,8 +51,8 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    port_options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
     Logger.debug("Uart.Estimation.VnIns.Operator setup complete!")
     {:noreply, state}
   end
