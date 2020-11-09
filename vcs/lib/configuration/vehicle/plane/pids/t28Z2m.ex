@@ -36,7 +36,6 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
       rudder: %{output_min: 0, output_max: 1.0, output_neutral: 0.5},
       throttle: %{output_min: 0, output_max: 1.0, output_neutral: 0},
       flaps: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
-      # select: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       gear: %{output_min: 0, output_max: 1.0, output_neutral: 0.0},
       rollrate: %{output_min: -2.0, output_max: 2.0, output_neutral: 0},
       pitchrate: %{output_min: -1.57, output_max: 1.57, output_neutral: 0},
@@ -107,7 +106,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28Z2m do
         },
         tecs: %{
           thrust:
-          fn (cmd, _value, speed_cmd) ->
+          fn (_cmd, _value, speed_cmd) ->
             if (speed_cmd > 0), do: speed_cmd/30.0, else: 0.0
           end
         }

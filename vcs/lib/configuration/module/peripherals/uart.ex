@@ -2,20 +2,19 @@ defmodule Configuration.Module.Peripherals.Uart do
   require Logger
   @spec get_config(atom(), atom()) :: map()
   def get_config(_model_type, node_type) do
-    subdirectory = Atom.to_string(node_type)
-    peripherals = Common.Utils.Configuration.get_uart_peripherals(subdirectory)
+    # subdirectory = Atom.to_string(node_type)
+    peripherals = Common.Utils.Configuration.get_uart_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
-    node_type = if Common.Utils.Configuration.is_hil?(), do: :hil, else: node_type
-    Enum.reduce(peripherals, %{}, fn (name, acc) ->
-      peripheral_string = Atom.to_string(name)
-      [device, port] = String.split(peripheral_string, "_")
-      {module_key, module_config} = get_module_key_and_config(device, node_type, port)
+    Enum.reduce(peripherals, %{}, fn (peripheral, acc) ->
+      # peripheral_string = Atom.to_string(name)
+      [device, port] = String.split(peripheral, "_")
+      {module_key, module_config} = get_module_key_and_config(device, port)
       Map.put(acc, module_key, module_config)
     end)
   end
 
-  @spec get_module_key_and_config(atom(), atom(), binary()) :: tuple()
-  def get_module_key_and_config(device, node_type, port) do
+  @spec get_module_key_and_config(binary(), binary()) :: tuple()
+  def get_module_key_and_config(device, port) do
     Logger.debug("port: #{port}")
     uart_port =
       case port do
@@ -23,25 +22,25 @@ defmodule Configuration.Module.Peripherals.Uart do
         port_num -> "ttyAMA#{String.to_integer(port_num)-2}"
       end
     case device do
-      :Dsm -> {Command.Rx, get_dsm_rx_config()}
+      "Dsm" -> {Command.Rx, get_dsm_rx_config(uart_port)}
       "FrskyRx" -> {Command.Rx, get_frsky_rx_config(uart_port)}
-      :FrskyServo -> {Actuation, get_actuation_config(device)}
-      :PololuServo -> {Actuation, get_actuation_config(device)}
-      :DsmRxFrskyServo -> {ActuationCommand, get_actuation_command_config(device)}
-      :FrskyRxFrskyServo -> {ActuationCommand, get_actuation_command_config(device)}
-      :TerarangerEvo -> {Estimation.TerarangerEvo, get_teraranger_evo_config(node_type)}
-      :VnIns -> {Estimation.VnIns, get_vn_ins_config(node_type)}
-      :VnImu -> {Estimation.VnIns, get_vn_imu_config(node_type)}
-      "Xbee" -> {Telemetry, get_telemetry_config(device)}
-      :Sik -> {Telemetry, get_telemetry_config(device)}
-      :PwmReader -> {PwmReader, get_pwm_reader_config()}
+      "FrskyServo" -> {Actuation, get_actuation_config(device, uart_port)}
+      "PololuServo" -> {Actuation, get_actuation_config(device, uart_port)}
+      "DsmRxFrskyServo" -> {ActuationCommand, get_actuation_command_config(device, uart_port)}
+      "FrskyRxFrskyServo" -> {ActuationCommand, get_actuation_command_config(device, uart_port)}
+      "TerarangerEvo" -> {Estimation.TerarangerEvo, get_teraranger_evo_config(uart_port)}
+      "VnIns" -> {Estimation.VnIns, get_vn_ins_config(uart_port)}
+      "VnImu" -> {Estimation.VnIns, get_vn_imu_config(uart_port)}
+      "Xbee" -> {Telemetry, get_telemetry_config(uart_port)}
+      "Sik" -> {Telemetry, get_telemetry_config(uart_port)}
+      "PwmReader" -> {PwmReader, get_pwm_reader_config(uart_port)}
     end
   end
 
-  @spec get_dsm_rx_config() :: map()
-  def get_dsm_rx_config() do
+  @spec get_dsm_rx_config(atom()) :: map()
+  def get_dsm_rx_config(uart_port) do
     %{
-      device_description: "CP2104",
+      uart_port: uart_port_real_or_sim(uart_port, "CP2104"),
       rx_module: :Dsm,
       port_options: [
         speed: 115_200,
@@ -53,7 +52,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_frsky_rx_config(binary()) :: map()
   def get_frsky_rx_config(uart_port) do
     %{
-      device_description: uart_port,
+      uart_port: uart_port_real_or_sim(uart_port, "CP2104"),
       rx_module: :Frsky,
       port_options: [
         speed: 100000,
@@ -64,86 +63,72 @@ defmodule Configuration.Module.Peripherals.Uart do
     }
   end
 
-  @spec get_actuation_config(atom()) :: map()
-  def get_actuation_config(module) do
-    {interface_module, device_desc} =
-      case module do
-        :FrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0"}
-        :PololuServo -> {Peripherals.Uart.Actuation.Pololu.Device, "Pololu"}
+  @spec get_actuation_config(binary(), binary()) :: map()
+  def get_actuation_config(device, uart_port) do
+    {interface_module, sim_port} =
+      case device do
+        "FrskyServo" -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0"}
+        "PololuServo" -> {Peripherals.Uart.Actuation.Pololu.Device, "Pololu"}
       end
     %{
       interface_module: interface_module,
-      device_description: device_desc,
-      baud: 115_200
-      # write_timeout: 1,
-      # read_timeout: 1
+      uart_port: uart_port_real_or_sim(uart_port, sim_port),
+      port_options: [
+        speed: 115_200
+      ]
     }
   end
 
-  @spec get_actuation_command_config(atom()) :: map()
-  def get_actuation_command_config(module) do
-    {interface_module, device_desc, rx_module} =
-      case module do
-        :DsmRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0", :Dsm}
-        :FrskyRxFrskyServo -> {Peripherals.Uart.Actuation.Frsky.Device, "Feather M0", :Frsky}
+  @spec get_actuation_command_config(binary(), binary()) :: map()
+  def get_actuation_command_config(device, uart_port) do
+    {interface_module, rx_module} =
+      case device do
+        "DsmRxFrskyServo" -> {Peripherals.Uart.Actuation.Frsky.Device, :Dsm}
+        "FrskyRxFrskyServo" -> {Peripherals.Uart.Actuation.Frsky.Device, :Frsky}
       end
     %{
       interface_module: interface_module,
-      device_description: device_desc,
-      baud: 115_200,
+      uart_port: uart_port_real_or_sim(uart_port, "Feather M0"),
+      port_options: [
+        speed: 115_200,
+      ],
       rx_module: rx_module
     }
   end
 
 
-  @spec get_teraranger_evo_config(atom()) :: map()
-  def get_teraranger_evo_config(node_type) do
-    device_description =
-      case node_type do
-        :sim -> "FT232R"
-        :hil -> "FT232R"
-        _other -> "STM32"
-      end
+  @spec get_teraranger_evo_config(binary()) :: map()
+  def get_teraranger_evo_config(uart_port) do
     %{
-      device_description: device_description,
-      baud: 115_200
+      uart_port: uart_port_real_or_sim(uart_port, "FT232R"),
+      port_options: [
+        speed: 115_200
+      ]
     }
   end
 
-  @spec get_vn_ins_config(atom()) :: map()
-  def get_vn_ins_config(node_type) do
-    {device_desc, baud} =
-      case node_type do
-        :sim -> {"USB Serial", 115_200}
-        :hil -> {"USB Serial", 115_200}
-        _other -> {"RedBoard", 115_200}
-      end
+  @spec get_vn_ins_config(binary()) :: map()
+  def get_vn_ins_config(uart_port) do
     %{
-      device_description: device_desc,
-      baud: baud,
+      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
+      port_options: [speed: 115_200],
       expecting_pos_vel: true
     }
   end
 
-  @spec get_vn_imu_config(atom()) :: map()
-  def get_vn_imu_config(node_type) do
-    {device_desc, baud} =
-      case node_type do
-        :sim -> {"USB Serial", 115_200}
-        :hil -> {"USB Serial", 115_200}
-        _other -> {"Qwiic Micro", 115_200}
-      end
+  @spec get_vn_imu_config(binary()) :: map()
+  def get_vn_imu_config(uart_port) do
     %{
-      device_description: device_desc,
-      baud: baud,
+      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
+      port_options: [speed: 115_200],
       expecting_pos_vel: false
     }
   end
 
-  @spec get_cp_ins_config() :: map()
-  def get_cp_ins_config() do
+  @spec get_cp_ins_config(binary()) :: map()
+  def get_cp_ins_config(uart_port) do
     %{
-      ublox_device_description: "USB Serial",
+      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
       antenna_offset: Common.Constants.pi_2(),
       imu_loop_interval_ms: 20,
       ins_loop_interval_ms: 200,
@@ -153,42 +138,26 @@ defmodule Configuration.Module.Peripherals.Uart do
 
   @spec get_telemetry_config(binary()) :: map()
   def get_telemetry_config(uart_port) do
-    device_desc =
-      case uart_port do
-        "usb" -> "FT231X"
-        port -> port
-      end
     %{
-      device_description: device_desc,
-      baud: 57_600,
+      uart_port: uart_port_real_or_sim(uart_port, "FT231X"),
+      port_options: [speed: 57_600],
       fast_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       medium_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
       slow_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
     }
   end
 
-  @spec get_sik_config() :: map()
-  def get_sik_config() do
+  @spec get_pwm_reader_config(binary()) :: map()
+  def get_pwm_reader_config(uart_port) do
     %{
-      device_description: "FT231X",
-      baud: 57_600
+      uart_port: uart_port_real_or_sim(uart_port, "Feather M0"),
+      port_options: [speed: 115_200],
     }
   end
 
-  @spec get_xbee_config() :: map()
-  def get_xbee_config() do
-    %{
-      device_description: "FT231X",
-      baud: 57_600
-    }
-  end
-
-  @spec get_pwm_reader_config() :: map()
-  def get_pwm_reader_config() do
-    %{
-      device_description: "Feather M0",
-      baud: 115_200
-    }
+  @spec uart_port_real_or_sim(binary(), binary()) :: binary()
+  def uart_port_real_or_sim(real_port, sim_port) do
+    if real_port == "usb", do: sim_port, else: real_port
   end
 
 end

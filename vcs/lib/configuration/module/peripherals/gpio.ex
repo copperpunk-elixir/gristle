@@ -3,13 +3,12 @@ defmodule Configuration.Module.Peripherals.Gpio do
 
   @spec get_config(atom(), atom()) :: map()
   def get_config(_model_type, node_type) do
-    subdirectory = Atom.to_string(node_type)
-    peripherals = Common.Utils.Configuration.get_gpio_peripherals(subdirectory)
+    peripherals = Common.Utils.Configuration.get_gpio_peripherals(node_type)
     Logger.debug("gpio per: #{inspect(peripherals)}")
     Enum.reduce(peripherals, %{}, fn (module, acc) ->
       {module_key, module_config} =
         case module do
-          :LogPowerButton -> {Logging, get_log_power_button_config()}
+          "LogPowerButton" -> {Logging, get_log_power_button_config()}
         end
       Map.put(acc, module_key, module_config)
     end)

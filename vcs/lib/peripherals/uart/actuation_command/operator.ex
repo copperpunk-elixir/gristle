@@ -18,8 +18,8 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
     rx_module = Module.concat(Peripherals.Uart.Command.Rx, config.rx_module)
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
@@ -43,8 +43,8 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
     interface = apply(state.interface_module, :new_device, [state.uart_ref])
-    port_options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.device_description, port_options)
+    port_options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
     Logger.debug("Uart.ActuationCommand setup complete!")
     {:noreply, %{state | interface: interface}}
   end

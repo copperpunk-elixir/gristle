@@ -2,12 +2,10 @@ defmodule Configuration.Module.Peripherals.I2c do
   require Logger
   @spec get_config(atom(), atom()) :: map()
   def get_config(_model_type, node_type) do
-    subdirectory = Atom.to_string(node_type)
-    peripherals = Common.Utils.Configuration.get_i2c_peripherals(subdirectory)
+    peripherals = Common.Utils.Configuration.get_i2c_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
-    Enum.reduce(peripherals, %{}, fn (name, acc) ->
-      peripheral_string = Atom.to_string(name)
-      device_and_metadata = String.split(peripheral_string, "_")
+    Enum.reduce(peripherals, %{}, fn (peripheral, acc) ->
+      device_and_metadata = String.split(peripheral, "_")
       device = Enum.at(device_and_metadata,0)
       {module_key, module_config} =
         case device do

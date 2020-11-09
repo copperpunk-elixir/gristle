@@ -1,7 +1,7 @@
 defmodule Configuration.Vehicle.Plane.Simulation do
-  @spec get_pwm_channels(atom()) :: map()
+  @spec get_pwm_channels(binary()) :: map()
   def get_pwm_channels(model_type) do
-    model_module = Module.concat(__MODULE__, model_type)
+    model_module = Module.concat(__MODULE__, String.to_existing_atom(model_type))
     apply(model_module, :get_pwm_channels, [])
   end
 end

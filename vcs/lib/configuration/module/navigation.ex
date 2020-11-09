@@ -1,9 +1,9 @@
 defmodule Configuration.Module.Navigation do
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(model_type, node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module =
-      Module.concat(Configuration.Vehicle, vehicle_type)
+      Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
       |> Module.concat(Navigation)
     vehicle_limits = apply(vehicle_module, :get_vehicle_limits, [model_type])
 

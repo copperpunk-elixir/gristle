@@ -42,8 +42,8 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        device_description: config.device_description,
-        baud: config.baud,
+        uart_port: config.uart_port,
+        port_options: config.port_options,
         range: nil,
         start_byte_found: false,
         remaining_buffer: [],
@@ -60,8 +60,8 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   @impl GenServer
   def handle_cast(:begin, state) do
     Comms.System.start_operator(__MODULE__)
-    options = [speed: state.baud, active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.device_description, options)
+    options = state.port_options ++ [active: true]
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.uart_port, options)
     Logger.debug("Uart.Estimation.TerarangerEvo.Operator setup complete!")
     {:noreply, state}
   end

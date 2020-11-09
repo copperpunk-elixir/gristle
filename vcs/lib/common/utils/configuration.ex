@@ -3,29 +3,24 @@ defmodule Common.Utils.Configuration do
 
   @file_lookup_count_max 10
 
-  @spec get_vehicle_type(atom()) :: atom()
+  @spec get_vehicle_type(atom()) :: binary()
   def get_vehicle_type(model_type) do
-    # Common.Utils.File.get_filenames_with_extension(".vehicle") |> Enum.at(0) |> String.to_atom()
     case model_type do
-      :Cessna -> :Plane
-      :T28 -> :Plane
-      :T28Z2m -> :Plane
+      "Cessna" -> "Plane"
+      "T28" -> "Plane"
+      "T28Z2m" -> "Plane"
       _other -> raise "Unknown model"
     end
   end
 
-  @spec get_node_type() :: atom()
+  @spec get_node_type() :: binary()
   def get_node_type() do
-    get_file_safely(".node", 1, @file_lookup_count_max) |> String.to_atom()
-  end
-
-  def get_node_type_string() do
     get_file_safely(".node", 1, @file_lookup_count_max)
   end
 
-  @spec get_model_type() :: atom()
+  @spec get_model_type() :: binary()
   def get_model_type() do
-    get_file_safely(".model", 1, @file_lookup_count_max) |> String.to_atom()
+    get_file_safely(".model", 1, @file_lookup_count_max)
   end
 
   @spec get_modules() :: list()
@@ -45,7 +40,7 @@ defmodule Common.Utils.Configuration do
     end
   end
 
-  @spec get_files_safely(binary(), integer(), integer()) :: atom()
+  @spec get_files_safely(binary(), integer(), integer()) :: list()
   def get_files_safely(file_extension, count, count_max) do
     filenames = Common.Utils.File.get_filenames_with_extension(file_extension)
     if Enum.empty?(filenames) and (count < count_max) do
@@ -82,9 +77,6 @@ defmodule Common.Utils.Configuration do
   @spec get_peripherals(binary(), binary()) :: list()
   def get_peripherals(extension, subdirectory) do
     directory = "peripherals/" <> subdirectory
-    peripherals_bin_list = Common.Utils.File.get_filenames_with_extension(extension, directory)
-    Enum.map(peripherals_bin_list, fn x ->
-      String.to_atom(x)
-    end)
+    Common.Utils.File.get_filenames_with_extension(extension, directory)
   end
 end

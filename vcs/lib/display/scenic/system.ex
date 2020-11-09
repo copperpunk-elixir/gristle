@@ -8,7 +8,7 @@ defmodule Display.Scenic.System do
     #GCS
     gcs_scene =
       Module.concat(display_module, Gcs)
-      |> Module.concat(config.vehicle_type)
+      |> Module.concat(String.to_existing_atom(config.vehicle_type))
 
     gcs_config = %{
       name: :gcs,

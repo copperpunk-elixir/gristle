@@ -1,5 +1,5 @@
 defmodule Configuration.Module.Cluster do
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(_model_type, _node_type) do
     %{
       heartbeat: get_heartbeat_config(),
@@ -14,24 +14,19 @@ defmodule Configuration.Module.Cluster do
     get_heartbeat_config(node, ward)
   end
 
-  @spec get_node_and_ward(atom()) :: tuple()
+  @spec get_node_and_ward(binary()) :: tuple()
   def get_node_and_ward(node_type) do
     case node_type do
-      :gcs -> {-1,-1}
-      :all -> {0,0}
-      :sim -> {0,0}
-      :server -> {0,0}
+      "gcs" -> {-1,-1}
+      "all" -> {0,0}
+      "sim" -> {0,0}
+      "server" -> {0,0}
 
-      :left_side -> {0,1}
-      :right_side -> {1,0}
+      "left_side" -> {0,1}
+      "right_side" -> {1,0}
 
-      :steering -> {0,1}
-      :throttle -> {1,0}
-
-      :front_right -> {0,1}
-      :rear_right -> {1,2}
-      :rear_left -> {2,3}
-      :front_left -> {3,0}
+      "steering" -> {0,1}
+      "throttle" -> {1,0}
     end
   end
 
@@ -46,14 +41,6 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_network_config() :: map()
   def get_network_config() do
-    # connection_required =
-    #   case node_type do
-    #     :gcs -> false
-    #     :all -> false
-    #     :sim -> false
-    #     :server -> false
-    #     _other -> true
-    #   end
     {interface, vintage_net_config} = get_interface_and_config()
     %{
       interface: interface,

@@ -1,6 +1,6 @@
 defmodule Configuration.Module.MessageSorter do
 
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(binary(), binary()) :: map()
   def get_config(model_type, _node_type) do
     %{
       sorter_configs: get_sorter_configs(model_type)
@@ -8,14 +8,14 @@ defmodule Configuration.Module.MessageSorter do
   end
 
 
-  @spec get_sorter_configs(atom()) :: list()
+  @spec get_sorter_configs(binary()) :: list()
   def get_sorter_configs(model_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     base_module = Configuration.Vehicle
     vehicle_modules = [Control, Navigation]
     Enum.reduce(vehicle_modules, %{}, fn (module, acc) ->
       vehicle_module =
-        Module.concat(base_module, vehicle_type)
+        Module.concat(base_module, String.to_existing_atom(vehicle_type))
         |>Module.concat(module)
       Enum.concat(acc,apply(vehicle_module, :get_sorter_configs,[]))
     end)
