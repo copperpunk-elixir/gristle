@@ -90,7 +90,7 @@ defmodule Configuration.Module.Peripherals.Uart do
       uart_port: uart_port_real_or_sim(uart_port, "Feather M0"),
       port_options: [
         speed: 115_200,
-	rx_framing_timeout: 7
+	      # rx_framing_timeout: 7
       ],
       rx_module: rx_module
     }
