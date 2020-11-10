@@ -52,7 +52,7 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
   @impl GenServer
   def handle_cast({:update_actuators, actuators_and_outputs}, state) do
     channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({_actuator_name, {actuator, output}}, acc) ->
-      # Logger.debug("op #{actuator.channel_number}: #{output}")
+      Logger.debug("op #{actuator.channel_number}: #{output}")
       pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
       Map.put(acc, actuator.channel_number, pulse_width_us)
     end)
@@ -90,7 +90,7 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
       channel_values = apply(rx_module, :get_channels, [rx])
       # Logger.debug("ready")
       # Logger.debug("omap: #{inspect(rx.channel_map)}")
-      # Logger.debug("channels: #{inspect(channel_values)}")
+      Logger.debug("channels: #{inspect(Enum.at(channel_values, 0))}")
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, channel_values, false}, :rx_output, self())
       {apply(rx_module, :clear, [rx]), channel_values}
     else

@@ -9,10 +9,9 @@ defmodule Common.Application do
 
   @spec common_startup() :: atom()
   def common_startup() do
-    define_atoms()
+    Common.Utils.common_startup()
     Common.Utils.File.mount_usb_drive()
     Cluster.Network.Utils.set_host_name()
-    Comms.System.start_link()
     Process.sleep(200)
     model_type = Common.Utils.Configuration.get_model_type()
     node_type = Common.Utils.Configuration.get_node_type()
@@ -67,14 +66,5 @@ defmodule Common.Application do
     Enum.each(1..10, fn _x ->
       Logger.info("") end)
     Logger.info("------------------------------------")
-  end
-
-  @spec define_atoms() :: atom()
-  def define_atoms() do
-    _ = :Plane
-    _ = :Cessna
-    _ = :T28
-    _ = :T28Z2m
-    Process.sleep(100)
   end
 end
