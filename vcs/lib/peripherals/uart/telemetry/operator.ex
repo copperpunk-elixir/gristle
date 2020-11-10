@@ -314,7 +314,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     payload = Common.Utils.assert_list(payload)
     msg = Telemetry.Ublox.construct_message(msg_type, payload)
     Circuits.UART.write(uart_ref, msg)
-    Circuits.UART.drain(uart_ref)
+#    Circuits.UART.drain(uart_ref)
   end
 
   @spec construct_and_send_message(any(), list()) :: atom()

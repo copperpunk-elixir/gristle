@@ -67,7 +67,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @impl GenServer
   def handle_cast({:write, msg}, state) do
     Circuits.UART.write(state.uart_ref, msg)
-    Circuits.UART.drain(state.uart_ref)
+#    Circuits.UART.drain(state.uart_ref)
     {:noreply, state}
   end
 

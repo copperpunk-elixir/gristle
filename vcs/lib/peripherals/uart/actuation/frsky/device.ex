@@ -134,7 +134,7 @@ defmodule Peripherals.Uart.Actuation.Frsky.Device do
     # :ok = Circuits.UART.write(device.interface_ref, buffer, device.write_timeout)
     unless is_nil(device) do
       Circuits.UART.write(device.interface_ref, buffer, device.write_timeout)
-      Circuits.UART.drain(device.interface_ref)
+#      Circuits.UART.drain(device.interface_ref)
     end
   end
 

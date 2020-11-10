@@ -70,7 +70,7 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   def handle_cast({:write, range}, state) do
     msg = create_message_for_range_m(range) |> :binary.list_to_bin()
     Circuits.UART.write(state.uart_ref, msg)
-    Circuits.UART.drain(state.uart_ref)
+#    Circuits.UART.drain(state.uart_ref)
     {:noreply, state}
   end
 
