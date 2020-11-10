@@ -19,6 +19,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     uart_port =
       case port do
         "usb" -> "usb"
+        "0" -> "ttyAMA0"
         port_num -> "ttyAMA#{String.to_integer(port_num)-2}"
       end
     case device do

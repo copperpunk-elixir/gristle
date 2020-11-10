@@ -3,23 +3,25 @@ defmodule ActuationCommand.FrskyrxFrskyservoReadWriteTest do
   require Logger
 
   setup do
+    Common.Utils.common_startup()
     RingLogger.attach()
-    Comms.ProcessRegistry.start_link()
-    Comms.System.start_link()
     Process.sleep(100)
     {:ok, []}
   end
 
   test "Receive Single Message" do
     Logger.info("Receive Single Message test")
-    model_type = :Cessna
-    node_type = :all
+    model_type = "T28"
+    node_type = "all"
     act_config = Configuration.Module.Actuation.get_config(model_type, node_type)
     Actuation.System.start_link(act_config)
-    {act_module, act_op_config} = Configuration.Module.Peripherals.Uart.get_module_key_and_config_for_module(:FrskyRxFrskyServo, node_type)
+    {act_module, act_op_config} = Configuration.Module.Peripherals.Uart.get_module_key_and_config("FrskyRxFrskyServo", "5")
     module = Module.concat(Peripherals.Uart, act_module)
     |> Module.concat(Operator)
-    apply(module, :start_link, [act_op_config])
+    # apply(module, :start_link, [act_op_config])
+    frsky_rx_config = Configuration.Module.Peripherals.Uart.get_actuation_command_config("FrskyRxFrskyServo", "ttyAMA3")
+    Peripherals.Uart.ActuationCommand.Operator.start_link(frsky_rx_config)
+
     Process.sleep(1000)
     actuators = act_config.sw_interface.actuators.indirect
     |> Map.merge(act_config.sw_interface.actuators.direct)

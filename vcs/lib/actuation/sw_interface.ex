@@ -46,7 +46,7 @@ defmodule Actuation.SwInterface do
 
   @impl GenServer
   def handle_cast({:indirect_override_cmds_sorter, classification, time_validity_ms, cmds}, state) do
-    # Logger.debug("indirect override: #{inspect(cmds)}")
+    Logger.debug("indirect override: #{inspect(cmds)}")
     MessageSorter.Sorter.add_message(:indirect_override_actuator_cmds, classification, time_validity_ms, cmds)
     {:noreply, state}
   end

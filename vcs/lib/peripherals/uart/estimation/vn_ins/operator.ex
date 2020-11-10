@@ -76,12 +76,12 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     ins = state.ins
-    # Logger.debug("rpy/rate: #{eftb_deg_sign(ins.attitude.roll,1)}/#{eftb_deg_sign(ins.attitude.pitch,1)}/#{eftb_deg_sign(ins.attitude.yaw,1)}/#{eftb_deg_sign(ins.bodyrate.rollrate,1)}/#{eftb_deg_sign(ins.bodyrate.pitchrate,1)}/#{eftb_deg_sign(ins.bodyrate.yawrate,1)}")
 
     # Logger.debug("time: #{ins.gps_time_ns}")
     # Logger.debug("lat/lon/alt: #{eftb(ins.position.latitude*@rad2deg,6)}/#{eftb(ins.position.longitude*@rad2deg,6)}/#{eftb(ins.position.altitude,1)}")
     # Logger.debug("gps_status: #{ins.gps_status}")
     state = if (state.new_ins_data_to_publish) do
+      Logger.debug("rpy/rate: #{eftb_deg_sign(ins.attitude.roll,1)}/#{eftb_deg_sign(ins.attitude.pitch,1)}/#{eftb_deg_sign(ins.attitude.yaw,1)}/#{eftb_deg_sign(ins.bodyrate.rollrate,1)}/#{eftb_deg_sign(ins.bodyrate.pitchrate,1)}/#{eftb_deg_sign(ins.bodyrate.yawrate,1)}")
       publish_ins_data(ins, state.expecting_pos_vel)
       %{state | new_ins_data_to_publish: false}
     else
