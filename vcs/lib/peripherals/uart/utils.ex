@@ -31,7 +31,7 @@ defmodule Peripherals.Uart.Utils do
 
   @spec get_uart_devices_containing_string(binary()) :: list()
   def get_uart_devices_containing_string(device_string) do
-    if String.contains?(device_string, "ttyAMA") do
+    if String.contains?(device_string, "ttyAMA") or String.contains?(device_string, "ttyS0") do
       # open port directly
       device_string
     else

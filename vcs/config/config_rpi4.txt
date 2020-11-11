@@ -19,8 +19,8 @@ gpu_mem=192
 
 # Enable I2C, SPI, and audio
 dtparam=i2c_arm=on
-dtparam=spi=on
-dtparam=audio=on
+#dtparam=spi=on
+#dtparam=audio=on
 
 # Enable drivers for the Raspberry Pi 7" Touchscreen
 #
@@ -40,13 +40,13 @@ dtparam=audio=on
 # information across reboots in DRAM
 dtoverlay=ramoops
 
+# Enable DRM VC4 V3D driver on top of the dispmanx display stack
+dtoverlay=vc4-fkms-v3d
+#max_framebuffers=2
+
 # Enable the UART (/dev/ttyAMA0)
 enable_uart=1
 dtoverlay=disable-bt
-
-# Enable DRM VC4 V3D driver on top of the dispmanx display stack
-#dtoverlay=vc4-fkms-v3d
-#max_framebuffers=2
 
 # Enable UARTS 3-5
 dtoverlay=uart3

@@ -64,7 +64,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.debug("rx'd data: #{inspect(data)}")
+    Logger.debug("rx'd data: #{inspect(data)}")
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
   end

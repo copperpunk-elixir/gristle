@@ -65,3 +65,5 @@ node_name = if Mix.env() != :prod, do: "vcs"
 # Uncomment to use target specific configurations
 
 # import_config "#{Mix.target()}.exs"
+config :nerves, :erlinit,
+  ctty: "ttyAMA0"

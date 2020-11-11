@@ -51,7 +51,7 @@ defmodule Common.Application do
       "gcs" -> [Display.Scenic, Navigation, Peripherals.Uart]
       "sim" -> [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
       "server" -> [Simulation, Peripherals.Uart, Display.Scenic]
-      "all" -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c]#,Peripherals.Leds]
+      "all" -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c,Peripherals.Leds]
       _vehicle -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c, Peripherals.Leds]
     end
   end
