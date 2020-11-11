@@ -45,7 +45,7 @@ dtoverlay=vc4-fkms-v3d
 #max_framebuffers=2
 
 # Enable the UART (/dev/ttyAMA0)
-enable_uart=1
+#enable_uart=1
 dtoverlay=disable-bt
 
 # Enable UARTS 3-5
