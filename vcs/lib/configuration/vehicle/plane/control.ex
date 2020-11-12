@@ -14,35 +14,35 @@ defmodule Configuration.Vehicle.Plane.Control do
   @spec get_pv_cmds_sorter_configs() :: list()
   def get_pv_cmds_sorter_configs() do
     [
-      %{
+      [
         name: {:pv_cmds, 1},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
         value_type: :map
-      },
-      %{
+      ],
+      [
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, roll: 0.175, pitch: 0.05, yaw: 0.09},
         value_type: :map
-      },
-      %{
+      ],
+      [
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
         default_value: %{course_flight: 0, speed: 0, altitude: 0},
         value_type: :map
-      }
+      ]
     ]
   end
 
   @spec get_control_state_config() :: map()
   def get_control_state_config() do
-    %{
+    [
       name: :control_state,
       default_message_behavior: :default_value,
       default_value: 2,
       value_type: :number
-    }
+    ]
   end
 
   @spec get_sorter_configs() :: list()

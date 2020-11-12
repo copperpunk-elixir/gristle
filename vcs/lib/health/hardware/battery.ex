@@ -59,15 +59,15 @@ defmodule Health.Hardware.Battery do
 
   @spec battery_type_enum(atom()) :: integer()
   def battery_type_enum(type) do
-    Common.Utils.get_key_or_value(battery_type_map(), type)
+    Common.Utils.get_key_or_value(battery_type_structure(), type)
   end
 
-  @spec battery_type_map() :: map()
-  def battery_type_map() do
-    %{
+  @spec battery_type_structure() :: list()
+  def battery_type_structure() do
+    [
       cluster: 0,
       motor: 1
-    }
+    ]
   end
 
 end

@@ -11,14 +11,14 @@ defmodule MessageSorter.System do
 
   @impl Supervisor
   def init(config) do
-    children = get_all_children(config.sorter_configs)
+    children = get_all_children(config[:sorter_configs])
     Supervisor.init(children, strategy: :one_for_one)
   end
 
   @spec get_all_children(list()) :: list()
   def get_all_children(sorter_configs) do
     Enum.reduce(sorter_configs, [], fn (config, acc) ->
-      [Supervisor.child_spec({MessageSorter.Sorter, config}, id: config.name)] ++ acc
+      [Supervisor.child_spec({MessageSorter.Sorter, config}, id: config[:name])] ++ acc
     end)
   end
 end

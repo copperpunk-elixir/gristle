@@ -1,10 +1,10 @@
 defmodule Configuration.Module.Peripherals.I2c do
   require Logger
-  @spec get_config(atom(), atom()) :: map()
+  @spec get_config(atom(), atom()) :: list()
   def get_config(_model_type, node_type) do
     peripherals = Common.Utils.Configuration.get_i2c_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
-    Enum.reduce(peripherals, %{}, fn (peripheral, acc) ->
+    Enum.reduce(peripherals, [], fn (peripheral, acc) ->
       device_and_metadata = String.split(peripheral, "_")
       device = Enum.at(device_and_metadata,0)
       {module_key, module_config} =
@@ -36,14 +36,14 @@ defmodule Configuration.Module.Peripherals.I2c do
             {Health.Ads1015, get_ads1015_config(type, channel, 90)}
 
         end
-      Map.put(acc, module_key, module_config)
+      Keyword.put(acc, module_key, module_config)
     end)
   end
 
-  @spec get_ina260_config(atom(), integer()) :: map()
+  @spec get_ina260_config(binary(), integer()) :: map()
   def get_ina260_config(battery_type, channel) do
     %{
-      battery_type: String.to_atom(battery_type),
+      battery_type: battery_type,
       battery_channel: channel,
       read_voltage_interval_ms: 1000,
       read_current_interval_ms: 1000
@@ -53,7 +53,7 @@ defmodule Configuration.Module.Peripherals.I2c do
   @spec get_ina219_config(atom(), integer()) :: map()
   def get_ina219_config(battery_type, channel) do
     %{
-      battery_type: String.to_atom(battery_type),
+      battery_type: battery_type,
       battery_channel: channel,
       read_voltage_interval_ms: 1000,
       read_current_interval_ms: 1000
@@ -63,7 +63,7 @@ defmodule Configuration.Module.Peripherals.I2c do
   @spec get_sixfab_config(atom(), integer()) :: map()
   def get_sixfab_config(battery_type, channel) do
     %{
-      battery_type: String.to_atom(battery_type),
+      battery_type: battery_type,
       battery_channel: channel,
       read_voltage_interval_ms: 1000,
       read_current_interval_ms: 1000
@@ -82,7 +82,7 @@ defmodule Configuration.Module.Peripherals.I2c do
     Logger.debug("Ads1015 version: #{version}")
     Logger.debug("V/I mults: #{voltage_mult}/#{current_mult}")
     %{
-      battery_type: String.to_atom(battery_type),
+      battery_type: battery_type,
       battery_channel: channel,
       read_battery_interval_ms: 1000,
       voltage_mult: voltage_mult,

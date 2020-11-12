@@ -1,15 +1,15 @@
 defmodule Configuration.Module.Actuation do
   require Logger
 
-  @spec get_config(binary(), binary()) :: map()
+  @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, node_type) do
     sw_config = get_actuation_sw_config(model_type, node_type)
-    %{
+    [
       sw_interface: sw_config
-    }
+    ]
   end
 
-  @spec get_actuation_sw_config(binary(), binary()) :: map()
+  @spec get_actuation_sw_config(binary(), binary()) :: list()
   def get_actuation_sw_config(model_type, node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module =
@@ -39,14 +39,14 @@ defmodule Configuration.Module.Actuation do
         _other -> [Peripherals.Uart.Actuation.Operator]
       end
 
-    %{
+    [
       actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       actuators: %{
         indirect: indirect_actuators,
         direct: direct_actuators
       },
       output_modules: output_modules
-    }
+    ]
   end
 
   @spec get_default_actuator_config(atom(), integer(), float(), float()) :: map()
@@ -174,28 +174,28 @@ defmodule Configuration.Module.Actuation do
       Map.put(acc, actuator_name, failsafe_value)
     end)
 
-    indirect_sorter = %{
+    indirect_sorter = [
       name: :indirect_actuator_cmds,
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map
-    }
+    ]
 
-    indirect_override_sorter = %{
+    indirect_override_sorter = [
       name: :indirect_override_actuator_cmds,
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map
-    }
+    ]
 
     direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
       failsafe_value = get_failsafe_for_actuator(actuator_name)
-      sorter = %{
+      sorter = [
         name: {:direct_actuator_cmds, actuator_name},
         default_message_behavior: :default_value,
         default_value: failsafe_value,
         value_type: :number
-      }
+      ]
       [sorter] ++ acc
       # Map.put(acc, actuator_name, failsafe_value)
     end)
