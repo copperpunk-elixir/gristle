@@ -1,4 +1,4 @@
-# Hardware vs. Software
+# 1. Hardware vs. Software
 Software is great, but at some point it has to interact with hardware or it's useless. One of the pressing questions early on was how many of the hardware interfaces could be written in Elixir. For example, the first peripheral I wanted to test out was an IMU (inertial measurement unit). If I were working with Arduino, I would have a library already available, ready to plug and play. 
 > Should I connect the IMU to an Arduino board, and then interface with the Arduino board using a serial protocol of my choice? Or does the extra hardware outweigh the benefits of ready-to-use software?<br>
 

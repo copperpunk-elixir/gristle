@@ -1,4 +1,4 @@
-# Code for any Mode
+# 2. Code for any Mode
 From the start, this autopilot was designed to use multiple nodes operating on a local network. And with that premise in mind, I introduce you to Segal's law (not to be confused with Steven Seagal's [*Above the Law*](https://youtu.be/BsbYE-Q474I)).<div align=center><img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a1/Abovethelaw.jpg/220px-Abovethelaw.jpg"></div><br>
 ## "A person with a watch knows what time is it. A person with two watches is never sure."
 
