@@ -5,22 +5,14 @@ defmodule Watchdog.Active do
   def start_link(config) do
     name = Keyword.fetch!(config, :name)
     Logger.info("Start Watchdog.Active: #{name} GenServer")
-    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
-    GenServer.cast(via_tuple(name), :begin)
+    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, via_tuple(name))
+    GenServer.cast(via_tuple(name), {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-    loop_interval_ms = 5*Keyword.fetch!(config, :expected_interval_ms)
-    {:ok, %{
-        name: Keyword.fetch!(config, :name),
-        expected_interval_ms: Keyword.fetch!(config, :expected_interval_ms),
-        loop_interval_ms: loop_interval_ms,
-        local_or_global: Keyword.fetch!(config, :local_or_global),
-        count: loop_interval_ms,
-        fed: false
-     }}
+  def init(nil) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -31,7 +23,16 @@ defmodule Watchdog.Active do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    loop_interval_ms = 5*Keyword.fetch!(config, :expected_interval_ms)
+    state = %{
+      name: Keyword.fetch!(config, :name),
+      expected_interval_ms: Keyword.fetch!(config, :expected_interval_ms),
+      loop_interval_ms: loop_interval_ms,
+      local_or_global: Keyword.fetch!(config, :local_or_global),
+      count: loop_interval_ms,
+      fed: false
+    }
     Comms.System.start_operator({__MODULE__, state.name})
     send_status(state.name, state.local_or_global, false)
     Common.Utils.start_loop(self(), state.loop_interval_ms, :loop)

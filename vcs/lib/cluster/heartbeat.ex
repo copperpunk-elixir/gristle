@@ -6,23 +6,14 @@ defmodule Cluster.Heartbeat do
 
   def start_link(config) do
     Logger.info("Start Cluster.Heartbeat GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
-    {:ok, %{
-        node: Keyword.fetch!(config, :node),
-        hb_map: %{node: Keyword.fetch!(config, :node), ward: Keyword.fetch!(config, :ward)},
-        heartbeat_loop_interval_ms: Keyword.fetch!(config, :heartbeat_loop_interval_ms),
-        heartbeat_loop_timer: nil,
-        heartbeat_time_validity_ms: heartbeat_time_validity_ms,
-        cluster_status: -1,
-        all_nodes: %{}
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -32,12 +23,20 @@ defmodule Cluster.Heartbeat do
   end
 
   @impl GenServer
-  def handle_cast(:begin , state) do
-    Process.sleep(100)
+  def handle_cast({:begin, config} , _state) do
+    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
+    state = %{
+      node: Keyword.fetch!(config, :node),
+      hb_map: %{node: Keyword.fetch!(config, :node), ward: Keyword.fetch!(config, :ward)},
+      heartbeat_time_validity_ms: heartbeat_time_validity_ms,
+      cluster_status: -1,
+      all_nodes: %{},
+      store_cluster_status: Keyword.fetch!(config, :node) > -1
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :add_heartbeat, self())
-    heartbeat_loop_timer = Common.Utils.start_loop(self(), state.heartbeat_loop_interval_ms, :heartbeat_loop)
-    {:noreply, %{state | heartbeat_loop_timer: heartbeat_loop_timer}}
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :heartbeat_loop_interval_ms), :heartbeat_loop)
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -80,7 +79,9 @@ defmodule Cluster.Heartbeat do
     |> update_ward_status()
     # all_nodes = update_ward_status(all_nodes)
     cluster_status = get_cluster_status(all_nodes)
-    Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
+    if state.store_cluster_status do
+      Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
+    end
     Logger.debug("#{inspect(state.hb_map)} status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end

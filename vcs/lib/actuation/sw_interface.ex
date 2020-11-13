@@ -4,18 +4,14 @@ defmodule Actuation.SwInterface do
 
   def start_link(config) do
     Logger.info("Start Actuation SwInterface GenServer")
-    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-        {:ok, %{
-        actuators: Keyword.get(config, :actuators),
-        actuator_loop_interval_ms: Keyword.get(config, :actuator_loop_interval_ms, 0),
-        output_modules: Keyword.fetch!(config, :output_modules)
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -25,12 +21,16 @@ defmodule Actuation.SwInterface do
   end
 
    @impl GenServer
-  def handle_cast(:begin, state) do
+   def handle_cast({:begin, config}, _state) do
+     state = %{
+       actuators: Keyword.get(config, :actuators),
+       output_modules: Keyword.fetch!(config, :output_modules),
+     }
      Comms.System.start_operator(__MODULE__)
      Comms.Operator.join_group(__MODULE__, :direct_actuator_cmds_sorter, self())
      Comms.Operator.join_group(__MODULE__, :indirect_override_cmds_sorter, self())
      # Comms.Operator.join_group(__MODULE__, :actuation_selector_sorter, self())
-     Common.Utils.start_loop(self(), state.actuator_loop_interval_ms, :actuator_loop)
+     Common.Utils.start_loop(self(), Keyword.fetch!(config, :actuator_loop_interval_ms), :actuator_loop)
      {:noreply, state}
   end
 

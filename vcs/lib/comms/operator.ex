@@ -5,21 +5,14 @@ defmodule Comms.Operator do
   def start_link(config) do
     name = Keyword.fetch!(config, :name)
     Logger.info("Start Comms.Operator: #{inspect(name)}")
-    Process.sleep(100)
-    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
-    # start_refresh_loop(name)
-    GenServer.cast(via_tuple(name), :begin)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, via_tuple(name))
+    GenServer.cast(via_tuple(name), {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        refresh_groups_loop_interval_ms: Keyword.fetch!(config, :refresh_groups_loop_interval_ms),
-        refresh_groups_timer: nil,
-        groups: %{},
-        name: Keyword.fetch!(config, :name) #purely for dianostics
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -28,8 +21,13 @@ defmodule Comms.Operator do
     state
   end
 
-  def handle_cast(:begin, state) do
-    Common.Utils.start_loop(self(), state.refresh_groups_loop_interval_ms, :refresh_groups)
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      refresh_groups_timer: nil,
+      groups: %{},
+      name: Keyword.fetch!(config, :name) #purely for dianostics
+    }
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :refresh_groups_loop_interval_ms), :refresh_groups)
     {:noreply, state}
   end
 

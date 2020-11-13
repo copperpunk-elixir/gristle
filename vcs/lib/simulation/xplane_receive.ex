@@ -11,26 +11,14 @@ defmodule Simulation.XplaneReceive do
 
   def start_link(config) do
     Logger.info("Start Simulation.XplaneReceive GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(pid, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    Logger.debug("recieve config: #{inspect(config)}")
-    {:ok, %{
-        socket: nil,
-        port: Keyword.fetch!(config, :port),
-        bodyaccel: %{},
-        attitude: %{},
-        bodyrate: %{},
-        position: %{},
-        velocity: %{},
-        agl: 0,
-        airspeed: 0,
-        new_simulation_data_to_publish: false,
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -40,10 +28,23 @@ defmodule Simulation.XplaneReceive do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    port = Keyword.fetch!(config, :port)
+    {:ok, socket} = :gen_udp.open(port, [broadcast: false, active: true])
+    state = %{
+      socket: socket,
+      port: port,
+      bodyaccel: %{},
+      attitude: %{},
+      bodyrate: %{},
+      position: %{},
+      velocity: %{},
+      agl: 0,
+      airspeed: 0,
+      new_simulation_data_to_publish: false,
+    }
     Comms.System.start_operator(__MODULE__)
-    {:ok, socket} = :gen_udp.open(state.port, [broadcast: false, active: true])
-    {:noreply, %{state | socket: socket}}
+    {:noreply, state}
   end
 
   @impl GenServer

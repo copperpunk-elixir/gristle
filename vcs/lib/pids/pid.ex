@@ -4,19 +4,47 @@ defmodule Pids.Pid do
 
   def start_link(config) do
     Logger.info("Start Pids.Pid #{inspect(config[:name])} GenServer")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(Keyword.fetch!(config, :name)))
+    {:ok, pid} = GenServer.start_link(__MODULE__, nil, name: via_tuple(Keyword.fetch!(config, :name)))
+    GenServer.cast(via_tuple(Keyword.fetch!(config, :name)), {:begin, config})
+    {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    pid_module = Module.concat(Pids.Controller, config[:type])
-    apply(pid_module, :init, [config])
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
   def terminate(reason, state) do
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
+  end
+
+  @impl GenServer
+  def handle_cast({:begin, config}, _state) do
+    pid_module = Module.concat(Pids.Controller, Keyword.fetch!(config, :type))
+    state = apply(pid_module, :begin, [config])
+    # Logger.warn("pid: #{state.process_variable}/#{state.control_variable} returned from begin")
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:force_output, output}, state) do
+    {:noreply, %{state | output: output}}
+  end
+
+  @impl GenServer
+  def handle_cast({:set_parameter, parameter, value}, state) do
+    {:noreply, Map.put(state, parameter, value)}
+  end
+
+  @impl GenServer
+  def handle_cast(:write_parameters_to_file, state) do
+    output = filter_parameters(state)
+    file_suffix = Atom.to_string(state.process_variable) <> "-" <> Atom.to_string(state.control_variable)
+    {:ok, data} = Jason.encode(output, [pretty: true])
+    Logging.Logger.write_to_folder("pid", data, file_suffix)
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -42,26 +70,6 @@ defmodule Pids.Pid do
   @impl GenServer
   def handle_call({:get_parameter, parameter}, _from, state) do
     {:reply, Map.get(state, parameter, nil), state}
-  end
-
-  @impl GenServer
-  def handle_cast({:force_output, output}, state) do
-    {:noreply, %{state | output: output}}
-  end
-
-
-  @impl GenServer
-  def handle_cast({:set_parameter, parameter, value}, state) do
-    {:noreply, Map.put(state, parameter, value)}
-  end
-
-  @impl GenServer
-  def handle_cast(:write_parameters_to_file, state) do
-    output = filter_parameters(state)
-    file_suffix = Atom.to_string(state.process_variable) <> "-" <> Atom.to_string(state.control_variable)
-    {:ok, data} = Jason.encode(output, [pretty: true])
-    Logging.Logger.write_to_folder("pid", data, file_suffix)
-    {:noreply, state}
   end
 
   def update_pid(pv_name, output_variable_name, pv_cmd, pv_value, airspeed, dt) do

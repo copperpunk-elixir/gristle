@@ -4,25 +4,25 @@ defmodule Time.Server do
 
   def start_link(config) do
     Logger.debug("Start Time.Server GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        server_loop_interval_ms: Keyword.fetch!(config, :server_loop_interval_ms),
-        clock: Time.Clock.new()
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      clock: Time.Clock.new()
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :gps_time_source, self())
     Comms.Operator.join_group(__MODULE__, :gps_time, self())
-    Common.Utils.start_loop(self(), state.server_loop_interval_ms, :server_loop)
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :server_loop_interval_ms), :server_loop)
     {:noreply, state}
   end
 

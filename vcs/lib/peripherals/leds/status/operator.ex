@@ -2,38 +2,35 @@ defmodule Peripherals.Leds.Status.Operator do
   use GenServer
   require Logger
 
-  @on_duration 100
-  @off_duration 900
-
   def start_link(config) do
-    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     Logger.info("Start Leds.Status.Operator GenServer")
-    GenServer.cast(__MODULE__, :begin)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    # Start the low-level actuator driver
-    {:ok, %{
-        led: config.led
-     }
-    }
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
-    blink(state.led)
+  def handle_cast({:begin, config}, _state) do
+    state = %{}
+    Enum.each(config[:leds], fn led_config ->
+      %{:name => name, :on_duration_ms => on, :off_duration_ms => off} = led_config
+      blink(name, on, off)
+    end)
     {:noreply, state}
   end
 
-
-  def blink(led_key) do
+  @spec blink(binary(), integer(), integer()) :: atom()
+  def blink(led_key, on_duration_ms, off_duration_ms) do
     # Logger.debug "blinking led #{inspect led_key}"
     Nerves.Leds.set([{led_key, true}])
-    :timer.sleep(@on_duration)
+    :timer.sleep(on_duration_ms)
     Nerves.Leds.set([{led_key, false}])
-    :timer.sleep(@off_duration)
-    blink(led_key)
+    :timer.sleep(off_duration_ms)
+    blink(led_key, on_duration_ms, off_duration_ms)
   end
 end

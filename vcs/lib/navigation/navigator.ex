@@ -6,26 +6,14 @@ defmodule Navigation.Navigator do
 
   def start_link(config) do
     Logger.info("Start Navigation.Navigator GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    Logger.debug("nav init")
-    {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
-    {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
-
-    {:ok, %{
-        default_pv_cmds_level: Keyword.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
-        navigator_loop_timer: nil,
-        navigator_loop_interval_ms: Keyword.fetch!(config, :navigator_loop_interval_ms),
-        pv_cmds_msg_classification: pv_cmds_msg_classification,
-        pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
-        control_state_msg_classification: control_state_msg_classification,
-        control_state_msg_time_validity_ms: control_state_msg_time_validity_ms
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -35,12 +23,22 @@ defmodule Navigation.Navigator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
+    state = %{
+      default_pv_cmds_level: Keyword.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
+      navigator_loop_timer: nil,
+      pv_cmds_msg_classification: pv_cmds_msg_classification,
+      pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
+      control_state_msg_classification: control_state_msg_classification,
+      control_state_msg_time_validity_ms: control_state_msg_time_validity_ms
+    }
+
     Comms.System.start_operator(__MODULE__)
-    # Start sorters
     Comms.Operator.join_group(__MODULE__, :goals_sorter, self())
-    navigator_loop_timer = Common.Utils.start_loop(self(), state.navigator_loop_interval_ms, :navigator_loop)
-    {:noreply, %{state | navigator_loop_timer: navigator_loop_timer}}
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :navigator_loop_interval_ms), :navigator_loop)
+    {:noreply, state}
   end
 
   @impl GenServer

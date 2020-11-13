@@ -4,28 +4,14 @@ defmodule Cluster.Network do
 
   def start_link(config) do
     Logger.info("Start Cluster.Network GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        # connection_required: config.connection_required,
-        node_name_with_domain: nil,
-        ip_address: nil,
-        socket: nil,
-        src_port: Keyword.fetch!(config, :src_port),
-        dest_port: Keyword.fetch!(config, :dest_port),
-        cookie: Keyword.fetch!(config, :cookie),
-        broadcast_ip_loop_interval_ms: Keyword.fetch!(config, :broadcast_ip_loop_interval_ms),
-        broadcast_ip_loop_timer: nil,
-        interface: Keyword.fetch!(config, :interface),
-        vintage_net_access: Keyword.fetch!(config, :vintage_net_access),
-        vintage_net_config: Keyword.fetch!(config, :vintage_net_config),
-        connected_to_network: false
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -35,14 +21,24 @@ defmodule Cluster.Network do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
     Logger.debug("cluster.network begin")
-    Process.sleep(100)
+    state = %{
+      node_name_with_domain: nil,
+      ip_address: nil,
+      socket: nil,
+      src_port: Keyword.fetch!(config, :src_port),
+      dest_port: Keyword.fetch!(config, :dest_port),
+      cookie: Keyword.fetch!(config, :cookie),
+      broadcast_ip_loop_interval_ms: Keyword.fetch!(config, :broadcast_ip_loop_interval_ms),
+      broadcast_ip_loop_timer: nil,
+      interface: Keyword.fetch!(config, :interface),
+      connected_to_network: false
+    }
     Comms.System.start_operator(__MODULE__)
-    Logger.debug("cluster.network if statement")
-    if state.vintage_net_access and !is_nil(state.interface) do
+    if Keyword.fetch!(config, :vintage_net_access) and !is_nil(state.interface) do
       Logger.debug("Connect to network interface: #{inspect(state.interface)}")
-      VintageNet.configure(state.interface, state.vintage_net_config)
+      VintageNet.configure(state.interface, Keyword.fetch!(config, :vintage_net_config))
       GenServer.cast(__MODULE__, :connect_to_network)
     else
       Logger.debug("Network connection not required.")

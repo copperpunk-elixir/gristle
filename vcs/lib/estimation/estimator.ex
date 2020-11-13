@@ -5,34 +5,14 @@ defmodule Estimation.Estimator do
 
   def start_link(config) do
     Logger.info("Start Estimation.Estimator GenServer")
-    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        imu_loop_interval_ms: Keyword.fetch!(config, :imu_loop_interval_ms),
-        ins_loop_interval_ms: Keyword.fetch!(config, :ins_loop_interval_ms),
-        pv_3_local_loop_interval_ms: Keyword.fetch!(config, :pv_3_local_loop_interval_ms),
-        att_rate_expected_interval_ms: Keyword.fetch!(config, :att_rate_expected_interval_ms),
-        pos_vel_expected_interval_ms: Keyword.fetch!(config, :pos_vel_expected_interval_ms),
-        range_expected_interval_ms: Keyword.fetch!(config, :range_expected_interval_ms),
-        airspeed_expected_interval_ms: Keyword.fetch!(config, :airspeed_expected_interval_ms),
-        watchdog_fed: %{att_rate: false, pos_vel: false, range: false, airspeed: false},
-        estimator_health: :unknown,
-        min_speed_for_course: @min_speed_for_course,
-        bodyrate: %{},
-        attitude: %{},
-        velocity: %{},
-        position: %{},
-        vertical_velocity: 0.0,
-        agl: 0.0,
-        airspeed: 0.0,
-        laser_alt_ekf: Estimation.LaserAltimeterEkf.new([]),
-        ground_altitude: 0.0
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -42,7 +22,24 @@ defmodule Estimation.Estimator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      watchdog_fed: %{att_rate: false, pos_vel: false, range: false, airspeed: false},
+      imu_loop_interval_ms: Keyword.fetch!(config, :imu_loop_interval_ms),
+      ins_loop_interval_ms: Keyword.fetch!(config, :ins_loop_interval_ms),
+      estimator_health: :unknown,
+      min_speed_for_course: @min_speed_for_course,
+      bodyrate: %{},
+      attitude: %{},
+      velocity: %{},
+      position: %{},
+      vertical_velocity: 0.0,
+      agl: 0.0,
+      airspeed: 0.0,
+      laser_alt_ekf: Estimation.LaserAltimeterEkf.new([]),
+      ground_altitude: 0.0
+    }
+
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
@@ -54,11 +51,11 @@ defmodule Estimation.Estimator do
     Comms.Operator.join_group(__MODULE__, {:watchdog_status, :airspeed}, self())
     Common.Utils.start_loop(self(), state.imu_loop_interval_ms, :imu_loop)
     Common.Utils.start_loop(self(), state.ins_loop_interval_ms, :ins_loop)
-    Common.Utils.start_loop(self(), state.pv_3_local_loop_interval_ms, :pv_3_local_loop)
-    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:att_rate, state.att_rate_expected_interval_ms))
-    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:pos_vel, state.pos_vel_expected_interval_ms))
-    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:airspeed, state.airspeed_expected_interval_ms))
-    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:range, state.range_expected_interval_ms))
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :pv_3_local_loop_interval_ms), :pv_3_local_loop)
+    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:att_rate, Keyword.fetch!(config, :att_rate_expected_interval_ms)))
+    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:pos_vel, Keyword.fetch!(config, :pos_vel_expected_interval_ms)))
+    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:airspeed, Keyword.fetch!(config, :airspeed_expected_interval_ms)))
+    Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(:range, Keyword.fetch!(config, :range_expected_interval_ms)))
     {:noreply, state}
   end
 

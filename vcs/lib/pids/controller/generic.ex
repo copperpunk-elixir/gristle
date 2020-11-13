@@ -1,28 +1,27 @@
 defmodule Pids.Controller.Generic do
   require Logger
 
-  @spec init(map()) :: tuple()
-  def init(config) do
+  @spec begin(list()) :: tuple()
+  def begin(config) do
     {process_variable, control_variable} = Keyword.get(config, :name)
-    {:ok, %{
-        pid_module: __MODULE__,
-        process_variable: process_variable,
-        control_variable: control_variable,
-        kp: Keyword.get(config, :kp, 0),
-        ki: Keyword.get(config, :ki, 0),
-        kd: Keyword.get(config, :kd, 0),
-        ff: Keyword.get(config, :ff, nil),
-        output_min: Keyword.fetch!(config, :output_min),
-        output_max: Keyword.fetch!(config, :output_max),
-        output_neutral: Keyword.fetch!(config, :output_neutral),
-        integrator_range_min: -Keyword.get(config, :integrator_range, 0),
-        integrator_range_max: Keyword.get(config, :integrator_range, 0),
-        integrator_airspeed_min: Keyword.get(config, :integrator_airspeed_min, 10000),
-        pv_integrator: 0,
-        pv_correction_prev: 0,
-        output: Keyword.fetch!(config, :output_neutral)
-     }}
-
+    %{
+      pid_module: __MODULE__,
+      process_variable: process_variable,
+      control_variable: control_variable,
+      kp: Keyword.get(config, :kp, 0),
+      ki: Keyword.get(config, :ki, 0),
+      kd: Keyword.get(config, :kd, 0),
+      ff: Keyword.get(config, :ff, nil),
+      output_min: Keyword.fetch!(config, :output_min),
+      output_max: Keyword.fetch!(config, :output_max),
+      output_neutral: Keyword.fetch!(config, :output_neutral),
+      integrator_range_min: -Keyword.get(config, :integrator_range, 0),
+      integrator_range_max: Keyword.get(config, :integrator_range, 0),
+      integrator_airspeed_min: Keyword.get(config, :integrator_airspeed_min, 10000),
+      pv_integrator: 0,
+      pv_correction_prev: 0,
+      output: Keyword.fetch!(config, :output_neutral)
+    }
   end
 
   @spec update(float(), float(), float(), float(), map()) :: map()
