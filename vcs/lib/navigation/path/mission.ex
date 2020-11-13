@@ -12,7 +12,7 @@ defmodule Navigation.Path.Mission do
     |> Module.concat(Navigation)
     vehicle_turn_rate =
       apply(navigation_config_module, :get_vehicle_limits,[model_type])
-      |> Map.get(:vehicle_turn_rate)
+      |> Keyword.get(:vehicle_turn_rate)
     new_mission(name, waypoints, vehicle_turn_rate)
   end
 
@@ -77,7 +77,7 @@ defmodule Navigation.Path.Mission do
 
     model_type = Common.Utils.Configuration.get_model_type()
     vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Map.get(:vehicle_turn_rate)
+    |> Keyword.get(:vehicle_turn_rate)
     Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], vehicle_turn_rate)
   end
 
@@ -130,7 +130,7 @@ defmodule Navigation.Path.Mission do
     end)
 
     vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Map.get(:vehicle_turn_rate)
+    |> Keyword.get(:vehicle_turn_rate)
 
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, vehicle_turn_rate)
   end
@@ -234,7 +234,7 @@ defmodule Navigation.Path.Mission do
   @spec get_model_spec(atom(), atom()) :: any()
   def get_model_spec(model_type, spec) do
     model = %{
-      Cessna: %{
+      "Cessna" => %{
         takeoff_roll: 500,
         climbout_distance: 1200,
         climbout_height: 100,
@@ -247,7 +247,7 @@ defmodule Navigation.Path.Mission do
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
       },
-      T28: %{
+      "T28" => %{
         takeoff_roll: 30,
         climbout_distance: 200,
         climbout_height: 40,
@@ -260,7 +260,7 @@ defmodule Navigation.Path.Mission do
         wp_dist_range: {200, 400},
         planning_turn_rate: 0.80
       },
-      T28Z2m: %{
+      "T28Z2m" => %{
         takeoff_roll: 30,
         climbout_distance: 200,
         climbout_height: 40,

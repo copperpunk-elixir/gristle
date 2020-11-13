@@ -13,15 +13,15 @@ defmodule Pids.Controller.TecsEnergy do
         ff: Keyword.get(config, :ff, nil),
         altitude_kp: Keyword.get(config, :altitude_kp, 0),
         time_constant: Keyword.get(config, :tc, 1.0),
-        energy_rate_scalar: config.energy_rate_scalar,
-        output_min: config.output_min,
-        output_max: config.output_max,
+        energy_rate_scalar: Keyword.fetch!(config, :energy_rate_scalar),
+        output_min: Keyword.fetch!(config, :output_min),
+        output_max: Keyword.fetch!(config, :output_max),
         integrator_range_min: -Keyword.get(config, :integrator_range, 0),
         integrator_range_max: Keyword.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
         speed_prev: nil,
-        output: config.output_neutral
+        output: Keyword.fetch!(config, :output_neutral)
      }}
 
   end

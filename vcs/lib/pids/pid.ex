@@ -3,8 +3,8 @@ defmodule Pids.Pid do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Pids.Pid #{inspect(config.name)} GenServer")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
+    Logger.info("Start Pids.Pid #{inspect(config[:name])} GenServer")
+    GenServer.start_link(__MODULE__, config, name: via_tuple(Keyword.fetch!(config, :name)))
   end
 
   @impl GenServer

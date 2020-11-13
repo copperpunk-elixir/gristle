@@ -45,7 +45,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    Logger.debug("data: #{inspect(data)}")
+    # Logger.debug("data: #{inspect(data)}")
     data_list =
     if is_binary(data) do
       state.remaining_buffer ++ :binary.bin_to_list(data)
@@ -66,7 +66,7 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
       # Logger.debug("ready")
       channel_values = apply(rx_module, :get_channels, [rx])
       # Logger.debug("omap: #{inspect(rx.channel_map)}")
-      Logger.debug("channels: #{inspect(channel_values)}")
+      # Logger.debug("channels: #{inspect(channel_values)}")
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, channel_values, false}, :rx_output, self())
       {apply(rx_module, :clear, [rx]), channel_values}
     else

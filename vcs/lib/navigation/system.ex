@@ -12,8 +12,8 @@ defmodule Navigation.System do
   def init(config) do
     children =
       [
-        {Navigation.Navigator, [config, :navigator]},
-        {Navigation.PathManager, [config, :path_manager]}
+        {Navigation.Navigator, config[:navigator]},
+        {Navigation.PathManager, config[:path_manager]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

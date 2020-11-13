@@ -2,13 +2,6 @@ defmodule Common.Utils do
   require Logger
   use Bitwise
 
-  def common_startup() do
-    define_atoms()
-    Process.sleep(100)
-    Comms.System.start_link()
-    Process.sleep(100)
-  end
-
   def start_link_redundant(parent_module, module, config, name \\ nil) do
     name =
       case name do
@@ -193,18 +186,5 @@ defmodule Common.Utils do
   def power_off() do
     # System.cmd("poweroff", ["now"])
     Nerves.Runtime.poweroff()
-  end
-
-  @spec define_atoms() :: atom()
-  def define_atoms() do
-    atoms_as_strings = [
-      "Plane",
-      "Cessna",
-      "T28",
-      "T28Z2m"
-    ]
-    Enum.each(atoms_as_strings, fn x ->
-      String.to_atom(x)
-    end)
   end
 end

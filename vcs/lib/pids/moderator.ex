@@ -13,9 +13,11 @@ defmodule Pids.Moderator do
   def init(config) do
     {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
     {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
-
+    attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
+      Map.put(acc, cv_pv, Enum.into(scalar, %{}))
+    end)
     {:ok, %{
-        attitude_scalar: Keyword.fetch!(config, :attitude_scalar) |> Enum.into(%{}),
+        attitude_scalar: attitude_scalar,
         act_msg_class: act_msg_class,
         act_msg_time_ms: act_msg_time_ms,
         pv_msg_class: pv_msg_class,

@@ -19,7 +19,7 @@ defmodule Configuration.Module.Cluster do
     case node_type do
       "gcs" -> {-1,-1}
       "all" -> {0,0}
-      "sim" -> {0,0}
+      "sim" -> {-1,-1}
       "server" -> {0,0}
 
       "left_side" -> {0,1}

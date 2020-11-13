@@ -23,12 +23,12 @@ defmodule Estimation.LaserAltimeterEkf do
 
   @spec reset(struct(), float()) :: struct()
   def reset(ekf, z) do
-    config = %{
+    config = [
       q_att_sq: ekf.p00,
       q_zdot_sq: ekf.p22,
       q_z_sq: ekf.q33,
       r_range_sq: ekf.r
-    }
+    ]
     ekf = Estimation.LaserAltimeterEkf.new(config)
     %{ekf | z: z}
   end
