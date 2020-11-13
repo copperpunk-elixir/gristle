@@ -2,9 +2,8 @@ defmodule MessageSorter.System do
   use Supervisor
   require Logger
 
-  def start_link(model_type) do
+  def start_link(config) do
     Logger.info("Start MessageSorter Supervisor")
-    config = Configuration.Module.MessageSorter.get_config(model_type, nil)
     Comms.ProcessRegistry.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end

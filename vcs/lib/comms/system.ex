@@ -38,10 +38,10 @@ defmodule Comms.System do
           Comms.Operator,
           :start_link,
           [
-            %{
+            [
               name: name,
               refresh_groups_loop_interval_ms: 100
-            }
+            ]
           ]}
       }
     )

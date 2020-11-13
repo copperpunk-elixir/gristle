@@ -25,8 +25,8 @@ defmodule Configuration.Module.Command do
     Enum.reduce(commands, %{}, fn (channel, acc) ->
       constraints =
         apply(model_module, :get_constraints, [])
-        |> Map.get(channel)
-      Map.put(acc, channel, %{min: constraints.output_min, max: constraints.output_max})
+        |> Keyword.get(channel)
+      Map.put(acc, channel, %{min: constraints[:output_min], max: constraints[:output_max]})
     end)
   end
 

@@ -1,7 +1,7 @@
 defmodule Common.Utils.File do
   require Logger
 
-  @mount_count_max 3
+  @mount_count_max 1
 
   @spec get_mount_path() :: binary()
   def get_mount_path() do
