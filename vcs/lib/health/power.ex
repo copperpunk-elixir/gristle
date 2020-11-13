@@ -4,19 +4,14 @@ defmodule Health.Power do
 
   def start_link(config) do
     Logger.info("Start Health.Power GenServer")
-    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        status_loop_interval_ms: Keyword.fetch!(config, :status_loop_interval_ms),
-        watchdogs: Keyword.fetch!(config, :watchdogs),
-        watchdog_interval_ms: Keyword.fetch!(config, :watchdog_interval_ms),
-        batteries: %{}
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -26,12 +21,18 @@ defmodule Health.Power do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      batteries: %{}
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :battery_status, self())
-    Common.Utils.start_loop(self(), state.status_loop_interval_ms, :status_loop)
-    Enum.each(state.watchdogs, fn watchdog ->
-      Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(watchdog, state.watchdog_interval_ms))
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :status_loop_interval_ms), :status_loop)
+    # Start watchdogs
+    watchdogs = Keyword.fetch!(config, :watchdogs)
+    watchdog_interval_ms = Keyword.fetch!(config, :watchdog_interval_ms)
+    Enum.each(watchdogs, fn watchdog ->
+      Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(watchdog, watchdog_interval_ms))
     end)
     {:noreply, state}
   end

@@ -3,26 +3,15 @@ defmodule Peripherals.Uart.Actuation.Operator do
   require Logger
 
   def start_link(config) do
-    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     Logger.info("Start Uart.Actuation.Operator GenServer")
-    GenServer.cast(__MODULE__, :begin)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    # Start the low-level actuator driver
-    {:ok, uart_ref} = Circuits.UART.start_link()
-    Logger.debug("Actuation module: #{Keyword.fetch!(config, :interface_module)}")
-    {:ok, %{
-        interface_module: Keyword.fetch!(config, :interface_module),
-        uart_ref: uart_ref,
-        uart_port: Keyword.fetch!(config, :uart_port),
-        port_options: Keyword.fetch!(config, :port_options),
-        interface: nil,
-        channels: %{}
-     }
-    }
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -34,10 +23,21 @@ defmodule Peripherals.Uart.Actuation.Operator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    Logger.debug("Actuation module: #{Keyword.fetch!(config, :interface_module)}")
+    {:ok, uart_ref} = Circuits.UART.start_link()
+    state = %{
+      interface_module: Keyword.fetch!(config, :interface_module),
+      uart_ref: uart_ref,
+      interface: nil,
+      channels: %{}
+    }
+
+    uart_port = Keyword.fetch!(config, :uart_port)
+    port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
     interface = apply(state.interface_module, :new_device, [state.uart_ref])
-    options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, state.uart_port, options)
+
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
     Logger.debug("Uart.Actuation.Operator setup complete!")
     {:noreply, %{state | interface: interface}}
   end

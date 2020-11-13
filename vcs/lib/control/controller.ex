@@ -4,19 +4,14 @@ defmodule Control.Controller do
 
   def start_link(config) do
     Logger.info("Start Control.Controller GenServer")
-    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        pv_cmds: %{},
-        control_loop_interval_ms: Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms),
-        control_state: -1,
-        airspeed: 0,
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -26,11 +21,16 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      pv_cmds: %{},
+      control_state: -1,
+      airspeed: 0,
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Common.Utils.start_loop(self(), state.control_loop_interval_ms, :control_loop)
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms), :control_loop)
     {:noreply, state}
   end
 

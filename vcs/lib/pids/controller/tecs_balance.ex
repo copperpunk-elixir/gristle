@@ -1,30 +1,29 @@
 defmodule Pids.Controller.TecsBalance do
   require Logger
 
-  @spec init(map()) :: tuple()
-  def init(config) do
+  @spec begin(list()) :: tuple()
+  def begin(config) do
     {process_variable, control_variable} = Keyword.get(config, :name)
-    {:ok, %{
-        pid_module: __MODULE__,
-        process_variable: process_variable,
-        control_variable: control_variable,
-        ki: Keyword.get(config, :ki, 0),
-        kd: Keyword.get(config, :kd, 0),
-        altitude_kp: Keyword.get(config, :altitude_kp, 0),
-        time_constant: Keyword.get(config, :tc, 1.0),
-        balance_rate_scalar: Keyword.fetch!(config, :balance_rate_scalar),
-        min_climb_speed: Keyword.fetch!(config, :min_climb_speed),
-        output_min: Keyword.fetch!(config, :output_min),
-        output_max: Keyword.fetch!(config, :output_max),
-        output_neutral: Keyword.fetch!(config, :output_neutral),
-        integrator_range_min: -Keyword.get(config, :integrator_range, 0),
-        integrator_range_max: Keyword.get(config, :integrator_range, 0),
-        pv_integrator: 0,
-        pv_correction_prev: 0,
-        speed_prev: nil,
-        output: Keyword.fetch!(config, :output_neutral)
-     }}
-
+    %{
+      pid_module: __MODULE__,
+      process_variable: process_variable,
+      control_variable: control_variable,
+      ki: Keyword.get(config, :ki, 0),
+      kd: Keyword.get(config, :kd, 0),
+      altitude_kp: Keyword.get(config, :altitude_kp, 0),
+      time_constant: Keyword.get(config, :tc, 1.0),
+      balance_rate_scalar: Keyword.fetch!(config, :balance_rate_scalar),
+      min_climb_speed: Keyword.fetch!(config, :min_climb_speed),
+      output_min: Keyword.fetch!(config, :output_min),
+      output_max: Keyword.fetch!(config, :output_max),
+      output_neutral: Keyword.fetch!(config, :output_neutral),
+      integrator_range_min: -Keyword.get(config, :integrator_range, 0),
+      integrator_range_max: Keyword.get(config, :integrator_range, 0),
+      pv_integrator: 0,
+      pv_correction_prev: 0,
+      speed_prev: nil,
+      output: Keyword.fetch!(config, :output_neutral)
+    }
   end
 
   @spec update(map(), map(), float(), float(), map()) :: map()

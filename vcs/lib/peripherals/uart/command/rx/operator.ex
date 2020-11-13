@@ -7,25 +7,14 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
 
   def start_link(config) do
     Logger.info("Start Uart.Command.Rx.Operator GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, uart_ref} = Circuits.UART.start_link()
-    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
-    Logger.debug("Rx module: #{rx_module}")
-    {:ok, %{
-        uart_ref: uart_ref,
-        uart_port: Keyword.fetch!(config, :uart_port),
-        port_options: Keyword.fetch!(config, :port_options),
-        remaining_buffer: [],
-        channel_values: [],
-        rx_module: rx_module,
-        rx: apply(rx_module, :new, [])
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -35,10 +24,24 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin,config}, _state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
+
+    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
+    Logger.debug("Rx module: #{rx_module}")
+    {:ok, uart_ref} = Circuits.UART.start_link()
+    state = %{
+      uart_ref: uart_ref,
+      remaining_buffer: [],
+      channel_values: [],
+      rx_module: rx_module,
+      rx: apply(rx_module, :new, [])
+    }
+
+    uart_port = Keyword.fetch!(config, :uart_port)
+    port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
+
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
     Logger.debug("Uart.Command.Rx setup complete!")
     {:noreply, state}
   end

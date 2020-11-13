@@ -14,34 +14,14 @@ defmodule Command.Commander do
 
   def start_link(config) do
     Logger.info("Start Command.Commander GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
-    # {direct_select_class, direct_select_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :select})
-    {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
-
-    {:ok, %{
-        goals_class: goals_class,
-        goals_time_ms: goals_time_ms,
-        direct_cmds_class: direct_cmds_class,
-        direct_cmds_time_ms: direct_cmds_time_ms,
-        indirect_override_cmds_class: indirect_override_class,
-        indirect_override_cmds_time_ms: indirect_override_time_ms,
-        # direct_select_class: direct_select_class,
-        # direct_select_time_ms: direct_select_time_ms,
-        control_state: -1,
-        pilot_control_mode: -1,
-        reference_cmds: %{},
-        rx_output_time_prev: 0,
-        pv_values: %{},
-        rx_output_channel_map: Keyword.fetch!(config, :rx_output_channel_map)
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -51,12 +31,28 @@ defmodule Command.Commander do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
+    {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
+    state = %{
+      goals_class: goals_class,
+      goals_time_ms: goals_time_ms,
+      direct_cmds_class: direct_cmds_class,
+      direct_cmds_time_ms: direct_cmds_time_ms,
+      indirect_override_cmds_class: indirect_override_class,
+      indirect_override_cmds_time_ms: indirect_override_time_ms,
+      control_state: -1,
+      pilot_control_mode: -1,
+      reference_cmds: %{},
+      pv_values: %{},
+      rx_output_channel_map: Keyword.fetch!(config, :rx_output_channel_map),
+      rx_output_time_prev: :erlang.monotonic_time(:millisecond)
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
     Comms.Operator.join_group(__MODULE__, :pv_3_local, self())
-    rx_output_time_prev = :erlang.monotonic_time(:millisecond)
-    {:noreply, %{state | rx_output_time_prev: rx_output_time_prev}}
+    {:noreply, state}
   end
 
   @impl GenServer

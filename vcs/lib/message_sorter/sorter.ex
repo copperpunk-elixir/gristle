@@ -6,31 +6,39 @@ defmodule MessageSorter.Sorter do
 
   def start_link(config) do
     Logger.info("Start MessageSorter: #{inspect(config[:name])} GenServer")
-    Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config[:name]))
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, via_tuple(config[:name]))
+    GenServer.cast(via_tuple(config[:name]), {:begin, config})
     # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
+    {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {default_message_behavior, default_value} =
-      case Keyword.get(config, :default_message_behavior) do
-        :last -> {:last, nil}
-        :default_value -> {:default_value, config[:default_value]}
-        :decay -> {:decay, config[:decay_value]}
-      end
-    {:ok, %{
-        messages: [],
-        last_value: Keyword.get(config, :initial_value, nil),
-        default_message_behavior: default_message_behavior,
-        default_value: default_value,
-        value_type: config[:value_type]
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
   def terminate(reason, state) do
     Logging.Logger.log_terminate(reason, state, __MODULE__)
     state
+  end
+
+  @impl GenServer
+  def handle_cast({:begin, config}, _state) do
+    {default_message_behavior, default_value} =
+      case Keyword.get(config, :default_message_behavior) do
+        :last -> {:last, nil}
+        :default_value -> {:default_value, config[:default_value]}
+        :decay -> {:decay, config[:decay_value]}
+      end
+    state = %{
+      messages: [],
+      last_value: Keyword.get(config, :initial_value, nil),
+      default_message_behavior: default_message_behavior,
+      default_value: default_value,
+      value_type: Keyword.fetch!(config, :value_type)
+    }
+    {:noreply, state}
   end
 
   @impl GenServer

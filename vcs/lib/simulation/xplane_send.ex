@@ -12,22 +12,14 @@ defmodule Simulation.XplaneSend do
 
   def start_link(config) do
     Logger.info("Start Simulation.XplaneSend GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, %{
-        socket: nil,
-        dest_ip: Keyword.fetch!(config, :dest_ip),
-        source_port: Keyword.fetch!(config, :source_port),
-        dest_port: Keyword.fetch!(config, :dest_port),
-        pwm_channels: Keyword.fetch!(config, :pwm_channels),
-        reversed_channels: Keyword.fetch!(config, :reversed_channels),
-        commands: %{}
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -37,11 +29,21 @@ defmodule Simulation.XplaneSend do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    source_port = Keyword.fetch!(config, :source_port)
+    {:ok, socket} = :gen_udp.open(source_port, [broadcast: false, active: false])
+    state = %{
+      socket: socket,
+      dest_ip: Keyword.fetch!(config, :dest_ip),
+      source_port: source_port,
+      dest_port: Keyword.fetch!(config, :dest_port),
+      pwm_channels: Keyword.fetch!(config, :pwm_channels),
+      reversed_channels: Keyword.fetch!(config, :reversed_channels),
+      commands: %{}
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :pwm_input, self())
-    {:ok, socket} = :gen_udp.open(state.source_port, [broadcast: false, active: false])
-    {:noreply, %{state | socket: socket}}
+    {:noreply, state}
   end
 
   @impl GenServer

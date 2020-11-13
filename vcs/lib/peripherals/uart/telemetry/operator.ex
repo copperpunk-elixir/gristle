@@ -4,23 +4,14 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   def start_link(config) do
     Logger.info("Start Uart.Telemetry.Operator GenServer")
-    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, uart_ref} = Circuits.UART.start_link()
-    {:ok, %{
-        uart_ref: uart_ref,
-        uart_port: Keyword.fetch!(config, :uart_port),
-        port_options: Keyword.fetch!(config, :port_options),
-        ublox: Telemetry.Ublox.new(),
-        fast_loop_interval_ms: Keyword.fetch!(config, :fast_loop_interval_ms),
-        medium_loop_interval_ms: Keyword.fetch!(config, :medium_loop_interval_ms),
-        slow_loop_interval_ms: Keyword.fetch!(config, :slow_loop_interval_ms),
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -31,10 +22,24 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
+
+    {:ok, uart_ref} = Circuits.UART.start_link()
+    state = %{
+      uart_ref: uart_ref,
+      uart_port: Keyword.fetch!(config, :uart_port),
+      port_options: Keyword.fetch!(config, :port_options),
+      ublox: Telemetry.Ublox.new(),
+      fast_loop_interval_ms: Keyword.fetch!(config, :fast_loop_interval_ms),
+      medium_loop_interval_ms: Keyword.fetch!(config, :medium_loop_interval_ms),
+      slow_loop_interval_ms: Keyword.fetch!(config, :slow_loop_interval_ms),
+    }
+
+    uart_port = Keyword.fetch!(config, :uart_port)
+    port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
+
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
      # fast_loop_timer = Common.Utils.start_loop(self(), state.fast_loop_interval_ms, :fast_loop)
     # medium_loop_timer = Common.Utils.start_loop(self(), state.medium_loop_interval_ms, :medium_loop)
     Common.Utils.start_loop(self(), state.slow_loop_interval_ms, :slow_loop)
@@ -117,8 +122,10 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       end
     end)
     # Cluster Status
-    cluster_status = Map.get(state, :cluster_status,0)
-    construct_and_send_message(:cluster_status, [iTOW,cluster_status], state.uart_ref)
+    cluster_status = Map.get(state, :cluster_status)
+    unless is_nil(cluster_status) do
+      construct_and_send_message(:cluster_status, [iTOW,cluster_status], state.uart_ref)
+    end
     {:noreply, state}
   end
 

@@ -9,37 +9,14 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   def start_link(config) do
     Logger.info("Start Uart.Estimation.VsIns.Operator GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, uart_ref} = Circuits.UART.start_link()
-    {:ok, %{
-        uart_ref: uart_ref,
-        uart_port: Keyword.fetch!(config, :uart_port),
-        port_options: Keyword.fetch!(config, :port_options),
-        ins: %{
-          attitude: %{roll: 0,pitch: 0,yaw: 0},
-          bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
-          bodyaccel: %{x: 0, y: 0, z: 0},
-          gps_time_ns: 0,
-          position: %{latitude: 0, longitude: 0, altitude: 0},
-          velocity: %{north: 0, east: 0, down: 0},
-          magnetometer: %{x: 0, y: 0, z: 0},
-          baro_pressure: 0,
-          temperature: 0,
-          gps_status: 0
-        },
-        start_byte_found: false,
-        remaining_buffer: [],
-        field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
-        new_ins_data_to_publish: false,
-        expecting_pos_vel: Keyword.fetch!(config, :expecting_pos_vel)
-     }
-    }
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -49,11 +26,35 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
-    port_options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
-    Logger.debug("Uart.Estimation.VnIns.Operator setup complete!")
+
+    {:ok, uart_ref} = Circuits.UART.start_link()
+    state = %{
+      uart_ref: uart_ref,
+      ins: %{
+        attitude: %{roll: 0,pitch: 0,yaw: 0},
+        bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
+        bodyaccel: %{x: 0, y: 0, z: 0},
+        gps_time_ns: 0,
+        position: %{latitude: 0, longitude: 0, altitude: 0},
+        velocity: %{north: 0, east: 0, down: 0},
+        magnetometer: %{x: 0, y: 0, z: 0},
+        baro_pressure: 0,
+        temperature: 0,
+        gps_status: 0
+      },
+      start_byte_found: false,
+      remaining_buffer: [],
+      field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
+      new_ins_data_to_publish: false,
+      expecting_pos_vel: Keyword.fetch!(config, :expecting_pos_vel)
+    }
+
+    uart_port = Keyword.fetch!(config, :uart_port)
+    port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
+
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,uart_port, port_options)
     {:noreply, state}
   end
 

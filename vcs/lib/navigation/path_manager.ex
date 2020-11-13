@@ -7,31 +7,14 @@ defmodule Navigation.PathManager do
 
   def start_link(config) do
     Logger.info("Start Navigation.PathManager GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(pid, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {flaps_cmd_class, flaps_cmd_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
-    {:ok, %{
-        vehicle_loiter_speed: Keyword.fetch!(config, :vehicle_loiter_speed),
-        vehicle_agl_ground_threshold: Keyword.fetch!(config, :vehicle_agl_ground_threshold),
-        vehicle_takeoff_speed: Keyword.fetch!(config, :vehicle_takeoff_speed),
-        # vehicle_max_ground_speed: Keyword.fetch!(config, :vehicle_max_ground_speed),
-        goals_classification: goals_classification,
-        goals_time_validity_ms: goals_time_validity_ms,
-        flaps_cmd_class: flaps_cmd_class,
-        flaps_cmd_time_ms: flaps_cmd_time_ms,
-        config_points: [],
-        current_cp_index: nil,
-        current_path_case: nil,
-        current_path_distance: 0,
-        landing_altitude: 0,
-        path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower))
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -41,7 +24,25 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {flaps_cmd_class, flaps_cmd_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
+    state = %{
+      vehicle_loiter_speed: Keyword.fetch!(config, :vehicle_loiter_speed),
+      vehicle_agl_ground_threshold: Keyword.fetch!(config, :vehicle_agl_ground_threshold),
+      vehicle_takeoff_speed: Keyword.fetch!(config, :vehicle_takeoff_speed),
+      # vehicle_max_ground_speed: Keyword.fetch!(config, :vehicle_max_ground_speed),
+      goals_classification: goals_classification,
+      goals_time_validity_ms: goals_time_validity_ms,
+      flaps_cmd_class: flaps_cmd_class,
+      flaps_cmd_time_ms: flaps_cmd_time_ms,
+      config_points: [],
+      current_cp_index: nil,
+      current_path_case: nil,
+      current_path_distance: 0,
+      landing_altitude: 0,
+      path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower))
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())

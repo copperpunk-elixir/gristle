@@ -4,26 +4,25 @@ defmodule Logging.Logger do
 
   def start_link(config) do
     Logger.info("Start Logging.Logger GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    root_path = Keyword.fetch!(config, :root_path)
-    {:ok, %{
-        root_directory: root_path,
-        clock: Time.Clock.new()
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    state = %{
+      root_directory: Keyword.fetch!(config, :root_path),
+      clock: Time.Clock.new()
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :gps_time, self())
     Comms.Operator.join_group(__MODULE__, :save_log, self())
-    # Logger.debug("log directory: #{state.log_directory}")
     {:noreply, state}
   end
 

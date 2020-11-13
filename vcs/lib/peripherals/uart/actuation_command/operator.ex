@@ -7,28 +7,14 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
 
   def start_link(config) do
     Logger.info("Start Uart.ActuationCommand.Operator GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
+    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, __MODULE__)
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {:ok, uart_ref} = Circuits.UART.start_link()
-    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
-    {:ok, %{
-        uart_ref: uart_ref,
-        uart_port: Keyword.fetch!(config, :uart_port),
-        port_options: Keyword.fetch!(config, :port_options),
-        start_byte_found: false,
-        remaining_buffer: [],
-        channel_values: [],
-        rx_module: rx_module,
-        rx: apply(rx_module, :new, []),
-        interface: nil,
-        interface_module: Keyword.fetch!(config, :interface_module),
-        channels: %{}
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -40,11 +26,28 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
+
+    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
+    {:ok, uart_ref} = Circuits.UART.start_link()
+    state = %{
+      uart_ref: uart_ref,
+      start_byte_found: false,
+      remaining_buffer: [],
+      channel_values: [],
+      rx_module: rx_module,
+      rx: apply(rx_module, :new, []),
+      interface: nil,
+      interface_module: Keyword.fetch!(config, :interface_module),
+      channels: %{}
+    }
+
+    uart_port = Keyword.fetch!(config, :uart_port)
+    port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
     interface = apply(state.interface_module, :new_device, [state.uart_ref])
-    port_options = state.port_options ++ [active: true]
-    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref,state.uart_port, port_options)
+
+    Peripherals.Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
     Logger.debug("Uart.ActuationCommand setup complete!")
     {:noreply, %{state | interface: interface}}
   end

@@ -24,9 +24,9 @@ defmodule Display.Scenic.Planner do
     model_type = Common.Utils.Configuration.get_model_type()
     margin =
       case model_type do
-        :Cessna -> 734
-        :T28 -> 100
-        :T28Z2m -> 100
+        "Cessna" -> 734
+        "T28" -> 100
+        "T28Z2m" -> 100
         _other -> 734
       end
     state = %{

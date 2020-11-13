@@ -4,25 +4,14 @@ defmodule Pids.Moderator do
 
   def start_link(config) do
     Logger.info("Start Pids.Moderator GenServer")
-    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :begin)
+    {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
+    GenServer.cast(pid, {:begin, config})
     {:ok, pid}
   end
 
   @impl GenServer
-  def init(config) do
-    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
-    {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
-    attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
-      Map.put(acc, cv_pv, Enum.into(scalar, %{}))
-    end)
-    {:ok, %{
-        attitude_scalar: attitude_scalar,
-        act_msg_class: act_msg_class,
-        act_msg_time_ms: act_msg_time_ms,
-        pv_msg_class: pv_msg_class,
-        pv_msg_time_ms: pv_msg_time_ms,
-     }}
+  def init(_) do
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -32,7 +21,19 @@ defmodule Pids.Moderator do
   end
 
   @impl GenServer
-  def handle_cast(:begin, state) do
+  def handle_cast({:begin, config}, _state) do
+    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
+    {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
+      Map.put(acc, cv_pv, Enum.into(scalar, %{}))
+    end)
+    state = %{
+      attitude_scalar: attitude_scalar,
+      act_msg_class: act_msg_class,
+      act_msg_time_ms: act_msg_time_ms,
+      pv_msg_class: pv_msg_class,
+      pv_msg_time_ms: pv_msg_time_ms,
+    }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
