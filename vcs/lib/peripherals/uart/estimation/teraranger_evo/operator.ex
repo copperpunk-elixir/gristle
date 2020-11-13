@@ -42,8 +42,8 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         range: nil,
         start_byte_found: false,
         remaining_buffer: [],

@@ -12,9 +12,9 @@ defmodule Actuation.SwInterface do
   @impl GenServer
   def init(config) do
         {:ok, %{
-        actuators: Map.get(config, :actuators),
-        actuator_loop_interval_ms: Map.get(config, :actuator_loop_interval_ms, 0),
-        output_modules: config.output_modules
+        actuators: Keyword.get(config, :actuators),
+        actuator_loop_interval_ms: Keyword.get(config, :actuator_loop_interval_ms, 0),
+        output_modules: Keyword.fetch!(config, :output_modules)
      }}
   end
 

@@ -12,7 +12,7 @@ defmodule Logging.System do
   def init(config) do
     children =
       [
-        {Logging.Logger, config.logger}
+        {Logging.Logger, config[:logger]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

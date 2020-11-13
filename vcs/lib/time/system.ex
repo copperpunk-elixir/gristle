@@ -12,7 +12,7 @@ defmodule Time.System do
   def init(config) do
     children =
       [
-        {Time.Server, config.server}
+        {Time.Server, config[:server]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

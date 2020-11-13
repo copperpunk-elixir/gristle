@@ -15,9 +15,9 @@ defmodule Cluster.Heartbeat do
   def init(config) do
     {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     {:ok, %{
-        node: config.node,
-        hb_map: %{node: config.node, ward: config.ward},
-        heartbeat_loop_interval_ms: config.heartbeat_loop_interval_ms,
+        node: Keyword.fetch!(config, :node),
+        hb_map: %{node: Keyword.fetch!(config, :node), ward: Keyword.fetch!(config, :ward)},
+        heartbeat_loop_interval_ms: Keyword.fetch!(config, :heartbeat_loop_interval_ms),
         heartbeat_loop_timer: nil,
         heartbeat_time_validity_ms: heartbeat_time_validity_ms,
         cluster_status: -1,

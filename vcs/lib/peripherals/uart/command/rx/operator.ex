@@ -15,12 +15,12 @@ defmodule Peripherals.Uart.Command.Rx.Operator do
   @impl GenServer
   def init(config) do
     {:ok, uart_ref} = Circuits.UART.start_link()
-    rx_module = Module.concat(Peripherals.Uart.Command.Rx, config.rx_module)
+    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
     Logger.debug("Rx module: #{rx_module}")
     {:ok, %{
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         remaining_buffer: [],
         channel_values: [],
         rx_module: rx_module,

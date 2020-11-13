@@ -19,7 +19,7 @@ defmodule Navigation.Navigator do
     {:ok, %{
         default_pv_cmds_level: Map.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
         navigator_loop_timer: nil,
-        navigator_loop_interval_ms: config.navigator_loop_interval_ms,
+        navigator_loop_interval_ms: Keyword.fetch!(config, :navigator_loop_interval_ms),
         pv_cmds_msg_classification: pv_cmds_msg_classification,
         pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
         control_state_msg_classification: control_state_msg_classification,

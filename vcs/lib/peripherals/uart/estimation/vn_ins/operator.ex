@@ -19,8 +19,8 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         ins: %{
           attitude: %{roll: 0,pitch: 0,yaw: 0},
           bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
@@ -37,7 +37,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
         remaining_buffer: [],
         field_lengths_binary_1: [8,8,8,12,16,12,24,12,12,24,20,28,2,4,8],
         new_ins_data_to_publish: false,
-        expecting_pos_vel: config.expecting_pos_vel
+        expecting_pos_vel: Keyword.fetch!(config, :expecting_pos_vel)
      }
     }
   end

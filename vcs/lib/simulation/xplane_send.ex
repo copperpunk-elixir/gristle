@@ -21,11 +21,11 @@ defmodule Simulation.XplaneSend do
   def init(config) do
     {:ok, %{
         socket: nil,
-        dest_ip: config.dest_ip,
-        source_port: config.source_port,
-        dest_port: config.dest_port,
-        pwm_channels: config.pwm_channels,
-        reversed_channels: config.reversed_channels,
+        dest_ip: Keyword.fetch!(config, :dest_ip),
+        source_port: Keyword.fetch!(config, :source_port),
+        dest_port: Keyword.fetch!(config, :dest_port),
+        pwm_channels: Keyword.fetch!(config, :pwm_channels),
+        reversed_channels: Keyword.fetch!(config, :reversed_channels),
         commands: %{}
      }}
   end

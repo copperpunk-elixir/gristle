@@ -3,7 +3,7 @@ defmodule Comms.Operator do
   require Logger
 
   def start_link(config) do
-    name = config.name
+    name = Keyword.fetch!(config, :name)
     Logger.info("Start Comms.Operator: #{inspect(name)}")
     Process.sleep(100)
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
@@ -15,10 +15,10 @@ defmodule Comms.Operator do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        refresh_groups_loop_interval_ms: config.refresh_groups_loop_interval_ms,
+        refresh_groups_loop_interval_ms: Keyword.fetch!(config, :refresh_groups_loop_interval_ms),
         refresh_groups_timer: nil,
         groups: %{},
-        name: config.name #purely for dianostics
+        name: Keyword.fetch!(config, :name) #purely for dianostics
      }}
   end
 

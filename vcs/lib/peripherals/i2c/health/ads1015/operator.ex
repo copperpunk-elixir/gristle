@@ -35,10 +35,10 @@ defmodule Peripherals.I2c.Health.Ads1015.Operator do
     {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     {:ok, %{
         i2c_ref: i2c_ref,
-        read_battery_interval_ms: config.read_battery_interval_ms,
-        battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel),
-        voltage_mult: config.voltage_mult,
-        current_mult: config.current_mult
+        read_battery_interval_ms: Keyword.fetch!(config, :read_battery_interval_ms),
+        battery: Health.Hardware.Battery.new(Keyword.fetch!(config, :battery_type), Keyword.fetch!(config, :battery_channel)),
+        voltage_mult: Keyword.fetch!(config, :voltage_mult),
+        current_mult: Keyword.fetch!(config, :current_mult)
      }
     }
   end

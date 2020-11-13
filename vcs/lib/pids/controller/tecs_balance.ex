@@ -3,22 +3,22 @@ defmodule Pids.Controller.TecsBalance do
 
   @spec init(map()) :: tuple()
   def init(config) do
-    {process_variable, control_variable} = Map.get(config, :name)
+    {process_variable, control_variable} = Keyword.get(config, :name)
     {:ok, %{
         pid_module: __MODULE__,
         process_variable: process_variable,
         control_variable: control_variable,
-        ki: Map.get(config, :ki, 0),
-        kd: Map.get(config, :kd, 0),
-        altitude_kp: Map.get(config, :altitude_kp, 0),
-        time_constant: Map.get(config, :tc, 1.0),
+        ki: Keyword.get(config, :ki, 0),
+        kd: Keyword.get(config, :kd, 0),
+        altitude_kp: Keyword.get(config, :altitude_kp, 0),
+        time_constant: Keyword.get(config, :tc, 1.0),
         balance_rate_scalar: config.balance_rate_scalar,
         min_climb_speed: config.min_climb_speed,
         output_min: config.output_min,
         output_max: config.output_max,
         output_neutral: config.output_neutral,
-        integrator_range_min: -Map.get(config, :integrator_range, 0),
-        integrator_range_max: Map.get(config, :integrator_range, 0),
+        integrator_range_min: -Keyword.get(config, :integrator_range, 0),
+        integrator_range_max: Keyword.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
         speed_prev: nil,

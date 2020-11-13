@@ -11,7 +11,7 @@ defmodule Logging.Logger do
 
   @impl GenServer
   def init(config) do
-    root_path = config.root_path
+    root_path = Keyword.fetch!(config, :root_path)
     {:ok, %{
         root_directory: root_path,
         clock: Time.Clock.new()

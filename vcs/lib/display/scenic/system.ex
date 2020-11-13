@@ -3,12 +3,12 @@ defmodule Display.Scenic.System do
   require Logger
   def start_link(config) do
     Logger.info("Display Supervisor start_link()")
-    display_module = Map.get(config, :display_module, Display.Scenic)
+    display_module = Keyword.get(config, :display_module, Display.Scenic)
 
     #GCS
     gcs_scene =
       Module.concat(display_module, Gcs)
-      |> Module.concat(String.to_existing_atom(config.vehicle_type))
+      |> Module.concat(String.to_existing_atom(Keyword.fetch!(config, :vehicle_type)))
 
     gcs_config = %{
       name: :gcs,
@@ -43,17 +43,17 @@ defmodule Display.Scenic.System do
 
     viewports = [
       gcs_config,
-      # planner_config
+      planner_config
     ]
-    config = %{
+    config = [
       viewports: viewports
-    }
+    ]
 
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 
   def init(config) do
-    children = [Supervisor.child_spec({Scenic, viewports: config.viewports}, id: :scenic_app)]
+    children = [Supervisor.child_spec({Scenic, viewports: config[:viewports]}, id: :scenic_app)]
     Supervisor.init(children, strategy: :one_for_one)
   end
 

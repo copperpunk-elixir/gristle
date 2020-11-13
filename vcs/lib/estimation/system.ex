@@ -12,7 +12,7 @@ defmodule Estimation.System do
   def init(config) do
     children =
       [
-        {Estimation.Estimator, config.estimator}
+        {Estimation.Estimator, config[:estimator]}
       ]
     Logger.info("estimator children: #{inspect(children)}")
     Supervisor.init(children, strategy: :one_for_one)

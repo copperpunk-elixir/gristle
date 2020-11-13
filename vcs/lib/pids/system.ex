@@ -12,7 +12,7 @@ defmodule Pids.System do
   def init(config) do
     pid_children = get_pids(config[:pids])
     children = [
-      {Pids.Moderator, config},
+      {Pids.Moderator, Keyword.drop(config, [:pids])},
     ] ++ pid_children
     # Logger.info("pid child specs: #{inspect(children)}")
     Supervisor.init(children, strategy: :one_for_one)

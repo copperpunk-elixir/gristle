@@ -12,11 +12,12 @@ defmodule Estimation.LaserAltimeterEkf do
   @max_phi 0.52
   @max_theta 0.52
 
+  @spec new(list()) :: struct()
   def new(config) do
-    q_att_sq = Map.get(config, :q_att_sq, @default_q_att_sq)
-    q_zdot_sq = Map.get(config, :q_zdot_sq, @default_q_zdot_sq)
-    q_z_sq = Map.get(config, :q_z_sq, @default_q_z_sq)
-    r_range_sq = Map.get(config, :r_range_sq, @default_r_range_sq)
+    q_att_sq = Keyword.get(config, :q_att_sq, @default_q_att_sq)
+    q_zdot_sq = Keyword.get(config, :q_zdot_sq, @default_q_zdot_sq)
+    q_z_sq = Keyword.get(config, :q_z_sq, @default_q_z_sq)
+    r_range_sq = Keyword.get(config, :r_range_sq, @default_r_range_sq)
     %Estimation.LaserAltimeterEkf{q33: q_z_sq, p00: q_att_sq, p11: q_att_sq, p22: q_zdot_sq, p33: q_z_sq, r: r_range_sq}
   end
 

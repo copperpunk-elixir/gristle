@@ -13,7 +13,7 @@ defmodule Control.Controller do
   def init(config) do
     {:ok, %{
         pv_cmds: %{},
-        control_loop_interval_ms: config.process_variable_cmd_loop_interval_ms,
+        control_loop_interval_ms: Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms),
         control_state: -1,
         airspeed: 0,
      }}

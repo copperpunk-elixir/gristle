@@ -5,6 +5,7 @@ defmodule Health.Hardware.Battery do
   @enforce_keys [:type, :channel]
   defstruct [type: nil, channel: nil, voltage_V: nil, current_A: nil, energy_discharged_As: nil]
 
+  @spec new(atom(), integer()) :: struct()
   def new(type, channel) do
     %Health.Hardware.Battery{type: type, channel: channel}
   end

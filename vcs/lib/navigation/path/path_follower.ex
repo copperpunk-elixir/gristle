@@ -7,6 +7,12 @@ defmodule Navigation.Path.PathFollower do
 
   defstruct [:k_path, :k_orbit, :chi_inf_two_over_pi, :lookahead_dt]
 
+
+  @spec new(list) :: struct()
+  def new(config) do
+    new(Keyword.fetch!(config, :k_path),Keyword.fetch!(config, :k_orbit),Keyword.fetch!(config, :chi_inf_two_over_pi),Keyword.fetch!(config, :lookahead_dt))
+  end
+
   @spec new(float(), float(), float(), float()) :: struct()
   def new(k_path, k_orbit, chi_inf, lookahead_dt) do
     %Navigation.Path.PathFollower{

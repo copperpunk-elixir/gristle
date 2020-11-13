@@ -40,7 +40,7 @@ defmodule Command.Commander do
         reference_cmds: %{},
         rx_output_time_prev: 0,
         pv_values: %{},
-        rx_output_channel_map: config.rx_output_channel_map
+        rx_output_channel_map: Keyword.fetch!(config, :rx_output_channel_map)
      }}
   end
 

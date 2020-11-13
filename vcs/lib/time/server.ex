@@ -12,7 +12,7 @@ defmodule Time.Server do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        server_loop_interval_ms: config.server_loop_interval_ms,
+        server_loop_interval_ms: Keyword.fetch!(config, :server_loop_interval_ms),
         clock: Time.Clock.new()
      }}
   end

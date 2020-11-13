@@ -9,7 +9,7 @@ defmodule Pids.Pid do
 
   @impl GenServer
   def init(config) do
-    pid_module = Module.concat(Pids.Controller, config.type)
+    pid_module = Module.concat(Pids.Controller, config[:type])
     apply(pid_module, :init, [config])
   end
 

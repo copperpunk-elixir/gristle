@@ -28,8 +28,8 @@ defmodule Common.Application do
   @spec attach_ringlogger(atom()) :: atom()
   def attach_ringlogger(node_type) do
     case node_type do
-      "gcs" -> nil
-      "sim" -> nil
+      # "gcs" -> nil
+      # "sim" -> nil
       _other -> RingLogger.attach()
     end
   end
@@ -48,8 +48,18 @@ defmodule Common.Application do
   @spec get_modules_for_node(binary()) :: list()
   def get_modules_for_node(node_type) do
     case node_type do
-      "gcs" -> [Display.Scenic, Navigation, Peripherals.Uart]
-      "sim" -> [Actuation,Pids, Control, Estimation, Navigation, Command, Simulation, Peripherals.Uart, Display.Scenic]
+      "gcs" ->[Display.Scenic, Peripherals.Uart]
+      "sim" ->[
+        Actuation,
+        # Pids,
+        # Control,
+        # Estimation,
+        # Navigation,
+        # Command,
+        # Simulation,
+        # Peripherals.Uart,
+        # Display.Scenic
+      ]
       "server" -> [Simulation, Peripherals.Uart, Display.Scenic]
       "all" -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c,Peripherals.Leds]
       _vehicle -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c, Peripherals.Leds]
