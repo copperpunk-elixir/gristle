@@ -12,8 +12,8 @@ defmodule Cluster.System do
   def init(config) do
     children =
       [
-        {Cluster.Heartbeat, config.heartbeat},
-        {Cluster.Network, config.network}
+        {Cluster.Heartbeat, config[:heartbeat]},
+        {Cluster.Network, config[:network]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

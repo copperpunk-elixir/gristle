@@ -1,13 +1,13 @@
 defmodule Configuration.Module.Cluster do
-  @spec get_config(binary(), binary()) :: map()
+  @spec get_config(binary(), binary()) :: list()
   def get_config(_model_type, _node_type) do
-    %{
+    [
       heartbeat: get_heartbeat_config(),
       network: get_network_config()
-    }
+    ]
   end
 
-  @spec get_heartbeat_config() :: map()
+  @spec get_heartbeat_config() :: list()
   def get_heartbeat_config do
     node_type = Common.Utils.Configuration.get_node_type()
     {node, ward} = get_node_and_ward(node_type)
@@ -19,7 +19,7 @@ defmodule Configuration.Module.Cluster do
     case node_type do
       "gcs" -> {-1,-1}
       "all" -> {0,0}
-      "sim" -> {0,0}
+      "sim" -> {-1,-1}
       "server" -> {0,0}
 
       "left_side" -> {0,1}
@@ -30,19 +30,19 @@ defmodule Configuration.Module.Cluster do
     end
   end
 
-  @spec get_heartbeat_config(integer(), integer()) :: map()
+  @spec get_heartbeat_config(integer(), integer()) :: list()
   def get_heartbeat_config(node, ward) do
-    %{
+    [
       heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:extra_slow),
       node: node,
       ward: ward
-    }
+    ]
   end
 
-  @spec get_network_config() :: map()
+  @spec get_network_config() :: list()
   def get_network_config() do
     {interface, vintage_net_config} = get_interface_and_config()
-    %{
+    [
       interface: interface,
       vintage_net_access: vintage_net_access?(),
       vintage_net_config: vintage_net_config,
@@ -50,7 +50,7 @@ defmodule Configuration.Module.Cluster do
       cookie: get_cookie(),
       src_port: 8780,
       dest_port: 8780
-    }
+    ]
   end
 
   @spec get_cookie() :: atom()

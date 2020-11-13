@@ -7,19 +7,20 @@ defmodule Navigation.Navigator do
   def start_link(config) do
     Logger.info("Start Navigation.Navigator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
-    GenServer.cast(pid, :begin)
+    GenServer.cast(__MODULE__, :begin)
     {:ok, pid}
   end
 
   @impl GenServer
   def init(config) do
+    Logger.debug("nav init")
     {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
     {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
 
     {:ok, %{
-        default_pv_cmds_level: Map.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
+        default_pv_cmds_level: Keyword.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
         navigator_loop_timer: nil,
-        navigator_loop_interval_ms: config.navigator_loop_interval_ms,
+        navigator_loop_interval_ms: Keyword.fetch!(config, :navigator_loop_interval_ms),
         pv_cmds_msg_classification: pv_cmds_msg_classification,
         pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
         control_state_msg_classification: control_state_msg_classification,

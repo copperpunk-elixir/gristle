@@ -21,7 +21,7 @@ defmodule Simulation.XplaneReceive do
     Logger.debug("recieve config: #{inspect(config)}")
     {:ok, %{
         socket: nil,
-        port: config.port,
+        port: Keyword.fetch!(config, :port),
         bodyaccel: %{},
         attitude: %{},
         bodyrate: %{},

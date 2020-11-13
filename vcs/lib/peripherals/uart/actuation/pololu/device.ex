@@ -6,26 +6,8 @@ defmodule Peripherals.Uart.Actuation.Pololu.Device do
   defstruct [interface_ref: nil, write_timeout: 1, read_timeout: 1]
 
   def new_device(interface_ref) do
-    # write_timeout = config.write_timeout
-    # read_timeout = config.read_timeout
     %Peripherals.Uart.Actuation.Pololu.Device{interface_ref: interface_ref}
   end
-
-  # def open_port(device) do
-  #   Logger.debug("Open port with device: #{inspect(device)}")
-  #   command_port = Peripherals.Uart.Utils.get_uart_devices_containing_string(device.device_description)
-  #   Logger.debug("Pololu command port: #{command_port}")
-  #   # Logger.debug("interface_ref: #{inspect(device.interface_ref)}")
-  #   case Circuits.UART.open(device.interface_ref,command_port,[speed: device.baud, active: false]) do
-  #     {:error, error} ->
-  #       Logger.error("Error opening UART: #{inspect(error)}")
-  #       nil
-  #     _success ->
-  #       Logger.debug("PololuServo opened UART")
-  #       device
-  #   end
-  # end
-
 
   def write_microseconds(device, channel, output_ms) do
     # See Pololu Maestro Servo Controller User's Guide for explanation

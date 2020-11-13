@@ -3,13 +3,13 @@ defmodule Pids.Pid do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Pids.Pid #{inspect(config.name)} GenServer")
-    GenServer.start_link(__MODULE__, config, name: via_tuple(config.name))
+    Logger.info("Start Pids.Pid #{inspect(config[:name])} GenServer")
+    GenServer.start_link(__MODULE__, config, name: via_tuple(Keyword.fetch!(config, :name)))
   end
 
   @impl GenServer
   def init(config) do
-    pid_module = Module.concat(Pids.Controller, config.type)
+    pid_module = Module.concat(Pids.Controller, config[:type])
     apply(pid_module, :init, [config])
   end
 

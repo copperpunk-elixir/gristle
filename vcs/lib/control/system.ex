@@ -12,7 +12,7 @@ defmodule Control.System do
   def init(config) do
     children =
       [
-        {Control.Controller, config.controller}
+        {Control.Controller, config[:controller]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

@@ -5,9 +5,9 @@ defmodule Peripherals.Gpio.Logging.Operator do
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, __MODULE__)
     Logger.info("Start Gpio.Logging.Operator GenServer")
-    initial_value = Map.get(config, :initial_value, 0)
-    gpio_config = Map.take(config, [:pin_number, :pin_direction, :pull_mode])
-    |> Map.put(:initial_value, initial_value)
+    initial_value = Keyword.get(config, :initial_value, 0)
+    gpio_config = Keyword.take(config, [:pin_number, :pin_direction, :pull_mode])
+    |> Keyword.put(:initial_value, initial_value)
 
     GenServer.cast(__MODULE__, {:begin, gpio_config})
     {:ok, pid}
@@ -18,13 +18,8 @@ defmodule Peripherals.Gpio.Logging.Operator do
     # Start the low-level actuator driver
     {:ok, %{
         gpio_ref: nil,
-        # pin_number: config.pin_number,
-        # pin_direction: config.pin_direction,
-        # pull_mode: config.pull_mode,
-        # initial_value: Map.get(config, :initial_value, 0),
-        time_threshold_cycle_mount_ms: config.time_threshold_cycle_mount_ms,
-        time_threshold_power_off_ms: config.time_threshold_power_off_ms,
-#        falling_time: nil,
+        time_threshold_cycle_mount_ms: Keyword.fetch!(config, :time_threshold_cycle_mount_ms),
+        time_threshold_power_off_ms: Keyword.fetch!(config, :time_threshold_power_off_ms),
      }
     }
   end
@@ -36,15 +31,15 @@ defmodule Peripherals.Gpio.Logging.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:begin, gpio}, state) do
+  def handle_cast({:begin, gpio_config}, state) do
     options =
-      case gpio.pin_direction do
-        :output -> [initial_value: gpio.initial_value]
-        :input -> [pull_mode: gpio.pull_mode]
+      case gpio_config[:pin_direction] do
+        :output -> [initial_value: gpio_config[:initial_value]]
+        :input -> [pull_mode: gpio_config[:pull_mode]]
       end
-    {:ok, ref} = Circuits.GPIO.open(gpio.pin_number, gpio.pin_direction, options)
+    {:ok, ref} = Circuits.GPIO.open(Keyword.fetch!(gpio_config, :pin_number), Keyword.fetch!(gpio_config, :pin_direction), options)
     Process.sleep(100)
-    if gpio.pin_direction == :input do
+    if gpio_config[:pin_direction] == :input do
       Circuits.GPIO.set_interrupts(ref, :both,[suppress_glitches: true])
     end
     {:noreply, %{state | gpio_ref: ref}}

@@ -3,7 +3,7 @@ defmodule Watchdog.Active do
   require Logger
 
   def start_link(config) do
-    name = config.name
+    name = Keyword.fetch!(config, :name)
     Logger.info("Start Watchdog.Active: #{name} GenServer")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, config, via_tuple(name))
     GenServer.cast(via_tuple(name), :begin)
@@ -12,12 +12,12 @@ defmodule Watchdog.Active do
 
   @impl GenServer
   def init(config) do
-    loop_interval_ms = 5*config.expected_interval_ms
+    loop_interval_ms = 5*Keyword.fetch!(config, :expected_interval_ms)
     {:ok, %{
-        name: config.name,
-        expected_interval_ms: config.expected_interval_ms,
+        name: Keyword.fetch!(config, :name),
+        expected_interval_ms: Keyword.fetch!(config, :expected_interval_ms),
         loop_interval_ms: loop_interval_ms,
-        local_or_global: config.local_or_global,
+        local_or_global: Keyword.fetch!(config, :local_or_global),
         count: loop_interval_ms,
         fed: false
      }}

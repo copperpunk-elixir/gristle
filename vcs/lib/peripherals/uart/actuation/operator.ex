@@ -13,12 +13,12 @@ defmodule Peripherals.Uart.Actuation.Operator do
   def init(config) do
     # Start the low-level actuator driver
     {:ok, uart_ref} = Circuits.UART.start_link()
-    Logger.debug("Actuation module: #{config.interface_module}")
+    Logger.debug("Actuation module: #{Keyword.fetch!(config, :interface_module)}")
     {:ok, %{
-        interface_module: config.interface_module,
+        interface_module: Keyword.fetch!(config, :interface_module),
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         interface: nil,
         channels: %{}
      }

@@ -13,13 +13,13 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        imu_loop_interval_ms: config.imu_loop_interval_ms,
-        ins_loop_interval_ms: config.ins_loop_interval_ms,
-        pv_3_local_loop_interval_ms: config.pv_3_local_loop_interval_ms,
-        att_rate_expected_interval_ms: config.att_rate_expected_interval_ms,
-        pos_vel_expected_interval_ms: config.pos_vel_expected_interval_ms,
-        range_expected_interval_ms: config.range_expected_interval_ms,
-        airspeed_expected_interval_ms: config.airspeed_expected_interval_ms,
+        imu_loop_interval_ms: Keyword.fetch!(config, :imu_loop_interval_ms),
+        ins_loop_interval_ms: Keyword.fetch!(config, :ins_loop_interval_ms),
+        pv_3_local_loop_interval_ms: Keyword.fetch!(config, :pv_3_local_loop_interval_ms),
+        att_rate_expected_interval_ms: Keyword.fetch!(config, :att_rate_expected_interval_ms),
+        pos_vel_expected_interval_ms: Keyword.fetch!(config, :pos_vel_expected_interval_ms),
+        range_expected_interval_ms: Keyword.fetch!(config, :range_expected_interval_ms),
+        airspeed_expected_interval_ms: Keyword.fetch!(config, :airspeed_expected_interval_ms),
         watchdog_fed: %{att_rate: false, pos_vel: false, range: false, airspeed: false},
         estimator_health: :unknown,
         min_speed_for_course: @min_speed_for_course,
@@ -30,7 +30,7 @@ defmodule Estimation.Estimator do
         vertical_velocity: 0.0,
         agl: 0.0,
         airspeed: 0.0,
-        laser_alt_ekf: Estimation.LaserAltimeterEkf.new(%{}),
+        laser_alt_ekf: Estimation.LaserAltimeterEkf.new([]),
         ground_altitude: 0.0
      }}
   end

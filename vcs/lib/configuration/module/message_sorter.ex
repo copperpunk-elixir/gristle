@@ -1,10 +1,10 @@
 defmodule Configuration.Module.MessageSorter do
 
-  @spec get_config(binary(), binary()) :: map()
+  @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, _node_type) do
-    %{
+    [
       sorter_configs: get_sorter_configs(model_type)
-    }
+    ]
   end
 
 
@@ -13,7 +13,7 @@ defmodule Configuration.Module.MessageSorter do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     base_module = Configuration.Vehicle
     vehicle_modules = [Control, Navigation]
-    Enum.reduce(vehicle_modules, %{}, fn (module, acc) ->
+    Enum.reduce(vehicle_modules, [], fn (module, acc) ->
       vehicle_module =
         Module.concat(base_module, String.to_existing_atom(vehicle_type))
         |>Module.concat(module)
@@ -26,18 +26,18 @@ defmodule Configuration.Module.MessageSorter do
   @spec get_generic_sorter_configs() :: list()
   def get_generic_sorter_configs() do
     [
-      %{
+      [
         name: {:hb, :node},
         default_message_behavior: :default_value,
         default_value: :nil,
         value_type: :map
-      },
-      %{
+      ],
+      [
         name: :estimator_health,
         default_message_behavior: :default_value,
         default_value: 0,
         value_type: :number
-      },
+      ],
 
     ]
   end

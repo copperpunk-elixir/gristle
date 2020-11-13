@@ -12,9 +12,9 @@ defmodule Health.Power do
   @impl GenServer
   def init(config) do
     {:ok, %{
-        status_loop_interval_ms: config.status_loop_interval_ms,
-        watchdogs: config.watchdogs,
-        watchdog_interval_ms: config.watchdog_interval_ms,
+        status_loop_interval_ms: Keyword.fetch!(config, :status_loop_interval_ms),
+        watchdogs: Keyword.fetch!(config, :watchdogs),
+        watchdog_interval_ms: Keyword.fetch!(config, :watchdog_interval_ms),
         batteries: %{}
      }}
   end

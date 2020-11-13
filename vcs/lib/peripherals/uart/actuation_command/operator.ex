@@ -15,18 +15,18 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
   @impl GenServer
   def init(config) do
     {:ok, uart_ref} = Circuits.UART.start_link()
-    rx_module = Module.concat(Peripherals.Uart.Command.Rx, config.rx_module)
+    rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
     {:ok, %{
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         start_byte_found: false,
         remaining_buffer: [],
         channel_values: [],
         rx_module: rx_module,
         rx: apply(rx_module, :new, []),
         interface: nil,
-        interface_module: config.interface_module,
+        interface_module: Keyword.fetch!(config, :interface_module),
         channels: %{}
      }}
   end

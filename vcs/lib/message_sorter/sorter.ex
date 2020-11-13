@@ -5,25 +5,25 @@ defmodule MessageSorter.Sorter do
   @default_call_timeout 20
 
   def start_link(config) do
-    Logger.info("Start MessageSorter: #{inspect(config.name)} GenServer")
-    Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config.name))
+    Logger.info("Start MessageSorter: #{inspect(config[:name])} GenServer")
+    Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config[:name]))
     # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
   end
 
   @impl GenServer
   def init(config) do
     {default_message_behavior, default_value} =
-      case Map.get(config, :default_message_behavior) do
+      case Keyword.get(config, :default_message_behavior) do
         :last -> {:last, nil}
-        :default_value -> {:default_value, config.default_value}
-        :decay -> {:decay, config.decay_value}
+        :default_value -> {:default_value, config[:default_value]}
+        :decay -> {:decay, config[:decay_value]}
       end
     {:ok, %{
         messages: [],
-        last_value: Map.get(config, :initial_value, nil),
+        last_value: Keyword.get(config, :initial_value, nil),
         default_message_behavior: default_message_behavior,
         default_value: default_value,
-        value_type: config.value_type
+        value_type: config[:value_type]
      }}
   end
 

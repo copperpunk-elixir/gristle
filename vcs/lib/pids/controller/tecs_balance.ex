@@ -3,26 +3,26 @@ defmodule Pids.Controller.TecsBalance do
 
   @spec init(map()) :: tuple()
   def init(config) do
-    {process_variable, control_variable} = Map.get(config, :name)
+    {process_variable, control_variable} = Keyword.get(config, :name)
     {:ok, %{
         pid_module: __MODULE__,
         process_variable: process_variable,
         control_variable: control_variable,
-        ki: Map.get(config, :ki, 0),
-        kd: Map.get(config, :kd, 0),
-        altitude_kp: Map.get(config, :altitude_kp, 0),
-        time_constant: Map.get(config, :tc, 1.0),
-        balance_rate_scalar: config.balance_rate_scalar,
-        min_climb_speed: config.min_climb_speed,
-        output_min: config.output_min,
-        output_max: config.output_max,
-        output_neutral: config.output_neutral,
-        integrator_range_min: -Map.get(config, :integrator_range, 0),
-        integrator_range_max: Map.get(config, :integrator_range, 0),
+        ki: Keyword.get(config, :ki, 0),
+        kd: Keyword.get(config, :kd, 0),
+        altitude_kp: Keyword.get(config, :altitude_kp, 0),
+        time_constant: Keyword.get(config, :tc, 1.0),
+        balance_rate_scalar: Keyword.fetch!(config, :balance_rate_scalar),
+        min_climb_speed: Keyword.fetch!(config, :min_climb_speed),
+        output_min: Keyword.fetch!(config, :output_min),
+        output_max: Keyword.fetch!(config, :output_max),
+        output_neutral: Keyword.fetch!(config, :output_neutral),
+        integrator_range_min: -Keyword.get(config, :integrator_range, 0),
+        integrator_range_max: Keyword.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
         speed_prev: nil,
-        output: config.output_neutral
+        output: Keyword.fetch!(config, :output_neutral)
      }}
 
   end
@@ -54,8 +54,8 @@ defmodule Pids.Controller.TecsBalance do
     balance_rate_cmd = potential_energy_rate_sp
     balance_rate_values = potential_energy_rate
     balance_rate_corr = balance_rate_cmd - balance_rate_values
-    Logger.debug("pe_sp/pe: #{Common.Utils.eftb(potential_energy_sp,1)}/#{Common.Utils.eftb(potential_energy,1)}")
-    Logger.debug("rate: pe_sp/pe: #{Common.Utils.eftb(potential_energy_rate_sp,3)}/#{Common.Utils.eftb(potential_energy_rate,3)}")
+    # Logger.debug("pe_sp/pe: #{Common.Utils.eftb(potential_energy_sp,1)}/#{Common.Utils.eftb(potential_energy,1)}")
+    # Logger.debug("rate: pe_sp/pe: #{Common.Utils.eftb(potential_energy_rate_sp,3)}/#{Common.Utils.eftb(potential_energy_rate,3)}")
 
     # Proportional
     cmd_p = balance_corr
@@ -80,7 +80,7 @@ defmodule Pids.Controller.TecsBalance do
     output = (cmd_p + cmd_i + cmd_d + cmd_rate) / state.time_constant * state.balance_rate_scalar
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    Logger.debug("tecs bal: #{Common.Utils.eftb_deg(output,1)}")
+    # Logger.debug("tecs bal: #{Common.Utils.eftb_deg(output,1)}")
     # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb(output, 3)}")
 
     %{state | output: output, speed_prev: speed}

@@ -16,12 +16,12 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        ublox_device_description: config.ublox_device_description,
-        baud: Map.get(config, :baud, @default_baud),
-        antenna_offset: config.antenna_offset,
-        imu_loop_interval_ms: config.imu_loop_interval_ms,
-        ins_loop_interval_ms: config.ins_loop_interval_ms,
-        heading_loop_interval_ms: config.heading_loop_interval_ms,
+        ublox_device_description: Keyword.fetch!(config, :ublox_device_description),
+        baud: Keyword.get(config, :baud, @default_baud),
+        antenna_offset: Keyword.fetch!(config, :antenna_offset),
+        imu_loop_interval_ms: Keyword.fetch!(config, :imu_loop_interval_ms),
+        ins_loop_interval_ms: Keyword.fetch!(config, :ins_loop_interval_ms),
+        heading_loop_interval_ms: Keyword.fetch!(config, :heading_loop_interval_ms),
         attitude: %{},
         bodyrate: %{},
         bodyaccel: %{},

@@ -1,7 +1,7 @@
 defmodule Configuration.Module.Command do
   require Logger
 
-  @spec get_config(binary(), binary()) :: map()
+  @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, _node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module = Module.concat([Configuration.Vehicle, String.to_existing_atom(vehicle_type),Command])
@@ -9,11 +9,11 @@ defmodule Configuration.Module.Command do
     output_limits = get_command_output_limits(model_type, vehicle_type, commands)
     command_multipliers = get_command_output_multipliers(model_type, vehicle_type, commands)
     rx_output_channel_map = apply(vehicle_module, :get_rx_output_channel_map, [output_limits, command_multipliers])
-    %{
-      commander: %{
+    [
+      commander: [
         rx_output_channel_map: rx_output_channel_map
-      }
-    }
+      ]
+    ]
   end
 
   @spec get_command_output_limits(binary(), binary(), list()) :: map()
@@ -25,8 +25,8 @@ defmodule Configuration.Module.Command do
     Enum.reduce(commands, %{}, fn (channel, acc) ->
       constraints =
         apply(model_module, :get_constraints, [])
-        |> Map.get(channel)
-      Map.put(acc, channel, %{min: constraints.output_min, max: constraints.output_max})
+        |> Keyword.get(channel)
+      Map.put(acc, channel, %{min: constraints[:output_min], max: constraints[:output_max]})
     end)
   end
 

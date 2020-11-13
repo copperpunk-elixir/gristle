@@ -5,6 +5,7 @@ defmodule Health.Hardware.Battery do
   @enforce_keys [:type, :channel]
   defstruct [type: nil, channel: nil, voltage_V: nil, current_A: nil, energy_discharged_As: nil]
 
+  @spec new(atom(), integer()) :: struct()
   def new(type, channel) do
     %Health.Hardware.Battery{type: type, channel: channel}
   end
@@ -59,15 +60,15 @@ defmodule Health.Hardware.Battery do
 
   @spec battery_type_enum(atom()) :: integer()
   def battery_type_enum(type) do
-    Common.Utils.get_key_or_value(battery_type_map(), type)
+    Common.Utils.get_key_or_value(battery_type_structure(), type)
   end
 
-  @spec battery_type_map() :: map()
-  def battery_type_map() do
-    %{
+  @spec battery_type_structure() :: list()
+  def battery_type_structure() do
+    [
       cluster: 0,
       motor: 1
-    }
+    ]
   end
 
 end

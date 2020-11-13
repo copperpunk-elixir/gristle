@@ -16,14 +16,14 @@ defmodule Cluster.Network do
         node_name_with_domain: nil,
         ip_address: nil,
         socket: nil,
-        src_port: config.src_port,
-        dest_port: config.dest_port,
-        cookie: config.cookie,
-        broadcast_ip_loop_interval_ms: config.broadcast_ip_loop_interval_ms,
+        src_port: Keyword.fetch!(config, :src_port),
+        dest_port: Keyword.fetch!(config, :dest_port),
+        cookie: Keyword.fetch!(config, :cookie),
+        broadcast_ip_loop_interval_ms: Keyword.fetch!(config, :broadcast_ip_loop_interval_ms),
         broadcast_ip_loop_timer: nil,
-        interface: config.interface,
-        vintage_net_access: config.vintage_net_access,
-        vintage_net_config: config.vintage_net_config,
+        interface: Keyword.fetch!(config, :interface),
+        vintage_net_access: Keyword.fetch!(config, :vintage_net_access),
+        vintage_net_config: Keyword.fetch!(config, :vintage_net_config),
         connected_to_network: false
      }}
   end
@@ -46,7 +46,7 @@ defmodule Cluster.Network do
       GenServer.cast(__MODULE__, :connect_to_network)
     else
       Logger.debug("Network connection not required.")
-      Common.Application.start_node_processes()
+      Boss.System.start_node_processes()
     end
     {:noreply, state}
   end
@@ -58,7 +58,7 @@ defmodule Cluster.Network do
     if connected == true do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      Common.Application.start_node_processes()
+      Boss.System.start_node_processes()
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)

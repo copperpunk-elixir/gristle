@@ -10,19 +10,23 @@ defmodule Pids.System do
 
   @impl Supervisor
   def init(config) do
-    pid_children = get_pids(config.pids)
+    pid_children = get_pids(config[:pids])
     children = [
-      {Pids.Moderator, config},
+      {Pids.Moderator, Keyword.drop(config, [:pids])},
     ] ++ pid_children
-    # Logger.info("pid child specs: #{inspect(children)}")
+    Logger.warn("pid child specs: #{inspect(pid_children)}")
+    Enum.each(pid_children, fn x ->
+      Logger.info("child: #{inspect(x)}")
+    end)
     Supervisor.init(children, strategy: :one_for_one)
   end
 
   def get_pids(pids) do
     Enum.reduce(pids, [], fn ({process_variable, control_variables}, acc) ->
       Enum.reduce(control_variables, acc, fn ({control_variable, single_config}, acc2) ->
-        single_config = Map.put(single_config, :name, {process_variable, control_variable})
-        [Supervisor.child_spec({Pids.Pid, single_config}, id: single_config.name)] ++ acc2
+        single_config = Keyword.put(single_config, :name, {process_variable, control_variable})
+        Logger.debug("pid config: #{inspect(single_config)}")
+        [Supervisor.child_spec({Pids.Pid, single_config}, id: single_config[:name])] ++ acc2
       end)
     end)
   end

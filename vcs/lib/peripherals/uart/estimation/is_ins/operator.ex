@@ -4,8 +4,8 @@ defmodule Peripherals.Uart.Estimation.IsIns.Operator do
   require Logger
 
 
-@default_port "ttyACM0"
-@default_baud 1_000_000
+  @default_port "ttyACM0"
+  @default_baud 1_000_000
 
   def start_link(config) do
     Logger.info("Start Uart.Estimation.IsIns GenServer")
@@ -18,8 +18,8 @@ defmodule Peripherals.Uart.Estimation.IsIns.Operator do
   def init(config) do
     {:ok, %{
         uart_ref: Circuits.UART.start_link(),
-        port: Map.get(config, :port, @default_port),
-        baud: Map.get(config, :baud, @default_baud),
+        port: Keyword.get(config, :port, @default_port),
+        baud: Keyword.get(config, :baud, @default_baud),
         attitude: %{roll: 0,pitch: 0,yaw: 0},
         bodyrate: %{roll: 0, pitch: 0, yaw: 0},
         gps_time: 0,

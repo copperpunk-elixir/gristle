@@ -1,5 +1,5 @@
 defmodule Configuration.Module.Health do
-  @spec get_config(binary(), binary()) :: map()
+  @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, _node_type) do
     watchdogs =
       case model_type do
@@ -7,12 +7,12 @@ defmodule Configuration.Module.Health do
         "T28" -> [:motor, :cluster]
         "T28Z2m" -> [:motor, :cluster]
       end
-    %{
-      power: %{
+    [
+      power: [
         status_loop_interval_ms: 1000,
         watchdogs: watchdogs,
         watchdog_interval_ms: 1000
-      }
-    }
+      ]
+    ]
   end
 end

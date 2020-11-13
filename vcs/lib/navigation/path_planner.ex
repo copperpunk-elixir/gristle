@@ -4,7 +4,8 @@ defmodule Navigation.PathPlanner do
 
   @spec load_seatac_34L(integer()) ::atom()
   def load_seatac_34L(num_wps \\ 1) do
-    send_path_mission("seatac", "34L",:Cessna, nil, num_wps, true)
+    model_type = Common.Utils.Configuration.get_model_type()
+    send_path_mission("seatac", "34L", model_type, nil, num_wps, true)
   end
 
   @spec load_montague_36L(any()) :: atom()
@@ -15,7 +16,8 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    send_path_mission("montague", "36L",:T28, track_type, num_wps, true)
+    model_type = Common.Utils.Configuration.get_model_type()
+    send_path_mission("montague", "36L", model_type, track_type, num_wps, true)
   end
 
   @spec load_montague_18R(any()) :: atom()
@@ -26,7 +28,8 @@ defmodule Navigation.PathPlanner do
     else
       {nil, track_type_or_num_wps}
     end
-    send_path_mission("montague", "18R",:T28, track_type, num_wps, true)
+    model_type = Common.Utils.Configuration.get_model_type()
+    send_path_mission("montague", "18R",model_type, track_type, num_wps, true)
   end
 
   @spec send_path_mission(binary(), binary(), atom(), atom(), integer(), boolean()) :: atom()

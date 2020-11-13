@@ -67,9 +67,9 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     {:ok, %{
         i2c_ref: i2c_ref,
-        read_voltage_interval_ms: config.read_voltage_interval_ms,
-        read_current_interval_ms: config.read_current_interval_ms,
-        battery: Health.Hardware.Battery.new(config.battery_type, config.battery_channel)
+        read_voltage_interval_ms: Keyword.fetch!(config, :read_voltage_interval_ms),
+        read_current_interval_ms: Keyword.fetch!(config, :read_current_interval_ms),
+        battery: Health.Hardware.Battery.new(Keyword.fetch!(config, :battery_type), Keyword.fetch!(config, :battery_channel))
      }
     }
   end

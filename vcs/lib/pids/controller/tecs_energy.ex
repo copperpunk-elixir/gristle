@@ -3,25 +3,25 @@ defmodule Pids.Controller.TecsEnergy do
 
   @spec init(map()) :: tuple()
   def init(config) do
-    {process_variable, control_variable} = Map.get(config, :name)
+    {process_variable, control_variable} = Keyword.get(config, :name)
     {:ok, %{
         pid_module: __MODULE__,
         process_variable: process_variable,
         control_variable: control_variable,
-        ki: Map.get(config, :ki, 0),
-        kd: Map.get(config, :kd, 0),
-        ff: Map.get(config, :ff, nil),
-        altitude_kp: Map.get(config, :altitude_kp, 0),
-        time_constant: Map.get(config, :tc, 1.0),
-        energy_rate_scalar: config.energy_rate_scalar,
-        output_min: config.output_min,
-        output_max: config.output_max,
-        integrator_range_min: -Map.get(config, :integrator_range, 0),
-        integrator_range_max: Map.get(config, :integrator_range, 0),
+        ki: Keyword.get(config, :ki, 0),
+        kd: Keyword.get(config, :kd, 0),
+        ff: Keyword.get(config, :ff, nil),
+        altitude_kp: Keyword.get(config, :altitude_kp, 0),
+        time_constant: Keyword.get(config, :tc, 1.0),
+        energy_rate_scalar: Keyword.fetch!(config, :energy_rate_scalar),
+        output_min: Keyword.fetch!(config, :output_min),
+        output_max: Keyword.fetch!(config, :output_max),
+        integrator_range_min: -Keyword.get(config, :integrator_range, 0),
+        integrator_range_max: Keyword.get(config, :integrator_range, 0),
         pv_integrator: 0,
         pv_correction_prev: 0,
         speed_prev: nil,
-        output: config.output_neutral
+        output: Keyword.fetch!(config, :output_neutral)
      }}
 
   end

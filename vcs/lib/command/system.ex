@@ -10,7 +10,7 @@ defmodule Command.System do
 
   @impl Supervisor
   def init(config) do
-    children = [{Command.Commander, config.commander}]
+    children = [{Command.Commander, config[:commander]}]
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

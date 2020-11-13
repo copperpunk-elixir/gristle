@@ -14,12 +14,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     {:ok, uart_ref} = Circuits.UART.start_link()
     {:ok, %{
         uart_ref: uart_ref,
-        uart_port: config.uart_port,
-        port_options: config.port_options,
+        uart_port: Keyword.fetch!(config, :uart_port),
+        port_options: Keyword.fetch!(config, :port_options),
         ublox: Telemetry.Ublox.new(),
-        fast_loop_interval_ms: config.fast_loop_interval_ms,
-        medium_loop_interval_ms: config.medium_loop_interval_ms,
-        slow_loop_interval_ms: config.slow_loop_interval_ms,
+        fast_loop_interval_ms: Keyword.fetch!(config, :fast_loop_interval_ms),
+        medium_loop_interval_ms: Keyword.fetch!(config, :medium_loop_interval_ms),
+        slow_loop_interval_ms: Keyword.fetch!(config, :slow_loop_interval_ms),
      }}
   end
 
@@ -64,7 +64,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    Logger.debug("rx'd data: #{inspect(data)}")
+    # Logger.debug("rx'd data: #{inspect(data)}")
     ublox = parse(state.ublox, :binary.bin_to_list(data))
     {:noreply, %{state | ublox: ublox}}
   end
