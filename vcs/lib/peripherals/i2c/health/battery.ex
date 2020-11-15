@@ -30,7 +30,6 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
     Comms.System.start_operator(__MODULE__)
     {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
     read_battery_interval_ms = Keyword.fetch!(config, :read_battery_interval_ms)
-    i2c_ref = nil
     battery_module = Module.concat(Peripherals.I2c.Health.Battery, Keyword.fetch!(config, :module))
     state = %{
       i2c_ref: i2c_ref,

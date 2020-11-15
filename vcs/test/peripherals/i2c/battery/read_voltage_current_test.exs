@@ -24,7 +24,7 @@ defmodule Peripherals.I2c.Battery.ReadVoltageCurrentTest do
     Process.sleep(200)
     battery = Peripherals.I2c.Health.Battery.Operator.get_battery(battery_type, battery_channel)
     assert battery.voltage_V > 1.0
-    assert battery.current_A > 1.0
+    assert battery.current_A > 0.0
   end
 
   test "Interval read Atto90 Voltage/Current" do
