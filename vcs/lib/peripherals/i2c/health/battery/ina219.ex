@@ -8,6 +8,10 @@ defmodule Peripherals.I2c.Health.Battery.Ina219 do
   @reg_current 0x04
   @reg_calibration 0x05
 
+  @spec configure(any()) :: atom()
+  def configure(_i2c_ref) do
+  end
+
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
     # result = read_channel(i2c_ref, @reg_bus_voltage)

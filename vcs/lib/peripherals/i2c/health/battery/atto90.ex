@@ -23,6 +23,10 @@ defmodule Peripherals.I2c.Health.Battery.Atto90 do
   @channel_voltage 0
   @channel_current 1
 
+  @spec configure(any()) :: atom()
+  def configure(_i2c_ref) do
+  end
+
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
     result = read_channel(i2c_ref, @channel_voltage)

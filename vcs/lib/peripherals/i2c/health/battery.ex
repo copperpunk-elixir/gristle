@@ -37,6 +37,8 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
       battery: Health.Hardware.Battery.new(Keyword.fetch!(config, :battery_type), Keyword.fetch!(config, :battery_channel)),
       read_battery_interval_ms: read_battery_interval_ms
     }
+    #Configure sensor
+    apply(state.battery_module, :configure, [state.i2c_ref])
 
     Common.Utils.start_loop(self(), read_battery_interval_ms, :read_battery)
     {:noreply, state}

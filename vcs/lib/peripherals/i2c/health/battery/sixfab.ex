@@ -53,6 +53,10 @@ defmodule Peripherals.I2c.Health.Battery.Sixfab do
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
   }
 
+  @spec configure(any()) :: atom()
+  def configure(_i2c_ref) do
+  end
+
   @spec read_voltage(any()) :: float()
   def read_voltage(i2c_ref) do
     command_msg = create_get_command(:get_battery_voltage)
