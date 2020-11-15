@@ -7,37 +7,48 @@ defmodule Configuration.Module.Peripherals.I2c do
     Enum.reduce(peripherals, [], fn (peripheral, acc) ->
       device_and_metadata = String.split(peripheral, "_")
       device = Enum.at(device_and_metadata,0)
+      metadata = Enum.at(device_and_metadata,1)
       {module_key, module_config} =
         case device do
           "Ina260" ->
-            metadata = Enum.at(device_and_metadata,1)
-            [type, channel] = String.split(metadata,"-")
-            channel = String.to_integer(channel)
-            {Health.Ina260, get_ina260_config(type, channel)}
+            {module, type, channel} = get_battery_module_type_channel(device, metadata)
+            {Health.Battery, get_battery_config(module, type, channel)}
           "Ina219" ->
-            metadata = Enum.at(device_and_metadata,1)
-            [type, channel] = String.split(metadata,"-")
-            channel = String.to_integer(channel)
-            {Health.Ina219, get_ina219_config(type, channel)}
+            {module, type, channel} = get_battery_module_type_channel(device, metadata)
+            {Health.Battery, get_battery_config(module, type, channel)}
           "Sixfab" ->
-            metadata = Enum.at(device_and_metadata,1)
-            [type, channel] = String.split(metadata,"-")
-            channel = String.to_integer(channel)
-            {Health.Sixfab, get_sixfab_config(type, channel)}
-          "Ads1015-45" ->
-            metadata = Enum.at(device_and_metadata,1)
-            [type, channel] = String.split(metadata,"-")
-            channel = String.to_integer(channel)
-            {Health.Ads1015, get_ads1015_config(type, channel, 45)}
-          "Ads1015-90" ->
-            metadata = Enum.at(device_and_metadata,1)
-            [type, channel] = String.split(metadata,"-")
-            channel = String.to_integer(channel)
-            {Health.Ads1015, get_ads1015_config(type, channel, 90)}
+            {module, type, channel} = get_battery_module_type_channel(device, metadata)
+            {Health.Battery, get_battery_config(module, type, channel)}
+          "Atto90" ->
+            {module, type, channel} = get_battery_module_type_channel(device, metadata)
+            {Health.Battery, get_battery_config(module, type, channel)}
 
         end
       Keyword.put(acc, module_key, module_config)
     end)
+  end
+
+  @spec get_battery_module_type_channel(binary(), binary()) :: tuple()
+  def get_battery_module_type_channel(device, metadata) do
+    module = String.to_existing_atom(device)
+    [type, channel] = String.split(metadata,"-")
+    channel = String.to_integer(channel)
+    {module, type, channel}
+  end
+
+  @spec get_battery_config(binary(), binary(), integer()) :: list()
+  def get_battery_config(module, battery_type, battery_channel) do
+    read_battery_interval_ms =
+      case battery_type do
+        "cluster" -> 1000
+        "motor" -> 1000
+      end
+    [
+      module: module,
+      battery_type: battery_type,
+      battery_channel: battery_channel,
+      read_battery_interval_ms: read_battery_interval_ms
+    ]
   end
 
   @spec get_ina260_config(binary(), integer()) :: map()

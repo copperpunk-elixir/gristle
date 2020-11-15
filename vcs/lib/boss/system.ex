@@ -117,7 +117,11 @@ defmodule Boss.System do
       "Plane",
       "Cessna",
       "T28",
-      "T28Z2m"
+      "T28Z2m",
+      "Ina260",
+      "Ina219",
+      "Sixfab",
+      "Atto90"
     ]
     Enum.each(atoms_as_strings, fn x ->
       String.to_atom(x)
