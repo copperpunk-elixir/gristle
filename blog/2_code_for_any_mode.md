@@ -1,5 +1,5 @@
 # 2. Code for any Mode
-From the start, this autopilot was designed to use multiple nodes operating on a local network. And with that premise in mind, I introduce you to Segal's law (not to be confused with Steven Seagal's [*Above the Law*](https://youtu.be/BsbYE-Q474I)).<div align=center><img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a1/Abovethelaw.jpg/220px-Abovethelaw.jpg"></div><br>
+From the start, this autopilot was designed to use multiple nodes operating on a local network. And with that premise in mind, I introduce you to Segal's law (not to be confused with Steven Seagal's [*Above the Law*](https://youtu.be/BsbYE-Q474I)).<div align=center><img src="https://upload.wikimedia.org/wikipedia/en/thumb/a/a1/Abovethelaw.jpg/220px-Abovethelaw.jpg"><sub>[1](https://upload.wikimedia.org/wikipedia/en/a/a1/Abovethelaw.jpg)</sub></div><br>
 ## "A person with a watch knows what time is it. A person with two watches is never sure."
 
 And here lies perhaps the biggest issue when it comes to multiple devices working together: 
@@ -13,7 +13,7 @@ Okay, back to the crashing. The ultimate means by which the autopilot achieves i
 * If the primary signal is present and valid, use it.
 * Otherwise, use the secondary signal.<br>
 
-There is no voting or averaging or ladder matches for the WWF Intercontinental Championship. If the `Process` is alive and capable of sending a signal, we trust that it is a good signal. In other words: If I fits, I sits.<div align="center"><img src="../blog/gifs/if_i_fits.gif"></div>
+There is no voting or averaging or ladder matches for the WWF Intercontinental Championship. If the `Process` is alive and capable of sending a signal, we trust that it is a good signal. In other words: If I fits, I sits.<div align="center"><img src="../blog/gifs/if_i_fits.gif"><sub>[2](http://purrtacular.com/wp-content/uploads/2017/08/If-It-Fits-I-Sits-16.gif)</sub></div>
 This decision has a very nice byproduct: The code on every device can be identical. Sorry, let me repeat that for those in the back.<br>
 ## **The code on every device can be identical.**<br>
 If the signal routing is being done by an external piece of hardware, then each node can behave as though it were the only node. Of course, the tasks it must perform will be determined by the peripherals to which it is connected, but we will see how that works later. For now, we can take for granted the fact that our code will not be riddled with `if/else` or `switch` statements (or the Elixir equivalent of these) to deal with every possible type of node. This makes it so much easier to build a network. The only thing a node needs to know is where it fits in the system, i.e., what hardware is it connected to. This will define its responsibilities.<br><br>
