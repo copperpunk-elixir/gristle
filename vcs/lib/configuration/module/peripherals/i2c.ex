@@ -23,7 +23,8 @@ defmodule Configuration.Module.Peripherals.I2c do
           "Atto90" ->
             {module, type, channel} = get_battery_module_type_channel(device, metadata)
             {Health.Battery, get_battery_config(module, type, channel)}
-
+          "TerarangerEvo" ->
+            {Estimation.TerarangerEvo, get_teraranger_config()}
         end
       acc ++ Keyword.put([], module_key, module_config)
     end)
@@ -52,54 +53,11 @@ defmodule Configuration.Module.Peripherals.I2c do
     ]
   end
 
-  @spec get_ina260_config(binary(), integer()) :: map()
-  def get_ina260_config(battery_type, channel) do
-    %{
-      battery_type: battery_type,
-      battery_channel: channel,
-      read_voltage_interval_ms: 1000,
-      read_current_interval_ms: 1000
-    }
-  end
-
-  @spec get_ina219_config(atom(), integer()) :: map()
-  def get_ina219_config(battery_type, channel) do
-    %{
-      battery_type: battery_type,
-      battery_channel: channel,
-      read_voltage_interval_ms: 1000,
-      read_current_interval_ms: 1000
-    }
-  end
-
-  @spec get_sixfab_config(atom(), integer()) :: map()
-  def get_sixfab_config(battery_type, channel) do
-    %{
-      battery_type: battery_type,
-      battery_channel: channel,
-      read_voltage_interval_ms: 1000,
-      read_current_interval_ms: 1000
-    }
-  end
-
-  @spec get_ads1015_config(atom(), integer(), integer()) :: map()
-  def get_ads1015_config(battery_type, channel, version) do
-    {voltage_mult, current_mult} =
-      case version do
-        180 -> {1.0/63.69, 1.0/18.3}
-        90 -> {1.0/63.69, 1.0/36.6}
-        45 -> {1.0/242.3, 1.0/73.2}
-        _other -> raise "Incorrect Voltage/Current measurement settings for Ads1015"
-      end
-    Logger.debug("Ads1015 version: #{version}")
-    Logger.debug("V/I mults: #{voltage_mult}/#{current_mult}")
-    %{
-      battery_type: battery_type,
-      battery_channel: channel,
-      read_battery_interval_ms: 1000,
-      voltage_mult: voltage_mult,
-      current_mult: current_mult
-    }
+  @spec get_teraranger_config() :: list()
+  def get_teraranger_config() do
+    [
+      read_range_interval_ms: 100
+    ]
   end
 
 end
