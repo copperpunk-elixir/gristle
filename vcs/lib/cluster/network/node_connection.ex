@@ -27,7 +27,7 @@ defmodule Cluster.Network.NodeConnection do
   end
 
   @spec process_udp_message(any(), tuple(), integer(), binary(), tuple(), integer()) :: binary()
-  def process_udp_message(socket, src_ip, src_port, msg, dest_ip, dest_port) do
+  def process_udp_message(_socket, src_ip, src_port, msg, dest_ip, dest_port) do
     # Logger.debug("msg rx with socket #{inspect(socket)} from #{inspect(src_ip)} on port #{src_port}: #{msg}")
     msg = to_string(msg)
     if (String.contains?(msg,":")) do

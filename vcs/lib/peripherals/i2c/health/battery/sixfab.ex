@@ -1,17 +1,15 @@
-defmodule Peripherals.I2c.Health.Sixfab.Operator do
+defmodule Peripherals.I2c.Health.Battery.Sixfab do
   use Bitwise
-  use GenServer
   require Logger
 
-  @i2c_bus "i2c-1"
   @device_address 0x41
 
   @start_byte_received 0xDC
   @start_byte_sent 0xCD
   @protocol_header_size 5
   @protocol_frame_size 7
-  @command_size_for_uint8 8
-  @command_size_for_uint16 9
+  # @command_size_for_uint8 8
+  # @command_size_for_uint16 9
   @command_size_for_int32 11
 
 
@@ -55,118 +53,8 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
   }
 
-  def start_link(config) do
-    Logger.info("Start I2c.Health.Sixfab.Operator GenServer")
-    {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, config, __MODULE__)
-    GenServer.cast(__MODULE__, :begin)
-    {:ok, pid}
-  end
-
-  @impl GenServer
-  def init(config) do
-    {:ok, i2c_ref} = Circuits.I2C.open(@i2c_bus)
-    {:ok, %{
-        i2c_ref: i2c_ref,
-        read_voltage_interval_ms: Keyword.fetch!(config, :read_voltage_interval_ms),
-        read_current_interval_ms: Keyword.fetch!(config, :read_current_interval_ms),
-        battery: Health.Hardware.Battery.new(Keyword.fetch!(config, :battery_type), Keyword.fetch!(config, :battery_channel))
-     }
-    }
-  end
-
-  @impl GenServer
-  def terminate(reason, state) do
-    Logging.Logger.log_terminate(reason, state, __MODULE__)
-    state
-  end
-
-  @impl GenServer
-  def handle_cast(:begin, state) do
-    Comms.System.start_operator(__MODULE__)
-    Logger.debug("Sixfab begin with process: #{inspect(self())}")
-    Process.sleep(100)
-    Common.Utils.start_loop(self(), state.read_voltage_interval_ms, :read_voltage)
-    Process.sleep(50)
-    Common.Utils.start_loop(self(), state.read_current_interval_ms, :read_current)
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast({:set_parameter, parameter, value}, state) do
-    num_bytes =
-      case parameter do
-        :fan_mode -> 1
-        :fan_speed -> 4
-        :fan_automation -> 2
-      end
-    set_fan_parameter(state.i2c_ref, parameter, value, num_bytes)
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast({:get_parameter, parameter}, state) do
-    num_bytes =
-      case parameter do
-        :fan_mode -> 1
-        :fan_speed -> 4
-        :fan_health -> 4
-        :fan_automation -> 2
-      end
-    result = get_fan_parameter(state.i2c_ref, parameter, num_bytes)
-    Logger.debug("#{parameter} value: #{inspect(result)}")
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_info(:read_voltage, state) do
-    voltage = read_voltage(state.i2c_ref)
-    # Logger.debug("voltage: #{voltage}")
-    battery = if is_nil(voltage), do: state.battery, else: Health.Hardware.Battery.update_voltage(state.battery, voltage)
-    send_battery_status(battery)
-    {:noreply, %{state | battery: battery}}
-  end
-
-  @impl GenServer
-  def handle_info(:read_current, state) do
-    current = read_current(state.i2c_ref)
-    # Logger.info("current: #{current}")
-    battery =
-      cond do
-      is_nil(current) -> state.battery
-      current < 0 ->
-        # Battery is discharging
-        Health.Hardware.Battery.update_current(state.battery, -current, state.read_current_interval_ms*0.001)
-      true ->
-        # Battery is charging
-        Health.Hardware.Battery.update_current(state.battery, -current, state.read_current_interval_ms*0.001)
-    end
-    {:noreply, %{state | battery: battery}}
-  end
-
-  @impl GenServer
-  def handle_call({:get_battery_value, key}, _from, state) do
-    value = Health.Hardware.Battery.get_value(state.battery, key)
-    {:reply, value, state}
-  end
-
-  @spec send_battery_status(struct()) :: atom()
-  def send_battery_status(battery) do
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {:battery_status, battery}, self())
-  end
-
-  @spec get_voltage() :: float()
-  def get_voltage() do
-    Common.Utils.safe_call(__MODULE__, {:get_battery_value, :voltage}, 200, -1)
-  end
-
-  @spec get_current() :: float()
-  def get_current() do
-    Common.Utils.safe_call(__MODULE__, {:get_battery_value, :current}, 200, -1)
-  end
-
-  @spec get_energy_discharged() :: float()
-  def get_energy_discharged() do
-    Common.Utils.safe_call(__MODULE__, {:get_battery_value, :energy_discharged}, 200, -1)
+  @spec configure(any()) :: atom()
+  def configure(_i2c_ref) do
   end
 
   @spec read_voltage(any()) :: float()
@@ -193,84 +81,11 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
       current_unsigned = process_response(response, 4, 1)
       # Convert to signed integer
       <<current_signed::signed-integer-32>> = <<current_unsigned::32>>
-      current_signed*0.001
-    else
-       nil
-    end
-  end
-
-  @spec get_fan_parameter(any(), atom(), integer()) :: integer()
-  def get_fan_parameter(i2c_ref, command, num_bytes) do
-    command_msg = create_get_command(command)
-    send_command(i2c_ref, command_msg)
-    Process.sleep(@default_response_delay)
-    response = receive_command_response(i2c_ref, get_command_size_for_bytes(num_bytes))
-    unless is_nil(response) do
-      Logger.info("fan response: #{inspect(response)}")
-      process_response(response, num_bytes, 1)
+    current_signed*0.001
     else
       nil
     end
   end
-
-  @spec set_fan_parameter(any(), atom(), any(), integer()) :: atom()
-  def set_fan_parameter(i2c_ref, command, value, num_bytes) do
-    command_msg = create_set_command(command, value, num_bytes)
-    send_command(i2c_ref, command_msg)
-    Process.sleep(@default_response_delay)
-    response = receive_command_response(i2c_ref, get_command_size_for_bytes(num_bytes))
-    Logger.debug("set_fan response: #{inspect(response)}")
-    unless is_nil(response) do
-      status = process_response(response,num_bytes,1)
-      Logger.debug("set_fan status: #{inspect(status)}")
-    end
-  end
-
-  @spec request_read(integer()) :: atom()
-  def request_read(channel)  do
-    GenServer.cast(__MODULE__, {:read_channel, channel})
-  end
-
-  @spec turn_fan_on() :: atom()
-  def turn_fan_on do
-    GenServer.cast(__MODULE__, {:set_parameter, :fan_mode, 1})
-  end
-
-  @spec turn_fan_off() :: atom()
-  def turn_fan_off do
-    GenServer.cast(__MODULE__, {:set_parameter, :fan_mode, 2})
-  end
-
-  @spec set_fan_automation(list()) :: atom()
-  def set_fan_automation([slow_threshold, fast_threshold]) do
-    GenServer.cast(__MODULE__, {:set_parameter, :fan_automation, [slow_threshold, fast_threshold]})
-  end
-
-  @spec set_fan_speed(integer()) :: atom()
-  def set_fan_speed(rpm) do
-    GenServer.cast(__MODULE__, {:set_parameter, :fan_speed, rpm})
-  end
-
-  @spec get_fan_mode() :: atom()
-  def get_fan_mode() do
-    GenServer.cast(__MODULE__, {:get_parameter, :fan_mode})
-  end
-
-  @spec get_fan_speed() :: atom()
-  def get_fan_speed() do
-    GenServer.cast(__MODULE__, {:get_parameter, :fan_speed})
-  end
-
-  @spec get_fan_health() :: atom()
-  def get_fan_health() do
-    GenServer.cast(__MODULE__, {:get_parameter, :fan_health})
-  end
-
-  @spec get_fan_automation() :: atom()
-  def get_fan_automation() do
-    GenServer.cast(__MODULE__, {:get_parameter, :fan_automation})
-  end
-
 
   @spec create_get_command(atom()) :: list()
   def create_get_command(command) do
@@ -314,7 +129,6 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
     <<msb, lsb>> = <<checksum::16>>
     msg ++ [msb, lsb]
   end
-
 
   @spec send_command(any(), list()) :: atom()
   def send_command(i2c_ref, msg) do
@@ -420,11 +234,5 @@ defmodule Peripherals.I2c.Health.Sixfab.Operator do
   @spec get_command_size_for_bytes(integer()) :: integer()
   def get_command_size_for_bytes(num_bytes) do
     @protocol_frame_size + num_bytes
-    # case num_bytes do
-    #   1 -> @command_size_for_uint8
-    #   2 -> @command_
-    #   4 -> @command_size_for_int32
-    # end
   end
-
 end

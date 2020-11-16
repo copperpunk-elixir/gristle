@@ -84,7 +84,7 @@ defmodule Pids.Pid do
     GenServer.call(via_tuple(process_variable, control_variable), {:get_output, weight})
   end
 
-  @spec via_tuple(atom(), atom()) :: tuple()
+  @spec via_tuple(binary(), binary()) :: tuple()
   def via_tuple(process_variable, control_variable) do
     Comms.ProcessRegistry.via_tuple(__MODULE__,{process_variable, control_variable})
   end

@@ -65,10 +65,10 @@ defmodule Health.Hardware.Battery do
 
   @spec battery_type_structure() :: list()
   def battery_type_structure() do
-    [
-      cluster: 0,
-      motor: 1
-    ]
+    %{
+      "cluster" => 0,
+      "motor" => 1
+    }
   end
 
 end

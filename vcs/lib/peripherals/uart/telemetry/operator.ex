@@ -22,7 +22,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:begin, config}, state) do
+  def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
 
     {:ok, uart_ref} = Circuits.UART.start_link()
@@ -274,7 +274,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, iTOW})
           0x04 ->
-            msg_type = :save_log_proto
+            # msg_type = :save_log_proto
             Logger.debug("save log proto received")
             save_log_pb = Display.Scenic.Gcs.Protobuf.SaveLog.decode(:binary.list_to_bin(payload))
             filename =  save_log_pb.filename
