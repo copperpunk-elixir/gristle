@@ -40,7 +40,7 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
     #Configure sensor
     apply(state.battery_module, :configure, [state.i2c_ref])
 
-    Common.Utils.start_loop(self(), read_battery_interval_ms, :read_battery)
+    Common.Utils.start_loop(self(), read_battery_interval_ms, :read_battery_loop)
     {:noreply, state}
   end
 
@@ -59,7 +59,7 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
   end
 
   @impl GenServer
-  def handle_info(:read_battery, state) do
+  def handle_info(:read_battery_loop, state) do
     # Logger.debug("read battery")
     battery = update_battery_voltage(state.i2c_ref, state.battery_module, state.battery)
     Process.sleep(20)
