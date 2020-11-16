@@ -19,7 +19,7 @@ defmodule Peripherals.I2c.Health.Battery.Ina260 do
     result = read_channel(i2c_ref, @reg_voltage)
     case result do
       {:ok, voltage} ->
-        Logger.debug("Ina260 voltage: #{voltage}")
+        # Logger.debug("Ina260 voltage: #{voltage}")
         voltage
       other ->
         Logger.error("Ina260 Voltage read error: #{inspect(other)}")
@@ -32,7 +32,7 @@ defmodule Peripherals.I2c.Health.Battery.Ina260 do
     result = read_channel(i2c_ref, @reg_current)
     case result do
       {:ok, current} ->
-        Logger.debug("Ina260 current: #{current}")
+        # Logger.debug("Ina260 current: #{current}")
         current
       other ->
         Logger.error("Ina260 Current read error: #{inspect(other)}")
@@ -48,7 +48,6 @@ defmodule Peripherals.I2c.Health.Battery.Ina260 do
         {:error, :bad_ack}
       else
         <<msb, lsb>> = result
-        Logger.info("result: #{inspect(result)}")
         output = ((msb<<<8) + lsb)*0.00125
         {:ok, output}
       end

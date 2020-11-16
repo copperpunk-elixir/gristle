@@ -63,12 +63,12 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
 
 
-    batteries = [:cluster, :motor]
+    batteries = ["cluster", "motor"]
     {graph, _offset_x, _offset_y} =
       Enum.reduce(batteries, {graph, goals_offset_x, offset_y}, fn (battery, {graph, off_x, off_y}) ->
         ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]
-        battery_str = Atom.to_string(battery)
-        labels = [battery_str <> " V", battery_str <> " I", battery_str <> " mAh"]
+        # battery_str = Atom.to_string(battery)
+        labels = [battery <> " V", battery <> " I", battery <> " mAh"]
         Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, spacer_y: spacer_y, labels: labels, ids: ids, font_size: @battery_font_size})
       end)
 
@@ -186,7 +186,7 @@ defmodule Display.Scenic.Gcs.Plane do
     current = Common.Utils.eftb(current_A, 2)
     mAh = Common.Utils.eftb(energy_mAh, 0)
     {battery_type, _battery_channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
-    # Logger.debug("tx battery type: #{battery_type}")
+    Logger.debug("tx battery type: #{battery_type}")
     graph =
       state.graph
       |> Scenic.Graph.modify({battery_type, :V}, &text(&1,voltage <> "V"))

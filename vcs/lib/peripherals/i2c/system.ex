@@ -14,8 +14,7 @@ defmodule Peripherals.I2c.System do
       module = Module.concat(Peripherals.I2c, single_module)
       |> Module.concat(Operator)
       Logger.debug("module: #{module}")
-      # Logger.info("config: #{inspect(single_config)}")
-      acc ++ [{module, single_config}]
+      acc ++ [Supervisor.child_spec({module, single_config}, id: Module.concat(module, single_config[:module]))]
     end)
     Supervisor.init(children, strategy: :one_for_one)
   end

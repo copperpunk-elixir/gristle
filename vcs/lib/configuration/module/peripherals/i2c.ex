@@ -5,6 +5,7 @@ defmodule Configuration.Module.Peripherals.I2c do
     peripherals = Common.Utils.Configuration.get_i2c_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
     Enum.reduce(peripherals, [], fn (peripheral, acc) ->
+      Logger.debug("peripheral: #{inspect(peripheral)}")
       device_and_metadata = String.split(peripheral, "_")
       device = Enum.at(device_and_metadata,0)
       metadata = Enum.at(device_and_metadata,1)
@@ -24,7 +25,7 @@ defmodule Configuration.Module.Peripherals.I2c do
             {Health.Battery, get_battery_config(module, type, channel)}
 
         end
-      Keyword.put(acc, module_key, module_config)
+      acc ++ Keyword.put([], module_key, module_config)
     end)
   end
 

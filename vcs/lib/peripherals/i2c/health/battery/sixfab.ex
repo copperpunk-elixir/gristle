@@ -8,8 +8,8 @@ defmodule Peripherals.I2c.Health.Battery.Sixfab do
   @start_byte_sent 0xCD
   @protocol_header_size 5
   @protocol_frame_size 7
-  @command_size_for_uint8 8
-  @command_size_for_uint16 9
+  # @command_size_for_uint8 8
+  # @command_size_for_uint16 9
   @command_size_for_int32 11
 
 

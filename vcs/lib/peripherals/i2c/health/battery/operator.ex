@@ -6,7 +6,7 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
   @i2c_bus "i2c-1"
 
   def start_link(config) do
-    Logger.info("Start I2c.Health.Ads1015.Operator GenServer")
+    Logger.info("Start I2c.Health.Battery.Operator GenServer")
     name = via_tuple(Keyword.fetch!(config, :battery_type), Keyword.fetch!(config, :battery_channel))
     Logger.debug("name: #{inspect(name)}")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, name)
@@ -60,7 +60,7 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
 
   @impl GenServer
   def handle_info(:read_battery, state) do
-    Logger.debug("read battery")
+    # Logger.debug("read battery")
     battery = update_battery_voltage(state.i2c_ref, state.battery_module, state.battery)
     Process.sleep(20)
     battery = update_battery_current(state.i2c_ref, state.battery_module, state.read_battery_interval_ms, battery)
