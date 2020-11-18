@@ -97,13 +97,16 @@ defmodule MessageSorter.Sorter do
       Logger.debug("Send #{inspect(value)}/#{status} to #{inspect(dest)}")
       GenServer.cast(dest, {:message_sorter_value, name, value, status})
     end)
-    {:noreply, state}
+    {:noreply, %{state | publish_looper: publish_looper}}
   end
 
   @impl GenServer
   def handle_info(:update_subscriber_loop, state) do
     Logger.debug("update sub loop!")
-    {:noreply, state}
+    subs = Registry.lookup(registry(), state.name)
+    Logger.info("subs: #{inspect(subs)}")
+    publish_looper = Common.DiscreteLooper.update_all_members(state.publish_looper, subs)
+    {:noreply, %{state | publish_looper: publish_looper}}
   end
 
   @impl GenServer
@@ -236,5 +239,9 @@ defmodule MessageSorter.Sorter do
       :atom -> is_atom(value)
       _other -> false
     end
+  end
+
+  def registry() do
+    MessageSorterRegistry
   end
 end

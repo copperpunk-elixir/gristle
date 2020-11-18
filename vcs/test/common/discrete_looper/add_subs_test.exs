@@ -6,8 +6,8 @@ defmodule Common.DiscreteLooper.AddSubsTest do
   setup do
     RingLogger.attach()
     Boss.System.common_prepare()
-    registry = :msg_sorter
-    Common.Utils.start_link_redundant(Registry, Registry, [keys: :duplicate, name: :msg_sorter])
+    registry = MessageSorterRegistry
+    Common.Utils.start_link_redundant(Registry, Registry, [keys: :duplicate, name: registry])
     {:ok, [registry: registry]}
   end
 

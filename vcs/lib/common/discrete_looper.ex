@@ -25,13 +25,25 @@ defmodule Common.DiscreteLooper do
   end
 
   @spec add_member_to_members(map(), any(), integer(), integer()) :: struct()
-  def add_member_to_members(members, pid, interval_ms, looper_interval_ms) do
-    if valid_interval?(interval_ms, looper_interval_ms) do
-      Logger.info("add #{inspect(pid)} to #{interval_ms} member list")
-      interval_members = [pid] ++ Map.get(members, interval_ms, [])
-      Map.put(members, interval_ms, interval_members)
+  def add_member_to_members(members, pid, new_interval_ms, looper_interval_ms) do
+    if valid_interval?(new_interval_ms, looper_interval_ms) do
+      Logger.info("add #{inspect(pid)} to #{new_interval_ms} member list")
+      Logger.info("members: #{inspect(members)}")
+      Logger.debug("looper_interval: #{looper_interval_ms}")
+      num_intervals = round(1000/looper_interval_ms)
+      Logger.info("num_ints: #{num_intervals}")
+      Enum.reduce(1..num_intervals, members, fn (mult, members_acc) ->
+        single_interval_ms = mult*looper_interval_ms
+        pids =
+        if rem(single_interval_ms, new_interval_ms) == 0 do
+          [pid] ++ Map.get(members, single_interval_ms, [])
+        else
+          Map.get(members, single_interval_ms, [])
+        end
+        if Enum.empty?(pids), do: members_acc, else: Map.put(members_acc, single_interval_ms, pids)
+      end)
     else
-      Logger.warn("Interval #{interval_ms} is invalid")
+      Logger.warn("Interval #{new_interval_ms} is invalid")
       members
     end
   end
@@ -78,7 +90,7 @@ defmodule Common.DiscreteLooper do
   @spec get_all_members_flat(struct()) :: list()
   def get_all_members_flat(looper) do
     Enum.reduce(looper.members, [], fn ({_interval, pid_list}, acc) ->
-    pid_list ++ acc
+      Enum.uniq(pid_list ++ acc)
     end)
   end
 
