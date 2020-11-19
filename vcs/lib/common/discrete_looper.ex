@@ -27,11 +27,11 @@ defmodule Common.DiscreteLooper do
   @spec add_member_to_members(map(), any(), integer(), integer()) :: struct()
   def add_member_to_members(members, pid, new_interval_ms, looper_interval_ms) do
     if valid_interval?(new_interval_ms, looper_interval_ms) do
-      Logger.info("add #{inspect(pid)} to #{new_interval_ms} member list")
-      Logger.info("members: #{inspect(members)}")
-      Logger.debug("looper_interval: #{looper_interval_ms}")
+      # Logger.info("add #{inspect(pid)} to #{new_interval_ms} member list")
+      # Logger.info("members: #{inspect(members)}")
+      # Logger.debug("looper_interval: #{looper_interval_ms}")
       num_intervals = round(1000/looper_interval_ms)
-      Logger.info("num_ints: #{num_intervals}")
+      # Logger.info("num_ints: #{num_intervals}")
       Enum.reduce(1..num_intervals, members, fn (mult, members_acc) ->
         single_interval_ms = mult*looper_interval_ms
         pids =
@@ -66,7 +66,7 @@ defmodule Common.DiscreteLooper do
     members = Enum.reduce(member_interval_list, %{}, fn ({pid, interval_ms}, acc) ->
       add_member_to_members(acc, pid, interval_ms, looper_interval_ms)
     end)
-    Logger.debug("updated all members: #{inspect(members)}")
+    # Logger.debug("updated all members: #{inspect(members)}")
     %{looper | members: members}
   end
 

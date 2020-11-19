@@ -6,7 +6,7 @@ defmodule Configuration.Generic do
     case loop_type do
       :super_fast -> 5
       :fast -> 20
-      :medium -> 100
+      :medium -> 50
       :slow -> 200
       :extra_slow -> 1000
     end

@@ -18,19 +18,22 @@ defmodule Configuration.Vehicle.Plane.Control do
         name: {:pv_cmds, 1},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
-        value_type: :map
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],
       [
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, roll: 0.175, pitch: 0.05, yaw: 0.09},
-        value_type: :map
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],
       [
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
         default_value: %{course_flight: 0, speed: 0, altitude: 0},
-        value_type: :map
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ]
     ]
   end
@@ -41,7 +44,8 @@ defmodule Configuration.Vehicle.Plane.Control do
       name: :control_state,
       default_message_behavior: :default_value,
       default_value: 2,
-      value_type: :number
+      value_type: :number,
+      publish_interval_ms: 100
     ]
   end
 
