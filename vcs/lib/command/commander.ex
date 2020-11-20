@@ -42,7 +42,7 @@ defmodule Command.Commander do
       direct_cmds_time_ms: direct_cmds_time_ms,
       indirect_override_cmds_class: indirect_override_class,
       indirect_override_cmds_time_ms: indirect_override_time_ms,
-      control_state: -1,
+      control_state: 1,
       pilot_control_mode: -1,
       reference_cmds: %{},
       pv_values: %{},
@@ -88,11 +88,9 @@ defmodule Command.Commander do
     {reference_cmds, control_state} =
     if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
-        control_state_float < -0.95 -> 0
-        control_state_float > -0.80 and control_state_float < -0.70 -> 1
-        control_state_float > 0.20 and control_state_float < 0.30 -> 2
-        control_state_float > 0.95 -> 3
-        true -> -1
+        control_state_float > 0.5 -> 3
+        control_state_float > -0.5 -> 2
+        true -> 1
       end
       reference_cmds =
       if (control_state != state.control_state) or (pilot_control_mode != state.pilot_control_mode) do
@@ -126,7 +124,6 @@ defmodule Command.Commander do
         # If under manual control, tell all nodes to retain control
         # If a node's Actuation process is dead, it will not receive this, and thus it will be
         # under Guardian control anyway
-        # Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_select_class, state.direct_select_time_ms, %{select: Actuation.SwInterface.self_control_value()}}, self())
       # else
         Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_class, state.goals_time_ms, indirect_cmds}, self())
       end

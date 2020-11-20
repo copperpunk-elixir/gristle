@@ -29,7 +29,7 @@ defmodule Configuration.Module.MessageSorter do
       [
         name: {:hb, :node},
         default_message_behavior: :default_value,
-        default_value: :nil,
+        default_value: nil,
         value_type: :map
       ],
       [

@@ -88,7 +88,7 @@ defmodule Cluster.Heartbeat do
 
   @spec unpack_heartbeats(map()) :: map()
   def unpack_heartbeats(self_hb) do
-    node_messages = MessageSorter.Sorter.get_all_messages(@node_sorter)
+    node_messages = MessageSorter.Sorter.get_all_messages(@node_sorter, 100)
     |> Kernel.++([%{value: self_hb}])
     Enum.reduce(node_messages, %{}, fn (node_msg, acc) ->
       hb = node_msg.value

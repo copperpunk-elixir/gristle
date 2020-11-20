@@ -24,13 +24,18 @@ defmodule Control.Controller do
   def handle_cast({:begin, config}, _state) do
     state = %{
       pv_cmds: %{},
+      pv_cmds_store: %{},
       control_state: -1,
       airspeed: 0,
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Common.Utils.start_loop(self(), Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms), :control_loop)
+    Registry.register(MessageSorterRegistry, :control_state, 200)
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 1}, Configuration.Generic.get_loop_interval_ms(:medium))
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 2}, Configuration.Generic.get_loop_interval_ms(:medium))
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 3}, Configuration.Generic.get_loop_interval_ms(:medium))
+    # Common.Utils.start_loop(self(), Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms), :control_loop)
     {:noreply, state}
   end
 
@@ -43,8 +48,6 @@ defmodule Control.Controller do
         3 -> {{:pv_cmds_values, 2}, state.pv_cmds}
         2 -> {{:pv_cmds_values, 2}, state.pv_cmds}
         1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
-        0 -> {{:pv_cmds_values, 1}, state.pv_cmds}
-        -1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
         _other -> {nil, nil}
       end
     pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
@@ -66,27 +69,21 @@ defmodule Control.Controller do
     {:noreply, %{state | airspeed: airspeed}}
   end
 
+  @impl GenServer
+  def handle_cast({:message_sorter_value, :control_state, control_state, status}, state) do
+    {:noreply, %{state | control_state: control_state}}
+  end
 
   @impl GenServer
-  def handle_info(:control_loop, state) do
-    # Logger.debug("Control loop. CS: #{state.control_state}")
-    # For every PV, get the corresponding command
-    control_state = MessageSorter.Sorter.get_value(:control_state)
-    pv_cmds = retrieve_pv_cmds_from_1_to_control_state(control_state)
-    # Get Direct Cmds
-    {:noreply, %{state | pv_cmds: pv_cmds, control_state: control_state}}
+  def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
+    pv_cmds_store = Map.put(state.pv_cmds_store, level, pv_cmds)
+    pv_cmds_all = retrieve_pv_cmds_from_1_to_control_state(state.control_state, pv_cmds_store)
+    {:noreply, %{state | pv_cmds_store: pv_cmds_store, pv_cmds: pv_cmds_all}}
   end
 
-  def get_pv_cmd(pv_name) do
-    Enum.reduce(1..3, nil, fn (level, acc) ->
-      cmds = MessageSorter.Sorter.get_value({:pv_cmds, level})
-      Map.get(cmds, pv_name, acc)
-    end)
-  end
-
-  def retrieve_pv_cmds_from_1_to_control_state(control_state) do
+  def retrieve_pv_cmds_from_1_to_control_state(control_state, pv_cmds_store) do
     Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
-      Map.merge(acc, MessageSorter.Sorter.get_value({:pv_cmds, level}))
+      Map.merge(acc, Map.get(pv_cmds_store, level, %{}))
     end)
   end
 end

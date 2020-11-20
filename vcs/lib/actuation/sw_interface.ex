@@ -25,12 +25,22 @@ defmodule Actuation.SwInterface do
      state = %{
        actuators: Keyword.get(config, :actuators),
        output_modules: Keyword.fetch!(config, :output_modules),
+       direct_actuator_cmds: %{},
+       indirect_actuator_cmds: %{},
+       indirect_override_actuator_cmds: %{}
      }
      Comms.System.start_operator(__MODULE__)
      Comms.Operator.join_group(__MODULE__, :direct_actuator_cmds_sorter, self())
      Comms.Operator.join_group(__MODULE__, :indirect_override_cmds_sorter, self())
-     # Comms.Operator.join_group(__MODULE__, :actuation_selector_sorter, self())
-     Common.Utils.start_loop(self(), Keyword.fetch!(config, :actuator_loop_interval_ms), :actuator_loop)
+
+     actuator_loop_interval_ms = Keyword.fetch!(config, :actuator_loop_interval_ms)
+     Enum.each(state.actuators.direct, fn {actuator_name, _actuator} ->
+       Registry.register(MessageSorterRegistry, {:direct_actuator_cmds, actuator_name}, actuator_loop_interval_ms)
+     end)
+     Registry.register(MessageSorterRegistry, :indirect_actuator_cmds, actuator_loop_interval_ms)
+     Registry.register(MessageSorterRegistry, :indirect_override_actuator_cmds, actuator_loop_interval_ms)
+
+     Common.Utils.start_loop(self(), actuator_loop_interval_ms, :actuator_loop)
      {:noreply, state}
   end
 
@@ -46,39 +56,38 @@ defmodule Actuation.SwInterface do
 
   @impl GenServer
   def handle_cast({:indirect_override_cmds_sorter, classification, time_validity_ms, cmds}, state) do
-    # Logger.debug("indirect override: #{inspect(cmds)}")
+    # Logger.info("indirect override sorter: #{inspect(cmds)}")
     MessageSorter.Sorter.add_message(:indirect_override_actuator_cmds, classification, time_validity_ms, cmds)
     {:noreply, state}
   end
 
   @impl GenServer
+  def handle_cast({:message_sorter_value, {:direct_actuator_cmds, name}, cmd, status}, state) do
+    direct_actuator_cmds = Map.put(state.direct_actuator_cmds, name, cmd)
+    # Logger.debug("dir: #{inspect(direct_actuator_cmds)}")
+    {:noreply, %{state | direct_actuator_cmds: direct_actuator_cmds}}
+  end
+
+  @impl GenServer
+  def handle_cast({:message_sorter_value, :indirect_actuator_cmds, cmds, status}, state) do
+    {:noreply, %{state | indirect_actuator_cmds: cmds}}
+  end
+
+  @impl GenServer
+  def handle_cast({:message_sorter_value, :indirect_override_actuator_cmds, cmds, status}, state) do
+    cmds = if status == :current, do: cmds, else: %{}
+    # Logger.debug("indirect override: #{inspect(cmds)}")
+    {:noreply, %{state | indirect_override_actuator_cmds: cmds}}
+  end
+
+  @impl GenServer
   def handle_info(:actuator_loop, state) do
-    # Go through every channel and send an update to the ActuatorInterfaceOutput
-    direct_actuators = state.actuators.direct
-    direct_actuator_output_map = Enum.reduce(direct_actuators, %{}, fn ({name, _actuator}, acc) ->
-      value = MessageSorter.Sorter.get_value({:direct_actuator_cmds, name})
-      # Logger.info("name/value: #{name}/#{value}")
-      if is_nil(value) do
-        acc
-      else
-        Map.put(acc, name, value)
-      end
-    end)
-
-    indirect_actuator_output_map = MessageSorter.Sorter.get_value(:indirect_actuator_cmds)
-    |> Common.Utils.default_to(%{})
-    indirect_override_actuator_output_map = MessageSorter.Sorter.get_value_if_current(:indirect_override_actuator_cmds)
-    |> Common.Utils.default_to(%{})
-    indirect_output_map_all = Map.merge(indirect_actuator_output_map, indirect_override_actuator_output_map)
-
-    # Logger.debug("indirect: #{inspect(indirect_output_map_all)}")
-    # Logger.debug("indirect override: #{inspect(indirect_override_actuator_output_map)}")
-    # Logger.debug("act direct: #{inspect(direct_actuator_output_map)}")
-    actuator_output_map = Map.merge(indirect_output_map_all, direct_actuator_output_map)
+    actuator_output_map = Map.merge(state.indirect_actuator_cmds, state.indirect_override_actuator_cmds)
+    |> Map.merge(state.direct_actuator_cmds)
 
     # Logger.debug("aom: #{inspect(actuator_output_map)}")
+
     # Loop over actuator_output_map. Only move those actuators with values
-    # This way we can have different MessageSorters for different types of actuation (direct, indirect)
     actuators = Map.merge(state.actuators.direct, state.actuators.indirect)
     actuators_and_outputs =
       Enum.reduce(actuator_output_map,%{}, fn ({actuator_name, output}, acc) ->
@@ -91,15 +100,4 @@ defmodule Actuation.SwInterface do
     end)
     {:noreply, state}
   end
-
-  @spec self_control_value() :: float()
-  def self_control_value do
-    1.0
-  end
-
-  @spec guardian_control_value() :: float()
-  def guardian_control_value() do
-    0.0
-  end
-
 end

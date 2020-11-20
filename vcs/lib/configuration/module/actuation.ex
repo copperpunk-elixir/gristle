@@ -40,7 +40,7 @@ defmodule Configuration.Module.Actuation do
       end
 
     [
-      actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+      actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
       actuators: %{
         indirect: indirect_actuators,
         direct: direct_actuators
@@ -99,7 +99,6 @@ defmodule Configuration.Module.Actuation do
       :throttle -> 0.0
       :flaps -> 0.0
       :gear -> 0.0
-      # :select -> Actuation.SwInterface.guardian_control_value()
     end
   end
 
@@ -178,14 +177,16 @@ defmodule Configuration.Module.Actuation do
       name: :indirect_actuator_cmds,
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
-      value_type: :map
+      value_type: :map,
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
     ]
 
     indirect_override_sorter = [
       name: :indirect_override_actuator_cmds,
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
-      value_type: :map
+      value_type: :map,
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
     ]
 
     direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
@@ -194,7 +195,8 @@ defmodule Configuration.Module.Actuation do
         name: {:direct_actuator_cmds, actuator_name},
         default_message_behavior: :default_value,
         default_value: failsafe_value,
-        value_type: :number
+        value_type: :number,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ]
       [sorter] ++ acc
       # Map.put(acc, actuator_name, failsafe_value)

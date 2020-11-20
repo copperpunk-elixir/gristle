@@ -8,7 +8,6 @@ defmodule MessageSorter.Sorter do
     Logger.info("Start MessageSorter: #{inspect(config[:name])} GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, via_tuple(config[:name]))
     GenServer.cast(via_tuple(config[:name]), {:begin, config})
-    # GenServer.start_link(__MODULE__, nil, name: via_tuple(name))
     {:ok, pid}
   end
 
@@ -31,12 +30,24 @@ defmodule MessageSorter.Sorter do
         :default_value -> {:default_value, config[:default_value]}
         :decay -> {:decay, config[:decay_value]}
       end
+
+    publish_looper =
+      case Keyword.get(config, :publish_interval_ms) do
+        nil -> nil
+        interval_ms ->
+          Common.Utils.start_loop(self(), interval_ms, :publish_loop)
+          Common.Utils.start_loop(self(), 1000, :update_subscriber_loop)
+          Common.DiscreteLooper.new(interval_ms)
+      end
+
     state = %{
+      name: config[:name],
       messages: [],
       last_value: Keyword.get(config, :initial_value, nil),
       default_message_behavior: default_message_behavior,
       default_value: default_value,
-      value_type: Keyword.fetch!(config, :value_type)
+      value_type: Keyword.fetch!(config, :value_type),
+      publish_looper: publish_looper
     }
     {:noreply, state}
   end
@@ -49,7 +60,7 @@ defmodule MessageSorter.Sorter do
     if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
       # Remove any messages that have the same classification (there should be at most 1)
       if value == nil || !is_valid_type?(value, state.value_type) do
-        Logger.error("Sorter add message rejected")
+        Logger.error("Sorter #{inspect(state.name)} add message rejected")
         state.messages
       else
         unique_msgs = Enum.reject(state.messages, fn msg ->
@@ -70,6 +81,34 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
+  def handle_cast({:get_value_async, name, sender_pid}, state) do
+    Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
+    {state, value, status} = process_get_value(state)
+    GenServer.cast(sender_pid, {:message_sorter_value, name, value, status})
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info(:publish_loop, state) do
+    publish_looper = Common.DiscreteLooper.step(state.publish_looper)
+    {state, value, status} = process_get_value(state)
+    name = state.name
+    Enum.each(Common.DiscreteLooper.get_members_now(publish_looper), fn dest ->
+      # Logger.debug("Send #{inspect(value)}/#{status} to #{inspect(dest)}")
+      GenServer.cast(dest, {:message_sorter_value, name, value, status})
+    end)
+    {:noreply, %{state | publish_looper: publish_looper}}
+  end
+
+  @impl GenServer
+  def handle_info(:update_subscriber_loop, state) do
+    subs = Registry.lookup(registry(), state.name)
+    # Logger.info("subs: #{inspect(subs)}")
+    publish_looper = Common.DiscreteLooper.update_all_members(state.publish_looper, subs)
+    {:noreply, %{state | publish_looper: publish_looper}}
+  end
+
+  @impl GenServer
   def handle_call(:get_all_messages, _from, state) do
     messages = prune_old_messages(state.messages)
     {:reply, messages, %{state | messages: messages}}
@@ -84,6 +123,13 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_call({:get_value, with_status}, _from, state) do
+    {state, value, status} = process_get_value(state)
+    result = if (with_status), do: {value, status}, else: value
+    {:reply, result, state}
+  end
+
+  @spec process_get_value(map()) :: any()
+  def process_get_value(state) do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
     {value, value_status} =
@@ -95,13 +141,7 @@ defmodule MessageSorter.Sorter do
     else
       {msg.value, :current}
     end
-    return_value =
-    if (with_status == true) do
-      {value, value_status}
-    else
-      value
-    end
-    {:reply, return_value, %{state | messages: messages, last_value: value}}
+    {%{state | messages: messages, last_value: value}, value, value_status}
   end
 
   def add_message(name, classification, time_validity_ms, value) do
@@ -119,8 +159,8 @@ defmodule MessageSorter.Sorter do
     GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end
 
-  def get_all_messages(name) do
-    GenServer.call(via_tuple(name), :get_all_messages, @default_call_timeout)
+  def get_all_messages(name, timeout \\ @default_call_timeout) do
+    GenServer.call(via_tuple(name), :get_all_messages, timeout)
   end
 
   def get_value(name, timeout \\ @default_call_timeout) do
@@ -129,11 +169,6 @@ defmodule MessageSorter.Sorter do
 
   def get_value_with_status(name, timeout \\ @default_call_timeout) do
     Common.Utils.safe_call(via_tuple(name),{:get_value, true}, timeout, {nil, :no_sorter})
-    # unless (GenServer.whereis(via_tuple(name)) == nil) do
-    #   GenServer.call(via_tuple(name), {:get_value, true}, timeout)
-    # else
-    #   {nil, :no_sorter}
-    # end
   end
 
   def get_value_if_current(name, timeout \\ @default_call_timeout) do
@@ -143,6 +178,11 @@ defmodule MessageSorter.Sorter do
     else
       nil
     end
+  end
+
+  @spec get_value_async(any(), any()) :: atom()
+  def get_value_async(name, sender_pid) do
+    GenServer.cast(via_tuple(name), {:get_value_async, name, sender_pid})
   end
 
   def remove_messages_for_classification(name, classification) do
@@ -198,5 +238,9 @@ defmodule MessageSorter.Sorter do
       :atom -> is_atom(value)
       _other -> false
     end
+  end
+
+  def registry() do
+    MessageSorterRegistry
   end
 end

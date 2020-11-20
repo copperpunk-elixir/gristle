@@ -165,15 +165,9 @@ defmodule Display.Scenic.Gcs.Plane do
   end
 
   def handle_cast({:control_state, control_state}, state) do
-    graph = Enum.reduce(3..-1, state.graph, fn (goal_level, acc) ->
+    graph = Enum.reduce(3..1, state.graph, fn (goal_level, acc) ->
       if goal_level == control_state do
-        {stroke_color, display_level} =
-          case goal_level do
-            -1 -> {:red, 1}
-            0 -> {:yellow, 1}
-            _other -> {:green, goal_level}
-          end
-        Scenic.Graph.modify(acc, {:goals, display_level}, &update_opts(&1, stroke: {@rect_border, stroke_color}))
+        Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :green}))
       else
         Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :white}))
       end
