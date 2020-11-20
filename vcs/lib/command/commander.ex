@@ -126,7 +126,6 @@ defmodule Command.Commander do
         # If under manual control, tell all nodes to retain control
         # If a node's Actuation process is dead, it will not receive this, and thus it will be
         # under Guardian control anyway
-        # Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_select_class, state.direct_select_time_ms, %{select: Actuation.SwInterface.self_control_value()}}, self())
       # else
         Comms.Operator.send_global_msg_to_group(__MODULE__,{:goals_sorter, control_state, state.goals_class, state.goals_time_ms, indirect_cmds}, self())
       end

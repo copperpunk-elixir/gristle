@@ -17,41 +17,41 @@ defmodule Configuration.Generic do
     Logger.debug("sender: #{inspect(sender)}")
     classification_all = %{
       {:hb, :node} => %{
-        Cluster.Heartbeat => [0,1]
+        Cluster.Heartbeat => [1,1]
       },
       :indirect_actuator_cmds => %{
-        Pids.Moderator => [0,1],
+        Pids.Moderator => [1,1],
         # Navigation.Navigator => [0,2]
       },
       :indirect_override_cmds => %{
-        Command.Commander => [0,1],
+        Command.Commander => [1,1],
         # Navigation.PathManager => [0,2]
       },
       {:direct_actuator_cmds, :flaps} => %{
-        Command.Commander => [0,1],
-        Navigation.PathManager => [0,2]
+        Command.Commander => [1,1],
+        Navigation.PathManager => [1,2]
       },
       {:direct_actuator_cmds, :gear} => %{
-        Command.Commander => [0,1],
-        Navigation.PathManager => [0,2]
+        Command.Commander => [1,1],
+        Navigation.PathManager => [1,2]
       },
       {:direct_actuator_cmds, :all} => %{
-        Command.Commander => [0,1],
+        Command.Commander => [1,1],
       },
       # {:direct_actuator_cmds, :select} => %{
       #   Command.Commander => [0,1],
       #   Pids.Moderator => [0,2]
       # },
       :pv_cmds => %{
-        Pids.Moderator => [0,1],
-        Navigation.Navigator => [0,2]
+        Pids.Moderator => [1,1],
+        Navigation.Navigator => [1,2]
       },
       :goals => %{
-        Command.Commander => [0,1],
-        Navigation.PathManager => [0,2]
+        Command.Commander => [1,1],
+        Navigation.PathManager => [1,2]
       },
       :control_state => %{
-        Navigation.Navigator => [0,1]
+        Navigation.Navigator => [1,1]
       }
     }
 
