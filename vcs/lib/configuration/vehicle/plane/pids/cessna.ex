@@ -6,8 +6,8 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
     constraints = get_constraints()
     integrator_airspeed_min = 5.0
     [
-      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
-      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.6, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
+      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.3, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
+      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.3, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
       yawrate: [rudder: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
       course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
       course_ground: [yaw: Keyword.merge([type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],

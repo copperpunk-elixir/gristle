@@ -10,7 +10,7 @@ defmodule Configuration.Module.Navigation do
     [
       node_type: node_type,
       navigator: [
-        navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+        navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
         default_pv_cmds_level: 2
       ],
       path_manager:

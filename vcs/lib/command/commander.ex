@@ -42,7 +42,7 @@ defmodule Command.Commander do
       direct_cmds_time_ms: direct_cmds_time_ms,
       indirect_override_cmds_class: indirect_override_class,
       indirect_override_cmds_time_ms: indirect_override_time_ms,
-      control_state: -1,
+      control_state: 1,
       pilot_control_mode: -1,
       reference_cmds: %{},
       pv_values: %{},
@@ -88,11 +88,9 @@ defmodule Command.Commander do
     {reference_cmds, control_state} =
     if (pilot_control_mode != @pilot_auto) do
       control_state = cond do
-        control_state_float < -0.95 -> 0
-        control_state_float > -0.80 and control_state_float < -0.70 -> 1
-        control_state_float > 0.20 and control_state_float < 0.30 -> 2
-        control_state_float > 0.95 -> 3
-        true -> -1
+        control_state_float > 0.5 -> 3
+        control_state_float > -0.5 -> 2
+        true -> 1
       end
       reference_cmds =
       if (control_state != state.control_state) or (pilot_control_mode != state.pilot_control_mode) do

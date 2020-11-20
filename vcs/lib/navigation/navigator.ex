@@ -32,12 +32,18 @@ defmodule Navigation.Navigator do
       pv_cmds_msg_classification: pv_cmds_msg_classification,
       pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
       control_state_msg_classification: control_state_msg_classification,
-      control_state_msg_time_validity_ms: control_state_msg_time_validity_ms
+      control_state_msg_time_validity_ms: control_state_msg_time_validity_ms,
+      goals_store: %{},
+      goals_default: %{}
     }
 
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :goals_sorter, self())
-    Common.Utils.start_loop(self(), Keyword.fetch!(config, :navigator_loop_interval_ms), :navigator_loop)
+    navigator_loop_interval_ms = Keyword.fetch!(config, :navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {:goals, 1}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {:goals, 2}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {:goals, 3}, navigator_loop_interval_ms)
+    Common.Utils.start_loop(self(), navigator_loop_interval_ms, :navigator_loop)
     {:noreply, state}
   end
 
@@ -49,32 +55,26 @@ defmodule Navigation.Navigator do
   end
 
   @impl GenServer
+  def handle_cast({:message_sorter_value, {:goals, level}, goals, status}, state) do
+    goals_default = if (level == state.default_pv_cmds_level), do: goals, else: state.goals_default
+    goals = if (status == :current), do: goals, else: %{}
+    {:noreply, %{state | goals_store: Map.put(state.goals_store, level, goals), goals_default: goals_default}}
+  end
+
+
+  @impl GenServer
   def handle_info(:navigator_loop, state) do
-    # Start with Goals 4, move through goals 1
+    # Start with Goals 3, move through goals 1
     # If there a no current commands, then take the command from default_pv_cmds_level
-    {pv_cmds, control_state} = Enum.reduce(3..-1, {%{}, nil}, fn (pv_cmd_level, acc) ->
-      cmd_values = MessageSorter.Sorter.get_value_if_current({:goals, pv_cmd_level})
-      if is_nil(cmd_values) do
-        acc
-      else
-        {cmd_values, pv_cmd_level}
-      end
+    default_result = {state.goals_default, state.default_pv_cmds_level}
+    goals_store = state.goals_store
+    {pv_cmds, control_state} = Enum.reduce(3..1, default_result, fn (pv_cmd_level, acc) ->
+      cmd_values = Map.get(goals_store, pv_cmd_level, %{})
+      if Enum.empty?(cmd_values), do: acc, else: {cmd_values, pv_cmd_level}
     end)
-    {pv_cmds, control_state} =
-    if Enum.empty?(pv_cmds) do
-      # If we are flying, send orbit command to Path Manager
-      # if true do
-      #   Logger.debug("We are flying and need an orbit. Send request to PathManager.")
-      #   Navigation.PathManager.begin_orbit()
-      # end
-      control_state = state.default_pv_cmds_level
-      {MessageSorter.Sorter.get_value({:goals, control_state}), control_state}
-    else
-      {pv_cmds, control_state}
-    end
-    control_state_pv_cmds = max(1,control_state)
+
     MessageSorter.Sorter.add_message(:control_state, state.control_state_msg_classification, state.control_state_msg_time_validity_ms, control_state)
-    MessageSorter.Sorter.add_message({:pv_cmds, control_state_pv_cmds}, state.pv_cmds_msg_classification, state.pv_cmds_msg_time_validity_ms, pv_cmds)
+    MessageSorter.Sorter.add_message({:pv_cmds, control_state}, state.pv_cmds_msg_classification, state.pv_cmds_msg_time_validity_ms, pv_cmds)
     Peripherals.Uart.Telemetry.Operator.store_data(%{control_state: control_state})
     {:noreply, state}
   end

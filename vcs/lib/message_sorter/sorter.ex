@@ -60,7 +60,7 @@ defmodule MessageSorter.Sorter do
     if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
       # Remove any messages that have the same classification (there should be at most 1)
       if value == nil || !is_valid_type?(value, state.value_type) do
-        Logger.error("Sorter add message rejected")
+        Logger.error("Sorter #{inspect(state.name)} add message rejected")
         state.messages
       else
         unique_msgs = Enum.reject(state.messages, fn msg ->
@@ -159,8 +159,8 @@ defmodule MessageSorter.Sorter do
     GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
   end
 
-  def get_all_messages(name) do
-    GenServer.call(via_tuple(name), :get_all_messages, @default_call_timeout)
+  def get_all_messages(name, timeout \\ @default_call_timeout) do
+    GenServer.call(via_tuple(name), :get_all_messages, timeout)
   end
 
   def get_value(name, timeout \\ @default_call_timeout) do
