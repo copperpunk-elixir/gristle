@@ -28,3 +28,4 @@ I'm not really sure how best to do this, but here are the links to any media tha
 1.  Aliens: https://i.kym-cdn.com/photos/images/original/000/183/103/alens.jpg
 2.  Dubins path example: https://commons.wikimedia.org/w/index.php?curid=46816719
 3.  Nobody cares: https://imgflip.com/i/4obe5k
+4.  Slot car controller: https://i.ebayimg.com/images/g/4xYAAOSwCFhfAF05/s-l1600.jpg
