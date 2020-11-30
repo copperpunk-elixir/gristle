@@ -19,7 +19,12 @@ I'm not really sure how best to do this, but here are the links to any media tha
 1.  I've made a huge mistake: https://giphy.com/gifs/11BAxHG7paxJcI
 2.  This blue part is land: https://i.pinimg.com/originals/58/03/1b/58031bef9a023a631b17e34884a7e18c.jpg
 
-## 5b. 
+## 5b. Good HIL Hunting
 1.  FT232R: https://www.adafruit.com/product/3309
 2.  Car Salemans: https://imgflip.com/i/4nw1gh
 3.  Is this a servo?: https://imgflip.com/i/4nw4s6
+
+## 6 SimPATHy
+1.  Aliens: https://i.kym-cdn.com/photos/images/original/000/183/103/alens.jpg
+2.  Dubins path example: https://commons.wikimedia.org/w/index.php?curid=46816719
+3.  Nobody cares: https://imgflip.com/i/4obe5k
