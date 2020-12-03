@@ -24,8 +24,13 @@ I'm not really sure how best to do this, but here are the links to any media tha
 2.  Car Salemans: https://imgflip.com/i/4nw1gh
 3.  Is this a servo?: https://imgflip.com/i/4nw4s6
 
-## 6 SimPATHy
+## 6. SimPATHy
 1.  Aliens: https://i.kym-cdn.com/photos/images/original/000/183/103/alens.jpg
 2.  Dubins path example: https://commons.wikimedia.org/w/index.php?curid=46816719
 3.  Nobody cares: https://imgflip.com/i/4obe5k
 4.  Slot car controller: https://i.ebayimg.com/images/g/4xYAAOSwCFhfAF05/s-l1600.jpg
+
+## 7. The Mimic Gimmick
+1. Shut Up: https://i.imgflip.com/2qkljz.png
+2. Twins: https://imgflip.com/i/4opm5k
+3. ArduSimple: https://www.ardusimple.com/wp-content/uploads/2019/07/simpleRTK2Bheading-Basic-Starter-Kit-IP67_.png
