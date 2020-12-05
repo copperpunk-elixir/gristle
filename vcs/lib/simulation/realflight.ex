@@ -47,8 +47,7 @@ defmodule Simulation.Realflight do
       position_origin: Common.Utils.LatLonAlt.new_deg(@default_latitude, @default_longitude),
       agl: 0,
       airspeed: 0,
-      rcin: @default_servo,
-      new_simulation_data_to_publish: false,
+      rcin: @default_servo
     }
     restore_controller(url)
     inject_controller_interface(url)
@@ -58,19 +57,36 @@ defmodule Simulation.Realflight do
 
   @impl GenServer
   def handle_cast({:post, msg, params}, state) do
-    Logger.info("handle post")
-    case msg do
-      :reset -> reset_aircraft(state.url)
-      :restore -> restore_controller(state.url)
-      :inject -> inject_controller_interface(state.url)
-      :exchange -> exchange_data(state.url, state.position_origin, params)
-    end
+    state =
+      case msg do
+        :reset ->
+          reset_aircraft(state.url)
+          state
+        :restore ->
+          restore_controller(state.url)
+          state
+        :inject ->
+          inject_controller_interface(state.url)
+          state
+        :exchange -> exchange_data(state, params)
+      end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:exchange_data_loop, state) do
+    state = exchange_data(state, state.rcin)
     {:noreply, state}
+  end
+
+  @spec publish_perfect_simulation_data(map()) ::atom()
+  def publish_perfect_simulation_data(state) do
+    Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    if !is_nil(state.attitude) and (:rand.uniform(5) == 1) do
+      range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
+      Peripherals.Uart.Estimation.TerarangerEvo.Operator.publish_range(range_meas)
+    end
   end
 
   @spec reset_aircraft(binary()) :: atom()
@@ -96,11 +112,8 @@ defmodule Simulation.Realflight do
     <RestoreOriginalControllerDevice><a>1</a><b>2</b></RestoreOriginalControllerDevice>
     </soap:Body>
     </soap:Envelope>"
-    Logger.debug("body: #{inspect(body)}")
     Logger.debug("restore")
-    response = post_poison(url, body)
-    Logger.debug("restore response: #{response}")
-    # Logger.debug("#{inspect(Soap.Response.parse(response.body))}")
+    post_poison(url, body)
   end
 
   @spec inject_controller_interface(binary()) :: atom()
@@ -111,15 +124,11 @@ defmodule Simulation.Realflight do
     <InjectUAVControllerInterface><a>1</a><b>2</b></InjectUAVControllerInterface>
     </soap:Body>
     </soap:Envelope>"
-    Logger.debug("body: #{inspect(body)}")
-    Logger.debug("inject")
-    response = post_poison(url, body)
-    Logger.debug("inject response: #{response}")
-    # Logger.debug("#{inspect(Soap.Response.parse(response.body))}")
+    post_poison(url, body)
   end
 
-  @spec exchange_data(binary(), struct(), list()) :: atom()
-  def exchange_data(url, position_origin, servo_output) do
+  @spec exchange_data(map(), list()) :: atom()
+  def exchange_data(state, servo_output) do
     body_header = "<?xml version='1.0' encoding='UTF-8'?>
     <soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>
     <soap:Body>
@@ -137,28 +146,35 @@ defmodule Simulation.Realflight do
     end)
     body = body_header <> servo_str <> body_footer
     # Logger.debug("body: #{inspect(body)}")
-    # Logger.debug("exchange")
-    response = post_poison(url, body)
+    response = post_poison(state.url, body)
     xml_map =
       case SAXMap.from_string(response) do
         {:ok, xml} -> xml
         _other -> %{}
       end
     return_data = get_in(xml_map, return_data_path())
-    aircraft_state = get_in(return_data, aircraft_state_path())
-    rcin_values = get_in(return_data, rcin_path())
-    position = extract_position(aircraft_state, position_origin)
-    Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
-    velocity = extract_velocity(aircraft_state)
-    Logger.debug("velocity: #{inspect(velocity)}")
-    attitude = extract_attitude(aircraft_state)
-    Logger.debug("attitude: #{inspect(attitude)}")
-    bodyrate = extract_bodyrate(aircraft_state)
-    Logger.debug("bodyrate: #{inspect(Common.Utils.map_rad2deg(bodyrate))}")
-    agl = extract_agl(aircraft_state)
-    Logger.debug("agl: #{agl}")
-    rcin = extract_rcin(rcin_values)
-
+    if is_nil(return_data) do
+      state
+    else
+      aircraft_state = extract_from_path(return_data, aircraft_state_path())
+      rcin_values = extract_from_path(return_data, rcin_path())
+      position = extract_position(aircraft_state, state.position_origin)
+      # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
+      velocity = extract_velocity(aircraft_state)
+      # Logger.debug("velocity: #{inspect(velocity)}")
+      # Logger.debug("quat: #{inspect(quat)}")
+      attitude = extract_attitude(aircraft_state)
+      Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
+      bodyrate = extract_bodyrate(aircraft_state)
+      # Logger.debug("bodyrate: #{inspect(Common.Utils.map_rad2deg(bodyrate))}")
+      agl = extract_agl(aircraft_state)
+      # Logger.debug("agl: #{agl}")
+      airspeed = extract_airspeed(aircraft_state)
+      # Logger.debug("airspeed: #{airspeed}")
+      rcin = extract_rcin(rcin_values)
+      # Logger.debug("rcin: #{inspect(rcin)}")
+      %{state | bodyrate: bodyrate, attitude: attitude, position: position, velocity: velocity, agl: agl, airspeed: airspeed, rcin: rcin}
+    end
   end
 
 
@@ -183,7 +199,6 @@ defmodule Simulation.Realflight do
       if x == 2, do: [throttle] ++ acc, else: [0.5] ++ acc
     end)
     |> Enum.reverse()
-    servos = [0.5,0.2, 0.0, 0.45, 0,0,0,0,0,0,0,0]
     GenServer.cast(__MODULE__, {:post, :exchange, servos})
   end
 
@@ -212,6 +227,19 @@ defmodule Simulation.Realflight do
     ["m-previousInputsState", "m-channelValues-0to1", "item"]
   end
 
+  @spec extract_from_path(map(), list()) :: map()
+  def extract_from_path(data, path) do
+    if (Enum.empty?(path)) do
+      data
+    else
+      {[next_path], remaining_path} = Enum.split(path, 1)
+      # Logger.debug("next: #{next_path}")
+      # Logger.debug("remaining: #{inspect(remaining_path)}")
+      data = Map.get(data, next_path, %{})
+      extract_from_path(data, remaining_path)
+    end
+  end
+
   @spec extract_position(map(), struct()) :: map()
   def extract_position(aircraft_state, origin) do
     lookup_keys = ["m-aircraftPositionX-MTR", "m-aircraftPositionY-MTR", "m-altitudeASL-MTR"]
@@ -220,10 +248,7 @@ defmodule Simulation.Realflight do
     if Enum.empty?(pos_data) do
       %{}
     else
-      Logger.debug("#{inspect(pos_data)}")
-      # pos_x = pos_data.x |> String.to_float()
-      # pos_y = pos_data.y |> String.to_float()
-      # pos_z = pos_data.z |> String.to_float()
+      # Logger.debug("#{inspect(pos_data)}")
       pos = convert_all_to_float(pos_data)
       %{Common.Utils.Location.lla_from_point(origin, pos.x, pos.y) | altitude: pos.z}
     end
@@ -237,49 +262,63 @@ defmodule Simulation.Realflight do
     if Enum.empty?(vel_data) do
       %{}
     else
-      # Logger.debug("#{inspect(pos_data)}")
-      # pos_x = pos_data.x |> String.to_float()
-      # pos_y = pos_data.y |> String.to_float()
-      # pos_z = pos_data.z |> String.to_float()
       convert_all_to_float(vel_data)
-      # %{Common.Utils.Location.lla_from_point(origin, pos.x, pos.y) | altitude: pos.z}
     end
-
-    %{
-      north: Map.get(aircraft_state, "m-velocityWorldU-MPS") |> String.to_float(),
-      east: Map.get(aircraft_state, "m-velocityWorldV-MPS") |> String.to_float(),
-      down: Map.get(aircraft_state, "m-velocityWorldW-MPS") |> String.to_float()
-    }
   end
 
-  @spec extract_attitude(map()) :: map()
-  def extract_attitude(aircraft_state) do
-    q0 = Map.get(aircraft_state, "m-orientationQuaternion-W") |> String.to_float()
-    q1 = Map.get(aircraft_state, "m-orientationQuaternion-X") |> String.to_float()
-    q2 = Map.get(aircraft_state, "m-orientationQuaternion-Y") |> String.to_float()
-    q3 = Map.get(aircraft_state, "m-orientationQuaternion-Z") |> String.to_float() |> Kernel.*(-1)
-    Common.Utils.Motion.quaternion_to_euler(q0, q1, q2, q3)
+  @spec extract_quat(map()) :: map()
+  def extract_quat(aircraft_state) do
+    lookup_keys = ["m-orientationQuaternion-W", "m-orientationQuaternion-X", "m-orientationQuaternion-Y",  "m-orientationQuaternion-Z"]
+    store_keys = [:w, :y, :x, :z]
+    quat_data = extract_all_or_nothing(aircraft_state, Enum.zip(lookup_keys, store_keys))
+    if Enum.empty?(quat_data) do
+      %{}
+    else
+      convert_all_to_float(quat_data)
+    end
   end
 
   @spec extract_bodyrate(map()) :: map()
   def extract_bodyrate(aircraft_state) do
-    %{
-      rollrate: Map.get(aircraft_state, "m-rollRate-DEGpSEC") |> String.to_float() |> Common.Utils.Math.deg2rad(),
-      pitchrate: Map.get(aircraft_state, "m-pitchRate-DEGpSEC") |> String.to_float() |> Common.Utils.Math.deg2rad(),
-      yawrate: Map.get(aircraft_state, "m-yawRate-DEGpSEC") |> String.to_float() |> Common.Utils.Math.deg2rad()
-    }
+    lookup_keys = ["m-rollRate-DEGpSEC", "m-pitchRate-DEGpSEC", "m-yawRate-DEGpSEC"]
+    store_keys = [:rollrate, :pitchrate, :yawrate]
+    rate_data = extract_all_or_nothing(aircraft_state, Enum.zip(lookup_keys, store_keys))
+    if Enum.empty?(rate_data) do
+      %{}
+    else
+      convert_all_to_float(rate_data, :math.pi()/180)
+    end
   end
 
   @spec extract_agl(map()) :: float()
   def extract_agl(aircraft_state) do
-    Map.get(aircraft_state, "m-altitudeAGL-MTR") |> String.to_float()
+    agl = Map.get(aircraft_state, "m-altitudeAGL-MTR")
+    if is_nil(agl), do: nil, else: String.to_float(agl)
+  end
+
+  @spec extract_airspeed(map()) :: float()
+  def extract_airspeed(aircraft_state) do
+    airspeed = Map.get(aircraft_state, "m-airspeed-MPS")
+    if is_nil(airspeed) do
+      nil
+    else
+      {x_float, _rem} = Float.parse(airspeed)
+      x_float
+    end
+  end
+
+  @spec extract_attitude(map()) :: float()
+  def extract_attitude(aircraft_state) do
+    quat = extract_quat(aircraft_state)
+    Common.Utils.Motion.quaternion_to_euler(quat.w, quat.x, quat.y, -quat.z)
   end
 
   @spec extract_rcin(map()) :: list()
   def extract_rcin(input_state) do
     Enum.map(input_state, fn input ->
       {input_float, _} = Float.parse(input)
-      (input_float - 0.5) * 2.0
+      # (input_float - 0.5) * 2.0
+      input_float
     end)
   end
 
@@ -294,17 +333,17 @@ defmodule Simulation.Realflight do
         Logger.debug("missing value: exit")
         %{}
       else
-        Logger.debug("good value, continue: #{inspect(lookup_store_tuples)}")
+        # Logger.debug("good value, continue: #{inspect(lookup_store_tuples)}")
         extract_all_or_nothing(data, lookup_store_tuples, Map.put(accumulator, store_key, value))
       end
     end
   end
 
-  @spec convert_all_to_float(map()) :: map()
-  def convert_all_to_float(string_values) do
+  @spec convert_all_to_float(map(), number()) :: map()
+  def convert_all_to_float(string_values, mult \\ 1) do
     Enum.reduce(string_values, %{}, fn ({key, value}, acc) ->
       {x_float, _rem} = Float.parse(value)
-      Map.put(acc, key, x_float)
+      Map.put(acc, key, x_float*mult)
     end)
   end
 
