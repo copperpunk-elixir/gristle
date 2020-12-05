@@ -12,8 +12,9 @@ defmodule Simulation.System do
   def init(config) do
     children =
       [
-        {Simulation.XplaneReceive, config[:receive]},
-        {Simulation.XplaneSend, config[:send]}
+        # {Simulation.XplaneReceive, config[:receive]},
+        # {Simulation.XplaneSend, config[:send]},
+        {Simulation.Realflight, config[:realflight]}
       ]
     Supervisor.init(children, strategy: :one_for_one)
   end

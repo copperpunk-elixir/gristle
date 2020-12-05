@@ -47,7 +47,8 @@ defmodule Simulation.Realflight do
       position_origin: Common.Utils.LatLonAlt.new_deg(@default_latitude, @default_longitude),
       agl: 0,
       airspeed: 0,
-      rcin: @default_servo
+      rcin: @default_servo,
+      servo_out: @default_servo
     }
     restore_controller(url)
     inject_controller_interface(url)
@@ -74,17 +75,61 @@ defmodule Simulation.Realflight do
   end
 
   @impl GenServer
+  def handle_cast({:update_actuators, output_map}, state) do
+    servo_out = if Enum.empty?(output_map) do
+      state.servo_out
+    else
+      # Logger.debug("output map: #{inspect(output_map)}")
+      {_, aileron} = Map.get(output_map, :aileron, {nil, 0.5})
+      {_, elevator} = Map.get(output_map, :elevator, {nil, 0.5})
+      {_, throttle} = Map.get(output_map, :throttle, {nil, 0.0})
+      {_, rudder} = Map.get(output_map, :rudder, {nil, 0.5})
+      {_, flaps} = Map.get(output_map, :flaps, {nil, 0.0})
+
+      [aileron, 1-elevator, throttle, rudder, 0, flaps,0,0,0,0,0,0]
+    end
+    # Logger.info("servo_out: #{inspect(servo_out)}")
+    {:noreply, %{state | servo_out: servo_out}}
+  end
+
+  # @spec get_servo_value_from_actuator_map(map(), atom(), float()) :: float()
+  # def get_servo_value_from_actuator_map(actuator_map, key, default_value) do
+  #   case Map.get(output_map, key)
+  # end
+
+  @impl GenServer
   def handle_info(:exchange_data_loop, state) do
-    state = exchange_data(state, state.rcin)
+    state = exchange_data(state, state.servo_out)
+    # state = exchange_data(state, state.rcin)
+    publish_perfect_simulation_data(state)
+    # Remove channel 5, add fake channel 7, so that flaps and gear will be in the right place
+    # I apologize for the hack, but this keeps me from having to change the Command configuration.
+    {rc_1_4, rc_5_12} = Enum.split(state.rcin, 4)
+    {rc_5_7, rc_8_12} = Enum.split(rc_5_12, 3)
+    rc_5_7 = Enum.drop(rc_5_7, 1) ++ [0.5]
+    rcin = rc_1_4 ++ rc_5_7 ++ rc_8_12
+    rx_output = Enum.map(rcin, fn x ->
+      (x - 0.5)*2
+    end )
+    # Logger.debug("#{inspect(rx_output)}")
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, rx_output, false}, :rx_output, self())
     {:noreply, state}
+  end
+
+  @spec update_actuators(map()) :: atom()
+  def update_actuators(actuators_and_outputs) do
+    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
   end
 
   @spec publish_perfect_simulation_data(map()) ::atom()
   def publish_perfect_simulation_data(state) do
-    Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
+    unless Enum.empty?(state.bodyrate) or Enum.empty?(state.attitude) or Enum.empty?(state.velocity) or Enum.empty?(state.position) do
+      Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
+    end
     # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
-    if !is_nil(state.attitude) and (:rand.uniform(5) == 1) do
+    if !Enum.empty?(state.attitude) and (:rand.uniform(5) == 1) do
       range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
+      range_meas = if (range_meas < 0), do: 0, else: range_meas
       Peripherals.Uart.Estimation.TerarangerEvo.Operator.publish_range(range_meas)
     end
   end
@@ -164,7 +209,7 @@ defmodule Simulation.Realflight do
       # Logger.debug("velocity: #{inspect(velocity)}")
       # Logger.debug("quat: #{inspect(quat)}")
       attitude = extract_attitude(aircraft_state)
-      Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
+      # Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
       bodyrate = extract_bodyrate(aircraft_state)
       # Logger.debug("bodyrate: #{inspect(Common.Utils.map_rad2deg(bodyrate))}")
       agl = extract_agl(aircraft_state)
@@ -250,7 +295,8 @@ defmodule Simulation.Realflight do
     else
       # Logger.debug("#{inspect(pos_data)}")
       pos = convert_all_to_float(pos_data)
-      %{Common.Utils.Location.lla_from_point(origin, pos.x, pos.y) | altitude: pos.z}
+      Map.from_struct(Common.Utils.Location.lla_from_point(origin, pos.x, pos.y))
+      |> Map.put(:altitude, pos.z)
     end
   end
 

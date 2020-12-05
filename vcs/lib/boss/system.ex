@@ -99,7 +99,7 @@ defmodule Boss.System do
   def attach_ringlogger(node_type) do
     case node_type do
       "gcs" -> nil
-      "sim" -> nil
+      # "sim" -> nil
       _other -> RingLogger.attach()
     end
   end

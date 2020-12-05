@@ -2,8 +2,8 @@ defmodule Command.Commander do
   use GenServer
   require Logger
 
-  @rx_control_state_channel 8
-  @pilot_control_mode_channel 7
+  @rx_control_state_channel 7
+  @pilot_control_mode_channel 11
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -72,12 +72,14 @@ defmodule Command.Commander do
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
+    # Logger.debug("csf: #{control_state_float}")
     pilot_control_mode_value = Enum.at(rx_output, @pilot_control_mode_channel)
     pilot_control_mode = cond do
       pilot_control_mode_value > 0.0 -> @pilot_manual
       pilot_control_mode_value > -0.5 -> @pilot_semi_auto
       true -> @pilot_auto
     end
+    # Logger.debug("pcm flt/val: #{pilot_control_mode_value}/#{pilot_control_mode}")
     # The direct_cmds control_state will determine which actuators are controlled directly from here
     # Any actuator not under direct control will have its command sent by either the Navigator (primary)
     # or the Pids.Moderator (secondary)
