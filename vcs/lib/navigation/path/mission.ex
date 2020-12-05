@@ -63,7 +63,7 @@ defmodule Navigation.Path.Mission do
   @spec get_default_mission() :: struct()
   def get_default_mission() do
     speed = 0.8
-    latlon1 = Navigation.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
+    latlon1 = Common.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
     latlon2 = Common.Utils.Location.lla_from_point(latlon1, 200, 20)
     latlon3 = Common.Utils.Location.lla_from_point(latlon1, 0, 40)
     latlon4 = Common.Utils.Location.lla_from_point(latlon1, 100, 30)
@@ -167,7 +167,7 @@ defmodule Navigation.Path.Mission do
     wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
     wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
       {lat, lon, alt} = get_in(wps, [airport, wp_name])
-      lla = Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt)
+      lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
       wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
       acc ++ [wp]
     end)
@@ -188,7 +188,7 @@ defmodule Navigation.Path.Mission do
           "18R" -> {41.7689, -122.50682, 803.0, 182.3}
         end
       end
-    {Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
+    {Common.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
   end
 
 
@@ -209,7 +209,7 @@ defmodule Navigation.Path.Mission do
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*flight_speed_range + min_flight_speed
         alt = :rand.uniform()*flight_agl_range + min_flight_agl + ground_wp.altitude
-        # Logger.debug(Navigation.Utils.LatLonAlt.to_string(last_wp))
+        # Logger.debug(Common.Utils.LatLonAlt.to_string(last_wp))
         # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)

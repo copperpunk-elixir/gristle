@@ -89,7 +89,7 @@ defmodule Display.Scenic.Gcs.Plane do
   # --------------------------------------------------------
   # receive PV updates from the vehicle
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
-    # Logger.debug("position: #{Navigation.Utils.LatLonAlt.to_string(position)}")
+    # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
     roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
     pitch = Map.get(attitude, :pitch,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
     yaw =

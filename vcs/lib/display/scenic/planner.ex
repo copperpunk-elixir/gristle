@@ -140,14 +140,14 @@ defmodule Display.Scenic.Planner do
       {min_lon, max_lon}
     end
     # {min_lat, max_lat, min_lon, max_lon}
-    {Navigation.Utils.LatLonAlt.new(min_lat, min_lon), Navigation.Utils.LatLonAlt.new(max_lat, max_lon)}
+    {Common.Utils.LatLonAlt.new(min_lat, min_lon), Common.Utils.LatLonAlt.new(max_lat, max_lon)}
   end
 
   @spec calculate_origin(tuple(), integer(), integer(), integer()) :: tuple()
   def calculate_origin(bounding_box, vp_width, vp_height, margin) do
     {bottom_left, top_right} = bounding_box
-    # Logger.debug("bottom left: #{Navigation.Utils.LatLonAlt.to_string(bottom_left)}")
-    # Logger.debug("top right: #{Navigation.Utils.LatLonAlt.to_string(top_right)}")
+    # Logger.debug("bottom left: #{Common.Utils.LatLonAlt.to_string(bottom_left)}")
+    # Logger.debug("top right: #{Common.Utils.LatLonAlt.to_string(top_right)}")
     aspect_ratio = vp_width/vp_height
     {dx_dist, dy_dist} = Common.Utils.Location.dx_dy_between_points(bottom_left, top_right)
     # Logger.debug("dx_dist/dy_dist: #{dx_dist}/#{dy_dist}")
@@ -188,7 +188,7 @@ defmodule Display.Scenic.Planner do
       wp_plot = get_translate(wp, origin, height)
       wp_text = {elem(wp_plot,0) + 10, elem(wp_plot,1)}
       # Logger.debug("#{wp.name} xy: #{inspect(wp_plot)}")
-      # Logger.debug(Navigation.Utils.LatLonAlt.to_string(wp))
+      # Logger.debug(Common.Utils.LatLonAlt.to_string(wp))
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
       |> text(wp.name, translate: wp_text, id: @primitive_id)
     end)
@@ -213,8 +213,8 @@ defmodule Display.Scenic.Planner do
       # Logger.debug("cs start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(cs_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(cs_arc_finish_angle+:math.pi/2))}")
       # Logger.debug("ce start/finish: #{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(ce_arc_start_angle+:math.pi/2))}/#{Common.Utils.Math.rad2deg(Common.Utils.Motion.constrain_angle_to_compass(ce_arc_finish_angle+:math.pi/2))}")
       # Logger.debug("cs/ce loc:")
-      # Navigation.Utils.LatLonAlt.print_deg(cp.cs)
-      # Navigation.Utils.LatLonAlt.print_deg(cp.ce)
+      # Common.Utils.LatLonAlt.print_deg(cp.cs)
+      # Common.Utils.LatLonAlt.print_deg(cp.ce)
       radius_cs = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.cs, cp.pos) |> Common.Utils.Math.hypot() |> round()
       radius_ce = Display.Scenic.PlannerOrigin.get_dx_dy(origin, cp.ce, cp.z2) |> Common.Utils.Math.hypot() |> round()
       # Logger.debug("radius_cs: #{radius_cs}")
@@ -229,9 +229,9 @@ defmodule Display.Scenic.Planner do
       # z2 = get_translate(cp.z2, origin, height)
       # z3 = get_translate(cp.ce, origin, height)
       # Logger.debug("wp/z1/z2")
-      # Navigation.Utils.LatLonAlt.print_deg(cp.pos, :debug)
-      # Navigation.Utils.LatLonAlt.print_deg(cp.z1)
-      # Navigation.Utils.LatLonAlt.print_deg(cp.z2)
+      # Common.Utils.LatLonAlt.print_deg(cp.pos, :debug)
+      # Common.Utils.LatLonAlt.print_deg(cp.z1)
+      # Common.Utils.LatLonAlt.print_deg(cp.z2)
       line(acc, {line_start, line_end}, stroke: {line_width, :white}, id: @primitive_id)
       # |> line()
       |> circle(3, stroke: {2, :green}, translate: cs , id: @primitive_id)

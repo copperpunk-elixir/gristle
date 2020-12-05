@@ -8,9 +8,9 @@ defmodule Navigation.Waypoint.CreateWaypointTest do
     speed = 10
     course = 0
     alt = 100
-    latlon1 = Navigation.Utils.LatLonAlt.new_deg(45.0, -120.0, alt)
+    latlon1 = Common.Utils.LatLonAlt.new_deg(45.0, -120.0, alt)
     # North
-    latlon2 = Navigation.Utils.LatLonAlt.new_deg(45.01, -120.0, alt)
+    latlon2 = Common.Utils.LatLonAlt.new_deg(45.01, -120.0, alt)
     wp1 = Navigation.Path.Waypoint.new_flight(latlon1, speed, course)
     wp2 = Navigation.Path.Waypoint.new_flight(latlon2, speed, course)
    {dx, dy} = Common.Utils.Location.dx_dy_between_points(wp1, wp2)

@@ -30,8 +30,8 @@ defmodule Vcs.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      mod: {Common.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      # mod: {Common.Application, []},
+      extra_applications: [:logger, :runtime_tools, :soap]
     ]
   end
 
@@ -58,9 +58,9 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi3a, "~> 1.13", runtime: false, targets: :rpi3a},
       {:nerves_system_rpi4, "~> 1.13", runtime: false, targets: :rpi4},
       # Package dependencies
-      {:vintage_net, "~> 0.9.2"},
-      {:vintage_net_wifi, "~> 0.9.1"},
-      {:vintage_net_ethernet, "~> 0.9.0"},
+      # {:vintage_net, "~> 0.9.2"},
+      # {:vintage_net_wifi, "~> 0.9.1"},
+      # {:vintage_net_ethernet, "~> 0.9.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.4.2"},
       {:circuits_i2c, "~> 0.3.6"},
@@ -75,7 +75,11 @@ defmodule Vcs.MixProject do
       {:msgpax, "~> 2.2.4"},
       #Protobufs
       {:protobuf, "~> 0.7.1"},
-      {:google_protos, "~> 0.1"}
+      {:google_protos, "~> 0.1"},
+      # RealFlight support
+      {:soap, "~> 1.0.1"},
+      {:httpoison, "~> 1.7.0"},
+      {:sax_map, "~> 1.0"}
     ]
   end
 

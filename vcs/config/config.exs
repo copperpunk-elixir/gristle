@@ -5,4 +5,6 @@
 # is restricted to this project.
 use Mix.Config
 
+config :soap, :globals, version: "1.1"
+
 import_config "#{Mix.target()}.exs"

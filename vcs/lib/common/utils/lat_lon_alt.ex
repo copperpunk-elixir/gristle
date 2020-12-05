@@ -1,11 +1,11 @@
-defmodule Navigation.Utils.LatLonAlt do
+defmodule Common.Utils.LatLonAlt do
   require Logger
   @enforce_keys [:latitude, :longitude, :altitude]
   defstruct [:latitude, :longitude, :altitude]
 
   @spec new(float(), float(), float()) :: struct()
   def new(lat, lon, alt) do
-    %Navigation.Utils.LatLonAlt{
+    %Common.Utils.LatLonAlt{
       latitude: lat,
       longitude: lon,
       altitude: alt
