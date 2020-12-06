@@ -8,12 +8,13 @@ defmodule Navigation.Path.Mission do
   def new_mission(name, waypoints) do
     model_type = Common.Utils.Configuration.get_model_type()
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
-    |> Module.concat(Navigation)
-    vehicle_turn_rate =
-      apply(navigation_config_module, :get_vehicle_limits,[model_type])
-      |> Keyword.get(:vehicle_turn_rate)
-    new_mission(name, waypoints, vehicle_turn_rate)
+    # navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    # |> Module.concat(Navigation)
+    # vehicle_turn_rate =
+      # apply(navigation_config_module, :get_vehicle_limits,[model_type])
+      # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    new_mission(name, waypoints, planning_turn_rate)
   end
 
   @spec new_mission(binary(), list(), float()) :: struct()
@@ -76,13 +77,15 @@ defmodule Navigation.Path.Mission do
     wp5 = Navigation.Path.Waypoint.new_flight(latlon5, speed, 0, "wp5", 0)
 
     model_type = Common.Utils.Configuration.get_model_type()
-    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Keyword.get(:vehicle_turn_rate)
-    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], vehicle_turn_rate)
+    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], planning_turn_rate)
   end
 
   @spec get_takeoff_waypoints(struct(), float(), atom()) :: list()
   def get_takeoff_waypoints(start_position, course, model_type) do
+    Logger.debug("start: #{Common.Utils.LatLonAlt.to_string(start_position)}")
     takeoff_roll_distance = get_model_spec(model_type, :takeoff_roll)
     climbout_distance = get_model_spec(model_type, :climbout_distance)
     climbout_height = get_model_spec(model_type, :climbout_height)
@@ -129,13 +132,14 @@ defmodule Navigation.Path.Mission do
       Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
 
-    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Keyword.get(:vehicle_turn_rate)
-
-    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, vehicle_turn_rate)
+    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    Logger.debug("wps: #{inspect(wps)}")
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
-  @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
+  @spec get_track_waypoints(binary(), binary(), atom(), atom()) :: list()
   def get_track_waypoints(airport, runway, track_type, model_type) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
     wps = %{
@@ -187,6 +191,11 @@ defmodule Navigation.Path.Mission do
           "36L" -> {41.76816, -122.50686, 802.0, 2.3}
           "18R" -> {41.7689, -122.50682, 803.0, 182.3}
         end
+        "flight_school" -> {41.76164, -122.48928, 1186.6, 180.0}
+        "boneyard" -> {42.18878, -122.08890, 0.2, 358.32}
+        "obstacle_course" -> {41.70676, -122.39755, 1800.4, 0.0}
+        "fpv_racing" -> {41.76302, -122.48963, 1186.6, 270}
+
       end
     {Common.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
   end
@@ -246,6 +255,19 @@ defmodule Navigation.Path.Mission do
         flight_agl_range: {100, 200},
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
+      },
+      "CessnaZ2m" => %{
+        takeoff_roll: 1,
+        climbout_distance: 200,
+        climbout_height: 40,
+        climbout_speed: 20,
+        cruise_speed: 12,
+        landing_distances_heights: [{-250, 30}, {-200,30}, {-50,3}, {1,0}],
+        landing_speeds: {15, 12},
+        flight_speed_range: {12,18},
+        flight_agl_range: {50, 80},
+        wp_dist_range: {100, 200},
+        planning_turn_rate: 0.20
       },
       "T28" => %{
         takeoff_roll: 30,

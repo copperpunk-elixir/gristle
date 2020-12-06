@@ -4,6 +4,7 @@ defmodule Simulation.Realflight do
   use GenServer
 
   @deg2rad 0.017453293
+  @pi_2 1.57079633
   @ft2m 0.3048
   @knots2mps 0.51444444
   @rad2deg 57.295779513
@@ -12,13 +13,13 @@ defmodule Simulation.Realflight do
   @default_servo [0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0, 0.5, 0.5, 0.5, 0.5]
 
   def start() do
-    start_link([host_ip: "192.168.7.136", sim_loop_interval_ms: 1000])
+    start_link([host_ip: "192.168.7.136", sim_loop_interval_ms: 1000000])
   end
 
   def start_link(config) do
     Logger.info("Start Simulation.Realflight GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
-    GenServer.cast(pid, {:begin, config})
+    GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
 
@@ -58,6 +59,7 @@ defmodule Simulation.Realflight do
 
   @impl GenServer
   def handle_cast({:post, msg, params}, state) do
+    Logger.debug("post: #{msg}")
     state =
       case msg do
         :reset ->
@@ -174,6 +176,8 @@ defmodule Simulation.Realflight do
 
   @spec exchange_data(map(), list()) :: atom()
   def exchange_data(state, servo_output) do
+    # start_time = :os.system_time(:microsecond)
+    # Logger.debug("start: #{start_time}")
     body_header = "<?xml version='1.0' encoding='UTF-8'?>
     <soap:Envelope xmlns:soap='http://schemas.xmlsoap.org/soap/envelope/' xmlns:xsd='http://www.w3.org/2001/XMLSchema' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>
     <soap:Body>
@@ -198,6 +202,7 @@ defmodule Simulation.Realflight do
         _other -> %{}
       end
     return_data = get_in(xml_map, return_data_path())
+    # Logger.info("#{inspect(return_data)}")
     if is_nil(return_data) do
       state
     else
@@ -207,7 +212,6 @@ defmodule Simulation.Realflight do
       # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
       velocity = extract_velocity(aircraft_state)
       # Logger.debug("velocity: #{inspect(velocity)}")
-      # Logger.debug("quat: #{inspect(quat)}")
       attitude = extract_attitude(aircraft_state)
       # Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
       bodyrate = extract_bodyrate(aircraft_state)
@@ -218,6 +222,8 @@ defmodule Simulation.Realflight do
       # Logger.debug("airspeed: #{airspeed}")
       rcin = extract_rcin(rcin_values)
       # Logger.debug("rcin: #{inspect(rcin)}")
+      end_time = :os.system_time(:microsecond)
+      # Logger.debug("dt: #{Common.Utils.eftb((end_time-start_time)*0.001,1)}")
       %{state | bodyrate: bodyrate, attitude: attitude, position: position, velocity: velocity, agl: agl, airspeed: airspeed, rcin: rcin}
     end
   end
@@ -230,6 +236,7 @@ defmodule Simulation.Realflight do
 
   @spec restore_controller() :: atom()
   def restore_controller() do
+    Logger.info("here")
     GenServer.cast(__MODULE__, {:post, :restore, nil})
   end
 
@@ -248,7 +255,7 @@ defmodule Simulation.Realflight do
   end
 
   @spec post_poison(binary(), binary(), integer()) :: binary()
-  def post_poison(url, body, timeout \\ 100) do
+  def post_poison(url, body, timeout \\ 10) do
     case HTTPoison.post(url, body, [], [timeout: timeout]) do
       {:ok, response} -> response.body
       {:error, error} ->
@@ -288,7 +295,7 @@ defmodule Simulation.Realflight do
   @spec extract_position(map(), struct()) :: map()
   def extract_position(aircraft_state, origin) do
     lookup_keys = ["m-aircraftPositionX-MTR", "m-aircraftPositionY-MTR", "m-altitudeASL-MTR"]
-    store_keys = [:x, :y, :z]
+    store_keys = [:y, :x, :z]
     pos_data = extract_all_or_nothing(aircraft_state, Enum.zip(lookup_keys, store_keys))
     if Enum.empty?(pos_data) do
       %{}
@@ -353,10 +360,23 @@ defmodule Simulation.Realflight do
     end
   end
 
-  @spec extract_attitude(map()) :: float()
+  @spec extract_attitude(map()) :: map()
   def extract_attitude(aircraft_state) do
     quat = extract_quat(aircraft_state)
+    # Logger.debug("quat: #{inspect(quat)}")
     Common.Utils.Motion.quaternion_to_euler(quat.w, quat.x, quat.y, -quat.z)
+  end
+
+  @spec extract_ria(map()) :: map()
+  def extract_ria(aircraft_state) do
+    lookup_keys = ["m-roll-DEG", "m-inclination-DEG", "m-azimuth-DEG"]
+    store_keys = [:roll, :pitch, :yaw]
+    rate_data = extract_all_or_nothing(aircraft_state, Enum.zip(lookup_keys, store_keys))
+    if Enum.empty?(rate_data) do
+      %{}
+    else
+      convert_all_to_float(rate_data, :math.pi()/180)
+    end
   end
 
   @spec extract_rcin(map()) :: list()

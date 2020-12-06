@@ -38,7 +38,7 @@ defmodule Configuration.Module.Simulation do
   def get_realflight_config() do
     [
       host_ip: "192.168.7.136",
-      sim_loop_interval_ms: 20
+      sim_loop_interval_ms: 40
     ]
   end
 end

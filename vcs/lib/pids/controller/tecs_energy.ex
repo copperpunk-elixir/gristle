@@ -75,7 +75,7 @@ defmodule Pids.Controller.TecsEnergy do
           |> Common.Utils.Math.constrain(state.output_min, state.output_max)
       end
 
-    output = feed_forward# + delta_output
+    output = feed_forward + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
     # Prevent integrator wind-up

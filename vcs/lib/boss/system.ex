@@ -99,7 +99,7 @@ defmodule Boss.System do
   def attach_ringlogger(node_type) do
     case node_type do
       "gcs" -> nil
-      # "sim" -> nil
+      "sim" -> nil
       _other -> RingLogger.attach()
     end
   end
@@ -116,6 +116,7 @@ defmodule Boss.System do
     atoms_as_strings = [
       "Plane",
       "Cessna",
+      "CessnaZ2m",
       "T28",
       "T28Z2m",
       "Ina260",

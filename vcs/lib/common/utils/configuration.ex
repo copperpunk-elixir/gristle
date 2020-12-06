@@ -7,6 +7,7 @@ defmodule Common.Utils.Configuration do
   def get_vehicle_type(model_type) do
     case model_type do
       "Cessna" -> "Plane"
+      "CessnaZ2m" -> "Plane"
       "T28" -> "Plane"
       "T28Z2m" -> "Plane"
       _other -> raise "Unknown model"

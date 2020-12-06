@@ -77,6 +77,7 @@ defmodule Configuration.Module.Actuation do
   @spec get_min_max_pw(binary()) :: tuple()
   def get_min_max_pw(model_type) do
     case model_type do
+      "CessnaZ2m" -> {1000, 2000}
       "T28Z2m" -> {1000, 2000}
       "T28" -> {1100, 1900}
       _other -> {1100, 1900}
@@ -115,7 +116,6 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   # 7 => :select
                  }
              }
       "T28" -> %{
@@ -126,7 +126,6 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
-                   # 7 => :select
                  }
 
              }
@@ -139,11 +138,19 @@ defmodule Configuration.Module.Actuation do
               direct: %{
                 4 => :flaps,
                 5 => :gear,
-                # 7 => :select
               }
-
           }
-
+      "CessnaZ2m" -> %{
+                  indirect: %{
+                    0 => :aileron,
+                    1 => :elevator,
+                    2 => :throttle,
+                    3 => :rudder},
+                  direct: %{
+                    4 => :flaps,
+                    5 => :gear,
+                  }
+              }
     end
   end
 

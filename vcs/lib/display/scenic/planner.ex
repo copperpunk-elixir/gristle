@@ -25,6 +25,7 @@ defmodule Display.Scenic.Planner do
     margin =
       case model_type do
         "Cessna" -> 734
+        "CessnaZ2m" -> 100
         "T28" -> 100
         "T28Z2m" -> 100
         _other -> 734
