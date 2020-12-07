@@ -34,3 +34,10 @@ I'm not really sure how best to do this, but here are the links to any media tha
 1. Shut Up: https://i.imgflip.com/2qkljz.png
 2. Twins: https://imgflip.com/i/4opm5k
 3. ArduSimple: https://www.ardusimple.com/wp-content/uploads/2019/07/simpleRTK2Bheading-Basic-Starter-Kit-IP67_.png
+
+## 8. The Dolt of Volt
+1. Chicken: https://twitter.com/platinum_chill/status/1122678207533109248
+2. Harry Watter: https://pics.onsizzle.com/youre-a-unit-of-power-harry-mawatt-25594323.png
+3. KR Sense: https://cdn.sparkfun.com//assets/parts/1/5/1/4/1/16408-KR_Sense_90A_Current_and_Voltage_Sensor-02.jpg
+4. ADC: https://cdn.sparkfun.com//assets/parts/1/3/8/5/7/15334-SparkFun_Qwiic_12_Bit_ADC_-_4_Channel__ADS1015_-01.jpg
+5. He-Man: https://i.imgur.com/saF5rwZ.gif
