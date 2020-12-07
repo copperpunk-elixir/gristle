@@ -19,7 +19,7 @@ defmodule Configuration.Module.Navigation do
             k_path: 0.05,
             k_orbit: 3.5,
             chi_inf_two_over_pi: 0.52,
-            lookahead_dt: 0.25
+            lookahead_dt: 0.5
           ]
         ] ++ vehicle_limits,
       path_planner: []

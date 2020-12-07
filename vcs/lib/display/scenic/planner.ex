@@ -124,7 +124,7 @@ defmodule Display.Scenic.Planner do
         {min_lat, max_lat, min_lon, max_lon}
       end)
 
-    min_separation = 0.001
+    min_separation = 0.00001
     {min_lat, max_lat} =
     if min_lat == max_lat do
       dLat = min_separation

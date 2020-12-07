@@ -11,6 +11,7 @@ defmodule Simulation.Realflight do
   @default_latitude 41.769201
   @default_longitude -122.506394
   @default_servo [0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0, 0.5, 0.5, 0.5, 0.5]
+  @rf_stick_mult 1.07
 
   def start() do
     start_link([host_ip: "192.168.7.136", sim_loop_interval_ms: 1000000])
@@ -106,6 +107,8 @@ defmodule Simulation.Realflight do
     publish_perfect_simulation_data(state)
     # Remove channel 5, add fake channel 7, so that flaps and gear will be in the right place
     # I apologize for the hack, but this keeps me from having to change the Command configuration.
+
+    # Logger.debug("#{inspect(state.rcin)}")
     {rc_1_4, rc_5_12} = Enum.split(state.rcin, 4)
     {rc_5_7, rc_8_12} = Enum.split(rc_5_12, 3)
     rc_5_7 = Enum.drop(rc_5_7, 1) ++ [0.5]
@@ -113,9 +116,12 @@ defmodule Simulation.Realflight do
     rx_output = Enum.map(rcin, fn x ->
       (x - 0.5)*2
     end )
-    # Logger.debug("#{inspect(rx_output)}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, rx_output, false}, :rx_output, self())
     {:noreply, state}
+  end
+
+  def fix_rx(x) do
+    (x - 0.5)*@rf_stick_mult + 0.5
   end
 
   @spec update_actuators(map()) :: atom()
@@ -222,7 +228,7 @@ defmodule Simulation.Realflight do
       # Logger.debug("airspeed: #{airspeed}")
       rcin = extract_rcin(rcin_values)
       # Logger.debug("rcin: #{inspect(rcin)}")
-      end_time = :os.system_time(:microsecond)
+      # end_time = :os.system_time(:microsecond)
       # Logger.debug("dt: #{Common.Utils.eftb((end_time-start_time)*0.001,1)}")
       %{state | bodyrate: bodyrate, attitude: attitude, position: position, velocity: velocity, agl: agl, airspeed: airspeed, rcin: rcin}
     end

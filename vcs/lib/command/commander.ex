@@ -72,6 +72,7 @@ defmodule Command.Commander do
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
+    # Logger.debug("rx_out: #{inspect(rx_output)}")
     # Logger.debug("csf: #{control_state_float}")
     pilot_control_mode_value = Enum.at(rx_output, @pilot_control_mode_channel)
     pilot_control_mode = cond do
@@ -152,12 +153,18 @@ defmodule Command.Commander do
     channel_index = elem(channel_tuple, 0)
     channel = elem(channel_tuple, 1)
     min_value = elem(channel_tuple, 3)
-    max_value = elem(channel_tuple, 4)
-    mid_value = (min_value + max_value)/2
-    delta_value_each_side = max_value - mid_value
-    inverted_multiplier = elem(channel_tuple, 5)
+    mid_value = elem(channel_tuple, 4)
+    max_value = elem(channel_tuple, 5)
+    # mid_value = (min_value + max_value)/2
+    # delta_value_each_side = max_value - mid_value
+    inverted_multiplier = elem(channel_tuple, 6)
     unscaled_value = inverted_multiplier*Enum.at(rx_output, channel_index)
-    scaled_value = mid_value + unscaled_value*delta_value_each_side
+    scaled_value =
+    if (unscaled_value > 0) do
+      mid_value + unscaled_value*(max_value-mid_value)#delta_value_each_side
+    else
+      mid_value + unscaled_value*(mid_value-min_value)
+    end
     {channel, scaled_value}
   end
 
@@ -165,7 +172,7 @@ defmodule Command.Commander do
   def get_relative_value(channel_tuple, scaled_value, reference_cmds, dt) do
     channel = elem(channel_tuple, 1)
     min_value = elem(channel_tuple, 3)
-    max_value = elem(channel_tuple, 4)
+    max_value = elem(channel_tuple, 5)
     value_to_add = scaled_value*dt
     case channel do
       :yaw ->

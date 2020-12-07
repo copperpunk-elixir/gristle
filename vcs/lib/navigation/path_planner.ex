@@ -3,7 +3,7 @@ defmodule Navigation.PathPlanner do
   require Logger
 
   @spec load_flight_school(integer()) :: atom()
-  def load_flight_school(num_wps \\ 1) do
+  def load_flight_school(num_wps \\ 0) do
     model_type = Common.Utils.Configuration.get_model_type()
     send_path_mission("flight_school", "18L", model_type, nil, num_wps, true)
   end

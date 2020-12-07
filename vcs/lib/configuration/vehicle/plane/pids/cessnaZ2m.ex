@@ -6,11 +6,11 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
     constraints = get_constraints()
     integrator_airspeed_min = 5.0
     [
-      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.08, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
-      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.08, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
+      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.02, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
+      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.02, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
       yawrate: [rudder: Keyword.merge([type: :Generic, kp: 0.08, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
-      course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.2, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
-      course_ground: [yaw: Keyword.merge([type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
+      course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.25, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
+      course_ground: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
       tecs: [
         thrust: Keyword.merge(get_tecs_energy(), constraints[:thrust]),
         pitch: Keyword.merge(get_tecs_balance(), constraints[:pitch])
@@ -22,8 +22,8 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
   def get_attitude() do
     constraints = get_constraints()
     [
-      roll_rollrate: Keyword.merge([scale: 2.0], constraints[:rollrate]),
-      pitch_pitchrate: Keyword.merge([scale: 2.0], constraints[:pitchrate]),
+      roll_rollrate: Keyword.merge([scale: 3.0], constraints[:rollrate]),
+      pitch_pitchrate: Keyword.merge([scale: 3.0], constraints[:pitchrate]),
       yaw_yawrate: Keyword.merge([scale: 2.0], constraints[:yawrate]),
     ]
   end
@@ -37,16 +37,16 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       throttle: [output_min: 0, output_max: 1.0, output_neutral: 0],
       flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
       gear: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
-      rollrate: [output_min: -2.0, output_max: 2.0, output_neutral: 0],
-      pitchrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
+      rollrate: [output_min: -3.9, output_max: 3.9, output_neutral: 0],
+      pitchrate: [output_min: -2.35, output_max: 1.57, output_neutral: 0],
       yawrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
       roll: [output_min: -1.05, output_max: 1.05, output_neutral: 0.0],
-      pitch: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
+      pitch: [output_min: -0.78, output_max: 0.52, output_neutral: 0.0],
       yaw: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
-      thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
+      thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
       course_flight: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
-      speed: [output_min: 0, output_max: 21, output_neutral: 0],
+      speed: [output_min: 0, output_max: 21, output_neutral: 0, output_mid: 10.5],
       altitude: [output_min: -10, output_max: 10, output_neutral: 0]
     ]
   end
@@ -54,24 +54,25 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
   @spec get_tecs_energy() :: list()
   def get_tecs_energy() do
     [type: :TecsEnergy,
-      ki: 0.1,
-      kd: 0,
-      altitude_kp: 1.0,
-      energy_rate_scalar: 0.002,
-      integrator_range: 300,
-      ff: get_feed_forward(:tecs, :thrust)]
+     ki: 0.1,
+     kd: 0,
+     altitude_kp: 1.0,
+     energy_rate_scalar: 0.002,
+     integrator_range: 300,
+     ff: get_feed_forward(:tecs, :thrust)]
   end
 
   @spec get_tecs_balance() :: list()
   def get_tecs_balance() do
     [type: :TecsBalance,
-      ki: 0.1,
-      kd: 0.0,
-      altitude_kp: 0.5,
-      balance_rate_scalar: 0.016,
-      time_constant: 2.0,
-      integrator_range: 300,
-      min_climb_speed: 10
+     ki: 0.1,
+     kd: 0.0,
+     altitude_kp: 0.25,
+     balance_rate_scalar: 1.0,
+     time_constant: 2.0,
+     integrator_range: 1,
+     integrator_factor: 5.0,
+     min_climb_speed: 10
     ]
   end
 
@@ -82,13 +83,13 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
         rollrate: [
           aileron:
           fn(cmd, _value, _airspeed) ->
-            0.5*cmd/2.0
+            0.5*cmd/3.9
           end
         ],
         pitchrate: [
           elevator:
           fn (cmd, _value, _airspeed) ->
-            0.5*cmd/1.57
+            if (cmd > 0), do: 0.5*cmd/1.57, else: 0.5*cmd/2.35
           end
         ],
         yawrate: [
