@@ -60,18 +60,22 @@ defmodule Pids.Controller.TecsBalance do
     # Proportional
     cmd_p = balance_corr
     # Integrator
-    # Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.pv_integrator,3)}")
+    Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.integrator_range_max,3)}")
     in_range = Common.Utils.Math.in_range?(balance_corr, state.integrator_range_min, state.integrator_range_max)
-        pv_integrator =
+    error_positive = cmd_p > 0
+    i_positive = state.pv_integrator > 0
+    pv_mult = if !i_positive and !error_positive, do: 1.0, else: state.integrator_factor
+    pv_add = balance_corr*dt
+    pv_integrator =
     if in_range do
-      pv_add = balance_corr*dt
-      error_positive = cmd_p > 0
-      i_positive = state.pv_integrator > 0
-      pv_mult = if !i_positive and !error_positive, do: 1.0, else: state.integrator_factor
-      Logger.debug("pv_mult: #{Common.Utils.eftb(pv_mult, 1)}")
+      # Logger.debug("pv_mult: #{Common.Utils.eftb(pv_mult, 1)}")
       state.pv_integrator + pv_add*pv_mult
     else
-      state.pv_integrator
+      if error_positive != i_positive do
+        state.pv_integrator + pv_add*pv_mult
+      else
+        state.pv_integrator
+      end
     end
     # Logger.debug("pv int: #{Common.Utils.eftb(pv_integrator,3)}")
     # cmd_i_mult =

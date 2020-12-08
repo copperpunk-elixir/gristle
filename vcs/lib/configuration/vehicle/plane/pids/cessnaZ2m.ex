@@ -54,11 +54,11 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
   @spec get_tecs_energy() :: list()
   def get_tecs_energy() do
     [type: :TecsEnergy,
-     ki: 0.1,
+     ki: 0.25,
      kd: 0,
      altitude_kp: 1.0,
-     energy_rate_scalar: 0.002,
-     integrator_range: 300,
+     energy_rate_scalar: 0.004,
+     integrator_range: 20,
      ff: get_feed_forward(:tecs, :thrust)]
   end
 
@@ -67,10 +67,10 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
     [type: :TecsBalance,
      ki: 0.1,
      kd: 0.0,
-     altitude_kp: 0.25,
-     balance_rate_scalar: 1.0,
+     altitude_kp: 0.75,
+     balance_rate_scalar: 0.5,
      time_constant: 2.0,
-     integrator_range: 1,
+     integrator_range: 0.4,
      integrator_factor: 5.0,
      min_climb_speed: 10
     ]
@@ -108,7 +108,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
         tecs: [
           thrust:
           fn (_cmd, _value, speed_cmd) ->
-            if (speed_cmd > 0), do: speed_cmd/21.0, else: 0.0
+            if (speed_cmd > 0), do: speed_cmd*speed_cmd/441.0, else: 0.0
           end
         ]
       ]

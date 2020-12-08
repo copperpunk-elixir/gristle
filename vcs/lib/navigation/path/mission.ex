@@ -269,7 +269,7 @@ defmodule Navigation.Path.Mission do
         climbout_height: 40,
         climbout_speed: 20,
         cruise_speed: 12,
-        landing_distances_heights: [{-160, 30}, {-20,3}, {-10, 2}, {20,0}],
+        landing_distances_heights: [{-150, 30}, {-10,3}, {10, 1.5}, {40,0}],
         landing_speeds: {15, 12},
         flight_speed_range: {12,18},
         flight_agl_range: {30, 50},
