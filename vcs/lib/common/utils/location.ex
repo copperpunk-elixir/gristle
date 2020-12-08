@@ -22,7 +22,7 @@ defmodule Common.Utils.Location do
 
   @spec dx_dy_between_points(float(), float(), float(), float()) :: tuple()
   def dx_dy_between_points(lat1, lon1, lat2, lon2) do
-    dx_dy_between_points(Navigation.Utils.LatLonAlt.new(lat1, lon1), Navigation.Utils.LatLonAlt.new(lat2, lon2))
+    dx_dy_between_points(Common.Utils.LatLonAlt.new(lat1, lon1), Common.Utils.LatLonAlt.new(lat2, lon2))
   end
 
   @spec lla_from_point(struct(), float(), float()) :: struct()
@@ -41,7 +41,7 @@ defmodule Common.Utils.Location do
     dlon = (dy/@earth_radius_m) / q
     lon2 = lon1 + dlon
     # {lat2, lon2}
-    Navigation.Utils.LatLonAlt.new(lat2, lon2, origin.altitude)
+    Common.Utils.LatLonAlt.new(lat2, lon2, origin.altitude)
   end
 
   @spec lla_from_point(struct(), tuple()) :: struct()

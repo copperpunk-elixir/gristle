@@ -181,7 +181,7 @@ defmodule Simulation.XplaneReceive do
 
   @spec publish_perfect_simulation_data(map()) ::atom()
   def publish_perfect_simulation_data(state) do
-    Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyaccel, state.bodyrate, state.attitude, state.velocity, state.position)
+    Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
     # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
     if !is_nil(state.attitude) and (:rand.uniform(5) == 1) do
       range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))

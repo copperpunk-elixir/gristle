@@ -116,6 +116,7 @@ defmodule Boss.System do
     atoms_as_strings = [
       "Plane",
       "Cessna",
+      "CessnaZ2m",
       "T28",
       "T28Z2m",
       "Ina260",

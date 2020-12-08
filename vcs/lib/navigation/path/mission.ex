@@ -7,13 +7,14 @@ defmodule Navigation.Path.Mission do
   @spec new_mission(binary(), list()) :: struct()
   def new_mission(name, waypoints) do
     model_type = Common.Utils.Configuration.get_model_type()
-    vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
-    |> Module.concat(Navigation)
-    vehicle_turn_rate =
-      apply(navigation_config_module, :get_vehicle_limits,[model_type])
-      |> Keyword.get(:vehicle_turn_rate)
-    new_mission(name, waypoints, vehicle_turn_rate)
+    # vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
+    # navigation_config_module = Module.concat(Configuration.Vehicle, vehicle_type)
+    # |> Module.concat(Navigation)
+    # vehicle_turn_rate =
+      # apply(navigation_config_module, :get_vehicle_limits,[model_type])
+      # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    new_mission(name, waypoints, planning_turn_rate)
   end
 
   @spec new_mission(binary(), list(), float()) :: struct()
@@ -63,7 +64,7 @@ defmodule Navigation.Path.Mission do
   @spec get_default_mission() :: struct()
   def get_default_mission() do
     speed = 0.8
-    latlon1 = Navigation.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
+    latlon1 = Common.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
     latlon2 = Common.Utils.Location.lla_from_point(latlon1, 200, 20)
     latlon3 = Common.Utils.Location.lla_from_point(latlon1, 0, 40)
     latlon4 = Common.Utils.Location.lla_from_point(latlon1, 100, 30)
@@ -76,13 +77,15 @@ defmodule Navigation.Path.Mission do
     wp5 = Navigation.Path.Waypoint.new_flight(latlon5, speed, 0, "wp5", 0)
 
     model_type = Common.Utils.Configuration.get_model_type()
-    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Keyword.get(:vehicle_turn_rate)
-    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], vehicle_turn_rate)
+    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], planning_turn_rate)
   end
 
   @spec get_takeoff_waypoints(struct(), float(), atom()) :: list()
   def get_takeoff_waypoints(start_position, course, model_type) do
+    Logger.debug("start: #{Common.Utils.LatLonAlt.to_string(start_position)}")
     takeoff_roll_distance = get_model_spec(model_type, :takeoff_roll)
     climbout_distance = get_model_spec(model_type, :climbout_distance)
     climbout_height = get_model_spec(model_type, :climbout_height)
@@ -90,7 +93,7 @@ defmodule Navigation.Path.Mission do
     takeoff_roll = Common.Utils.Location.lla_from_point_with_distance(start_position,takeoff_roll_distance, course)
     climb_position = Common.Utils.Location.lla_from_point_with_distance(start_position,climbout_distance, course)
     |> Map.put(:altitude, start_position.altitude+climbout_height)
-    wp0 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "WOG")
+    wp0 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "Start")
     wp1 = Navigation.Path.Waypoint.new_climbout(takeoff_roll, climbout_speed, course, "takeoff")
     wp2 = Navigation.Path.Waypoint.new_flight(climb_position, climbout_speed, course, "climbout")
     [wp0, wp1, wp2]
@@ -104,11 +107,13 @@ defmodule Navigation.Path.Mission do
       acc ++ [wp]
     end)
     {approach_speed, touchdown_speed} = get_model_spec(model_type, :landing_speeds)
-    wp0 = Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,0), approach_speed, course, "pre-approach")
-    wp1 = Navigation.Path.Waypoint.new_approach(Enum.at(landing_points,1), approach_speed, course, "approach")
-    wp2 = Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,2), touchdown_speed, course, "flare")
-    wp3 = Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,3), 0, course, "WOG")
-    [wp0, wp1, wp2, wp3]
+    # wp0 = Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,0), approach_speed, course, "pre-approach")
+    []
+    ++ [Navigation.Path.Waypoint.new_approach(Enum.at(landing_points,0), approach_speed, course, "approach")]
+    ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,1), touchdown_speed, course, "flare")]
+    ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,2), touchdown_speed, course, "descent")]
+    ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,3), 0, course, "touchdown")]
+    # [wp0, wp1, wp2, wp3, wp4]
   end
 
   @spec get_complete_mission(binary(), binary(), atom(), atom(), integer()) :: struct()
@@ -119,7 +124,12 @@ defmodule Navigation.Path.Mission do
     first_flight_wp = Enum.at(takeoff_wps, -1)
     flight_wps =
       case track_type do
-        nil -> get_random_waypoints(model_type, starting_wp, first_flight_wp,num_wps)
+        nil ->
+          if num_wps > 0 do
+            get_random_waypoints(model_type, starting_wp, first_flight_wp,num_wps)
+          else
+            []
+          end
         type -> get_track_waypoints(airport, runway, type, model_type)
       end
     landing_wps = get_landing_waypoints(start_position, start_course, model_type)
@@ -129,13 +139,14 @@ defmodule Navigation.Path.Mission do
       Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
     end)
 
-    vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    |> Keyword.get(:vehicle_turn_rate)
-
-    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, vehicle_turn_rate)
+    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    # Logger.debug("wps: #{inspect(wps)}")
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
-  @spec get_track_waypoints(atom(), atom(), atom(), atom()) :: list()
+  @spec get_track_waypoints(binary(), binary(), atom(), atom()) :: list()
   def get_track_waypoints(airport, runway, track_type, model_type) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
     wps = %{
@@ -167,7 +178,7 @@ defmodule Navigation.Path.Mission do
     wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
     wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
       {lat, lon, alt} = get_in(wps, [airport, wp_name])
-      lla = Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt)
+      lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
       wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
       acc ++ [wp]
     end)
@@ -187,8 +198,13 @@ defmodule Navigation.Path.Mission do
           "36L" -> {41.76816, -122.50686, 802.0, 2.3}
           "18R" -> {41.7689, -122.50682, 803.0, 182.3}
         end
+        "flight_school" -> {41.76174, -122.48928, 1186.6, 180.0}
+        "boneyard" -> {42.18878, -122.08890, 0.2, 358.32}
+        "obstacle_course" -> {41.70676, -122.39755, 1800.4, 0.0}
+        "fpv_racing" -> {41.76302, -122.48963, 1186.6, 270}
+
       end
-    {Navigation.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
+    {Common.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
   end
 
 
@@ -209,7 +225,7 @@ defmodule Navigation.Path.Mission do
         course = :rand.uniform()*2*:math.pi
         speed = :rand.uniform*flight_speed_range + min_flight_speed
         alt = :rand.uniform()*flight_agl_range + min_flight_agl + ground_wp.altitude
-        # Logger.debug(Navigation.Utils.LatLonAlt.to_string(last_wp))
+        # Logger.debug(Common.Utils.LatLonAlt.to_string(last_wp))
         # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)
@@ -246,6 +262,19 @@ defmodule Navigation.Path.Mission do
         flight_agl_range: {100, 200},
         wp_dist_range: {600, 1600},
         planning_turn_rate: 0.08
+      },
+      "CessnaZ2m" => %{
+        takeoff_roll: 10,
+        climbout_distance: 150,
+        climbout_height: 40,
+        climbout_speed: 20,
+        cruise_speed: 12,
+        landing_distances_heights: [{-150, 30}, {-10,3}, {10, 1.5}, {40,0}],
+        landing_speeds: {15, 12},
+        flight_speed_range: {12,18},
+        flight_agl_range: {30, 50},
+        wp_dist_range: {40, 60},
+        planning_turn_rate: 0.20
       },
       "T28" => %{
         takeoff_roll: 30,

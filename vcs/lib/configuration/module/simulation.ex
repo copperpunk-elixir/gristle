@@ -3,7 +3,8 @@ defmodule Configuration.Module.Simulation do
   def get_config(model_type, _node_type) do
     [
       receive: get_simulation_xplane_receive_config(),
-      send: get_simulation_xplane_send_config(model_type)
+      send: get_simulation_xplane_send_config(model_type),
+      realflight: get_realflight_config()
     ]
   end
 
@@ -33,4 +34,11 @@ defmodule Configuration.Module.Simulation do
     ]
   end
 
+  @spec get_realflight_config() :: list()
+  def get_realflight_config() do
+    [
+      host_ip: "192.168.7.136",
+      sim_loop_interval_ms: 40
+    ]
+  end
 end

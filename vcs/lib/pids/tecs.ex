@@ -12,6 +12,7 @@ defmodule Pids.Tecs do
     speed_cmd = cmds.speed
     alt_cmd = cmds.altitude
 
+    Logger.debug("alt cmd/value/err: #{Common.Utils.eftb(alt_cmd,1)}/#{Common.Utils.eftb(altitude,1)}/#{Common.Utils.eftb(alt_cmd - altitude,1)}")
     # Energy Cals
     potential_energy = Common.Constants.gravity()*altitude
     kinetic_energy = 0.5*speed*speed
@@ -20,7 +21,7 @@ defmodule Pids.Tecs do
     speed_sp = speed_cmd
     potential_energy_sp = Common.Constants.gravity()*alt_cmd
     kinetic_energy_sp = 0.5*speed_sp*speed_sp
-
+    # Logger.info("pe/pe_sp: #{Common.Utils.eftb(potential_energy,1)}/#{Common.Utils.eftb(potential_energy_sp,1)}")
 
     energy = potential_energy + kinetic_energy
     energy_sp = potential_energy_sp + kinetic_energy_sp

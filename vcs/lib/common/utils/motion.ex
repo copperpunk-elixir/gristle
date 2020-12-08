@@ -1,6 +1,7 @@
 defmodule Common.Utils.Motion do
   require Logger
 
+  @two_pi 6.2832185#307179586
   # Convert North/East velocity to Speed/Course
   @spec get_speed_course_for_velocity(number(), number(), number(), number()) :: float()
   def get_speed_course_for_velocity(v_north, v_east, min_speed_for_course, yaw) do
@@ -75,5 +76,22 @@ defmodule Common.Utils.Motion do
     by = (-cosphi*sinpsi + sinphi*sintheta*cospsi)*vx + (cosphi*cospsi + sinphi*sintheta*sinpsi)*vy + sinphi*costheta*vz
     bz = (sinphi*sinpsi + cosphi*sintheta*cospsi)*vx - (sinphi*cospsi + cosphi*sintheta*sinpsi)*vy + cosphi*costheta*vz
     {bx,by,bz}
+  end
+
+  @spec quaternion_to_euler(float(), float(), float(), float()) :: map()
+  def quaternion_to_euler(q0, q1, q2, q3) do
+    roll = :math.atan2(2.0 * (q0 * q1 + q2 * q3), (1.0 - 2.0 * (q1 * q1 + q2 * q2)));
+	  pitch = :math.asin(2 * (q0 * q2 - q3 * q1));
+	  yaw = :math.atan2(2.0 * (q0 * q3 + q1 * q2), (1.0 - 2.0 * (q2 * q2 + q3 * q3)));
+	  yaw = cond do
+      yaw < 0 -> yaw + @two_pi
+      yaw >= @two_pi -> yaw - @two_pi
+      true -> yaw
+    end
+    %{
+      roll: roll,
+      pitch: pitch,
+      yaw: yaw
+    }
   end
 end

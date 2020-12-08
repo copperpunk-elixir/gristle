@@ -59,6 +59,8 @@ defmodule Navigation.Path.PathFollower do
       course_cmd = chi_q - path_follower.chi_inf_two_over_pi*:math.atan(path_follower.k_path*e_py)
       |> Common.Utils.Motion.constrain_angle_to_compass()
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
+      # d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
+      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(d_course,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
@@ -66,7 +68,7 @@ defmodule Navigation.Path.PathFollower do
       |> Common.Utils.Math.hypot()
       # Only use lookahead position if we are far enough away from the transition to the next path case
       position = if (abs(distance_to_z1) > speed*1.0) or path_case.case_index == 0 or path_case.case_index == 3 do
-        get_lookahead_position(position, speed, course, 2.0)
+        get_lookahead_position(position, speed, course, path_follower.lookahead_dt)
       else
         position
       end
@@ -80,7 +82,9 @@ defmodule Navigation.Path.PathFollower do
       |> Common.Utils.Motion.constrain_angle_to_compass()
 
       # e_py = orbit_d - path_case.rho
-      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
+      # Logger.debug("orbit_d/rho: #{Common.Utils.eftb(orbit_d,2)}/#{Common.Utils.eftb(path_case.rho,2)}")
+      # d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
+      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(d_course,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     end
   end

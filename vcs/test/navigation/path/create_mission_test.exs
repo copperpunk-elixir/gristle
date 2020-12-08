@@ -6,9 +6,9 @@ defmodule Navigation.Path.CreateMissionTest do
     speed = 10
     course = 0
 
-    latlon1 = Navigation.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
+    latlon1 = Common.Utils.LatLonAlt.new_deg(45.0, -120.0, 100)
     # North
-    latlon2 = Navigation.Utils.LatLonAlt.new_deg(45.01, -120.0, 100)
+    latlon2 = Common.Utils.LatLonAlt.new_deg(45.01, -120.0, 100)
     wp1 = Navigation.Path.Waypoint.new_flight(latlon1, speed, course, "wp1")
     wp2 = Navigation.Path.Waypoint.new_flight(latlon2, speed, course, "wp2")
 
@@ -16,7 +16,7 @@ defmodule Navigation.Path.CreateMissionTest do
     assert mission.name == "test"
     assert mission.waypoints == [wp1, wp2]
 
-    latlon3 = Navigation.Utils.LatLonAlt.new_deg(45.01, -119.99, 100)
+    latlon3 = Common.Utils.LatLonAlt.new_deg(45.01, -119.99, 100)
     wp3 = Navigation.Path.Waypoint.new_flight(latlon3, speed, course, "wp3")
 
     # Add waypoint at the end
@@ -37,7 +37,7 @@ defmodule Navigation.Path.CreateMissionTest do
     assert new_mission.waypoints == [wp1, wp2]
 
     # Add waypoint in the middle
-    latlon4 = Navigation.Utils.LatLonAlt.new_deg(45.00, -119.99, 100)
+    latlon4 = Common.Utils.LatLonAlt.new_deg(45.00, -119.99, 100)
     wp4 = Navigation.Path.Waypoint.new_flight(latlon4, speed, course, "wp4")
     new_mission = Navigation.Path.Mission.add_waypoint_at_index(mission, wp4, 1)
     assert new_mission.waypoints == [wp1, wp4, wp2]

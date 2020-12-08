@@ -53,16 +53,18 @@ defmodule Pids.Controller.TecsEnergy do
 
     cmd_p = energy_corr*energy_rate_scalar
 
+    # Logger.debug("ecorr: #{Common.Utils.eftb(energy_corr,0)}")
     in_range = Common.Utils.Math.in_range?(energy_corr, state.integrator_range_min, state.integrator_range_max)
     pv_integrator =
     if in_range do
       pv_add = energy_corr*dt
       state.pv_integrator + pv_add*energy_rate_scalar
     else
-      0.0
+      state.pv_integrator
     end
 
     cmd_i = state.ki*pv_integrator
+    |> Common.Utils.Math.constrain(-0.4, 0.4)
 
     cmd_d = energy_rate_corr*state.kd*energy_rate_scalar
 
@@ -75,14 +77,15 @@ defmodule Pids.Controller.TecsEnergy do
           |> Common.Utils.Math.constrain(state.output_min, state.output_max)
       end
 
-    output = feed_forward# + delta_output
+    output = feed_forward + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
     # Prevent integrator wind-up
     pv_integrator =
     if (state.ki > 0) do
       # Logger.debug("pv_int: #{pv_integrator}/ #{cmd_i/state.ki}")
-      Common.Utils.Math.constrain(cmd_i/state.ki, state.output_min, state.output_max)
+      # Common.Utils.Math.constrain(cmd_i/state.ki, state.output_min, state.output_max)
+      cmd_i / state.ki
     else
       0.0
     end

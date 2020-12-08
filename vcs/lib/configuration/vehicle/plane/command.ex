@@ -61,12 +61,12 @@ defmodule Configuration.Vehicle.Plane.Command do
 
   @spec get_channel_config(map(), map(), atom(), integer(), atom(), boolean()) :: tuple()
   def get_channel_config(limits, multipliers, channel_name, channel_number, rel_abs, frozen \\ false) do
-    {output_min, output_max} = if frozen do
-      {0.0, 0.0}
+    {output_min, output_mid, output_max} = if frozen do
+      {0.0, 0.0, 0.0}
     else
-      {get_in(limits, [channel_name, :min]), get_in(limits, [channel_name, :max])}
+      {get_in(limits, [channel_name, :min]), get_in(limits, [channel_name, :mid]), get_in(limits, [channel_name, :max])}
     end
-    {channel_number, channel_name, rel_abs, output_min, output_max, Map.get(multipliers, channel_name)}
+    {channel_number, channel_name, rel_abs, output_min, output_mid, output_max, Map.get(multipliers, channel_name)}
   end
 
 end

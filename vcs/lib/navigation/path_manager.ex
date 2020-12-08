@@ -193,7 +193,7 @@ defmodule Navigation.PathManager do
           current_cp_index =
             case current_cp.goto_upon_completion do
               nil ->
-                Logger.debug("no goto, move to cp_index: #{state.current_cp_index + 1}")
+                Logger.info("no goto, move to cp_index: #{state.current_cp_index + 1}")
                 cp_index = state.current_cp_index + 1
                 if cp_index >= length(state.config_points) do
                   # No more waypoints

@@ -26,7 +26,8 @@ defmodule Configuration.Module.Command do
       constraints =
         apply(model_module, :get_constraints, [])
         |> Keyword.get(channel)
-      Map.put(acc, channel, %{min: constraints[:output_min], max: constraints[:output_max]})
+      mid = Keyword.get(constraints, :output_mid, constraints[:output_neutral])
+      Map.put(acc, channel, %{min: constraints[:output_min], mid: mid, max: constraints[:output_max]})
     end)
   end
 

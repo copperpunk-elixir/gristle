@@ -20,6 +20,7 @@ defmodule Pids.Controller.TecsBalance do
       integrator_range_min: -Keyword.get(config, :integrator_range, 0),
       integrator_range_max: Keyword.get(config, :integrator_range, 0),
       pv_integrator: 0,
+      integrator_factor: Keyword.get(config, :integrator_factor, 1),
       pv_correction_prev: 0,
       speed_prev: nil,
       output: Keyword.fetch!(config, :output_neutral)
@@ -59,29 +60,52 @@ defmodule Pids.Controller.TecsBalance do
     # Proportional
     cmd_p = balance_corr
     # Integrator
+    Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.integrator_range_max,3)}")
     in_range = Common.Utils.Math.in_range?(balance_corr, state.integrator_range_min, state.integrator_range_max)
+    error_positive = cmd_p > 0
+    i_positive = state.pv_integrator > 0
+    pv_mult = if !i_positive and !error_positive, do: 1.0, else: state.integrator_factor
+    pv_add = balance_corr*dt
     pv_integrator =
     if in_range do
-      pv_add = balance_corr*dt
-      state.pv_integrator + pv_add
+      # Logger.debug("pv_mult: #{Common.Utils.eftb(pv_mult, 1)}")
+      state.pv_integrator + pv_add*pv_mult
+    else
+      if error_positive != i_positive do
+        state.pv_integrator + pv_add*pv_mult
+      else
+        state.pv_integrator
+      end
+    end
+    # Logger.debug("pv int: #{Common.Utils.eftb(pv_integrator,3)}")
+    # cmd_i_mult =
+    # if i_positive == error_positive do
+    #   state.ki
+    # else
+    #   Logger.debug("int fact")
+    #   state.ki*state.integrator_factor
+    # end
+    cmd_i = state.ki*pv_integrator
+    |> Common.Utils.Math.constrain(-0.175, 0.175)
+    # Logger.info("cmd i pre/post: #{Common.Utils.eftb(cmd_i_mult*pv_integrator,3)}/#{Common.Utils.eftb(cmd_i, 3)}")
+    pv_integrator =
+    if (state.ki != 0) do
+      cmd_i / state.ki
     else
       0.0
     end
-
-    cmd_i = state.ki*pv_integrator
-    |> Common.Utils.Math.constrain(state.output_min, state.output_max)
-
     # Derivative
     cmd_d = balance_rate_corr*state.kd
 
-    cmd_rate = balance_rate_cmd*state.time_constant
+    cmd_rate = 0*balance_rate_cmd*state.time_constant
 
     output = (cmd_p + cmd_i + cmd_d + cmd_rate) / state.time_constant * state.balance_rate_scalar
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
     # Logger.debug("tecs bal: #{Common.Utils.eftb_deg(output,1)}")
-    # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb(output, 3)}")
+    # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb_deg(output, 3)}")
+    Logger.debug("p/i/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(output, 3)}")
 
-    %{state | output: output, speed_prev: speed}
+    %{state | pv_integrator: pv_integrator, output: output, speed_prev: speed}
   end
 end

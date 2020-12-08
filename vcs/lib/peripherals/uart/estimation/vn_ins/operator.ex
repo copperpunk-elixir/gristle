@@ -35,7 +35,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       ins: %{
         attitude: %{roll: 0,pitch: 0,yaw: 0},
         bodyrate: %{rollrate: 0, pitchrate: 0, yawrate: 0},
-        bodyaccel: %{x: 0, y: 0, z: 0},
+        # bodyaccel: %{x: 0, y: 0, z: 0},
         gps_time_ns: 0,
         position: %{latitude: 0, longitude: 0, altitude: 0},
         velocity: %{north: 0, east: 0, down: 0},
@@ -328,21 +328,21 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       {ins.velocity, buffer}
     end
 
-    {bodyaccel, buffer} = if(accel_bit == 1) do
-      {accel_x_mpss_uint32, buffer} = Enum.split(buffer, 4)
-      {accel_y_mpss_uint32, buffer} = Enum.split(buffer, 4)
-      {accel_z_mpss_uint32, buffer} = Enum.split(buffer, 4)
-      accel_x_mpss = list_to_int(accel_x_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-      accel_y_mpss = list_to_int(accel_y_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-      accel_z_mpss = list_to_int(accel_z_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
-      {%{
-          x: accel_x_mpss,
-          y: accel_y_mpss,
-          z: accel_z_mpss
-       }, buffer}
-    else
-      {ins.bodyaccel, buffer}
-    end
+    # {bodyaccel, buffer} = if(accel_bit == 1) do
+    #   {accel_x_mpss_uint32, buffer} = Enum.split(buffer, 4)
+    #   {accel_y_mpss_uint32, buffer} = Enum.split(buffer, 4)
+    #   {accel_z_mpss_uint32, buffer} = Enum.split(buffer, 4)
+    #   accel_x_mpss = list_to_int(accel_x_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+    #   accel_y_mpss = list_to_int(accel_y_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+    #   accel_z_mpss = list_to_int(accel_z_mpss_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
+    #   {%{
+    #       x: accel_x_mpss,
+    #       y: accel_y_mpss,
+    #       z: accel_z_mpss
+    #    }, buffer}
+    # else
+    #   {ins.bodyaccel, buffer}
+    # end
 
     {magnetometer, baro_pressure, temperature, buffer} = if(mag_pres_bit == 1) do
       {mag_x_gauss_uint32, buffer} = Enum.split(buffer, 4)
@@ -377,13 +377,13 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       {ins.gps_status, buffer}
     end
 
-    %{gps_time_ns: gps_time_ns, attitude: attitude, bodyrate: bodyrate, bodyaccel: bodyaccel, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
+    %{gps_time_ns: gps_time_ns, attitude: attitude, bodyrate: bodyrate, position: position, velocity: velocity, magnetometer: magnetometer, baro_pressure: baro_pressure, temperature: temperature, gps_status: gps_status}
   end
 
-  def publish_vn_message(bodyaccel, bodyrate, attitude, velocity, position) do
+  def publish_vn_message(bodyrate, attitude, velocity, position) do
     header = <<0xFA>>
     group = <<0x01>>
-    fields_word = <<0xEA, 0x11>>
+    fields_word = <<0xEA, 0x10>>
     now = DateTime.utc_now()
     current_time_ns =
       DateTime.diff(now, Time.Clock.get_epoch(), :nanosecond)
@@ -400,9 +400,9 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     vel_north = velocity.north |> Common.Utils.Math.uint_from_fp(32)
     vel_east = velocity.east |> Common.Utils.Math.uint_from_fp(32)
     vel_down = velocity.down |> Common.Utils.Math.uint_from_fp(32)
-    accel_x = bodyaccel.x |> Common.Utils.Math.uint_from_fp(32)
-    accel_y = bodyaccel.y |> Common.Utils.Math.uint_from_fp(32)
-    accel_z = bodyaccel.z |> Common.Utils.Math.uint_from_fp(32)
+    # accel_x = bodyaccel.x |> Common.Utils.Math.uint_from_fp(32)
+    # accel_y = bodyaccel.y |> Common.Utils.Math.uint_from_fp(32)
+    # accel_z = bodyaccel.z |> Common.Utils.Math.uint_from_fp(32)
     gps_status = <<3,0>>
     payload =
       group <>
@@ -420,9 +420,9 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
       vel_north <>
       vel_east <>
       vel_down <>
-      accel_x <>
-      accel_y <>
-      accel_z <>
+      # accel_x <>
+      # accel_y <>
+      # accel_z <>
       gps_status
     checksum = calculate_checksum(:binary.bin_to_list(payload))
     crc = <<checksum >>> 8, checksum &&& 0xFF>>
