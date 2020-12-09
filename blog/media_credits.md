@@ -41,3 +41,8 @@ I'm not really sure how best to do this, but here are the links to any media tha
 3. KR Sense: https://cdn.sparkfun.com//assets/parts/1/5/1/4/1/16408-KR_Sense_90A_Current_and_Voltage_Sensor-02.jpg
 4. ADC: https://cdn.sparkfun.com//assets/parts/1/3/8/5/7/15334-SparkFun_Qwiic_12_Bit_ADC_-_4_Channel__ADS1015_-01.jpg
 5. He-Man: https://i.imgur.com/saF5rwZ.gif
+
+## 9. Con Air(frame)
+1. Bunny: https://i.imgur.com/EaXaVpN.gif
+2. Flex Tape: https://i.kym-cdn.com/photos/images/newsfeed/001/706/064/57e.jpg
+3. Poe Air: http://www.reddit.com/r/reactiongifs/comments/3pse4c/mrw_when_i_leave_the_apartment_complexes_gym/
