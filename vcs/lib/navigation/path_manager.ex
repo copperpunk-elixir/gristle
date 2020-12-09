@@ -46,6 +46,7 @@ defmodule Navigation.PathManager do
       current_course: nil,
       stored_current_cp_index: nil,
       stored_current_path_case: nil,
+      orbit_active: false
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
@@ -112,7 +113,8 @@ defmodule Navigation.PathManager do
         current_path_case: path_case,
         current_cp_index: nil,
         stored_current_cp_index: state.current_cp_index,
-        stored_current_path_case: state.current_path_case
+        stored_current_path_case: state.current_path_case,
+        orbit_active: true
       }
     end
     {:noreply, state}
@@ -121,7 +123,20 @@ defmodule Navigation.PathManager do
   @impl GenServer
   def handle_cast(:clear_orbit, state) do
     Logger.debug("path man clear orbit")
-    state = %{state | current_cp_index: state.stored_current_cp_index, current_path_case: state.stored_current_path_case}
+    Logger.debug("orbit active? #{state.orbit_active}")
+    state =
+    if state.orbit_active do
+      %{
+        state |
+        current_cp_index: state.stored_current_cp_index,
+        current_path_case: state.stored_current_path_case,
+        stored_current_cp_index: nil,
+        stored_current_path_case: nil,
+        orbit_active: false
+      }
+    else
+      state
+    end
     {:noreply, state}
   end
 

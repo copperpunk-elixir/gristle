@@ -52,7 +52,7 @@ defmodule Display.Scenic.Planner do
     vehicle_position =
       Map.get(state, :vehicle, %{})
       |> Map.get(:position)
-    bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
+    bounding_box = calculate_lat_lon_bounding_box(mission.waypoints, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
     {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
     # graph =
@@ -85,7 +85,10 @@ defmodule Display.Scenic.Planner do
     # if is_nil(state.origin) == nil do
       # Logger.debug("no bounding box")
     Logger.debug("mission: #{inspect(Map.get(state, :mission))}")
-    bounding_box = calculate_lat_lon_bounding_box(Map.get(state, :mission, %{}), orbit_center)
+    mission = Map.get(state, :mission, %{})
+    waypoints = Map.get(mission, :waypoints, [])
+    all_points = add_orbit_points_to_waypoints(orbit_center, radius, waypoints)
+    bounding_box = calculate_lat_lon_bounding_box(all_points, orbit_center)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
     # else
     #   Logger.debug("bb: #{inspect(state.origin)}")
@@ -105,18 +108,22 @@ defmodule Display.Scenic.Planner do
 
   def handle_cast(:clear_orbit, state) do
     Logger.debug("scenic clear orbit")
-    graph =
+    {graph, origin} =
     if is_nil(Map.get(state, :mission)) do
-      Scenic.Graph.delete(state.graph, @orbit_id)
+      Logger.debug("no mission, just delete orbit primitives")
+     {Scenic.Graph.delete(state.graph, @orbit_id), state.origin}
     else
       vehicle_position =
         Map.get(state, :vehicle, %{})
         |> Map.get(:position)
-      bounding_box = calculate_lat_lon_bounding_box(state.mission, vehicle_position)
+      Logger.debug("stored mission: #{Common.Utils.LatLonAlt.to_string(vehicle_position)}")
+      mission = Map.get(state, :mission)
+      waypoints = Map.get(mission, :waypoints, [])
+      bounding_box = calculate_lat_lon_bounding_box(waypoints, vehicle_position)
       origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
-      draw_mission(state.graph, origin, state.height, state.mission.waypoints, state.config_points)
+      {draw_mission(state.graph, origin, state.height, state.mission.waypoints, state.config_points), origin}
     end
-    {:noreply, %{state | graph: graph}, push: graph}
+    {:noreply, %{state | origin: origin, graph: graph}, push: graph}
   end
 
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
@@ -127,7 +134,7 @@ defmodule Display.Scenic.Planner do
       vehicle = %{position: position, yaw: yaw, speed: speed}
       origin =
       if is_nil(state.origin) do
-        bounding_box = calculate_lat_lon_bounding_box(%{}, position)
+        bounding_box = calculate_lat_lon_bounding_box([], position)
         calculate_origin(bounding_box, state.width, state.height, state.margin)
       else
         state.origin
@@ -152,8 +159,20 @@ defmodule Display.Scenic.Planner do
     |> draw_path(origin, height, config_points)
   end
 
-  @spec calculate_lat_lon_bounding_box(map(), map(), boolean()) :: tuple()
-  def calculate_lat_lon_bounding_box(mission, vehicle_position, degrees \\ false) do
+  @spec add_orbit_points_to_waypoints(map(), float(), list()) :: list()
+  def add_orbit_points_to_waypoints(orbit_center, radius, waypoints) do
+    orbit_points = Enum.reduce(0..3, [], fn (mult, acc) ->
+      angle = mult*:math.pi/2
+      x = radius*:math.sin(angle)
+      y = radius*:math.cos(angle)
+      point = Common.Utils.Location.lla_from_point(orbit_center, x, y)
+      [point] ++ acc
+    end)
+    orbit_points ++ waypoints
+  end
+
+  @spec calculate_lat_lon_bounding_box(list(), map(), boolean()) :: tuple()
+  def calculate_lat_lon_bounding_box(waypoints, vehicle_position, degrees \\ false) do
     {min_lat, max_lat, min_lon, max_lon} =
     if degrees==true do
       {90, -90, 180, -180}
@@ -162,7 +181,7 @@ defmodule Display.Scenic.Planner do
     end
 
 
-    waypoints = Map.get(mission, :waypoints, [])
+    # waypoints = Map.get(mission, :waypoints, [])
 
     all_coords =
     if vehicle_position == nil do
