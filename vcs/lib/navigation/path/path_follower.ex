@@ -10,7 +10,7 @@ defmodule Navigation.Path.PathFollower do
 
   @spec new(list) :: struct()
   def new(config) do
-    new(Keyword.fetch!(config, :k_path),Keyword.fetch!(config, :k_orbit),Keyword.fetch!(config, :chi_inf_two_over_pi),Keyword.fetch!(config, :lookahead_dt))
+    new(Keyword.fetch!(config, :k_path),Keyword.fetch!(config, :k_orbit),Keyword.fetch!(config, :chi_inf),Keyword.fetch!(config, :lookahead_dt))
   end
 
   @spec new(float(), float(), float(), float()) :: struct()
@@ -18,7 +18,7 @@ defmodule Navigation.Path.PathFollower do
     %Navigation.Path.PathFollower{
       k_path: k_path,
       k_orbit: k_orbit,
-      chi_inf_two_over_pi: chi_inf *2.0/:math.pi,
+      chi_inf_two_over_pi: chi_inf*2.0/:math.pi,
       lookahead_dt: lookahead_dt
     }
   end
@@ -64,8 +64,13 @@ defmodule Navigation.Path.PathFollower do
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
-      distance_to_z1 = Common.Utils.Location.dx_dy_between_points(path_case.zi,position)
-      |> Common.Utils.Math.hypot()
+      distance_to_z1 =
+      if is_nil(path_case.zi) do
+        1_000_000_000
+      else
+        Common.Utils.Location.dx_dy_between_points(path_case.zi,position)
+        |> Common.Utils.Math.hypot()
+      end
       # Only use lookahead position if we are far enough away from the transition to the next path case
       position = if (abs(distance_to_z1) > speed*1.0) or path_case.case_index == 0 or path_case.case_index == 3 do
         get_lookahead_position(position, speed, course, path_follower.lookahead_dt)
@@ -81,9 +86,9 @@ defmodule Navigation.Path.PathFollower do
       course_cmd = phi + path_case.turn_direction*(@pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
       |> Common.Utils.Motion.constrain_angle_to_compass()
 
-      # e_py = orbit_d - path_case.rho
+      e_py = orbit_d - path_case.rho
       # Logger.debug("orbit_d/rho: #{Common.Utils.eftb(orbit_d,2)}/#{Common.Utils.eftb(path_case.rho,2)}")
-      # d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
+      d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(d_course,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     end

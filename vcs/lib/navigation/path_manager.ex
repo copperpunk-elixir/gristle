@@ -41,12 +41,19 @@ defmodule Navigation.PathManager do
       current_path_case: nil,
       current_path_distance: 0,
       landing_altitude: 0,
-      path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower))
+      path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower)),
+      current_position: nil,
+      current_course: nil,
+      stored_current_cp_index: nil,
+      stored_current_path_case: nil,
+      orbit_active: false
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :clear_mission, self())
+    Comms.Operator.join_group(__MODULE__, :load_orbit, self())
+    Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
     {:noreply, state}
   end
 
@@ -84,6 +91,56 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
+  def handle_cast({:load_orbit, model_type, radius, confirmation}, state) do
+    Logger.debug("path manager load orbit: #{radius}")
+    {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(model_type, radius)
+    position = state.current_position
+    state =
+    if is_nil(position) or is_nil(state.current_course) do
+      Logger.warn("no position. can't load orbit")
+      state
+    else
+      path_case = new_orbit_path_case(position, state.current_course, speed, radius)
+      Logger.debug("valid load orbit: #{inspect(path_case)}")
+      # Confirm orbit
+      if confirmation do
+        center = path_case.c
+        Navigation.PathPlanner.send_orbit_confirmation(radius, center.latitude, center.longitude, center.altitude)
+      end
+      Logger.debug("current cpi/cpc: #{inspect(state.current_cp_index)}/#{inspect(state.current_path_case)}")
+      %{
+        state |
+        current_path_case: path_case,
+        current_cp_index: nil,
+        stored_current_cp_index: state.current_cp_index,
+        stored_current_path_case: state.current_path_case,
+        orbit_active: true
+      }
+    end
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast(:clear_orbit, state) do
+    Logger.debug("path man clear orbit")
+    Logger.debug("orbit active? #{state.orbit_active}")
+    state =
+    if state.orbit_active do
+      %{
+        state |
+        current_cp_index: state.stored_current_cp_index,
+        current_path_case: state.stored_current_path_case,
+        stored_current_cp_index: nil,
+        stored_current_path_case: nil,
+        orbit_active: false
+      }
+    else
+      state
+    end
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, position, velocity, _dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
@@ -97,6 +154,7 @@ defmodule Navigation.PathManager do
     # If we have a path_case, then follow it
     unless is_nil(current_path_case) do
       # Logger.debug("cpc_i: #{current_path_case.case_index}")
+      # Logger.debug("cpc: #{inspect(current_path_case)}")
       {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, speed, current_path_case)
       goals = %{speed: speed_cmd, altitude: altitude_cmd}
       path_case_type = current_path_case.type
@@ -144,7 +202,7 @@ defmodule Navigation.PathManager do
         end
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
-    {:noreply, state}
+    {:noreply, %{state | current_position: position, current_course: course}}
   end
 
   @spec get_agl_error(float(), float(), float()) :: float()
@@ -593,6 +651,21 @@ defmodule Navigation.PathManager do
     else
       %Navigation.Dubins.ConfigPoint{path_distance: 1_000_000}
     end
+  end
+
+  def new_orbit_path_case(position, course, speed, radius) do
+    direction = if radius > 0, do: 1, else: -1
+    course_offset = direction*@pi_2
+    radius = radius*direction
+    radius_center = Common.Utils.Location.lla_from_point_with_distance(position, radius, course + course_offset)
+    path_case = Navigation.Dubins.PathCase.new_orbit(-1, :flight)
+    %{
+      path_case |
+      v_des: speed,
+      c: radius_center,
+      rho: radius,
+      turn_direction: direction
+    }
   end
 
 

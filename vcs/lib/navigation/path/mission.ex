@@ -26,6 +26,32 @@ defmodule Navigation.Path.Mission do
     }
   end
 
+  @spec calculate_orbit_parameters(binary(), float()) :: tuple()
+  def calculate_orbit_parameters(model_type, radius) do
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    cruise_speed = get_model_spec(model_type, :cruise_speed)
+    min_loiter_speed = get_model_spec(model_type, :min_loiter_speed)
+    turn_rate = cruise_speed/radius
+    # Turn rate , Speed , Radius
+    if (turn_rate > planning_turn_rate) do
+      speed = planning_turn_rate*radius
+      # Logger.warn("turn rate too high. new speed: #{speed}")
+      cond do
+        speed < min_loiter_speed ->
+          # Logger.warn("too slow")
+          radius = min_loiter_speed/planning_turn_rate
+          {planning_turn_rate, min_loiter_speed, radius}
+        speed > cruise_speed ->
+          # Logger.warn("too fast")
+          radius = cruise_speed / planning_turn_rate
+          {planning_turn_rate, cruise_speed, radius}
+        true ->
+          {planning_turn_rate, speed, radius}
+      end
+    else
+      {turn_rate, cruise_speed, radius}
+    end
+  end
   @spec set_waypoints(struct(), list()) :: struct()
   def set_waypoints(mission, waypoints) do
     %{mission | waypoints: waypoints}
@@ -83,7 +109,7 @@ defmodule Navigation.Path.Mission do
     Navigation.Path.Mission.new_mission("default", [wp1, wp2, wp3, wp4, wp5], planning_turn_rate)
   end
 
-  @spec get_takeoff_waypoints(struct(), float(), atom()) :: list()
+  @spec get_takeoff_waypoints(struct(), float(), binary()) :: list()
   def get_takeoff_waypoints(start_position, course, model_type) do
     Logger.debug("start: #{Common.Utils.LatLonAlt.to_string(start_position)}")
     takeoff_roll_distance = get_model_spec(model_type, :takeoff_roll)
@@ -99,7 +125,7 @@ defmodule Navigation.Path.Mission do
     [wp0, wp1, wp2]
   end
 
- @spec get_landing_waypoints(struct(), float(), atom()) :: list()
+ @spec get_landing_waypoints(struct(), float(), binary()) :: list()
   def get_landing_waypoints(final_position, course, model_type) do
     landing_points = Enum.reduce(get_model_spec(model_type, :landing_distances_heights),[],fn({distance, height},acc) ->
       wp = Common.Utils.Location.lla_from_point_with_distance(final_position, distance, course)
@@ -116,7 +142,7 @@ defmodule Navigation.Path.Mission do
     # [wp0, wp1, wp2, wp3, wp4]
   end
 
-  @spec get_complete_mission(binary(), binary(), atom(), atom(), integer()) :: struct()
+  @spec get_complete_mission(binary(), binary(), binary(), atom(), integer()) :: struct()
   def get_complete_mission(airport, runway, model_type, track_type, num_wps) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
     takeoff_wps = get_takeoff_waypoints(start_position, start_course, model_type)
@@ -124,7 +150,7 @@ defmodule Navigation.Path.Mission do
     first_flight_wp = Enum.at(takeoff_wps, -1)
     flight_wps =
       case track_type do
-        nil ->
+        "none" ->
           if num_wps > 0 do
             get_random_waypoints(model_type, starting_wp, first_flight_wp,num_wps)
           else
@@ -146,7 +172,7 @@ defmodule Navigation.Path.Mission do
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
-  @spec get_track_waypoints(binary(), binary(), atom(), atom()) :: list()
+  @spec get_track_waypoints(binary(), binary(), atom(), binary()) :: list()
   def get_track_waypoints(airport, runway, track_type, model_type) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
     wps = %{
@@ -208,7 +234,7 @@ defmodule Navigation.Path.Mission do
   end
 
 
-  @spec get_random_waypoints(atom(), struct(), struct(), integer(), boolean(), integer()) :: struct()
+  @spec get_random_waypoints(binary(), struct(), struct(), integer(), boolean(), integer()) :: struct()
   def get_random_waypoints(model_type, ground_wp, first_flight_wp, num_wps, loop \\ false, starting_wp_index \\ 0) do
     {min_flight_speed, max_flight_speed} = get_model_spec(model_type, :flight_speed_range)
     {min_flight_agl, max_flight_agl} = get_model_spec(model_type, :flight_agl_range)
@@ -247,7 +273,7 @@ defmodule Navigation.Path.Mission do
     end
   end
 
-  @spec get_model_spec(atom(), atom()) :: any()
+  @spec get_model_spec(binary(), atom()) :: any()
   def get_model_spec(model_type, spec) do
     model = %{
       "Cessna" => %{
@@ -268,13 +294,15 @@ defmodule Navigation.Path.Mission do
         climbout_distance: 150,
         climbout_height: 40,
         climbout_speed: 20,
-        cruise_speed: 12,
+        cruise_speed: 15,
+        min_loiter_speed: 12,
         landing_distances_heights: [{-150, 30}, {-10,3}, {10, 1.5}, {40,0}],
-        landing_speeds: {15, 12},
+        landing_speeds: {12, 10},
         flight_speed_range: {12,18},
         flight_agl_range: {30, 50},
         wp_dist_range: {40, 60},
-        planning_turn_rate: 0.20
+        planning_turn_rate: 0.20,
+        planning_orbit_radius: 30
       },
       "T28" => %{
         takeoff_roll: 30,

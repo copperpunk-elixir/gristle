@@ -60,7 +60,7 @@ defmodule Pids.Controller.TecsBalance do
     # Proportional
     cmd_p = balance_corr
     # Integrator
-    Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.integrator_range_max,3)}")
+    # Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.integrator_range_max,3)}")
     in_range = Common.Utils.Math.in_range?(balance_corr, state.integrator_range_min, state.integrator_range_max)
     error_positive = cmd_p > 0
     i_positive = state.pv_integrator > 0
@@ -104,7 +104,7 @@ defmodule Pids.Controller.TecsBalance do
 
     # Logger.debug("tecs bal: #{Common.Utils.eftb_deg(output,1)}")
     # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb_deg(output, 3)}")
-    Logger.debug("p/i/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(output, 3)}")
+    # Logger.debug("p/i/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(output, 3)}")
 
     %{state | pv_integrator: pv_integrator, output: output, speed_prev: speed}
   end

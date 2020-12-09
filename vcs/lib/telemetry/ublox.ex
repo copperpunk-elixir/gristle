@@ -189,6 +189,9 @@ defmodule Telemetry.Ublox do
       :rpc -> [-4, -4]
       :mission -> [-4, -4, -4, -4, -4, -4]
       :clear_mission -> [-4]
+      :orbit -> [-4, 4, -4]
+      :orbit_confirmation -> [4, 4, 4, 4]
+      :clear_orbit -> [-4]
       :tx_battery -> [-4, -4, 4, 4, 4]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [-2] end)
       :cluster_status -> [-4, -1]
@@ -217,6 +220,9 @@ defmodule Telemetry.Ublox do
       :mission_proto -> {0x50, 0x02}
       :clear_mission -> {0x50, 0x03}
       :save_log_proto -> {0x50, 0x04}
+      :orbit -> {0x50, 0x05}
+      :orbit_confirmation -> {0x50, 0x06}
+      :clear_orbit -> {0x50, 0x07}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []

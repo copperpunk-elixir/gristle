@@ -46,7 +46,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
       course_flight: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
-      speed: [output_min: 0, output_max: 21, output_neutral: 0, output_mid: 10.5],
+      speed: [output_min: 0, output_max: 20, output_neutral: 0, output_mid: 10.5],
       altitude: [output_min: -10, output_max: 10, output_neutral: 0]
     ]
   end
@@ -58,7 +58,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
      kd: 0,
      altitude_kp: 1.0,
      energy_rate_scalar: 0.004,
-     integrator_range: 20,
+     integrator_range: 100,
      ff: get_feed_forward(:tecs, :thrust)]
   end
 
@@ -108,7 +108,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
         tecs: [
           thrust:
           fn (_cmd, _value, speed_cmd) ->
-            if (speed_cmd > 0), do: speed_cmd*speed_cmd/441.0, else: 0.0
+            if (speed_cmd > 0), do: speed_cmd*speed_cmd/400.0, else: 0.0
           end
         ]
       ]
