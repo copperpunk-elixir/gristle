@@ -5,6 +5,7 @@ defmodule Display.Scenic.Planner do
   import Scenic.Primitives
 
   @primitive_id :mission_primitives
+  @orbit_id :orbit_primitive
 
   @moduledoc """
   This version of `Sensor` illustrates using spec functions to
@@ -34,11 +35,14 @@ defmodule Display.Scenic.Planner do
       graph: graph,
       width: vp_width,
       height: vp_height,
-      margin: margin
+      margin: margin,
+      origin: nil
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :clear_mission, self())
+    Comms.Operator.join_group(__MODULE__, :display_orbit, self())
+    Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
     Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     {:ok, state, push: graph}
   end
@@ -51,11 +55,14 @@ defmodule Display.Scenic.Planner do
     bounding_box = calculate_lat_lon_bounding_box(mission, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
     {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
-    graph =
-      Scenic.Graph.delete(state.graph, @primitive_id)
-      |> draw_waypoints(origin, state.height, mission.waypoints)
-      |> draw_path(origin, state.height, config_points)
+    # graph =
+    #   Scenic.Graph.delete(state.graph, @primitive_id)
+    #   |> Scenic.Graph.delete(@orbit_id)
+    #   |> draw_waypoints(origin, state.height, mission.waypoints)
+    #   |> draw_path(origin, state.height, config_points)
+    graph = draw_mission(state.graph, origin, state.height, mission.waypoints, config_points)
     state = Map.put(state, :mission, mission)
+    |> Map.put(:config_points, config_points)
     |> Map.put(:origin, origin)
     |> Map.put(:graph, graph)
     {:noreply, state, push: graph }
@@ -70,6 +77,48 @@ defmodule Display.Scenic.Planner do
     {:noreply, state, push: graph }
   end
 
+  def handle_cast({:display_orbit, radius, latitude, longitude, altitude}, state) do
+    Logger.debug("scenic display orbit (#{radius}): #{Common.Utils.eftb_deg(latitude,5)}/#{Common.Utils.eftb_deg(longitude,5)}")
+    orbit_center = Common.Utils.LatLonAlt.new(latitude, longitude, altitude)
+
+    # origin =
+    # if is_nil(state.origin) == nil do
+      # Logger.debug("no bounding box")
+    Logger.debug("mission: #{inspect(Map.get(state, :mission))}")
+    bounding_box = calculate_lat_lon_bounding_box(Map.get(state, :mission, %{}), orbit_center)
+    origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
+    # else
+    #   Logger.debug("bb: #{inspect(state.origin)}")
+    #   state.origin
+    # end
+
+    graph =
+    if is_nil(Map.get(state, :mission)) do
+      Scenic.Graph.delete(state.graph, @orbit_id)
+      |> draw_orbit(origin, orbit_center, radius, state.height)
+    else
+      draw_mission(state.graph, origin, state.height, state.mission.waypoints, state.config_points)
+      |> draw_orbit(origin, orbit_center, radius, state.height)
+    end
+    {:noreply, %{state | origin: origin, graph: graph}, push: graph}
+  end
+
+  def handle_cast(:clear_orbit, state) do
+    Logger.debug("scenic clear orbit")
+    graph =
+    if is_nil(Map.get(state, :mission)) do
+      Scenic.Graph.delete(state.graph, @orbit_id)
+    else
+      vehicle_position =
+        Map.get(state, :vehicle, %{})
+        |> Map.get(:position)
+      bounding_box = calculate_lat_lon_bounding_box(state.mission, vehicle_position)
+      origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
+      draw_mission(state.graph, origin, state.height, state.mission.waypoints, state.config_points)
+    end
+    {:noreply, %{state | graph: graph}, push: graph}
+  end
+
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
     {state, graph} =
     if !Enum.empty?(position) and !Enum.empty?(velocity) and !Enum.empty?(attitude) do
@@ -77,7 +126,7 @@ defmodule Display.Scenic.Planner do
       speed = Map.get(velocity, :speed, 0)
       vehicle = %{position: position, yaw: yaw, speed: speed}
       origin =
-      if Map.get(state, :origin) == nil do
+      if is_nil(state.origin) do
         bounding_box = calculate_lat_lon_bounding_box(%{}, position)
         calculate_origin(bounding_box, state.width, state.height, state.margin)
       else
@@ -93,6 +142,14 @@ defmodule Display.Scenic.Planner do
       {state, state.graph}
     end
     {:noreply, state, push: graph}
+  end
+
+  @spec draw_mission(map(), struct(), float(), list(), list()) :: map()
+  def draw_mission(graph, origin, height, waypoints, config_points) do
+    Scenic.Graph.delete(graph, @primitive_id)
+    |> Scenic.Graph.delete(@orbit_id)
+    |> draw_waypoints(origin, height, waypoints)
+    |> draw_path(origin, height, config_points)
   end
 
   @spec calculate_lat_lon_bounding_box(map(), map(), boolean()) :: tuple()
@@ -228,7 +285,7 @@ defmodule Display.Scenic.Planner do
       # z0 = get_translate(cp.pos, origin, height)
       # z1 = get_translate(cp.z1, origin, height)
       # z2 = get_translate(cp.z2, origin, height)
-      # z3 = get_translate(cp.ce, origin, height)
+      # z3 = get_translate(cp.ce, origin, height)j
       # Logger.debug("wp/z1/z2")
       # Common.Utils.LatLonAlt.print_deg(cp.pos, :debug)
       # Common.Utils.LatLonAlt.print_deg(cp.z1)
@@ -244,6 +301,16 @@ defmodule Display.Scenic.Planner do
       |> arc({radius_ce, ce_arc_start_angle, ce_arc_finish_angle}, stroke: {line_width, :red}, translate: ce , id: @primitive_id)
       #Arc
     end)
+  end
+
+  @spec draw_orbit(map(), struct(), struct(), float(), float()) :: map()
+  def draw_orbit(graph, origin, orbit_center, radius, height) do
+    c_orbit = get_translate(orbit_center, origin, height)
+    color = if (radius > 0), do: :blue, else: :pink
+    point_on_circle = Common.Utils.Location.lla_from_point(orbit_center, radius, 0)
+    radius_draw = Display.Scenic.PlannerOrigin.get_dx_dy(origin, orbit_center, point_on_circle) |> Common.Utils.Math.hypot() |> round()
+    circle(graph, radius_draw, stroke: {2, color}, translate: c_orbit, id: @orbit_id)
+    |> circle(3, stroke: {2, color}, translate: c_orbit, id: @orbit_id)
   end
 
   @spec draw_vehicle(map(), struct(), struct(), float()) :: map()

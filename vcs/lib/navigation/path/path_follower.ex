@@ -64,8 +64,13 @@ defmodule Navigation.Path.PathFollower do
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
-      distance_to_z1 = Common.Utils.Location.dx_dy_between_points(path_case.zi,position)
-      |> Common.Utils.Math.hypot()
+      distance_to_z1 =
+      if is_nil(path_case.zi) do
+        1_000_000_000
+      else
+        Common.Utils.Location.dx_dy_between_points(path_case.zi,position)
+        |> Common.Utils.Math.hypot()
+      end
       # Only use lookahead position if we are far enough away from the transition to the next path case
       position = if (abs(distance_to_z1) > speed*1.0) or path_case.case_index == 0 or path_case.case_index == 3 do
         get_lookahead_position(position, speed, course, path_follower.lookahead_dt)

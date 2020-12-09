@@ -58,7 +58,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
      kd: 0,
      altitude_kp: 1.0,
      energy_rate_scalar: 0.004,
-     integrator_range: 20,
+     integrator_range: 100,
      ff: get_feed_forward(:tecs, :thrust)]
   end
 

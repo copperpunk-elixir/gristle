@@ -280,6 +280,30 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             filename =  save_log_pb.filename
             # Logging.Logger.save_log(filename)
             send_global({:save_log, filename})
+          0x05 ->
+            Logger.debug("orbit received")
+            msg_type = :orbit
+            [model_code, radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            model = Navigation.PathPlanner.get_model(model_code)
+            # orbit_path_case = Navigation.Path.Mission.get_orbit_mission(model, radius)
+            send_global({:load_orbit, model, radius, confirmation>0})
+          0x06 ->
+            Logger.debug("orbit confirmation received")
+            msg_type = :orbit_confirmation
+            [radius, latitude, longitude, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({:display_orbit, radius, latitude, longitude, altitude})
+          0x07 ->
+            Logger.debug("clear orbit")
+            msg_type = :clear_orbit
+            [confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global(msg_type, msg_type)
+            if confirmation > 0 do
+              Logger.debug("confirm clear orbit")
+              construct_and_send_message(:clear_orbit, [0])
+            else
+              Logger.debug("confirmation received/unnecessary")
+            end
+
         end
       _other ->  Logger.warn("Bad message class: #{msg_class}")
     end
@@ -326,6 +350,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @spec construct_and_send_message(any(), list()) :: atom()
   def construct_and_send_message(msg_type, payload) do
+    Logger.debug("#{inspect(msg_type)}: #{inspect(payload)}")
     payload = Common.Utils.assert_list(payload)
     msg = Telemetry.Ublox.construct_message(msg_type, payload)
     send_message(msg)
