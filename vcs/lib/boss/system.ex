@@ -77,7 +77,7 @@ defmodule Boss.System do
   @spec get_modules_for_node(binary()) :: list()
   def get_modules_for_node(node_type) do
     case node_type do
-      "gcs" ->[Display.Scenic, Peripherals.Uart]
+      "gcs" ->[Display.Scenic, Peripherals.Uart, Gcs]
       "sim" ->[
         Actuation,
         Pids,
@@ -87,7 +87,8 @@ defmodule Boss.System do
         Command,
         Simulation,
         Peripherals.Uart,
-        Display.Scenic
+        Display.Scenic,
+        Gcs
       ]
       "server" -> [Simulation, Peripherals.Uart, Display.Scenic]
       "all" -> [Actuation, Pids, Control, Estimation, Health, Navigation, Command, Peripherals.Uart, Peripherals.Gpio, Peripherals.I2c,Peripherals.Leds]

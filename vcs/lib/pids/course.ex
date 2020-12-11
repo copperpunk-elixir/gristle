@@ -11,7 +11,8 @@ defmodule Pids.Course do
     else
       roll_cmd = Pids.Pid.update_pid(:course_flight, :roll, cmds.course_flight, 0.0, airspeed, dt)
       # Logger.debug("crs/roll: #{Common.Utils.eftb_deg(cmds.course_flight,1)}/#{Common.Utils.eftb_deg(roll_cmd,1)}")
-      %{roll: roll_cmd}
+      yaw_cmd = 0.25*cmds.course_flight
+      %{roll: roll_cmd, yaw: yaw_cmd}
     end
     # output_str = Common.Utils.eftb_deg(roll_yaw_output.roll,2)
     # output_str =

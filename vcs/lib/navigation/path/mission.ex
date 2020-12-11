@@ -149,9 +149,14 @@ defmodule Navigation.Path.Mission do
     # [wp0, wp1, wp2, wp3, wp4]
   end
 
-  @spec get_complete_mission(binary(), binary(), binary(), binary(), integer()) :: struct()
-  def get_complete_mission(airport, runway, model_type, track_type, num_wps) do
-    {start_position, start_course} = get_runway_position_heading(airport, runway)
+  @spec get_complete_mission(binary(), binary(), binary(), binary(), integer(), struct(), struct()) :: struct()
+  def get_complete_mission(airport, runway, model_type, track_type, num_wps, start_position \\ nil, start_course \\ nil) do
+    {start_position, start_course} =
+    if is_nil(start_position) or is_nil(start_course) do
+      get_runway_position_heading(airport, runway)
+    else
+      {start_position, start_course}
+    end
     takeoff_wps = get_takeoff_waypoints(start_position, start_course, model_type)
     starting_wp = Enum.at(takeoff_wps, 0)
     first_flight_wp = Enum.at(takeoff_wps, -1)
