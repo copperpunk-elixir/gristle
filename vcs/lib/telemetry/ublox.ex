@@ -190,6 +190,7 @@ defmodule Telemetry.Ublox do
       :mission -> [-4, -4, -4, -4, -4, -4]
       :clear_mission -> [-4]
       :orbit -> [-4, 4, -4]
+      :orbit_centered -> [-4, 4, -4]
       :orbit_confirmation -> [4, 4, 4, 4]
       :clear_orbit -> [-4]
       :tx_battery -> [-4, -4, 4, 4, 4]
@@ -221,8 +222,9 @@ defmodule Telemetry.Ublox do
       :clear_mission -> {0x50, 0x03}
       :save_log_proto -> {0x50, 0x04}
       :orbit -> {0x50, 0x05}
-      :orbit_confirmation -> {0x50, 0x06}
-      :clear_orbit -> {0x50, 0x07}
+      :orbit_centered -> {0x50, 0x06}
+      :orbit_confirmation -> {0x50, 0x07}
+      :clear_orbit -> {0x50, 0x08}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []

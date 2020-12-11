@@ -42,8 +42,9 @@ defmodule Navigation.PathManager do
       current_path_distance: 0,
       landing_altitude: 0,
       path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower)),
-      current_position: nil,
-      current_course: nil,
+      position: nil,
+      speed: nil,
+      course: nil,
       stored_current_cp_index: nil,
       stored_current_path_case: nil,
       orbit_active: false
@@ -58,8 +59,14 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({:load_mission, mission}, state) do
-    Logger.debug("path manager load mission: #{mission.name}")
+  def handle_cast({:load_mission, mission, confirmation}, state) do
+    mission =
+    if is_nil(state.speed) or (state.speed < 1.0) do
+      mission
+    else
+      Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, state.speed, state.course)
+    end
+    # Logger.debug("path manager load mission: #{mission.name}")
     {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
@@ -71,8 +78,13 @@ defmodule Navigation.PathManager do
       current_cp_index: 0,
       current_path_case: current_path_case,
       current_path_distance: current_path_distance,
-      landing_altitude: landing_altitude
+      landing_altitude: landing_altitude,
+      orbit_active: false
     }
+    if (confirmation) do
+      pb_encoded = Navigation.Path.Mission.encode(mission, false)
+      Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
+    end
     {:noreply, state}
   end
 
@@ -91,31 +103,37 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({:load_orbit, model_type, radius, confirmation}, state) do
+  def handle_cast({:load_orbit, orbit_type, model_type, radius, confirmation}, state) do
     Logger.debug("path manager load orbit: #{radius}")
     {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(model_type, radius)
-    position = state.current_position
+    position = state.position
     state =
-    if is_nil(position) or is_nil(state.current_course) do
+    if is_nil(position) or is_nil(state.course) do
       Logger.warn("no position. can't load orbit")
       state
     else
-      path_case = new_orbit_path_case(position, state.current_course, speed, radius)
+      path_case = new_orbit_path_case(position, state.course, speed, radius, orbit_type)
       Logger.debug("valid load orbit: #{inspect(path_case)}")
       # Confirm orbit
       if confirmation do
         center = path_case.c
         Navigation.PathPlanner.send_orbit_confirmation(radius, center.latitude, center.longitude, center.altitude)
       end
-      Logger.debug("current cpi/cpc: #{inspect(state.current_cp_index)}/#{inspect(state.current_path_case)}")
-      %{
-        state |
-        current_path_case: path_case,
-        current_cp_index: nil,
-        stored_current_cp_index: state.current_cp_index,
-        stored_current_path_case: state.current_path_case,
-        orbit_active: true
-      }
+      # Logger.debug("current cpi/cpc: #{inspect(state.current_cp_index)}/#{inspect(state.current_path_case)}")
+      if state.orbit_active do
+        %{
+          state | current_path_case: path_case
+        }
+      else
+        %{
+          state |
+          current_path_case: path_case,
+          current_cp_index: nil,
+          stored_current_cp_index: state.current_cp_index,
+          stored_current_path_case: state.current_path_case,
+          orbit_active: true
+        }
+      end
     end
     {:noreply, state}
   end
@@ -202,7 +220,7 @@ defmodule Navigation.PathManager do
         end
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
-    {:noreply, %{state | current_position: position, current_course: course}}
+    {:noreply, %{state | position: position, speed: speed, course: course}}
   end
 
   @spec get_agl_error(float(), float(), float()) :: float()
@@ -260,8 +278,9 @@ defmodule Navigation.PathManager do
                 else
                   cp_index
                 end
-              index ->
-                Logger.debug("goto: #{index}")
+              wp_name ->
+                index = Common.Utils.index_for_embedded_value(state.config_points, :name, wp_name)
+                Logger.debug("goto: #{index} for wp: #{wp_name}")
                 index
             end
           case current_cp_index do
@@ -331,7 +350,7 @@ defmodule Navigation.PathManager do
         if current_cp == nil do
           raise "Invalid path plan"
         else
-          current_cp = set_dubins_parameters(current_cp)
+          current_cp = set_dubins_parameters(current_cp, index==0)
           {cp_list ++ [current_cp], total_path_distance + best_path_distance}
         end
       else
@@ -342,6 +361,7 @@ defmodule Navigation.PathManager do
 
   @spec find_shortest_path_between_config_points(struct(), struct()) :: struct()
   def find_shortest_path_between_config_points(current_cp, next_cp) do
+    # Logger.debug("current/next: #{inspect(current_cp)}/#{inspect(next_cp)}")
     # current_cp
     path_config_points =
       [right_right_path(current_cp, next_cp),
@@ -385,8 +405,11 @@ defmodule Navigation.PathManager do
     end
   end
 
-  @spec set_dubins_parameters(struct()) :: struct()
-  def set_dubins_parameters(cp) do
+  @spec set_dubins_parameters(struct(), boolean()) :: struct()
+  def set_dubins_parameters(cp, is_first_cp) do
+    {skip_case_0, skip_case_3} =
+    if is_first_cp, do: {true, true}, else: {cp.dubins.skip_case_0, cp.dubins.skip_case_3}
+
     path_case_0 = Navigation.Dubins.PathCase.new_orbit(0, cp.type)
     path_case_0 = %{
       path_case_0 |
@@ -430,7 +453,8 @@ defmodule Navigation.PathManager do
       q: cp.q3,
     }
 
-    %{cp | dubins: %{cp.dubins | path_cases: [path_case_0, path_case_1, path_case_2, path_case_3, path_case_4]}}
+    path_cases = [path_case_0, path_case_1, path_case_2, path_case_3, path_case_4]
+    %{cp | dubins: %{cp.dubins | skip_case_0: skip_case_0, skip_case_3: skip_case_3, path_cases: path_cases}}
   end
 
   @spec can_skip_case(float(), float(), integer()) :: boolean()
@@ -653,11 +677,17 @@ defmodule Navigation.PathManager do
     end
   end
 
-  def new_orbit_path_case(position, course, speed, radius) do
+  @spec new_orbit_path_case(struct(), float(), float(), float(), atom()) :: map()
+  def new_orbit_path_case(position, course, speed, radius, orbit_type) do
     direction = if radius > 0, do: 1, else: -1
     course_offset = direction*@pi_2
     radius = radius*direction
-    radius_center = Common.Utils.Location.lla_from_point_with_distance(position, radius, course + course_offset)
+    radius_center =
+      case orbit_type do
+        :centered -> position
+        :inline ->  Common.Utils.Location.lla_from_point_with_distance(position, radius, course + course_offset)
+        _other -> raise "Invalid orbit_type"
+      end
     path_case = Navigation.Dubins.PathCase.new_orbit(-1, :flight)
     %{
       path_case |

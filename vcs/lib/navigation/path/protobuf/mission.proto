@@ -21,7 +21,7 @@ message Mission {
     required float altitude = 4;
     required float speed = 5;
     required float course = 6;
-    optional int32 goto = 7 [default = -1];
+    optional string goto = 7 [default = ""];
     required WaypointType type = 8;
   }
 

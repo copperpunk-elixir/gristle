@@ -26,6 +26,12 @@ defmodule Navigation.Path.Mission do
     }
   end
 
+  # @spec to_string(struct()) :: binary()
+  # def to_string(mission) do
+  #   str = "#{name}\n"
+     
+  # end
+
   @spec calculate_orbit_parameters(binary(), float()) :: tuple()
   def calculate_orbit_parameters(model_type, radius) do
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
@@ -116,12 +122,13 @@ defmodule Navigation.Path.Mission do
     climbout_distance = get_model_spec(model_type, :climbout_distance)
     climbout_height = get_model_spec(model_type, :climbout_height)
     climbout_speed = get_model_spec(model_type, :climbout_speed)
+    cruise_speed = get_model_spec(model_type, :cruise_speed)
     takeoff_roll = Common.Utils.Location.lla_from_point_with_distance(start_position,takeoff_roll_distance, course)
     climb_position = Common.Utils.Location.lla_from_point_with_distance(start_position,climbout_distance, course)
     |> Map.put(:altitude, start_position.altitude+climbout_height)
     wp0 = Navigation.Path.Waypoint.new_ground(start_position, climbout_speed, course, "Start")
     wp1 = Navigation.Path.Waypoint.new_climbout(takeoff_roll, climbout_speed, course, "takeoff")
-    wp2 = Navigation.Path.Waypoint.new_flight(climb_position, climbout_speed, course, "climbout")
+    wp2 = Navigation.Path.Waypoint.new_flight(climb_position, cruise_speed, course, "climbout")
     [wp0, wp1, wp2]
   end
 
@@ -142,7 +149,7 @@ defmodule Navigation.Path.Mission do
     # [wp0, wp1, wp2, wp3, wp4]
   end
 
-  @spec get_complete_mission(binary(), binary(), binary(), atom(), integer()) :: struct()
+  @spec get_complete_mission(binary(), binary(), binary(), binary(), integer()) :: struct()
   def get_complete_mission(airport, runway, model_type, track_type, num_wps) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
     takeoff_wps = get_takeoff_waypoints(start_position, start_course, model_type)
@@ -156,7 +163,7 @@ defmodule Navigation.Path.Mission do
           else
             []
           end
-        type -> get_track_waypoints(airport, runway, type, model_type)
+        type -> get_track_waypoints(airport, runway, type, model_type, false)
       end
     landing_wps = get_landing_waypoints(start_position, start_course, model_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
@@ -172,43 +179,132 @@ defmodule Navigation.Path.Mission do
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
-  @spec get_track_waypoints(binary(), binary(), atom(), binary()) :: list()
-  def get_track_waypoints(airport, runway, track_type, model_type) do
+  @spec get_flight_mission(binary(), binary(), binary(), binary()) :: struct()
+  def get_flight_mission(airport, runway, model_type, track_type) do
+    # {start_position, start_course} = get_runway_position_heading(airport, runway)
+    wps = get_track_waypoints(airport, runway, track_type, model_type, true)
+    # Enum.each(wps, fn wp ->
+    #   {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
+    #   Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
+    # end)
+
+    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
+    # |> Keyword.get(:vehicle_turn_rate)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    # Logger.debug("wps: #{inspect(wps)}")
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
+  end
+
+
+  @spec get_landing_mission(binary(), binary(), binary()) :: struct()
+  def get_landing_mission(airport, runway, model_type) do
+    {start_position, start_course} = get_runway_position_heading(airport, runway)
+    wps = get_landing_waypoints(start_position, start_course, model_type)
+    Enum.each(wps, fn wp ->
+      {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
+      Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
+    end)
+
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: landing",wps, planning_turn_rate)
+  end
+
+  @spec add_current_position_to_mission(struct(), struct(), float(), float()) :: struct()
+  def add_current_position_to_mission(mission, current_position, speed, course) do
+    Logger.debug("add current position to mission")
+    current_wp = Navigation.Path.Waypoint.new_flight(current_position, speed, course,"start")
+    wps = [current_wp] ++ mission.waypoints
+    Navigation.Path.Mission.new_mission(mission.name,wps, mission.vehicle_turn_rate)
+  end
+
+  @spec get_track_waypoints(binary(), binary(), atom(), binary(), boolean()) :: list()
+  def get_track_waypoints(airport, runway, track_type, model_type, loop) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
-    wps = %{
-      "seatac" =>  %{},
-      "montague" =>
+    origin_heading = %{
+      "flight_school" =>
       %{
-        top_left: {41.7693, -122.5077, 900},
-        top_right: {41.7693, -122.50603, 900},
-        bottom_left: {41.76782, -122.5077, 900},
-        bottom_right: {41.76782, -122.50603, 900}
+        "18L" => {Common.Utils.LatLonAlt.new_deg(41.76174, -122.48928, 1186.6), 180.0}
       }
     }
-    wps_and_course_map =
+
+    wps_relative = %{
+      "flight_school" =>
       %{
-        "montague" =>
-        %{
-          "36L" => %{
-            racetrack_left: [{:top_left, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_right, 0}],
-            racetrack_right: [{:top_right, :math.pi}, {:bottom_right, :math.pi}, {:bottom_left, 0}, {:top_left, 0}],
-            hourglass: [{:top_right, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_left, 0}]
-          },
-          "18R" => %{
-            racetrack_left: [{:bottom_right, 0}, {:top_right, 0}, {:top_left, :math.pi}, {:bottom_left, :math.pi}],
-            racetrack_right: [{:bottom_left, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_right, :math.pi}],
-            hourglass: [{:bottom_right, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_left, :math.pi}]
-          }
+        "top_left" => {125,-100,30},
+        "top_right" => {125, 100, 30},
+        "bottom_left" => {-125, -100, 30},
+        "bottom_right" => {-125, 100, 30}
         }
-      }
-    wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
-    wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
-      {lat, lon, alt} = get_in(wps, [airport, wp_name])
-      lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
+    }
+
+    wps_and_course_map = %{
+      "racetrack_left" => [{"top_left", 180}, {"bottom_left", 180}, {"bottom_right", 0}, {"top_right", 0}],
+      "racetrack_right" => [{"top_left", 0}, {"top_right", 180}, {"bottom_right", 180}, {"bottom_left", 0}],
+      "hourglass_right" => [{"top_left", 0}, {"top_right", 180}, {"bottom_left", 180}, {"bottom_right", 0}],
+      "hourglass_left" => [{"top_right", 0}, {"top_left", 180}, {"bottom_right", 180}, {"bottom_left", 0}]
+    }
+
+    wps_and_course = Map.get(wps_and_course_map, track_type)
+    {origin, runway_heading} = get_in(origin_heading, [airport, runway])
+    Logger.debug("origin: #{Common.Utils.LatLonAlt.to_string(origin)}")
+    Logger.debug("runway_heading: #{runway_heading}")
+    wps = Enum.reduce(wps_and_course, [], fn ({wp_name, rel_course}, acc) ->
+      Logger.debug("#{airport}/#{wp_name}")
+      {rel_x, rel_y, rel_alt} = get_in(wps_relative, [airport, wp_name])
+      dx = rel_x*:math.cos(runway_heading)
+      dy = rel_y*:math.sin(runway_heading)
+      Logger.warn("dx/dy: #{dx}/#{dy}")
+      lla = Common.Utils.Location.lla_from_point(origin, dx, dy)
+      |> Map.put(:altitude, origin.altitude+rel_alt)
+      # lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
+      course = Common.Utils.Motion.constrain_angle_to_compass(Common.Utils.Math.deg2rad(rel_course + runway_heading))
       wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
       acc ++ [wp]
     end)
-    wps ++ [Enum.at(wps,0)]
+    Logger.debug("wps: #{inspect(wps)}")
+    first_wp = Enum.at(wps, 0)
+    final_wp =
+    if loop do
+      %{first_wp | goto: first_wp.name}
+    else
+      first_wp
+    end
+    wps ++ [final_wp]
+
+    # wps = %{
+    #   "seatac" =>  %{},
+    #   "montague" =>
+    #   %{
+    #     top_left: {41.7693, -122.5077, 900},
+    #     top_right: {41.7693, -122.50603, 900},
+    #     bottom_left: {41.76782, -122.5077, 900},
+    #     bottom_right: {41.76782, -122.50603, 900}
+    #   }
+    # }
+    # wps_and_course_map =
+    #   %{
+    #     "montague" =>
+    #     %{
+    #       "36L" => %{
+    #         racetrack_left: [{:top_left, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_right, 0}],
+    #         racetrack_right: [{:top_right, :math.pi}, {:bottom_right, :math.pi}, {:bottom_left, 0}, {:top_left, 0}],
+    #         hourglass: [{:top_right, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_left, 0}]
+    #       },
+    #       "18R" => %{
+    #         racetrack_left: [{:bottom_right, 0}, {:top_right, 0}, {:top_left, :math.pi}, {:bottom_left, :math.pi}],
+    #         racetrack_right: [{:bottom_left, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_right, :math.pi}],
+    #         hourglass: [{:bottom_right, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_left, :math.pi}]
+    #       }
+    #     }
+    #   }
+    # wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
+    # wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
+    #   {lat, lon, alt} = get_in(wps, [airport, wp_name])
+    #   lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
+    #   wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
+    #   acc ++ [wp]
+    # end)
+    # wps ++ [Enum.at(wps,0)]
   end
 
   @spec get_runway_position_heading(binary(), binary()) :: tuple()
@@ -234,8 +330,8 @@ defmodule Navigation.Path.Mission do
   end
 
 
-  @spec get_random_waypoints(binary(), struct(), struct(), integer(), boolean(), integer()) :: struct()
-  def get_random_waypoints(model_type, ground_wp, first_flight_wp, num_wps, loop \\ false, starting_wp_index \\ 0) do
+  @spec get_random_waypoints(binary(), struct(), struct(), integer(), boolean()) :: struct()
+  def get_random_waypoints(model_type, ground_wp, first_flight_wp, num_wps, loop \\ false) do
     {min_flight_speed, max_flight_speed} = get_model_spec(model_type, :flight_speed_range)
     {min_flight_agl, max_flight_agl} = get_model_spec(model_type, :flight_agl_range)
     {min_wp_dist, max_wp_dist} = get_model_spec(model_type, :wp_dist_range)
@@ -266,7 +362,7 @@ defmodule Navigation.Path.Mission do
     # end)
     if loop do
       first_wp = Enum.at(wps,0)
-      last_wp = %{first_wp | goto: starting_wp_index}
+      last_wp = %{first_wp | goto: starting_wp.name}
       wps ++ [last_wp]
     else
       wps
@@ -293,11 +389,11 @@ defmodule Navigation.Path.Mission do
         takeoff_roll: 10,
         climbout_distance: 150,
         climbout_height: 40,
-        climbout_speed: 20,
-        cruise_speed: 15,
+        climbout_speed: 12,
+        cruise_speed: 14,
         min_loiter_speed: 12,
-        landing_distances_heights: [{-150, 30}, {-10,3}, {10, 1.5}, {40,0}],
-        landing_speeds: {12, 10},
+        landing_distances_heights: [{-150, 30}, {-10,3}, {20, 1.5}, {50,0}],
+        landing_speeds: {13, 10},
         flight_speed_range: {12,18},
         flight_agl_range: {30, 50},
         wp_dist_range: {40, 60},
@@ -337,6 +433,8 @@ defmodule Navigation.Path.Mission do
   @spec encode(struct(), boolean()) :: binary()
   def encode(mission, confirm) do
     wps = Enum.reduce(mission.waypoints, [], fn (wp, acc) ->
+      goto= if (wp.goto == ""), do: nil, else: wp.goto
+      Logger.warn("#{wp.name} goto: #{goto}")
       wp_proto = Navigation.Path.Protobuf.Mission.Waypoint.new([
       name: wp.name,
       latitude: wp.latitude,
@@ -344,7 +442,7 @@ defmodule Navigation.Path.Mission do
       altitude: wp.altitude,
       speed: wp.speed,
       course: wp.course,
-      goto: (if is_nil(wp.goto), do: -1, else: wp.goto),
+      goto: goto,
       type: to_string(wp.type) |> String.upcase() |> String.to_atom()
       ])
       acc ++ [wp_proto]
