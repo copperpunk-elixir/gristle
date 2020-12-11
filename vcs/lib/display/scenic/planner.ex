@@ -47,7 +47,7 @@ defmodule Display.Scenic.Planner do
     {:ok, state, push: graph}
   end
 
-  def handle_cast({:load_mission, mission}, state) do
+  def handle_cast({:load_mission, mission, _confirmation}, state) do
     Logger.debug("planner load mission")
     vehicle_position =
       Map.get(state, :vehicle, %{})
@@ -55,11 +55,7 @@ defmodule Display.Scenic.Planner do
     bounding_box = calculate_lat_lon_bounding_box(mission.waypoints, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
     {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
-    # graph =
-    #   Scenic.Graph.delete(state.graph, @primitive_id)
-    #   |> Scenic.Graph.delete(@orbit_id)
-    #   |> draw_waypoints(origin, state.height, mission.waypoints)
-    #   |> draw_path(origin, state.height, config_points)
+
     graph = draw_mission(state.graph, origin, state.height, mission.waypoints, config_points)
     state = Map.put(state, :mission, mission)
     |> Map.put(:config_points, config_points)
@@ -78,25 +74,16 @@ defmodule Display.Scenic.Planner do
   end
 
   def handle_cast({:display_orbit, radius, latitude, longitude, altitude}, state) do
-    Logger.debug("scenic display orbit (#{radius}): #{Common.Utils.eftb_deg(latitude,5)}/#{Common.Utils.eftb_deg(longitude,5)}")
     orbit_center = Common.Utils.LatLonAlt.new(latitude, longitude, altitude)
 
-    # origin =
-    # if is_nil(state.origin) == nil do
-      # Logger.debug("no bounding box")
-    Logger.debug("mission: #{inspect(Map.get(state, :mission))}")
     mission = Map.get(state, :mission, %{})
     waypoints = Map.get(mission, :waypoints, [])
     all_points = add_orbit_points_to_waypoints(orbit_center, radius, waypoints)
     bounding_box = calculate_lat_lon_bounding_box(all_points, orbit_center)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
-    # else
-    #   Logger.debug("bb: #{inspect(state.origin)}")
-    #   state.origin
-    # end
 
     graph =
-    if is_nil(Map.get(state, :mission)) do
+    if Enum.empty?(Map.get(state, :mission, %{})) do
       Scenic.Graph.delete(state.graph, @orbit_id)
       |> draw_orbit(origin, orbit_center, radius, state.height)
     else
@@ -116,7 +103,6 @@ defmodule Display.Scenic.Planner do
       vehicle_position =
         Map.get(state, :vehicle, %{})
         |> Map.get(:position)
-      Logger.debug("stored mission: #{Common.Utils.LatLonAlt.to_string(vehicle_position)}")
       mission = Map.get(state, :mission)
       waypoints = Map.get(mission, :waypoints, [])
       bounding_box = calculate_lat_lon_bounding_box(waypoints, vehicle_position)

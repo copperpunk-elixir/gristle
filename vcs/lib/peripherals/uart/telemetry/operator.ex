@@ -238,36 +238,36 @@ defmodule Peripherals.Uart.Telemetry.Operator do
               0x02 -> Common.Utils.File.unmount_usb_drive()
               _other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
             end
-          0x01 ->
-            msg_type = :mission
-            Logger.debug("mission received")
-            [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            airport = Navigation.PathPlanner.get_airport(airport_code)
-            runway = Navigation.PathPlanner.get_runway(runway_code)
-            model = Navigation.PathPlanner.get_model(model_code)
-            track= Navigation.PathPlanner.get_track(track_code)
-            mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
-            send_global({:load_mission, mission})
-            if Navigation.PathPlanner.get_confirmation(confirmation) do
-              Logger.debug("send confirmation")
-              Navigation.PathPlanner.send_path_mission(airport, runway, model, track, num_wps, false)
-            else
-              Logger.debug("confirmation received")
-            end
+          # 0x01 ->
+          #   msg_type = :mission
+          #   Logger.debug("mission received")
+          #   [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+          #   airport = Navigation.PathPlanner.get_airport(airport_code)
+          #   runway = Navigation.PathPlanner.get_runway(runway_code)
+          #   model = Navigation.PathPlanner.get_model(model_code)
+          #   track= Navigation.PathPlanner.get_track(track_code)
+          #   mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
+          #   send_global({:load_mission, mission})
+          #   if Navigation.PathPlanner.get_confirmation(confirmation) do
+          #     Logger.debug("send confirmation")
+          #     Navigation.PathPlanner.send_complete_mission(airport, runway, model, track, num_wps, false)
+          #   else
+          #     Logger.debug("confirmation received")
+          #   end
           0x02 ->
             # Protobuf mission
             Logger.debug("proto mission received!")
             msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
-            send_global({:load_mission, mission})
-            if mission_pb.confirm do
-              Logger.debug("send confirmation")
-              pb_encoded = Navigation.Path.Mission.encode(mission, false)
-              construct_and_send_proto_message(msg_type, pb_encoded)
-            else
-              Logger.debug("confirmation received")
-            end
+            send_global({:load_mission, mission, mission_pb.confirm})
+            # if mission_pb.confirm do
+            #   Logger.debug("send confirmation")
+            #   pb_encoded = Navigation.Path.Mission.encode(mission, false)
+            #   construct_and_send_proto_message(msg_type, pb_encoded)
+            # else
+            #   Logger.debug("confirmation received")
+            # end
           0x03 ->
             msg_type = :clear_mission
             Logger.debug("Clear mission")
@@ -286,13 +286,20 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             [model_code, radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             model = Navigation.PathPlanner.get_model(model_code)
             # orbit_path_case = Navigation.Path.Mission.get_orbit_mission(model, radius)
-            send_global({:load_orbit, model, radius, confirmation>0})
+            send_global({:load_orbit, :inline, model, radius, confirmation>0})
           0x06 ->
+            Logger.debug("orbit centered received")
+            msg_type = :orbit_centered
+            [model_code, radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            model = Navigation.PathPlanner.get_model(model_code)
+            # orbit_path_case = Navigation.Path.Mission.get_orbit_mission(model, radius)
+            send_global({:load_orbit, :centered, model, radius, confirmation>0})
+          0x07 ->
             Logger.debug("orbit confirmation received")
             msg_type = :orbit_confirmation
             [radius, latitude, longitude, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({:display_orbit, radius, latitude, longitude, altitude})
-          0x07 ->
+          0x08 ->
             Logger.debug("clear orbit")
             msg_type = :clear_orbit
             [confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)

@@ -2,6 +2,7 @@ defmodule Navigation.Dubins.ConfigPoint do
   require Logger
 
   defstruct [
+    :name,
     :pos,
     :start_direction,
     :end_direction,
@@ -28,6 +29,7 @@ defmodule Navigation.Dubins.ConfigPoint do
     radius = if (waypoint.speed < 0.5), do: 1000.0, else: waypoint.speed/vehicle_turn_rate
     # Logger.debug("new waypoint. speed/turn_rate/radius: #{waypoint.speed}/#{vehicle_turn_rate}/#{radius}")
     %Navigation.Dubins.ConfigPoint{
+      name: waypoint.name,
       pos: Common.Utils.LatLonAlt.new(waypoint.latitude, waypoint.longitude, waypoint.altitude),
       start_speed: waypoint.speed,
       course: waypoint.course,

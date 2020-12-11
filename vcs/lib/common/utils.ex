@@ -187,4 +187,18 @@ defmodule Common.Utils do
     # System.cmd("poweroff", ["now"])
     Nerves.Runtime.poweroff()
   end
+
+  @spec index_for_embedded_value(list(), any(), any(), integer()) :: integer()
+  def index_for_embedded_value(container, key, value, index \\ 0) do
+    {[item], remaining} = Enum.split(container, 1)
+    if Map.get(item, key,:undefined) == value do
+      index
+    else
+      if Enum.empty?(remaining) do
+        nil
+      else
+        index_for_embedded_value(remaining, key, value, index+1)
+      end
+    end
+  end
 end

@@ -10,7 +10,8 @@ defmodule Navigation.Path.Protobuf.Utils do
   @spec rectify_mission(map()) :: map()
   def rectify_mission(mission) do
     wps = Enum.map(mission.waypoints, fn wp ->
-      goto = if (wp.goto<0), do: nil, else: wp.goto
+      # goto = if (wp.goto<0), do: nil, else: wp.goto
+      goto= if (wp.goto == ""), do: nil, else: wp.goto
       type = wp.type |> to_string() |> String.downcase |> String.to_existing_atom()
       %{wp | type: type, goto: goto}
     end)

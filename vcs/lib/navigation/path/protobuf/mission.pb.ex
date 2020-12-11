@@ -22,7 +22,7 @@ defmodule Navigation.Path.Protobuf.Mission.Waypoint do
           altitude: float | :infinity | :negative_infinity | :nan,
           speed: float | :infinity | :negative_infinity | :nan,
           course: float | :infinity | :negative_infinity | :nan,
-          goto: integer,
+          goto: String.t(),
           type: Navigation.Path.Protobuf.Mission.WaypointType.t()
         }
   defstruct [:name, :latitude, :longitude, :altitude, :speed, :course, :goto, :type]
@@ -33,7 +33,7 @@ defmodule Navigation.Path.Protobuf.Mission.Waypoint do
   field :altitude, 4, required: true, type: :float
   field :speed, 5, required: true, type: :float
   field :course, 6, required: true, type: :float
-  field :goto, 7, optional: true, type: :int32, default: -1
+  field :goto, 7, optional: true, type: :string, default: ""
   field :type, 8, required: true, type: Navigation.Path.Protobuf.Mission.WaypointType, enum: true
 end
 
