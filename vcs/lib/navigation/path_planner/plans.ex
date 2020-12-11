@@ -21,8 +21,8 @@ defmodule Navigation.PathPlanner.Plans do
     Navigation.PathPlanner.load_orbit_centered(radius, -1)
   end
 
-  @spec load_flight_school(any()) :: atom()
-  def load_flight_school(track_type_or_num_wps \\ nil) do
+  @spec load_flight_school(any(), boolean()) :: atom()
+  def load_flight_school(track_type_or_num_wps \\ nil, relative \\ false) do
     {track_type, num_wps} = get_track_wps_default(track_type_or_num_wps)
     runway =
       case track_type do
@@ -32,11 +32,16 @@ defmodule Navigation.PathPlanner.Plans do
         "racetrack_right" -> "36R"
         "hourglass_right" -> "36R"
       end
-    Logger.debug("track type: #{track_type}")
-    Logger.debug("num_wps: #{num_wps}")
     model_type = Common.Utils.Configuration.get_model_type()
-    Logger.info("model_type: #{inspect(model_type)}")
-    Navigation.PathPlanner.send_complete_mission("flight_school", runway, model_type, track_type, num_wps, true)
+    if relative do
+      Gcs.Operator.load_mission_relative("flight_school", runway, model_type, track_type, num_wps, true)
+    else
+      Navigation.PathPlanner.send_complete_mission("flight_school", runway, model_type, track_type, num_wps, true)
+    end
+  end
+  @spec load_flight_school_relative(any()) :: atom()
+  def load_flight_school_relative(track_type_or_num_wps \\ nil) do
+    load_flight_school(track_type_or_num_wps, true)
   end
 
   @spec load_seatac_34L(integer()) ::atom()
@@ -47,24 +52,14 @@ defmodule Navigation.PathPlanner.Plans do
 
   @spec load_montague_36L(any()) :: atom()
   def load_montague_36L(track_type_or_num_wps) do
-    {track_type, num_wps} =
-    if (is_atom(track_type_or_num_wps)) do
-      {track_type_or_num_wps, 0}
-    else
-      {"none", track_type_or_num_wps}
-    end
+    {track_type, num_wps} = get_track_wps_default(track_type_or_num_wps)
     model_type = Common.Utils.Configuration.get_model_type()
     Navigation.PathPlanner.send_complete_mission("montague", "36L", model_type, track_type, num_wps, true)
   end
 
   @spec load_montague_18R(any()) :: atom()
   def load_montague_18R(track_type_or_num_wps) do
-    {track_type, num_wps} =
-    if (is_atom(track_type_or_num_wps)) do
-      {track_type_or_num_wps, 0}
-    else
-      {"none", track_type_or_num_wps}
-    end
+    {track_type, num_wps} = get_track_wps_default(track_type_or_num_wps)
     model_type = Common.Utils.Configuration.get_model_type()
     Navigation.PathPlanner.send_complete_mission("montague", "18R",model_type, track_type, num_wps, true)
   end
@@ -82,25 +77,21 @@ defmodule Navigation.PathPlanner.Plans do
   @spec load_racetrack_flight_school(atom()) :: atom()
   def load_racetrack_flight_school(direction \\ :left) do
     track_type = if (direction == :left), do: "racetrack_left", else: "racetrack_right"
-    model_type = Common.Utils.Configuration.get_model_type()
-    Logger.info("model_type: #{inspect(model_type)}")
-    Navigation.PathPlanner.send_flight_mission("flight_school", "18L", model_type, track_type, true)
+    load_flight_school(track_type)
   end
 
   @spec load_hourglass_flight_school(atom()) :: atom()
   def load_hourglass_flight_school(direction \\ :left) do
     track_type = if (direction == :left), do: "hourglass_left", else: "hourglass_right"
-    model_type = Common.Utils.Configuration.get_model_type()
-    Logger.info("model_type: #{inspect(model_type)}")
-    Navigation.PathPlanner.send_flight_mission("flight_school", "18L", model_type, track_type, true)
+    load_flight_school(track_type)
   end
 
-
-  @spec land_flight_school() :: atom()
-  def land_flight_school() do
+  @spec land_flight_school(atom()) :: atom()
+  def land_flight_school(direction \\ :left) do
+    runway = if (direction == :left), do: "18L", else: "36R"
     model_type = Common.Utils.Configuration.get_model_type()
     Logger.info("model_type: #{inspect(model_type)}")
-    Navigation.PathPlanner.send_landing_mission("flight_school", "18L", model_type, true)
+    Navigation.PathPlanner.send_landing_mission("flight_school", runway, model_type, true)
   end
 
   # @spec get_airport(any()) :: binary()
