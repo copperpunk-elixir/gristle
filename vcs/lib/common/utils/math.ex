@@ -56,6 +56,15 @@ defmodule Common.Utils.Math do
     x*:math.pi()/180
   end
 
+  @spec rotate_point(float(), float(), float()) :: tuple()
+  def rotate_point(dx, dy, theta_rotate) do
+    gamma = :math.atan2(dy, dx)
+    hypot = hypot(dx,dy)
+    x = hypot*:math.cos(gamma+theta_rotate)
+    y = hypot*:math.sin(gamma+theta_rotate)
+    {x, y}
+  end
+
   def integer_power(x, pow) do
     Enum.reduce(1..pow, 1, fn (_iter, acc) ->
       x*acc

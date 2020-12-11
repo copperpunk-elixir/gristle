@@ -21,11 +21,22 @@ defmodule Navigation.PathPlanner.Plans do
     Navigation.PathPlanner.load_orbit_centered(radius, -1)
   end
 
-  @spec load_flight_school(integer()) :: atom()
-  def load_flight_school(num_wps \\ 0) do
+  @spec load_flight_school(any()) :: atom()
+  def load_flight_school(track_type_or_num_wps \\ nil) do
+    {track_type, num_wps} = get_track_wps_default(track_type_or_num_wps)
+    runway =
+      case track_type do
+        "none" -> "18L"
+        "racetrack_left" -> "18L"
+        "hourglass_left" -> "18L"
+        "racetrack_right" -> "36R"
+        "hourglass_right" -> "36R"
+      end
+    Logger.debug("track type: #{track_type}")
+    Logger.debug("num_wps: #{num_wps}")
     model_type = Common.Utils.Configuration.get_model_type()
     Logger.info("model_type: #{inspect(model_type)}")
-    Navigation.PathPlanner.send_complete_mission("flight_school", "18L", model_type, "none", num_wps, true)
+    Navigation.PathPlanner.send_complete_mission("flight_school", runway, model_type, track_type, num_wps, true)
   end
 
   @spec load_seatac_34L(integer()) ::atom()
@@ -56,6 +67,16 @@ defmodule Navigation.PathPlanner.Plans do
     end
     model_type = Common.Utils.Configuration.get_model_type()
     Navigation.PathPlanner.send_complete_mission("montague", "18R",model_type, track_type, num_wps, true)
+  end
+
+  @spec get_track_wps_default(any()) :: tuple()
+  def get_track_wps_default(track_type_or_num_wps) do
+    if (is_binary(track_type_or_num_wps)) do
+      {track_type_or_num_wps, 0}
+    else
+      num_wps = if is_nil(track_type_or_num_wps), do: 0, else: track_type_or_num_wps
+      {"none", num_wps}
+    end
   end
 
   @spec load_racetrack_flight_school(atom()) :: atom()

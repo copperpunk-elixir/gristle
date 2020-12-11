@@ -17,7 +17,7 @@ defmodule Common.Utils.File do
   @spec mount_usb_drive(binary(), integer(), integer()) :: tuple()
   def mount_usb_drive(path, count, count_max) do
     Logger.debug("Mount USB drive to #{path}")
-    {_resp, error_code} = System.cmd("mount", ["/dev/sda1", path])
+    {_resp, error_code} = System.cmd("mount", ["/dev/sdb1", path])
     if (error_code == 0) do
       :ok
     else

@@ -220,48 +220,46 @@ defmodule Navigation.Path.Mission do
   @spec get_track_waypoints(binary(), binary(), atom(), binary(), boolean()) :: list()
   def get_track_waypoints(airport, runway, track_type, model_type, loop) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
-    origin_heading = %{
-      "flight_school" =>
-      %{
-        "18L" => {Common.Utils.LatLonAlt.new_deg(41.76174, -122.48928, 1186.6), 180.0}
-      }
-    }
+    {origin, _runway_heading} = get_runway_position_heading(airport, runway)
 
     wps_relative = %{
       "flight_school" =>
       %{
-        "top_left" => {125,-100,30},
-        "top_right" => {125, 100, 30},
-        "bottom_left" => {-125, -100, 30},
-        "bottom_right" => {-125, 100, 30}
+        "top_left" => {75,-150,30},
+        "top_right" => {75, 50, 30},
+        "bottom_left" => {-175, -150, 30},
+        "bottom_right" => {-175, 50, 30}
         }
     }
 
     wps_and_course_map = %{
       "racetrack_left" => [{"top_left", 180}, {"bottom_left", 180}, {"bottom_right", 0}, {"top_right", 0}],
-      "racetrack_right" => [{"top_left", 0}, {"top_right", 180}, {"bottom_right", 180}, {"bottom_left", 0}],
+      "racetrack_right" => [{"bottom_left", 0}, {"top_left", 0}, {"top_right", 180}, {"bottom_right", 180}],
       "hourglass_right" => [{"top_left", 0}, {"top_right", 180}, {"bottom_left", 180}, {"bottom_right", 0}],
-      "hourglass_left" => [{"top_right", 0}, {"top_left", 180}, {"bottom_right", 180}, {"bottom_left", 0}]
+      "hourglass_left" => [{"top_left", 180}, {"bottom_right", 180}, {"bottom_left", 0}, {"top_right", 0} ]
+    }
+
+    reference_headings = %{
+      "flight_school" => 180
     }
 
     wps_and_course = Map.get(wps_and_course_map, track_type)
-    {origin, runway_heading} = get_in(origin_heading, [airport, runway])
-    Logger.debug("origin: #{Common.Utils.LatLonAlt.to_string(origin)}")
-    Logger.debug("runway_heading: #{runway_heading}")
+    reference_heading = Map.get(reference_headings, airport) |> Common.Utils.Math.deg2rad()
+    # Logger.debug("origin: #{Common.Utils.LatLonAlt.to_string(origin)}")
+    # Logger.debug("reference_heading: #{reference_heading}")
     wps = Enum.reduce(wps_and_course, [], fn ({wp_name, rel_course}, acc) ->
       Logger.debug("#{airport}/#{wp_name}")
       {rel_x, rel_y, rel_alt} = get_in(wps_relative, [airport, wp_name])
-      dx = rel_x*:math.cos(runway_heading)
-      dy = rel_y*:math.sin(runway_heading)
-      Logger.warn("dx/dy: #{dx}/#{dy}")
+      {dx, dy} = Common.Utils.Math.rotate_point(rel_x, rel_y, reference_heading)
+      # Logger.warn("relx/rely: #{rel_x}/#{rel_y}")
+      # Logger.warn("dx/dy: #{dx}/#{dy}")
       lla = Common.Utils.Location.lla_from_point(origin, dx, dy)
       |> Map.put(:altitude, origin.altitude+rel_alt)
       # lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
-      course = Common.Utils.Motion.constrain_angle_to_compass(Common.Utils.Math.deg2rad(rel_course + runway_heading))
+      course = Common.Utils.Motion.constrain_angle_to_compass(Common.Utils.Math.deg2rad(rel_course) + reference_heading)
       wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
       acc ++ [wp]
     end)
-    Logger.debug("wps: #{inspect(wps)}")
     first_wp = Enum.at(wps, 0)
     final_wp =
     if loop do
@@ -270,63 +268,34 @@ defmodule Navigation.Path.Mission do
       first_wp
     end
     wps ++ [final_wp]
-
-    # wps = %{
-    #   "seatac" =>  %{},
-    #   "montague" =>
-    #   %{
-    #     top_left: {41.7693, -122.5077, 900},
-    #     top_right: {41.7693, -122.50603, 900},
-    #     bottom_left: {41.76782, -122.5077, 900},
-    #     bottom_right: {41.76782, -122.50603, 900}
-    #   }
-    # }
-    # wps_and_course_map =
-    #   %{
-    #     "montague" =>
-    #     %{
-    #       "36L" => %{
-    #         racetrack_left: [{:top_left, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_right, 0}],
-    #         racetrack_right: [{:top_right, :math.pi}, {:bottom_right, :math.pi}, {:bottom_left, 0}, {:top_left, 0}],
-    #         hourglass: [{:top_right, :math.pi}, {:bottom_left, :math.pi}, {:bottom_right, 0}, {:top_left, 0}]
-    #       },
-    #       "18R" => %{
-    #         racetrack_left: [{:bottom_right, 0}, {:top_right, 0}, {:top_left, :math.pi}, {:bottom_left, :math.pi}],
-    #         racetrack_right: [{:bottom_left, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_right, :math.pi}],
-    #         hourglass: [{:bottom_right, 0}, {:top_left, 0}, {:top_right, :math.pi}, {:bottom_left, :math.pi}]
-    #       }
-    #     }
-    #   }
-    # wps_and_course = get_in(wps_and_course_map, [airport, runway, track_type])
-    # wps = Enum.reduce(wps_and_course, [], fn ({wp_name, course}, acc) ->
-    #   {lat, lon, alt} = get_in(wps, [airport, wp_name])
-    #   lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
-    #   wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
-    #   acc ++ [wp]
-    # end)
-    # wps ++ [Enum.at(wps,0)]
   end
 
   @spec get_runway_position_heading(binary(), binary()) :: tuple()
   def get_runway_position_heading(airport, runway) do
-    {lat, lon, alt, heading} =
-      case airport do
-      "seatac" ->
-        case runway do
-          "34L" -> {47.4407476, -122.3180652, 133.3, 0.0}
-        end
-      "montague" ->
-        case runway do
-          "36L" -> {41.76816, -122.50686, 802.0, 2.3}
-          "18R" -> {41.7689, -122.50682, 803.0, 182.3}
-        end
-        "flight_school" -> {41.76174, -122.48928, 1186.6, 180.0}
-        "boneyard" -> {42.18878, -122.08890, 0.2, 358.32}
-        "obstacle_course" -> {41.70676, -122.39755, 1800.4, 0.0}
-        "fpv_racing" -> {41.76302, -122.48963, 1186.6, 270}
-
-      end
-    {Common.Utils.LatLonAlt.new_deg(lat, lon, alt), Common.Utils.Math.deg2rad(heading)}
+    origin_heading = %{
+      "seatac" => %{
+        "34L" => {Common.Utils.LatLonAlt.new_deg(47.4407476, -122.3180652, 133.3), 0.0}
+      },
+      "montague" => %{
+        "36L" => {Common.Utils.LatLonAlt.new_deg(41.76816, -122.50686, 802.0), 2.3},
+        "18R" => {Common.Utils.LatLonAlt.new_deg(41.7689, -122.50682, 803.0), 182.3}
+      },
+      "flight_school" => %{
+        "18L" => {Common.Utils.LatLonAlt.new_deg(41.76174, -122.48928, 1186.6), 180.0},
+        "36R" => {Common.Utils.LatLonAlt.new_deg(41.76105, -122.48928, 1186.7), 0.0}
+      },
+      "boneyard" => %{
+        "36R" => {Common.Utils.LatLonAlt.new_deg(42.18878, -122.08890, 0.2), 358.32}
+      },
+      "obstacle_course" => %{
+        "36R" => {Common.Utils.LatLonAlt.new_deg(41.70676, -122.39755, 1800.4), 0.0}
+      },
+      "fpv_racing" => %{
+        "27R" => {Common.Utils.LatLonAlt.new_deg(41.76302, -122.48963, 1186.6), 270}
+      }
+    }
+    {origin, heading} = get_in(origin_heading, [airport, runway])
+    {origin, Common.Utils.Math.deg2rad(heading)}
   end
 
 
@@ -388,7 +357,7 @@ defmodule Navigation.Path.Mission do
       "CessnaZ2m" => %{
         takeoff_roll: 10,
         climbout_distance: 150,
-        climbout_height: 40,
+        climbout_height: 30,
         climbout_speed: 12,
         cruise_speed: 14,
         min_loiter_speed: 12,
@@ -434,7 +403,6 @@ defmodule Navigation.Path.Mission do
   def encode(mission, confirm) do
     wps = Enum.reduce(mission.waypoints, [], fn (wp, acc) ->
       goto= if (wp.goto == ""), do: nil, else: wp.goto
-      Logger.warn("#{wp.name} goto: #{goto}")
       wp_proto = Navigation.Path.Protobuf.Mission.Waypoint.new([
       name: wp.name,
       latitude: wp.latitude,
