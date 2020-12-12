@@ -26,12 +26,6 @@ defmodule Navigation.Path.Mission do
     }
   end
 
-  # @spec to_string(struct()) :: binary()
-  # def to_string(mission) do
-  #   str = "#{name}\n"
-     
-  # end
-
   @spec calculate_orbit_parameters(binary(), float()) :: tuple()
   def calculate_orbit_parameters(model_type, radius) do
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
@@ -172,31 +166,16 @@ defmodule Navigation.Path.Mission do
       end
     landing_wps = get_landing_waypoints(start_position, start_course, model_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
-    Enum.each(wps, fn wp ->
-      {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
-      Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
-    end)
-
-    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    # |> Keyword.get(:vehicle_turn_rate)
+    print_waypoints_relative(start_position, wps)
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
-    # Logger.debug("wps: #{inspect(wps)}")
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
   @spec get_flight_mission(binary(), binary(), binary(), binary()) :: struct()
   def get_flight_mission(airport, runway, model_type, track_type) do
-    # {start_position, start_course} = get_runway_position_heading(airport, runway)
     wps = get_track_waypoints(airport, runway, track_type, model_type, true)
-    # Enum.each(wps, fn wp ->
-    #   {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
-    #   Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
-    # end)
-
-    # vehicle_turn_rate = Configuration.Vehicle.Plane.Navigation.get_vehicle_limits(model_type)
-    # |> Keyword.get(:vehicle_turn_rate)
+    print_waypoints_relative(Enum.at(wps, 0), wps)
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
-    # Logger.debug("wps: #{inspect(wps)}")
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 
@@ -205,11 +184,7 @@ defmodule Navigation.Path.Mission do
   def get_landing_mission(airport, runway, model_type) do
     {start_position, start_course} = get_runway_position_heading(airport, runway)
     wps = get_landing_waypoints(start_position, start_course, model_type)
-    Enum.each(wps, fn wp ->
-      {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
-      Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
-    end)
-
+    print_waypoints_relative(start_position, wps)
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: landing",wps, planning_turn_rate)
   end
@@ -427,5 +402,13 @@ defmodule Navigation.Path.Mission do
       confirm: confirm
     ])
     Navigation.Path.Protobuf.Mission.encode(mission_proto)
+  end
+
+  @spec print_waypoints_relative(struct(), list()) :: atom()
+  def print_waypoints_relative(start_position, wps) do
+    Enum.each(wps, fn wp ->
+      {dx, dy} = Common.Utils.Location.dx_dy_between_points(start_position.latitude, start_position.longitude, wp.latitude, wp.longitude)
+      Logger.debug("wp: #{wp.name}: (#{Common.Utils.eftb(dx,0)}, #{Common.Utils.eftb(dy,0)}, #{Common.Utils.eftb(wp.altitude,0)})m")
+    end)
   end
 end
