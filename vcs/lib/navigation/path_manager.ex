@@ -41,6 +41,7 @@ defmodule Navigation.PathManager do
       current_path_case: nil,
       current_path_distance: 0,
       landing_altitude: 0,
+      takeoff_altitude: 0,
       path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower)),
       position: nil,
       speed: nil,
@@ -70,6 +71,7 @@ defmodule Navigation.PathManager do
     {config_points, current_path_distance} = new_path(mission.waypoints, mission.vehicle_turn_rate)
     current_cp = Enum.at(config_points, 0)
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
+    takeoff_altitude = Enum.at(config_points, 0) |> Map.get(:z2) |> Map.get(:altitude)
     landing_altitude = Enum.at(config_points, -1) |> Map.get(:z2) |> Map.get(:altitude)
     Logger.debug("landing altitude: #{landing_altitude}")
     state = %{
@@ -78,6 +80,7 @@ defmodule Navigation.PathManager do
       current_cp_index: 0,
       current_path_case: current_path_case,
       current_path_distance: current_path_distance,
+      takeoff_altitude: takeoff_altitude,
       landing_altitude: landing_altitude,
       orbit_active: false
     }
@@ -97,6 +100,7 @@ defmodule Navigation.PathManager do
       current_cp_index: nil,
       current_path_case: nil,
       current_path_distance: 0,
+      takeoff_altitude: 0,
       landing_altitude: 0,
     }
     {:noreply, state}
@@ -179,13 +183,19 @@ defmodule Navigation.PathManager do
       goals =
         case path_case_type do
           :flight -> Map.put(goals, :course_flight, course_cmd)
-          :climbout -> Map.put(goals, :course_flight, course_cmd)
+          :climbout ->
+            agl_error = get_agl_error(altitude_cmd, state.takeoff_altitude, position.agl)
+            altitude_cmd = position.altitude + agl_error
+            Map.put(goals, :course_flight, course_cmd)
+            |> Map.put(:altitude, altitude_cmd)
           :ground ->
             if (position.agl < state.vehicle_agl_ground_threshold) do
               if (speed < state.vehicle_takeoff_speed) do
                 Map.put(goals, :altitude, position.altitude)
               else
-                goals
+                agl_error = get_agl_error(altitude_cmd, state.takeoff_altitude, position.agl)
+                altitude_cmd = position.altitude + agl_error
+                Map.put(goals, :altitude, altitude_cmd)
               end
               |> Map.put(:course_ground, course_cmd)
             else

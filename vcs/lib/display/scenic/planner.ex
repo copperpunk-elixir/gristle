@@ -83,7 +83,7 @@ defmodule Display.Scenic.Planner do
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
 
     graph =
-    if Enum.empty?(Map.get(state, :mission, %{})) do
+    if Map.equal?(Map.get(state, :mission, %{}), %{}) do
       Scenic.Graph.delete(state.graph, @orbit_id)
       |> draw_orbit(origin, orbit_center, radius, state.height)
     else
