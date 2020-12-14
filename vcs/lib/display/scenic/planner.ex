@@ -249,7 +249,19 @@ defmodule Display.Scenic.Planner do
   def draw_waypoints(graph, origin, height, waypoints) do
     Enum.reduce(waypoints, graph, fn (wp, acc) ->
       wp_plot = get_translate(wp, origin, height)
-      wp_text = {elem(wp_plot,0) + 10, elem(wp_plot,1)}
+      left_or_right =
+        case wp.type do
+          :approach -> :left
+          :landing -> :left
+          _other -> :right
+        end
+      wp_text_x =
+      if left_or_right == :left do
+        elem(wp_plot,0) - 8*String.length(wp.name)
+      else
+        elem(wp_plot,0) + 10
+      end
+      wp_text = {wp_text_x, elem(wp_plot,1)}
       # Logger.debug("#{wp.name} xy: #{inspect(wp_plot)}")
       # Logger.debug(Common.Utils.LatLonAlt.to_string(wp))
       circle(acc, 10, fill: :blue, translate: wp_plot, id: @primitive_id)
@@ -323,7 +335,8 @@ defmodule Display.Scenic.Planner do
     {y_plot,x_plot} = Display.Scenic.PlannerOrigin.get_xy(origin, vehicle.position.latitude, vehicle.position.longitude)
     # Logger.debug("xy_plot: #{x_plot}/#{y_plot}")
     vehicle_size = ceil(vehicle.speed/10) + 10
-    Display.Scenic.Gcs.Utils.draw_arrow(graph, x_plot, vp_height-y_plot, vehicle.yaw, vehicle_size, :vehicle)
+    Scenic.Graph.delete(graph, :vehicle)
+    |> Display.Scenic.Gcs.Utils.draw_arrow(x_plot, vp_height-y_plot, vehicle.yaw, vehicle_size, :vehicle, true)
   end
 
   @spec get_translate(struct(), tuple(), float()) :: tuple()

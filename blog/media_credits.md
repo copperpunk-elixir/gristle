@@ -46,3 +46,8 @@ I'm not really sure how best to do this, but here are the links to any media tha
 1. Bunny: https://i.imgur.com/EaXaVpN.gif
 2. Flex Tape: https://i.kym-cdn.com/photos/images/newsfeed/001/706/064/57e.jpg
 3. Poe Air: http://www.reddit.com/r/reactiongifs/comments/3pse4c/mrw_when_i_leave_the_apartment_complexes_gym/
+
+## 10. Plan it, Janet!
+1.  https://www.abouttoblow.com/wp-content/uploads/riff-raff-neon-icon.jpg
+2.  Bruce Lee: https://media2.giphy.com/media/mKPTMhAlmhlRu/giphy.gif?cid=ecf05e47422584188641f77c901febde712d6bd851aa7b66&rid=giphy.gif
+3.  Come over: https://pics.onsizzle.com/bae-come-over-me-i-cant-amat-the-zoo-bae-2623471.png
