@@ -16,11 +16,11 @@ import sys
 
 ap = argparse.ArgumentParser()
 # ap.add_argument("--host", type=str, default=None, required=True)
-ap.add_argument("--host", type=str, default="192.168.7.196")
+ap.add_argument("--host", type=str, default="192.168.7.251")
 ap.add_argument("--port", type=int, default=19721)
-ap.add_argument("--region", type=str, default="0,100,1014,800")
+ap.add_argument("--region", type=str, default="10,100,1014,875")
 ap.add_argument("--rate", type=int, default=50)
-ap.add_argument("--quality", type=int, default=20)
+ap.add_argument("--quality", type=int, default=30)
 
 args = ap.parse_args()
 
