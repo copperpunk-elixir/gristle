@@ -40,7 +40,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       rollrate: [output_min: -3.9, output_max: 3.9, output_neutral: 0],
       pitchrate: [output_min: -2.35, output_max: 1.57, output_neutral: 0],
       yawrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
-      roll: [output_min: -1.05, output_max: 1.05, output_neutral: 0.0],
+      roll: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
       pitch: [output_min: -0.78, output_max: 0.52, output_neutral: 0.0],
       yaw: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],

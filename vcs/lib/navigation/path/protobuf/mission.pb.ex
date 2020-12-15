@@ -53,4 +53,5 @@ defmodule Navigation.Path.Protobuf.Mission do
   field :vehicle_turn_rate, 2, required: true, type: :float
   field :waypoints, 3, repeated: true, type: Navigation.Path.Protobuf.Mission.Waypoint
   field :confirm, 4, optional: true, type: :bool, default: false
+  field :display, 5, optional: true, type: :bool, default: false
 end

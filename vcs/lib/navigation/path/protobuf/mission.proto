@@ -27,4 +27,5 @@ message Mission {
 
   repeated Waypoint waypoints = 3;
   optional bool confirm = 4 [default = false];
+  optional bool display = 5 [default = false];
 }

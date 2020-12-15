@@ -39,7 +39,7 @@ defmodule Display.Scenic.Planner do
       origin: nil
     }
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, :load_mission, self())
+    Comms.Operator.join_group(__MODULE__, :display_mission, self())
     Comms.Operator.join_group(__MODULE__, :clear_mission, self())
     Comms.Operator.join_group(__MODULE__, :display_orbit, self())
     Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
@@ -47,7 +47,7 @@ defmodule Display.Scenic.Planner do
     {:ok, state, push: graph}
   end
 
-  def handle_cast({:load_mission, mission, _confirmation}, state) do
+  def handle_cast({:display_mission, mission}, state) do
     Logger.debug("planner load mission")
     vehicle_position =
       Map.get(state, :vehicle, %{})

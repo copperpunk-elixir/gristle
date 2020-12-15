@@ -79,5 +79,12 @@ defmodule Navigation.Path.Waypoint do
     @approach_type
   end
 
+  @spec to_string(struct()) :: binary()
+  def to_string(wp) do
+    lla = Common.Utils.LatLonAlt.new(wp.latitude, wp.longitude, wp.altitude)
+      line1 = "wp #{inspect(wp.name)}: #{Common.Utils.LatLonAlt.to_string(lla)}"
+      line2 = "Speed/Course: #{Common.Utils.eftb(wp.speed, 1)}/#{Common.Utils.eftb_deg(wp.course,1)}"
+      line1 <> ", " <> line2
+  end
 
 end

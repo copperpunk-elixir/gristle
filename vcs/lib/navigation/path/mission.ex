@@ -193,6 +193,13 @@ defmodule Navigation.Path.Mission do
   def add_current_position_to_mission(mission, current_position, speed, course) do
     Logger.debug("add current position to mission")
     current_wp = Navigation.Path.Waypoint.new_flight(current_position, speed, course,"start")
+    Logger.debug("mission wps:")
+    Enum.each(mission.waypoints, fn wp ->
+      Logger.debug(Navigation.Path.Waypoint.to_string(wp))
+    end)
+    Logger.debug("current wp: ")
+
+    Logger.debug(Navigation.Path.Waypoint.to_string(current_wp))
     wps = [current_wp] ++ mission.waypoints
     Navigation.Path.Mission.new_mission(mission.name,wps, mission.vehicle_turn_rate)
   end
@@ -379,8 +386,8 @@ defmodule Navigation.Path.Mission do
     get_in(model, [model_type, spec])
   end
 
-  @spec encode(struct(), boolean()) :: binary()
-  def encode(mission, confirm) do
+  @spec encode(struct(), boolean(), boolean()) :: binary()
+  def encode(mission, confirm \\ false, display \\ false) do
     wps = Enum.reduce(mission.waypoints, [], fn (wp, acc) ->
       goto= if (wp.goto == ""), do: nil, else: wp.goto
       wp_proto = Navigation.Path.Protobuf.Mission.Waypoint.new([
@@ -399,7 +406,8 @@ defmodule Navigation.Path.Mission do
       name: mission.name,
       vehicle_turn_rate: mission.vehicle_turn_rate,
       waypoints: wps,
-      confirm: confirm
+      confirm: confirm,
+      display: display
     ])
     Navigation.Path.Protobuf.Mission.encode(mission_proto)
   end

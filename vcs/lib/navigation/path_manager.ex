@@ -65,6 +65,7 @@ defmodule Navigation.PathManager do
     if is_nil(state.speed) or (state.speed < 1.0) do
       mission
     else
+      Logger.warn("add current position")
       Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, state.speed, state.course)
     end
     # Logger.debug("path manager load mission: #{mission.name}")
@@ -85,7 +86,7 @@ defmodule Navigation.PathManager do
       orbit_active: false
     }
     if (confirmation) do
-      pb_encoded = Navigation.Path.Mission.encode(mission, false)
+      pb_encoded = Navigation.Path.Mission.encode(mission, false, true)
       Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
     end
     {:noreply, state}
@@ -360,7 +361,7 @@ defmodule Navigation.PathManager do
         if current_cp == nil do
           raise "Invalid path plan"
         else
-          current_cp = set_dubins_parameters(current_cp, index==0)
+          current_cp = set_dubins_parameters(current_cp)
           {cp_list ++ [current_cp], total_path_distance + best_path_distance}
         end
       else
@@ -415,11 +416,8 @@ defmodule Navigation.PathManager do
     end
   end
 
-  @spec set_dubins_parameters(struct(), boolean()) :: struct()
-  def set_dubins_parameters(cp, is_first_cp) do
-    {skip_case_0, skip_case_3} =
-    if is_first_cp, do: {true, true}, else: {cp.dubins.skip_case_0, cp.dubins.skip_case_3}
-
+  @spec set_dubins_parameters(struct()) :: struct()
+  def set_dubins_parameters(cp) do
     path_case_0 = Navigation.Dubins.PathCase.new_orbit(0, cp.type)
     path_case_0 = %{
       path_case_0 |
@@ -464,7 +462,7 @@ defmodule Navigation.PathManager do
     }
 
     path_cases = [path_case_0, path_case_1, path_case_2, path_case_3, path_case_4]
-    %{cp | dubins: %{cp.dubins | skip_case_0: skip_case_0, skip_case_3: skip_case_3, path_cases: path_cases}}
+    %{cp | dubins: %{cp.dubins | path_cases: path_cases}}
   end
 
   @spec can_skip_case(float(), float(), integer()) :: boolean()

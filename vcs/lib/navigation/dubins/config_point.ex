@@ -38,4 +38,11 @@ defmodule Navigation.Dubins.ConfigPoint do
       type: waypoint.type
     }
   end
+
+  @spec to_string(struct()) :: binary()
+  def to_string(cp) do
+    line1 = "cp #{inspect(cp.name)}: #{Common.Utils.LatLonAlt.to_string(cp.pos)}"
+    line2 = "Speed/Course/Radius: #{Common.Utils.eftb(cp.start_speed, 1)}/#{Common.Utils.eftb_deg(cp.course,1)}/#{Common.Utils.eftb(cp.start_radius,1)}"
+    line1 <> ", " <> line2
+  end
 end

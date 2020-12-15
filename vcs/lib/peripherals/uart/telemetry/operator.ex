@@ -260,14 +260,11 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
-            send_global({:load_mission, mission, mission_pb.confirm})
-            # if mission_pb.confirm do
-            #   Logger.debug("send confirmation")
-            #   pb_encoded = Navigation.Path.Mission.encode(mission, false)
-            #   construct_and_send_proto_message(msg_type, pb_encoded)
-            # else
-            #   Logger.debug("confirmation received")
-            # end
+            if mission_pb.display do
+              send_global({:display_mission, mission})
+            else
+              send_global({:load_mission, mission, mission_pb.confirm})
+            end
           0x03 ->
             msg_type = :clear_mission
             Logger.debug("Clear mission")
