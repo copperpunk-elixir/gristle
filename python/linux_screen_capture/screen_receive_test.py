@@ -21,6 +21,7 @@ if __name__ == '__main__':
     while True:
         p = sock.recv(80000)
         img = cv2.imdecode(numpy.fromstring(p, dtype=numpy.uint8), -1)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         print("received img")
         cv2.imshow('img_decode',img)
         cv2.waitKey(1)
