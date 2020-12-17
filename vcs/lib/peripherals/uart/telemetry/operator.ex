@@ -106,7 +106,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     end
     control_state = Map.get(state, :control_state, nil)
     unless is_nil(control_state) do
-      values = [iTOW, control_state+1]
+      values = [iTOW, control_state]
       construct_and_send_message(:control_state, values, state.uart_ref)
     end
     # Power
@@ -192,7 +192,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
           0x14 ->
             msg_type = :control_state
             [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_global({msg_type, control_state-1})
+            send_global({msg_type, control_state})
           0x15 ->
             msg_type = :tx_battery
             [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
