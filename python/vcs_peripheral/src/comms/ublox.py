@@ -1,14 +1,6 @@
 from enum import Enum
-
-def calculate_checksum(buffer):
-	chka = 0
-	chkb = 0
-	for x in buffer:
-		chka = chka + x
-		chkb = chkb + chka
-		chka = chka & 0xFF
-		chkb = chkb & 0xFF
-	return chka, chkb
+import src.common.math as cmath
+import src.common.utils as cutils
 
 class State(Enum):
     NONE = 0
@@ -114,3 +106,69 @@ class Ublox:
 		payload.reverse()
 		return payload
 
+def calculate_checksum(buffer):
+	chka = 0
+	chkb = 0
+	for x in buffer:
+		chka = chka + x
+		chkb = chkb + chka
+		chka = chka & 0xFF
+		chkb = chkb & 0xFF
+	return chka, chkb
+
+def construct_message(msg_type, values):
+	(msg_class, msg_id) = get_msg_class_and_id(msg_type)
+	payload, payload_length = get_payload_and_length(msg_type, values)
+	payload_length_msb = (payload_length >> 8) & 0xFF
+	payload_length_lsb = payload_length & 0xFF
+	checksum_buffer = [msg_class, msg_id, payload_length_lsb, payload_length_msb] + payload
+	chka, chkb = calculate_checksum(checksum_buffer)
+	return [0xB5, 0x62] + checksum_buffer + [chka, chkb]
+
+def deconstruct_message(msg_type, payload):
+	byte_types = get_bytes_for_msg(msg_type)
+	values = []
+	remaining_buffer = payload.copy()
+	for bytes in byte_types:
+		bytes_abs = round(abs(bytes))
+		buffer = remaining_buffer[:bytes_abs]
+		remaining_buffer = remaining_buffer[bytes_abs:]
+		value = cutils.list_to_int(buffer)
+		if isinstance(bytes, float):
+			value = cutils.int_to_decimal(value, bytes_abs)
+		else:
+			if bytes < 0:
+				value = cmath.convert_from_twos_comp(value, bytes_abs)
+		values.append(value)
+	return values
+
+def get_payload_and_length(msg_type, values):
+	byte_types = get_bytes_for_msg(msg_type)
+	payload_length = 0
+	payload = []
+	for value, bytes in zip(values, byte_types):
+		bytes_abs = round(abs(bytes))
+		if isinstance(bytes, float):
+			value = cutils.decimal_to_int(value, bytes_abs)
+		value_list = cutils.int_to_list(value, bytes_abs)	
+		payload += value_list
+		payload_length += bytes_abs
+	return payload, payload_length
+
+msg_type_and_bytes = {
+	"orbit": [4, 4.0, 4],
+	"orbit_centered": [4, 4.0, 4],
+	"test": [4.0, 4.0, 4, -4] 
+}
+
+msg_class_and_id = {
+	"orbit": (0x50, 0x05),
+	"orbit_centered": (0x50, 0x06),
+	"test": (0x01, 0x02)
+}
+
+def get_bytes_for_msg(msg_type):
+	return msg_type_and_bytes[msg_type]
+
+def get_msg_class_and_id(msg_type):
+	return msg_class_and_id[msg_type]

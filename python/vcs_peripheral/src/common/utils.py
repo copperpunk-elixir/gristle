@@ -8,13 +8,15 @@ def list_to_int(x,endian='little'):
             value += b<<(8*index)
             index+=1
         return value
-    else:
+    elif endian=='big':
         value = 0
         index = 0
         for b in reversed(x):
             value += b<<(8*index)
             index+=1
         return value
+    print("Endianness must be \'big\' or \'little\'")
+    return None
 
 def int_to_list(x,bytes=4,endian='little'):
     result = []
@@ -22,41 +24,35 @@ def int_to_list(x,bytes=4,endian='little'):
         print("bytes must be 4 or 8")
         return None
 
-    for i in range(bytes):
+    for _i in range(bytes):
         byte = x & 0xFF
-        print("i/x/byte: %d/%d/%d" % (i,x,byte))
+        # print("i/x/byte: %d/%d/%d" % (i,x,byte))
         result.insert(0, byte)
         x = x >> 8
     if endian == 'little':
         result.reverse()
-    return result
+        return result
+    elif endian == 'big':
+        return result
+
+    print("Endianness must be \'big\' or \'little\'")
+    return None
 
 def decimal_to_list(x, bytes=4, endian='little'):
-    x_int = decimal_to_int(x, 4)
-    return int_to_list(x_int, 4, endian)
+    x_int = decimal_to_int(x, bytes)
+    return int_to_list(x_int, bytes, endian)
 
 def list_to_decimal(x, bytes=4, endian='little'):
     x_int = list_to_int(x, endian=endian)
-    print('x_int: %d' % x_int)
+    # print('x_int: %d' % x_int)
     return int_to_decimal(x_int,bytes)
 
-
-# def float_to_list(x, endian='little'):
-#     x_int = decimal_to_int(x)
-#     return int_to_list(x_int, 4, endian)
-
-
-# def list_to_float(x, endian='little'):
-#     x_int = list_to_int(x, 4, endian=endian)
-#     print('x_int: %d' % x_int)
-#     return int_to_decimal(x_int,4)
-
-
 def int_to_decimal(x, bytes=4):
-    x_bytes = struct.pack('i',x)
     if bytes == 4:
+        x_bytes = struct.pack('I',x)
         (x_float,) = struct.unpack('f',x_bytes)
     elif bytes == 8:
+        x_bytes = struct.pack('Q',x)
         (x_float,) = struct.unpack('d',x_bytes)
     else:
         print("bytes must be 4 or 8")
@@ -66,10 +62,11 @@ def int_to_decimal(x, bytes=4):
 def decimal_to_int(x, bytes=4):
     if bytes == 4:
         packed = struct.pack('f', x)
+        (x_int,) = struct.unpack('I', packed)
     elif bytes == 8:
         packed = struct.pack('d', x)
+        (x_int,) = struct.unpack('Q', packed)
     else:
         print("bytes must be 4 or 8")
         return None
-    (x_int,) = struct.unpack('i', packed)
     return x_int
