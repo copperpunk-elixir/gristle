@@ -100,14 +100,18 @@ defmodule Telemetry.Ublox do
   def deconstruct_message(msg_type, payload) do
     byte_types = get_bytes_for_msg(msg_type)
     {_payload_rem, values} = Enum.reduce(byte_types, {payload, []}, fn (bytes, {remaining_buffer, values}) ->
-      bytes_abs = abs(bytes)
+      bytes_abs = abs(bytes) |> round()
       {buffer, remaining_buffer} = Enum.split(remaining_buffer, bytes_abs)
 
       value = Common.Utils.list_to_int(buffer, bytes_abs)
-      value = if bytes>0 do
+      value = if is_float(bytes) do
         Common.Utils.Math.fp_from_uint(value, bytes_abs*8)
       else
-        value
+        if bytes > 0 do
+          value
+        else
+          Common.Utils.Math.twos_comp(bytes_abs*8)
+        end
       end
       {remaining_buffer, values ++ [value]}
     end)
@@ -119,8 +123,8 @@ defmodule Telemetry.Ublox do
     {msg_class, msg_id} = get_class_and_id_for_msg(msg_type)
     byte_types = get_bytes_for_msg(msg_type)
     {payload, payload_length} = Enum.reduce(Enum.zip(values, byte_types), {<<>>,0}, fn ({value, bytes}, {payload, payload_length}) ->
-      bytes_abs = abs(bytes)
-      value_bin = if bytes>0 do
+      bytes_abs = abs(bytes) |> round()
+      value_bin = if is_float(bytes) do
         Common.Utils.Math.uint_from_fp(value, round(bytes_abs*8))
       else
         Common.Utils.Math.int_little_bin(value, bytes_abs*8)
@@ -177,25 +181,25 @@ defmodule Telemetry.Ublox do
   @spec get_bytes_for_msg(atom()) :: list()
   def get_bytes_for_msg(msg_type) do
     case msg_type do
-      :accel_gyro -> [-4,-4,4,4,4,4,4,4]
-      {:telemetry, :pvat} -> [-4,4,4,4,4,4,4,4,4,4,4]
-      {:tx_goals, 1} -> [-4,4,4,4,4]
-      {:tx_goals, 2} -> [-4,4,4,4,4]
-      {:tx_goals, 3} -> [-4,4,4,4]
-      :control_state -> [-4,-4]
-      :set_pid_gain -> [-4,-4,-4,4]
-      :request_pid_gain -> [-4, -4, -4]
-      :get_pid_gain -> [-4, -4, -4, 4]
-      :rpc -> [-4, -4]
-      :mission -> [-4, -4, -4, -4, -4, -4]
-      :clear_mission -> [-4]
-      :orbit -> [-4, 4, -4]
-      :orbit_centered -> [-4, 4, -4]
-      :orbit_confirmation -> [4, 4, 4, 4]
-      :clear_orbit -> [-4]
-      :tx_battery -> [-4, -4, 4, 4, 4]
-      {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [-2] end)
-      :cluster_status -> [-4, -1]
+      :accel_gyro -> [4, -4, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
+      {:telemetry, :pvat} -> [4, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
+      {:tx_goals, 1} -> [4, 4.0, 4.0, 4.0, 4.0]
+      {:tx_goals, 2} -> [4, 4.0, 4.0, 4.0, 4.0]
+      {:tx_goals, 3} -> [4, 4.0, 4.0, 4.0]
+      :control_state -> [4, 4]
+      # :set_pid_gain -> [-4,-4,-4,4]
+      # :request_pid_gain -> [-4, -4, -4]
+      # :get_pid_gain -> [-4, -4, -4, 4]
+      :rpc -> [4, 4]
+      # :mission -> [-4, -4, -4, -4, -4, -4]
+      :clear_mission -> [4]
+      :orbit -> [4, 4.0, 4]
+      :orbit_centered -> [4, 4.0, 4]
+      :orbit_confirmation -> [4.0, 4.0, 4.0, 4.0]
+      :clear_orbit -> [4]
+      :tx_battery -> [4, 4, 4.0, 4.0, 4.0]
+      {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [2] end)
+      :cluster_status -> [4, 1]
       _other ->
         Logger.error("Non-existent msg_type")
         []

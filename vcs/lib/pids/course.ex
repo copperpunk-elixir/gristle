@@ -13,7 +13,7 @@ defmodule Pids.Course do
       course_cmd = Common.Utils.Math.constrain(cmds.course_flight,-@roll_max, @roll_max)
       # Logger.debug("course cmd: #{Common.Utils.eftb_deg(course_cmd,1)}")
       roll_cmd = Pids.Pid.update_pid(:course_flight, :roll, course_cmd, 0.0, airspeed, dt)
-      Logger.debug("crs/roll: #{Common.Utils.eftb_deg(course_cmd,1)}/#{Common.Utils.eftb_deg(roll_cmd,1)}")
+      # Logger.debug("crs/roll: #{Common.Utils.eftb_deg(course_cmd,1)}/#{Common.Utils.eftb_deg(roll_cmd,1)}")
       yaw_cmd = 0.25*cmds.course_flight
       %{roll: roll_cmd, yaw: yaw_cmd}
     end

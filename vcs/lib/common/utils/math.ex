@@ -211,6 +211,14 @@ defmodule Common.Utils.Math do
     si
   end
 
+  def twos_comp(x, bits) do
+    case bits do
+      16 -> twos_comp_16(x)
+      32 -> twos_comp_32(x)
+      64 -> twos_comp_64(x)
+    end
+  end
+
   def int16_little_bin(x) do
     <<x::little-signed-integer-16>>
   end
