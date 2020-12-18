@@ -1,13 +1,16 @@
 import serial
+import serial.tools.list_ports as list_ports
 import src.comms.ublox as ublox
 
 MAX_READ_BYTES = 100
 
 class Operator:
 
-    def __init__(self, baud, interface):
+    def __init__(self, baud, device_desc):
+        device = locate_com_port(device_desc) 
+        print("located %s at %s: " %(device_desc, device))
         self.baud = baud
-        self.interface = interface
+        self.device = device
         self.serial_port = None
         self.ublox = ublox.Ublox()
         self.x = None
@@ -16,8 +19,8 @@ class Operator:
         self.b = None
 
     def open(self):
-        print("open %s" % self.interface)
-        self.serial_port = serial.Serial(self.interface, self.baud, timeout=0.010)
+        print("open %s" % self.device)
+        self.serial_port = serial.Serial(self.device, self.baud, timeout=0.010)
 
     def read(self):
         buffer = self.serial_port.read(MAX_READ_BYTES)
@@ -34,7 +37,7 @@ class Operator:
         if msg_class == 0x01:
             if msg_id == 0x02:
                 print("received a test message")
-                [x, y, a, b] = ublox.deconstruct_message("test", payload)
+                [x, y, a, b] = ublox.deconstruct_message("test", payload) # pylint: disable=unbalanced-tuple-unpacking
                 self.x = x
                 self.y = y
                 self.a = a
@@ -45,3 +48,11 @@ class Operator:
 
     def send_byte_array(self, message):
         self.serial_port.write(message)
+
+def locate_com_port(description):
+    ports = list_ports.comports()
+    description_upper = description.upper()
+    for port in ports:
+        if port.description.upper().find(description_upper) > -1:
+            return port.device
+    return None

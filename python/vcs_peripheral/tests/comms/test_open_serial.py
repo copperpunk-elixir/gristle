@@ -5,8 +5,8 @@ from time import sleep
 
 def test_open_serial_port():
     baud = 115200
-    port = "/dev/ttyUSB0"
-    op = Operator(baud, port)
+    device_desc = "USB Serial"
+    op = Operator(baud, device_desc)
     op.open()
 
     msg_type = "test"
