@@ -29,7 +29,7 @@ class Ublox:
 		
 	def parse(self, byte):
 		state = self.state
-
+		# print("state: %d" %state.value)
 		if (state == State.NONE) and (byte == 0xB5):
 			self.state = State.SYNC1
 		elif state == State.SYNC1:
@@ -60,7 +60,7 @@ class Ublox:
 			self.chkb = chkb
 		elif state == State.LENGTH1:
 			msglen = self.msg_len + (byte<<8)
-			# Logger.debug("msglen: #{msglen)")
+			# print("msglen: %d" % msglen)
 			if (msglen <= MAX_PAYLOAD_LENGTH):
 				(chka, chkb) = self.add_to_checksum(byte)
 				self.state =State.LENGTH2
@@ -76,6 +76,7 @@ class Ublox:
 			count = self.count + 1
 			if (count == self.msg_len):
 				self.state = State.PAYLOAD
+				print(payload_rev)	
 			self.chka = chka
 			self.chkb = chkb
 			self.count = count
@@ -84,12 +85,14 @@ class Ublox:
 			if (byte == self.chka):
 				self.state = State.CHKA
 			else:
+				print("bad chka")
 				self.state = State.NONE
 		elif state == State.CHKA:
 			self.state =State.NONE
 			if (byte == self.chkb):
 				self.payload_ready = True
 			else:
+				print("bad chkb")
 				self.payload_ready = False
 		else:
 			# Garbage byte
@@ -156,7 +159,7 @@ def get_payload_and_length(msg_type, values):
 	return payload, payload_length
 
 msg_type_and_bytes = {
-	"orbit": [4.0, 1],
+	"orbit_inline": [4.0, 1],
 	"orbit_centered": [4.0, 1],
 	"orbit_at_location": [4.0, 4.0, 4.0, 4.0, 1],
 	"test": [4.0, 4.0, 4, -4] 

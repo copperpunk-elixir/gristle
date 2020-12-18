@@ -5,7 +5,7 @@ from time import sleep
 
 def test_open_serial_port():
     baud = 115200
-    device_desc = "USB Serial"
+    device_desc = "FT231X"
     op = Operator(baud, device_desc)
     op.open()
 
