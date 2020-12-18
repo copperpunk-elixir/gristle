@@ -2,30 +2,19 @@ defmodule Navigation.PathPlanner do
   # use GenServer
   require Logger
 
-  @spec load_orbit(float(), integer()) :: atom()
-  def load_orbit(radius, direction) do
-    model_type = Common.Utils.Configuration.get_model_type()
-    radius = if is_nil(radius) do
-      {_turn_rate, _cruise_speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(model_type, 0.001)
-      direction*radius
-    else
-      direction*radius
-    end
+  @spec load_orbit(integer(), float()) :: atom()
+  def load_orbit(direction, radius \\ 0) do
+    radius = if (radius>0), do: direction*radius, else: direction
     Logger.debug("load orbit: #{radius}")
-    send_orbit(model_type, radius)
+    send_orbit(radius)
   end
 
-  @spec load_orbit_centered(float(), integer()) :: atom()
-  def load_orbit_centered(radius, direction) do
-    model_type = Common.Utils.Configuration.get_model_type()
-    radius = if is_nil(radius) do
-      {_turn_rate, _cruise_speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(model_type, 0.001)
-      direction*radius
-    else
-      direction*radius
-    end
+  @spec load_orbit_centered(integer(), float()) :: atom()
+  def load_orbit_centered(direction, radius \\ 0) do
+    # model_type = Common.Utils.Configuration.get_model_type()
+    radius = if (radius>0), do: direction*radius, else: direction
     Logger.debug("load orbit centered: #{radius}")
-    send_orbit_centered(model_type, radius)
+    send_orbit_centered(radius)
   end
 
   @spec send_complete_mission(binary(), binary(), binary(), binary(), integer(), boolean()) :: atom()
@@ -50,18 +39,18 @@ defmodule Navigation.PathPlanner do
     Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
   end
 
-  @spec send_orbit(binary(), float()) :: atom()
-  def send_orbit(model_type, radius) do
-    model_code = get_model(model_type)
-    Logger.debug("send orbit: #{model_code}/#{radius}/#{true}")
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:orbit, [model_code, radius, 1])
+  @spec send_orbit(float()) :: atom()
+  def send_orbit(radius) do
+    # model_code = get_model(model_type)
+    Logger.debug("send orbit: #{radius}/#{true}")
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:orbit, [radius, 1])
   end
 
-  @spec send_orbit_centered(binary(), float()) :: atom()
-  def send_orbit_centered(model_type, radius) do
-    model_code = get_model(model_type)
-    Logger.debug("send orbit centered: #{model_code}/#{radius}/#{true}")
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:orbit_centered, [model_code, radius, 1])
+  @spec send_orbit_centered(float()) :: atom()
+  def send_orbit_centered(radius) do
+    # model_code = get_model(model_type)
+    Logger.debug("send orbit centered: #{radius}/#{true}")
+    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:orbit_centered, [radius, 1])
   end
 
   @spec send_orbit_confirmation(float(), float(), float(), float()) :: atom()

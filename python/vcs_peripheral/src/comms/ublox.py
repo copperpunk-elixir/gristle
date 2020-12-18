@@ -156,14 +156,16 @@ def get_payload_and_length(msg_type, values):
 	return payload, payload_length
 
 msg_type_and_bytes = {
-	"orbit": [4, 4.0, 4],
-	"orbit_centered": [4, 4.0, 4],
+	"orbit": [4.0, 1],
+	"orbit_centered": [4.0, 1],
+	"orbit_at_location": [4.0, 4.0, 4.0, 4.0, 1],
 	"test": [4.0, 4.0, 4, -4] 
 }
 
 msg_class_and_id = {
-	"orbit": (0x50, 0x05),
-	"orbit_centered": (0x50, 0x06),
+	"orbit_inline": (0x52, 0x00),
+	"orbit_centered": (0x52, 0x01),
+	"orbit_at_location": (0x52, 0x02),
 	"test": (0x01, 0x02)
 }
 

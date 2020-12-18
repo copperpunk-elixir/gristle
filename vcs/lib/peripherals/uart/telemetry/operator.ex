@@ -205,7 +205,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             send_global({msg_type, cluster_status})
           _other ->  Logger.warn("Bad message id: #{msg_id}")
         end
-       0x46  ->
+      0x46 ->
         case msg_id do
           0x00 ->
             # Msgpax
@@ -223,12 +223,11 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             # Msgpax
             msg_type = :get_pid_gain
             [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
-          Logger.warn("#{process_variable}->#{output_variable} #{parameter} = #{value}")
-
-          other -> Logger.warn("Bad message id: #{other}")
+            Logger.warn("#{process_variable}-#{output_variable} #{parameter} = #{value}")
+          _other -> Logger.warn("Bad message id: #{msg_id}")
         end
-
       0x50 ->
+        # Proto messages
         case msg_id do
           0x00 ->
             msg_type = :rpc
@@ -238,23 +237,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
               0x02 -> Common.Utils.File.unmount_usb_drive()
               _other -> Logger.warn("Bad cmd/arg: #{cmd}/#{arg}")
             end
-          # 0x01 ->
-          #   msg_type = :mission
-          #   Logger.debug("mission received")
-          #   [airport_code, runway_code, model_code, track_code, num_wps, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-          #   airport = Navigation.PathPlanner.get_airport(airport_code)
-          #   runway = Navigation.PathPlanner.get_runway(runway_code)
-          #   model = Navigation.PathPlanner.get_model(model_code)
-          #   track= Navigation.PathPlanner.get_track(track_code)
-          #   mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model, track, num_wps)
-          #   send_global({:load_mission, mission})
-          #   if Navigation.PathPlanner.get_confirmation(confirmation) do
-          #     Logger.debug("send confirmation")
-          #     Navigation.PathPlanner.send_complete_mission(airport, runway, model, track, num_wps, false)
-          #   else
-          #     Logger.debug("confirmation received")
-          #   end
-          0x02 ->
+          0x01 ->
             # Protobuf mission
             Logger.debug("proto mission received!")
             msg_type = :mission_proto
@@ -265,39 +248,50 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             else
               send_global({:load_mission, mission, mission_pb.confirm})
             end
-          0x03 ->
+          0x02 ->
             msg_type = :clear_mission
             Logger.debug("Clear mission")
             [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({msg_type, iTOW})
-          0x04 ->
+          0x03 ->
             # msg_type = :save_log_proto
             Logger.debug("save log proto received")
             save_log_pb = Display.Scenic.Gcs.Protobuf.SaveLog.decode(:binary.list_to_bin(payload))
             filename =  save_log_pb.filename
             # Logging.Logger.save_log(filename)
             send_global({:save_log, filename})
-          0x05 ->
-            Logger.debug("orbit received")
-            msg_type = :orbit
-            [model_code, radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            model = Navigation.PathPlanner.get_model(model_code)
-            # orbit_path_case = Navigation.Path.Mission.get_orbit_mission(model, radius)
-            send_global({:load_orbit, :inline, model, radius, confirmation>0})
-          0x06 ->
-            Logger.debug("orbit centered received")
-            msg_type = :orbit_centered
-            [model_code, radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            model = Navigation.PathPlanner.get_model(model_code)
-            # orbit_path_case = Navigation.Path.Mission.get_orbit_mission(model, radius)
-            send_global({:load_orbit, :centered, model, radius, confirmation>0})
-          0x07 ->
+        end
+      0x51 ->
+        # Confirmation messages
+        case msg_id do
+          0x00 ->
             Logger.debug("orbit confirmation received")
             msg_type = :orbit_confirmation
             [radius, latitude, longitude, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({:display_orbit, radius, latitude, longitude, altitude})
-          0x08 ->
-            Logger.debug("clear orbit")
+        end
+      0x52 ->
+        # Peripheral/GCS commands
+        case msg_id do
+          0x00 ->
+            Logger.debug("op rx: orbit")
+            msg_type = :orbit_inline
+            [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({:load_orbit, :inline, nil, radius, confirmation>0})
+          0x01 ->
+            Logger.debug("op rx: orbit centered")
+            msg_type = :orbit_centered
+            [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({:load_orbit, :centered, nil, radius, confirmation>0})
+          0x02 ->
+            Logger.debug("op rx: orbit at location")
+            msg_type = :orbit_at_location
+            [radius, latitude, longitude, altitude, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            position = Common.Utils.LatLonAlt.new(latitude, longitude, altitude)
+            send_global({:load_orbit, :centered, position, radius, confirmation>0})
+
+          0x03 ->
+            Logger.debug("op rx: clear orbit")
             msg_type = :clear_orbit
             [confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global(msg_type, msg_type)
@@ -307,9 +301,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
             else
               Logger.debug("confirmation received/unnecessary")
             end
-
         end
-      _other ->  Logger.warn("Bad message class: #{msg_class}")
+      _other -> Logger.warn("Bad message class: #{msg_class}")
     end
   end
 

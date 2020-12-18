@@ -31,9 +31,9 @@ defmodule Navigation.Path.Mission do
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     cruise_speed = get_model_spec(model_type, :cruise_speed)
     min_loiter_speed = get_model_spec(model_type, :min_loiter_speed)
-    turn_rate = cruise_speed/radius
+    turn_rate = if radius > 0, do: cruise_speed/radius, else: 0
     # Turn rate , Speed , Radius
-    if (turn_rate > planning_turn_rate) do
+    if (turn_rate > planning_turn_rate) or (turn_rate == 0) do
       speed = planning_turn_rate*radius
       # Logger.warn("turn rate too high. new speed: #{speed}")
       cond do
@@ -361,13 +361,15 @@ defmodule Navigation.Path.Mission do
         climbout_distance: 200,
         climbout_height: 40,
         climbout_speed: 15,
-        cruise_speed: 20,
+        cruise_speed: 14,
+        min_loiter_speed: 12,
         landing_distances_heights: [{-250, 40}, {-200,40}, {-50,3}, {1,0}],
         landing_speeds: {15, 10},
         flight_speed_range: {15,20},
         flight_agl_range: {50, 100},
         wp_dist_range: {200, 400},
-        planning_turn_rate: 0.80
+        planning_turn_rate: 0.30,
+        planning_orbit_radius: 25
       },
       "T28Z2m" => %{
         takeoff_roll: 30,

@@ -110,7 +110,7 @@ defmodule Telemetry.Ublox do
         if bytes > 0 do
           value
         else
-          Common.Utils.Math.twos_comp(bytes_abs*8)
+          Common.Utils.Math.twos_comp(value, bytes_abs*8)
         end
       end
       {remaining_buffer, values ++ [value]}
@@ -186,17 +186,18 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 1} -> [4, 4.0, 4.0, 4.0, 4.0]
       {:tx_goals, 2} -> [4, 4.0, 4.0, 4.0, 4.0]
       {:tx_goals, 3} -> [4, 4.0, 4.0, 4.0]
-      :control_state -> [4, 4]
+      :control_state -> [4, 1]
       # :set_pid_gain -> [-4,-4,-4,4]
       # :request_pid_gain -> [-4, -4, -4]
       # :get_pid_gain -> [-4, -4, -4, 4]
       :rpc -> [4, 4]
       # :mission -> [-4, -4, -4, -4, -4, -4]
-      :clear_mission -> [4]
-      :orbit -> [4, 4.0, 4]
-      :orbit_centered -> [4, 4.0, 4]
+      :clear_mission -> [1]
       :orbit_confirmation -> [4.0, 4.0, 4.0, 4.0]
-      :clear_orbit -> [4]
+      :orbit_inline -> [4.0, 1]
+      :orbit_centered -> [4.0, 1]
+      :orbit_at_location -> [4.0, 4.0, 4.0, 4.0, 1]
+      :clear_orbit -> [1]
       :tx_battery -> [4, 4, 4.0, 4.0, 4.0]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [2] end)
       :cluster_status -> [4, 1]
@@ -221,14 +222,14 @@ defmodule Telemetry.Ublox do
       :request_pid_gain -> {0x46, 0x01}
       :get_pid_gain -> {0x46, 0x02}
       :rpc  -> {0x50, 0x00}
-      :mission -> {0x50, 0x01}
-      :mission_proto -> {0x50, 0x02}
-      :clear_mission -> {0x50, 0x03}
-      :save_log_proto -> {0x50, 0x04}
-      :orbit -> {0x50, 0x05}
-      :orbit_centered -> {0x50, 0x06}
-      :orbit_confirmation -> {0x50, 0x07}
-      :clear_orbit -> {0x50, 0x08}
+      :mission_proto -> {0x50, 0x01}
+      :clear_mission -> {0x50, 0x02}
+      :save_log_proto -> {0x50, 0x03}
+      :orbit_confirmation -> {0x51, 0x00}
+      :orbit_inline -> {0x52, 0x00}
+      :orbit_centered -> {0x52, 0x01}
+      :orbit_at_location -> {0x52, 0x02}
+      :clear_orbit -> {0x52, 0x03}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []

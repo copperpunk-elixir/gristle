@@ -20,9 +20,9 @@ def list_to_int(x,endian='little'):
 
 def int_to_list(x,bytes=4,endian='little'):
     result = []
-    if bytes < 4 or bytes > 8:
-        print("bytes must be 4 or 8")
-        return None
+    # if bytes < 4 or bytes > 8:
+    #     print("bytes must be 4 or 8")
+    #     return None
 
     for _i in range(bytes):
         byte = x & 0xFF

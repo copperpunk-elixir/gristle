@@ -31,6 +31,7 @@ defmodule Navigation.PathManager do
       vehicle_loiter_speed: Keyword.fetch!(config, :vehicle_loiter_speed),
       vehicle_agl_ground_threshold: Keyword.fetch!(config, :vehicle_agl_ground_threshold),
       vehicle_takeoff_speed: Keyword.fetch!(config, :vehicle_takeoff_speed),
+      model_type: Keyword.fetch!(config, :model_type),
       # vehicle_max_ground_speed: Keyword.fetch!(config, :vehicle_max_ground_speed),
       goals_classification: goals_classification,
       goals_time_validity_ms: goals_time_validity_ms,
@@ -108,10 +109,10 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({:load_orbit, orbit_type, model_type, radius, confirmation}, state) do
+  def handle_cast({:load_orbit, orbit_type, position, radius, confirmation}, state) do
     Logger.debug("path manager load orbit: #{radius}")
-    {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(model_type, radius)
-    position = state.position
+    {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
+    position = if is_nil(position), do: state.position, else: position
     state =
     if is_nil(position) or is_nil(state.course) do
       Logger.warn("no position. can't load orbit")
