@@ -73,13 +73,13 @@ defmodule Logging.Logger do
   @spec save_log_remote() :: atom()
   def save_log_remote() do
     payload = [0x01, 0]
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:rpc, payload)
+    Peripherals.Uart.Generic.construct_and_send_message(:rpc, payload, Telemetry)
   end
 
   @spec unmount_remote() :: atom()
   def unmount_remote() do
     payload = [0x02, 0]
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_message(:rpc, payload)
+    Peripherals.Uart.Generic.construct_and_send_message(:rpc, payload, Telemetry)
   end
 
   @spec get_log_directory() :: binary()

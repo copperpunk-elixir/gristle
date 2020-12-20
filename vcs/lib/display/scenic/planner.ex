@@ -93,7 +93,7 @@ defmodule Display.Scenic.Planner do
     {:noreply, %{state | origin: origin, graph: graph}, push: graph}
   end
 
-  def handle_cast(:clear_orbit, state) do
+  def handle_cast({:clear_orbit, _confirmaiton}, state) do
     Logger.debug("scenic clear orbit")
     {graph, origin} =
     if is_nil(Map.get(state, :mission)) do

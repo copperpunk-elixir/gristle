@@ -88,7 +88,7 @@ defmodule Navigation.PathManager do
     }
     if (confirmation) do
       pb_encoded = Navigation.Path.Mission.encode(mission, false, true)
-      Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
+      Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, Peripherals.Uart.Telemetry.Operator)
     end
     {:noreply, state}
   end
@@ -145,9 +145,13 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast(:clear_orbit, state) do
+  def handle_cast({:clear_orbit, confirmation}, state) do
     Logger.debug("path man clear orbit")
     Logger.debug("orbit active? #{state.orbit_active}")
+    if confirmation do
+      Logger.debug("confirm clear orbit")
+      Peripherals.Uart.Generic.construct_and_send_message(:clear_orbit, [0], Telemetry)
+    end
     state =
     if state.orbit_active do
       %{

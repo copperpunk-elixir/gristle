@@ -101,7 +101,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_teraranger_evo_config(binary()) :: list()
   def get_teraranger_evo_config(uart_port) do
     [
-      uart_port: uart_port_real_or_sim(uart_port, "FT232R"),
+      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
       port_options: [
         speed: 115_200
       ]
@@ -111,7 +111,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_vn_ins_config(binary()) :: list()
   def get_vn_ins_config(uart_port) do
     [
-      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
+      uart_port: uart_port_real_or_sim(uart_port, "FT232R"),
       port_options: [speed: 115_200],
       expecting_pos_vel: true
     ]
