@@ -37,7 +37,7 @@ defmodule Estimation.Estimator do
       agl: 0.0,
       airspeed: 0.0,
       laser_alt_ekf: Estimation.LaserAltimeterEkf.new([]),
-      ground_altitude: 0.0
+      # ground_altitude: 0.0
     }
 
     Comms.System.start_operator(__MODULE__)
@@ -81,28 +81,30 @@ defmodule Estimation.Estimator do
     # Logger.debug("Estimator rx: #{inspect(pv_value_map)}")
     position = Map.get(pv_value_map, :position)
     velocity = Map.get(pv_value_map, :velocity)
-    {position, velocity} =
+    {position, velocity, update_agl} =
     if (position == nil) or (velocity==nil) do
-      {state.position, state.velocity}
+      {state.position, state.velocity, false}
     else
-      position = Map.put(position, :altitude, position.altitude)
+      # position = Map.put_new(position, :ground_altitude, position.altitude)
       Watchdog.Active.feed(:pos_vel)
       # If the velocity is below a threshold, we use yaw instead
       {speed, course} = Common.Utils.Motion.get_speed_course_for_velocity(velocity.north, velocity.east, state.min_speed_for_course, Map.get(state.attitude, :yaw, 0))
       velocity = %{speed: speed, course: course, vertical: -velocity.down}
-      {position, velocity}
+      {position, velocity, true}
     end
 
     {ekf, ground_altitude, agl} =
-    if (state.watchdog_fed.range == true) do
+    if (state.watchdog_fed.range == true) and update_agl do
       ekf =update_ekf(state.laser_alt_ekf, state.attitude, velocity)
       agl = Estimation.LaserAltimeterEkf.agl(ekf)
       ground_altitude = position.altitude - agl
       {ekf, ground_altitude, agl}
     else
-      {state.laser_alt_ekf, state.ground_altitude, position.altitude - state.ground_altitude}
+      ground_altitude = Map.get(state, :ground_altitude, Map.get(position, :altitude, 0))
+      {state.laser_alt_ekf, ground_altitude, position.altitude - ground_altitude}
     end
-    state = %{state | position: position, velocity: velocity, laser_alt_ekf: ekf, ground_altitude: ground_altitude, agl: agl}
+    state = if ground_altitude != 0, do: Map.put(state, :ground_altitude, ground_altitude), else: state
+    state = %{state | position: position, velocity: velocity, laser_alt_ekf: ekf, agl: agl}
     {:noreply, state}
   end
 

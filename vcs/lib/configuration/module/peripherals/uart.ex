@@ -36,6 +36,7 @@ defmodule Configuration.Module.Peripherals.Uart do
       "Xbee" -> {Telemetry, get_telemetry_config(uart_port)}
       "Sik" -> {Telemetry, get_telemetry_config(uart_port)}
       "PwmReader" -> {PwmReader, get_pwm_reader_config(uart_port)}
+      "Generic" -> {Generic, get_generic_config(uart_port)}
     end
   end
 
@@ -152,6 +153,14 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_pwm_reader_config(uart_port) do
     [
       uart_port: uart_port_real_or_sim(uart_port, "Feather M0"),
+      port_options: [speed: 115_200],
+    ]
+  end
+
+  @spec get_generic_config(binary()) :: list()
+  def get_generic_config(uart_port) do
+    [
+      uart_port: uart_port_real_or_sim(uart_port, "CP2104"),
       port_options: [speed: 115_200],
     ]
   end

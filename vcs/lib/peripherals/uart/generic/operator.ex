@@ -4,11 +4,13 @@ defmodule Peripherals.Uart.Generic.Operator do
 
   def start_link(config) do
     Logger.info("Start Uart.Generic.Operator GenServer")
+    Logger.info("config: #{inspect(config)}")
     name = via_tuple(Keyword.fetch!(config, :uart_port))
+    Logger.warn("Generic.Operator name: #{inspect(name)}")
     config = Keyword.put(config, :name, name)
-    Logger.info("Generic.Operator name: #{name}")
+    Logger.info("new config: #{inspect(config)}")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, name)
-    GenServer.cast(__MODULE__, {:begin, config})
+    GenServer.cast(name, {:begin, config})
     {:ok, process_id}
   end
 
@@ -26,11 +28,13 @@ defmodule Peripherals.Uart.Generic.Operator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    Comms.System.start_operator(__MODULE__)
+    Logger.warn("generic config begin: #{inspect(config)}")
+    name = Keyword.fetch!(config, :name)
+    Comms.System.start_operator(name)
 
     {:ok, uart_ref} = Circuits.UART.start_link()
     state = %{
-      name: Keyword.fetch!(config, :name),
+      name: name,
       uart_ref: uart_ref,
       ublox: Telemetry.Ublox.new()
     }

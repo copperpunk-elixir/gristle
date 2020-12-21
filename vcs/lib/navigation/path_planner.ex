@@ -3,17 +3,15 @@ defmodule Navigation.PathPlanner do
   require Logger
   @telemetry_module Peripherals.Uart.Telemetry.Operator
 
-  @spec load_orbit(integer(), float()) :: atom()
-  def load_orbit(direction, radius \\ 0) do
-    radius = if (radius>0), do: direction*radius, else: direction
+  @spec load_orbit(float) :: atom()
+  def load_orbit(radius) do
     Logger.debug("load orbit: #{radius}")
     send_orbit(radius)
   end
 
-  @spec load_orbit_centered(integer(), float()) :: atom()
-  def load_orbit_centered(direction, radius \\ 0) do
+  @spec load_orbit_centered(float()) :: atom()
+  def load_orbit_centered(radius \\ 0) do
     # model_type = Common.Utils.Configuration.get_model_type()
-    radius = if (radius>0), do: direction*radius, else: direction
     Logger.debug("load orbit centered: #{radius}")
     send_orbit_centered(radius)
   end
@@ -44,7 +42,7 @@ defmodule Navigation.PathPlanner do
   def send_orbit(radius) do
     # model_code = get_model(model_type)
     Logger.debug("send orbit: #{radius}/#{true}")
-    Peripherals.Uart.Generic.construct_and_send_message(:orbit, [radius, 1], @telemetry_module)
+    Peripherals.Uart.Generic.construct_and_send_message(:orbit_inline, [radius, 1], @telemetry_module)
   end
 
   @spec send_orbit_centered(float()) :: atom()

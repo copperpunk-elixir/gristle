@@ -147,6 +147,7 @@ defmodule Peripherals.Uart.Generic do
         case msg_id do
           0x00 ->
             Logger.debug("op rx: orbit")
+            Logger.debug("from #{inspect(module)}")
             msg_type = :orbit_inline
             [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({:load_orbit, :inline, nil, radius, confirmation>0}, module)

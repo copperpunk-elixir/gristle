@@ -162,6 +162,7 @@ msg_type_and_bytes = {
 	"orbit_inline": [4.0, 1],
 	"orbit_centered": [4.0, 1],
 	"orbit_at_location": [4.0, 4.0, 4.0, 4.0, 1],
+	"clear_orbit": [1],
 	"test": [4.0, 4.0, 4, -4] 
 }
 
@@ -169,6 +170,7 @@ msg_class_and_id = {
 	"orbit_inline": (0x52, 0x00),
 	"orbit_centered": (0x52, 0x01),
 	"orbit_at_location": (0x52, 0x02),
+	"clear_orbit": (0x52, 0x03),
 	"test": (0x01, 0x02)
 }
 
