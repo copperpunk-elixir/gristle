@@ -25,7 +25,7 @@ class Operator:
     def read(self):
         if self.serial_port.in_waiting > 0:
             buffer = self.serial_port.read(MAX_READ_BYTES)
-            print("rx: buffer {}".format(buffer))
+            # print("rx: buffer {}".format(buffer))
             self.parse(buffer)
 
     def parse(self, buffer):
@@ -54,6 +54,20 @@ class Operator:
                 print("rx orbit centered")
                 [radius, confirmation] = ublox.deconstruct_message("orbit_centered", payload) # pylint: disable=unbalanced-tuple-unpacking
                 print("rad/conf: %f/%d" %(radius, confirmation))
+            elif msg_id == 0x02:
+                print("orbit at location")
+                [radius, latitude, longitude, altitude, confirmation]= ublox.deconstruct_message("orbit_at_location", payload) # pylint: disable=unbalanced-tuple-unpacking
+                print("radius/LLA/conf: %.1f/%.5f/%.5f/%.1f/%d" %(radius, latitude, longitude, altitude, confirmation))
+            elif msg_id == 0x03:
+                print("clear orbit")
+            elif msg_id == 0x04:
+                print("goto location")
+                [latitude, longitude, altitude, confirmation]= ublox.deconstruct_message("goto_location", payload) # pylint: disable=unbalanced-tuple-unpacking
+                print("LLA/conf: %.5f/%.5f/%.1f/%d" %(latitude, longitude, altitude, confirmation))
+            elif msg_id == 0x05:
+                print("clear goto")
+
+
     
     def send_message(self, msg_type, values):
         msg = ublox.construct_message(msg_type, values)

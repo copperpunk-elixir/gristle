@@ -61,109 +61,25 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({:load_mission, mission, confirmation}, state) do
-    mission =
-    if is_nil(state.speed) or (state.speed < 1.0) do
-      mission
-    else
-      Logger.warn("add current position")
-      Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, state.speed, state.course)
-    end
-    # Logger.debug("path manager load mission: #{mission.name}")
-    {config_points, current_path_distance} = Navigation.Dubins.Utils.config_points_from_waypoints(mission.waypoints, mission.vehicle_turn_rate)
-    current_cp = Enum.at(config_points, 0)
-    current_path_case = Enum.at(current_cp.dubins.path_cases,0)
-    takeoff_altitude = Enum.at(config_points, 0) |> Map.get(:z2) |> Map.get(:altitude)
-    landing_altitude = Enum.at(config_points, -1) |> Map.get(:z2) |> Map.get(:altitude)
-    Logger.debug("landing altitude: #{landing_altitude}")
-    state = %{
-      state |
-      config_points: config_points,
-      current_cp_index: 0,
-      current_path_case: current_path_case,
-      current_path_distance: current_path_distance,
-      takeoff_altitude: takeoff_altitude,
-      landing_altitude: landing_altitude,
-      orbit_active: false
-    }
-    if (confirmation) do
-      pb_encoded = Navigation.Path.Mission.encode(mission, false, true)
-      Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, Peripherals.Uart.Telemetry.Operator)
-    end
+    state = process_load_mission(mission, confirmation, state)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:clear_mission, iTOW}, state) do
-    Logger.debug("clear mission iTOW: #{iTOW}")
-    state = %{
-      state |
-      config_points: [],
-      current_cp_index: nil,
-      current_path_case: nil,
-      current_path_distance: 0,
-      takeoff_altitude: 0,
-      landing_altitude: 0,
-    }
+    state = process_clear_mission(iTOW, state)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:load_orbit, orbit_type, position, radius, confirmation}, state) do
-    Logger.debug("path manager load orbit: #{radius}")
-    {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
-    position = if is_nil(position), do: state.position, else: position
-    state =
-    if is_nil(position) or is_nil(state.course) do
-      Logger.warn("no position. can't load orbit")
-      state
-    else
-      path_case = new_orbit_path_case(position, state.course, speed, radius, orbit_type)
-      Logger.debug("valid load orbit: #{inspect(path_case)}")
-      # Confirm orbit
-      if confirmation do
-        center = path_case.c
-        Navigation.PathPlanner.send_orbit_confirmation(radius, center.latitude, center.longitude, center.altitude)
-      end
-      # Logger.debug("current cpi/cpc: #{inspect(state.current_cp_index)}/#{inspect(state.current_path_case)}")
-      if state.orbit_active do
-        %{
-          state | current_path_case: path_case
-        }
-      else
-        %{
-          state |
-          current_path_case: path_case,
-          current_cp_index: nil,
-          stored_current_cp_index: state.current_cp_index,
-          stored_current_path_case: state.current_path_case,
-          orbit_active: true
-        }
-      end
-    end
+    state = process_load_orbit(orbit_type, position, radius, confirmation, state)
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:clear_orbit, confirmation}, state) do
-    Logger.debug("path man clear orbit")
-    Logger.debug("orbit active? #{state.orbit_active}")
-    if confirmation do
-      Logger.debug("confirm clear orbit")
-      Peripherals.Uart.Generic.construct_and_send_message(:clear_orbit, [0], Telemetry)
-    end
-    state =
-    if state.orbit_active do
-      %{
-        state |
-        current_cp_index: state.stored_current_cp_index,
-        current_path_case: state.stored_current_path_case,
-        stored_current_cp_index: nil,
-        stored_current_path_case: nil,
-        orbit_active: false
-      }
-    else
-      state
-    end
+    state = process_clear_orbit(confirmation, state)
     {:noreply, state}
   end
 
@@ -330,6 +246,110 @@ defmodule Navigation.PathManager do
     agl_cmd = altitude_cmd - landing_altitude
     agl_error = agl_cmd - agl
     agl_error
+  end
+
+  @spec process_load_mission(struct(), boolean(), map()) :: map()
+  def process_load_mission(mission, confirmation, state) do
+    mission =
+    if is_nil(state.speed) or (state.speed < 1.0) do
+      mission
+    else
+      Logger.warn("add current position")
+      Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, state.speed, state.course)
+    end
+    # Logger.debug("path manager load mission: #{mission.name}")
+    {config_points, current_path_distance} = Navigation.Dubins.Utils.config_points_from_waypoints(mission.waypoints, mission.vehicle_turn_rate)
+    current_cp = Enum.at(config_points, 0)
+    current_path_case = Enum.at(current_cp.dubins.path_cases,0)
+    takeoff_altitude = Enum.at(config_points, 0) |> Map.get(:z2) |> Map.get(:altitude)
+    landing_altitude = Enum.at(config_points, -1) |> Map.get(:z2) |> Map.get(:altitude)
+    Logger.debug("landing altitude: #{landing_altitude}")
+    state = %{
+      state |
+      config_points: config_points,
+      current_cp_index: 0,
+      current_path_case: current_path_case,
+      current_path_distance: current_path_distance,
+      takeoff_altitude: takeoff_altitude,
+      landing_altitude: landing_altitude,
+      orbit_active: false
+    }
+    if (confirmation) do
+      pb_encoded = Navigation.Path.Mission.encode(mission, false, true)
+      Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, Peripherals.Uart.Telemetry.Operator)
+    end
+    state
+  end
+
+  @spec process_clear_mission(float(), map()) :: map()
+  def process_clear_mission(iTOW, state) do
+    Logger.debug("clear mission iTOW: #{iTOW}")
+    %{
+      state |
+      config_points: [],
+      current_cp_index: nil,
+      current_path_case: nil,
+      current_path_distance: 0,
+      takeoff_altitude: 0,
+      landing_altitude: 0,
+    }
+  end
+
+  @spec process_load_orbit(atom(), struct(), float(), integer(), map()) :: map()
+  def process_load_orbit(orbit_type, position, radius, confirmation, state) do
+    Logger.debug("path manager load orbit: #{radius}")
+    {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
+    position = if is_nil(position), do: state.position, else: position
+    if is_nil(position) or is_nil(state.course) do
+      Logger.warn("no position. can't load orbit")
+      state
+    else
+      path_case = new_orbit_path_case(position, state.course, speed, radius, orbit_type)
+      Logger.debug("valid load orbit: #{inspect(path_case)}")
+      # Confirm orbit
+      if confirmation do
+        center = path_case.c
+        Navigation.PathPlanner.send_orbit_confirmation(radius, center.latitude, center.longitude, center.altitude)
+      end
+      # Logger.debug("current cpi/cpc: #{inspect(state.current_cp_index)}/#{inspect(state.current_path_case)}")
+      if state.orbit_active do
+        %{
+          state | current_path_case: path_case
+        }
+      else
+        %{
+          state |
+          current_path_case: path_case,
+          current_cp_index: nil,
+          stored_current_cp_index: state.current_cp_index,
+          stored_current_path_case: state.current_path_case,
+          orbit_active: true
+        }
+      end
+    end
+  end
+
+  @spec process_clear_orbit(boolean(), map()) :: map()
+  def process_clear_orbit(confirmation, state) do
+    Logger.debug("path man clear orbit")
+    Logger.debug("orbit active? #{state.orbit_active}")
+    if confirmation do
+      Logger.debug("confirm clear orbit")
+      Peripherals.Uart.Generic.construct_and_send_message(:clear_orbit, [0], Telemetry)
+    end
+
+    if state.orbit_active do
+      %{
+        state |
+        current_cp_index: state.stored_current_cp_index,
+        current_path_case: state.stored_current_path_case,
+        stored_current_cp_index: nil,
+        stored_current_path_case: nil,
+        orbit_active: false
+      }
+    else
+      state
+    end
   end
 
   @spec get_config_points() :: struct()
