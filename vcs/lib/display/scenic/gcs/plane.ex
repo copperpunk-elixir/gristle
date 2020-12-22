@@ -88,6 +88,7 @@ defmodule Display.Scenic.Gcs.Plane do
 
   # --------------------------------------------------------
   # receive PV updates from the vehicle
+  # @impl GenServer
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
     # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
     roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
@@ -202,7 +203,7 @@ defmodule Display.Scenic.Gcs.Plane do
     Logger.debug("Save Log to file: #{state.save_log_file}")
     save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_file])
     save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:save_log_proto, save_log_encoded)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:save_log_proto, save_log_encoded, Telemetry)
     {:cont, :event, state}
   end
 

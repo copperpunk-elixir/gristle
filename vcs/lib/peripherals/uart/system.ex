@@ -13,7 +13,7 @@ defmodule Peripherals.Uart.System do
     children = Enum.reduce(config, [], fn({single_module, single_config}, acc) ->
       module = Module.concat(Peripherals.Uart, single_module)
       |> Module.concat(Operator)
-      Logger.debug("module: #{module}")
+      Logger.warn("module: #{module}")
       # Logger.info("config: #{inspect(single_config)}")
       acc ++ [{module, single_config}]
     end)

@@ -31,7 +31,10 @@ defmodule Navigation.Path.Mission do
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     cruise_speed = get_model_spec(model_type, :cruise_speed)
     min_loiter_speed = get_model_spec(model_type, :min_loiter_speed)
-    turn_rate = if radius > 0, do: cruise_speed/radius, else: 0
+    # Assume right turn if radius = 0
+    direction = if radius >= 0, do: 1, else: -1
+    radius = abs(radius)
+    turn_rate = if radius != 0, do: cruise_speed/radius, else: 0
     # Turn rate , Speed , Radius
     if (turn_rate > planning_turn_rate) or (turn_rate == 0) do
       speed = planning_turn_rate*radius
@@ -40,16 +43,16 @@ defmodule Navigation.Path.Mission do
         speed < min_loiter_speed ->
           # Logger.warn("too slow")
           radius = min_loiter_speed/planning_turn_rate
-          {planning_turn_rate, min_loiter_speed, radius}
+          {planning_turn_rate, min_loiter_speed, radius*direction}
         speed > cruise_speed ->
           # Logger.warn("too fast")
           radius = cruise_speed / planning_turn_rate
-          {planning_turn_rate, cruise_speed, radius}
+          {planning_turn_rate, cruise_speed, radius*direction}
         true ->
-          {planning_turn_rate, speed, radius}
+          {planning_turn_rate, speed, radius*direction}
       end
     else
-      {turn_rate, cruise_speed, radius}
+      {turn_rate, cruise_speed, radius*direction}
     end
   end
   @spec set_waypoints(struct(), list()) :: struct()

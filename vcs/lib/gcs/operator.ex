@@ -43,7 +43,7 @@ defmodule Gcs.Operator do
     unless is_nil(position) or is_nil(course) do
       mission = Navigation.Path.Mission.get_complete_mission(airport, runway, model_type, track_type, num_wps, position, course)
       pb_encoded = Navigation.Path.Mission.encode(mission, confirmation)
-      Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:mission_proto, pb_encoded)
+      Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, Telemetry)
     else
       Logger.warn("No position/course. Cannot send relative mission")
     end

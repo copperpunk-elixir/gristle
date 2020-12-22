@@ -122,12 +122,12 @@ defmodule Pids.Pid do
    @spec set_pid_gain(atom(), atom(), atom(), float()) ::atom()
   def set_pid_gain(pv, ov, param, value) do
     msg = [pv, ov, param, value] |> Msgpax.pack!(iodata: false)
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:set_pid_gain, msg)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:set_pid_gain, msg, Telemetry)
   end
 
   @spec get_pid_gain(atom(), atom(), atom()) :: atom()
   def get_pid_gain(pv, ov, param) do
     msg = [pv, ov, param] |> Msgpax.pack!(iodata: false)
-    Peripherals.Uart.Telemetry.Operator.construct_and_send_proto_message(:request_pid_gain, msg)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:request_pid_gain, msg, Telemetry)
   end
 end

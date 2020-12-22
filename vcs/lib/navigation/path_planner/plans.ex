@@ -2,23 +2,23 @@ defmodule Navigation.PathPlanner.Plans do
   require Logger
 
   @spec load_orbit_right(float()) :: atom()
-  def load_orbit_right(radius \\ 0) do
-    Navigation.PathPlanner.load_orbit(1, radius)
+  def load_orbit_right(radius \\ 0.001) do
+    Navigation.PathPlanner.load_orbit(abs(radius))
   end
 
   @spec load_orbit_left(float()) :: atom()
-  def load_orbit_left(radius \\ 0) do
-    Navigation.PathPlanner.load_orbit(-1, radius)
+  def load_orbit_left(radius \\ -0.001) do
+    Navigation.PathPlanner.load_orbit(-abs(radius))
   end
 
   @spec load_orbit_centered_right(float()) :: atom()
-  def load_orbit_centered_right(radius \\ 0) do
-    Navigation.PathPlanner.load_orbit_centered(1, radius)
+  def load_orbit_centered_right(radius \\ 0.001) do
+    Navigation.PathPlanner.load_orbit_centered(abs(radius))
   end
 
   @spec load_orbit_centered_left(float()) :: atom()
-  def load_orbit_centered_left(radius \\ 0) do
-    Navigation.PathPlanner.load_orbit_centered(-1, radius)
+  def load_orbit_centered_left(radius \\ -0.001) do
+    Navigation.PathPlanner.load_orbit_centered(-abs(radius))
   end
 
   @spec load_flight_school(any(), boolean()) :: atom()
