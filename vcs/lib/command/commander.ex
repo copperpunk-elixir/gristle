@@ -8,9 +8,9 @@ defmodule Command.Commander do
   @pilot_manual 0
   @pilot_semi_auto 1
   @pilot_auto 2
-  @cs_direct_manual 100
-  @cs_direct_semi_auto 101
-  @cs_direct_auto 102
+  @cs_direct_manual 100 #rates
+  @cs_direct_semi_auto 101 #attitude
+  @cs_direct_auto 102 #speed/course/altitude
 
   def start_link(config) do
     Logger.info("Start Command.Commander GenServer")

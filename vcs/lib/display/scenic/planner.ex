@@ -54,7 +54,7 @@ defmodule Display.Scenic.Planner do
       |> Map.get(:position)
     bounding_box = calculate_lat_lon_bounding_box(mission.waypoints, vehicle_position)
     origin = calculate_origin(bounding_box, state.width, state.height, state.margin)
-    {config_points, _current_path_distance} = Navigation.PathManager.new_path(mission.waypoints, mission.vehicle_turn_rate)
+    {config_points, _current_path_distance} = Navigation.Dubins.Utils.config_points_from_waypoints(mission.waypoints, mission.vehicle_turn_rate)
 
     graph = draw_mission(state.graph, origin, state.height, mission.waypoints, config_points)
     state = Map.put(state, :mission, mission)
