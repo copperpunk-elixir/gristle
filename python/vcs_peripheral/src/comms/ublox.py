@@ -76,7 +76,7 @@ class Ublox:
 			count = self.count + 1
 			if (count == self.msg_len):
 				self.state = State.PAYLOAD
-				print(payload_rev)	
+				# print(payload_rev)	
 			self.chka = chka
 			self.chkb = chkb
 			self.count = count
@@ -163,6 +163,8 @@ msg_type_and_bytes = {
 	"orbit_centered": [4.0, 1],
 	"orbit_at_location": [4.0, 4.0, 4.0, 4.0, 1],
 	"clear_orbit": [1],
+	"goto_location": [4.0, 4.0, 4.0, 1],
+	"clear_goto_location": [1],
 	"test": [4.0, 4.0, 4, -4] 
 }
 
@@ -171,6 +173,8 @@ msg_class_and_id = {
 	"orbit_centered": (0x52, 0x01),
 	"orbit_at_location": (0x52, 0x02),
 	"clear_orbit": (0x52, 0x03),
+	"goto_location": (0x52, 0x04),
+	"clear_goto_location": (0x52, 0x05),
 	"test": (0x01, 0x02)
 }
 
