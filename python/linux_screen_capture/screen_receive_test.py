@@ -3,10 +3,11 @@ import socket
 import numpy
 import argparse
 import matplotlib.pyplot as plt
+import simple_detect as sd
 
 if __name__ == '__main__':
     # multiproc.freeze_support()
-
+    print("Starting linux_screen_capture")
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=19721)
     ap.add_argument("--title", type=str, default='UDP Images')
@@ -23,6 +24,8 @@ if __name__ == '__main__':
         img = cv2.imdecode(numpy.fromstring(p, dtype=numpy.uint8), -1)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         print("received img")
-        cv2.imshow('img_decode',img)
+        sd.find_circle(img)
+        # cv2.imshow('img_decode',img)
+
         cv2.waitKey(1)
         # viewer.set_image(img)
