@@ -17,6 +17,9 @@ class Operator:
         self.y = None
         self.a = None
         self.b = None
+        self.position = None
+        self.velocity = None
+        self.attitude = None
 
     def open(self):
         print("open %s" % self.device)
@@ -45,6 +48,15 @@ class Operator:
                 self.y = y
                 self.a = a
                 self.b = b
+        elif msg_class == 0x45:
+            if msg_id == 0x00:
+                print("telemetry_pvat")
+                [_itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = ublox.deconstruct_message("telemetry_pvat", payload) # pylint: disable=unbalanced-tuple-unpacking
+                self.position = {"latitude": lat, "longitude": lon, "altitude": alt, "agl": agl}
+                self.velocity = {"speed": speed, "course": course, airspeed: airspeed}
+                self.attitude = {"roll": roll, "pitch": pitch, "yaw": yaw}
+                print("LLA: %.5f/%.5f/%.1f" %(lat,lon,alt))
+                print("Euler: %.1f/%.1f/%.1f" %(roll*57.3, pitch*57.3, yaw*57.3))
         elif msg_class == 0x52:
             if msg_id == 0x00:
                 print("rx orbit inline")

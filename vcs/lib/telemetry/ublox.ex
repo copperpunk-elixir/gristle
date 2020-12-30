@@ -187,6 +187,8 @@ defmodule Telemetry.Ublox do
       {:tx_goals, 2} -> [4, 4.0, 4.0, 4.0, 4.0]
       {:tx_goals, 3} -> [4, 4.0, 4.0, 4.0]
       :control_state -> [4, 1]
+      :tx_battery -> [4, 4, 4.0, 4.0, 4.0]
+      :cluster_status -> [4, 1]
       # :set_pid_gain -> [-4,-4,-4,4]
       # :request_pid_gain -> [-4, -4, -4]
       # :get_pid_gain -> [-4, -4, -4, 4]
@@ -198,9 +200,8 @@ defmodule Telemetry.Ublox do
       :orbit_centered -> [4.0, 1]
       :orbit_at_location -> [4.0, 4.0, 4.0, 4.0, 1]
       :clear_orbit -> [1]
-      :tx_battery -> [4, 4, 4.0, 4.0, 4.0]
+      :generic_sub -> [1, 4]
       {:pwm_reader, num_chs} -> Enum.reduce(1..num_chs, [], fn (_x,acc) -> acc ++ [2] end)
-      :cluster_status -> [4, 1]
       _other ->
         Logger.error("Non-existent msg_type")
         []
@@ -218,9 +219,9 @@ defmodule Telemetry.Ublox do
       :control_state -> {0x45, 0x14}
       :tx_battery -> {0x45, 0x15}
       :cluster_status -> {0x45, 0x16}
-      :set_pid_gain -> {0x46, 0x00}
-      :request_pid_gain -> {0x46, 0x01}
-      :get_pid_gain -> {0x46, 0x02}
+      # :set_pid_gain -> {0x46, 0x00}
+      # :request_pid_gain -> {0x46, 0x01}
+      # :get_pid_gain -> {0x46, 0x02}
       :rpc  -> {0x50, 0x00}
       :mission_proto -> {0x50, 0x01}
       :clear_mission -> {0x50, 0x02}
@@ -230,6 +231,7 @@ defmodule Telemetry.Ublox do
       :orbit_centered -> {0x52, 0x01}
       :orbit_at_location -> {0x52, 0x02}
       :clear_orbit -> {0x52, 0x03}
+      :generic_sub -> {0x60, 0x00}
       _other ->
         Logger.error("Non-existent msg_type: #{inspect(msg_type)}")
         []

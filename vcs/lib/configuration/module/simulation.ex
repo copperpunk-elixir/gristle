@@ -37,7 +37,7 @@ defmodule Configuration.Module.Simulation do
   @spec get_realflight_config() :: list()
   def get_realflight_config() do
     [
-      host_ip: "192.168.7.247",
+      host_ip: "192.168.7.136",
       sim_loop_interval_ms: 40
     ]
   end

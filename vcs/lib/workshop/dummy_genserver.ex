@@ -25,6 +25,11 @@ defmodule Workshop.DummyGenserver do
     GenServer.cast(via_tuple(name), {:join_registry, registry, key, value})
   end
 
+  def handle_info(:timer, state) do
+    Logger.debug("timer called")
+    {:noreply, state}
+  end
+
   def via_tuple(name) do
     Comms.ProcessRegistry.via_tuple(__MODULE__, name)
   end

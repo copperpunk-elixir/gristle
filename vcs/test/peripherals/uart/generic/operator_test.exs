@@ -1,4 +1,4 @@
-defmodule Simulation.Ublox.SendImuMsgTest do
+defmodule Peripherals.Uart.Generic.OperatorTest do
   use ExUnit.Case
   require Logger
 

@@ -44,6 +44,7 @@ class Gcs(tk.Frame):
         self.goto_altitude_entry = goto_altitude_entry
         self.operator = Operator(115200, "USB Serial")
         self.operator.open()
+        self.operator.send_message("generic_sub", [0,50])
         self.serial_tasks()
 
     def left_inline_orbit_cb(self):
