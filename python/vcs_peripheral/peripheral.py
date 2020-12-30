@@ -1,10 +1,15 @@
+import getopt
+import sys
 import tkinter as tk
+import math
 from time import sleep
 from threading import Timer
 from src.comms.operator import Operator
+from src.image.camera import Camera
+from src.common.location import position_with_distance_and_bearing
 
 class Gcs(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, camera_timeout):
         tk.Frame.__init__(self, parent)
         frame = tk.Frame(self)
         left_inline_orbit_button = tk.Button(frame, text="Left Inline\nOrbit", command=self.left_inline_orbit_cb)
@@ -45,7 +50,11 @@ class Gcs(tk.Frame):
         self.operator = Operator(115200, "USB Serial")
         self.operator.open()
         self.operator.send_message("generic_sub", [0,50])
-        self.serial_tasks()
+        if camera_timeout != None:
+            self.camera = Camera(timeout=camera_timeout)
+        else:
+            self.camera = None
+        self.loop()
 
     def left_inline_orbit_cb(self):
         radius = self.get_radius()
@@ -103,18 +112,50 @@ class Gcs(tk.Frame):
     def get_altitude_goto(self):
         return float(self.goto_altitude_entry.get())
 
-
-
     def serial_tasks(self):
         self.operator.read()
-        # print("loop")
-        self.after(10, self.serial_tasks)
+        # print("loop"):52
+        
+        # self.after(10, self.serial_tasks)
+    
+    def camera_tasks(self):
+        distance_pixels, angle_rad = self.camera.read()
+        if distance_pixels is not None:
+            position = self.operator.position
+            if position is not None:
+                attitude = self.operator.attitude
+                image_height = self.camera.image_height
+                object_size_sensor_mm = 2*distance_pixels/image_height
+                distance_m = position["agl"]*object_size_sensor_mm
+                heading_to_object = attitude["yaw"] + angle_rad
+                obj_lat, obj_lon = position_with_distance_and_bearing(position["latitude"], position["longitude"], distance_m, heading_to_object)
+                print("lat/lon: %.5f/%.5f" %(obj_lat*180./math.pi, obj_lon*180./math.pi))
+
+
+    def loop(self):
+        while True:
+            self.serial_tasks()
+            self.camera_tasks()
+            sleep(0.01)
+
+
+def process_args(argv):
+    arg_list = argv[1:]
+    arguments, _values = getopt.getopt(arg_list, 'c:')
+    for arg, value in arguments:
+        print("arg/value: {}/{}".format(arg, value))
+        if arg == "-c":
+            print('use camera: {}'.format(value))
+            return float(value)
+    return None
+
 
 
 
 if __name__ == "__main__":
+    camera_timeout = process_args(sys.argv)
     root = tk.Tk()
     root.title = "Camera"
     root.geometry("500x300")
-    Gcs(root).pack()
+    Gcs(root, camera_timeout).pack()
     root.mainloop()

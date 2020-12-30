@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 def find_circle(img):
     # img = cv2.imread("test_image.png")
@@ -29,14 +30,32 @@ def find_circle(img):
 
     # If we find a red light, then we're done
     # Return immediately
+    dimensions = img.shape
+    height_mid = dimensions[0]/2
+    width_mid = dimensions[1]/2
+    center_pt = (round(width_mid), round(height_mid))
+    distance = None
+    theta = None
     if circles_red is not None:
-        light_radius = []
-        for pt in circles_red[0,:]:
-            a, b, r = pt[0], pt[1], pt[2] 
-            cv2.circle(img,(a,b),r,(0, 255, 255),5)
-            light_radius.append(r)
-        print("{} red lights: {}".format(len(light_radius),light_radius))
+        # print("cr: {}".format(circles_red))
+        pt = circles_red[0,:][0]
+        # print("pt: {}".format(pt))
+        x, y, r = pt[0], pt[1], pt[2] 
+        # print("circle at x/y/r: {}/{}/{}".format(x, y, r))
+        cv2.circle(img,(x,y),r,(0, 255, 255),5)
+        dx = x - width_mid
+        dy = height_mid-y
+        # print("dx/dy: {}/{}".format(dx, dy))
+        theta = np.arctan2(dy, dx)
+        # print("angle from center to point: {}".format(theta*180/np.pi))
+        distance = math.sqrt(dx*dx + dy*dy)
+        # print("distance: %d" %round(distance))
+        # print("cnter pt: {}".format(center_pt))
+        # cv2.circle(img, center_pt, round(distance), (0,0,0))
+        cv2.circle(img, center_pt, round(distance), (0,0,0))
+        cv2.line(img, center_pt, (x,y), (128, 0, 0), 2)
         # self.annotated_image_pub.publish(self.bridge.cv2_to_imgmsg(red_only_img, "8UC1"))
         # return result
     cv2.imshow('circles',img)
-    cv2.waitKey(0)
+    cv2.waitKey(1)
+    return (distance, theta)
