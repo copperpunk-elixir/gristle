@@ -12,6 +12,7 @@ from src.common.lpf import Lpf
 
 class Gcs(tk.Frame):
     object_location_validity = 10.0
+    two_pi = 2.0*math.pi
 
     def __init__(self, parent, camera_timeout):
         tk.Frame.__init__(self, parent)
@@ -63,7 +64,7 @@ class Gcs(tk.Frame):
         self.object_latitude = Lpf(0.9)
         self.object_longitude = Lpf(0.9)
         self.goal_agl = 60.0
-        self.camera_send_interval_s = 1.0
+        self.camera_send_interval_s = 5.0
         self.orbit_radius = None
         # self.loop()
         self.after(1000, self.loop)
@@ -143,28 +144,35 @@ class Gcs(tk.Frame):
                 self.capture_time_previous = capture_time
                 attitude = self.operator.attitude
                 image_height = self.camera.image_height
-                object_size_sensor_mm = 2*distance_pixels/image_height
+                object_size_sensor_mm = 2.5*distance_pixels/image_height
                 distance_m = position["agl"]*object_size_sensor_mm
-                print("distance_m: {}".format(distance_m))
+                print("distance_m: %.2f" %distance_m)
                 heading_to_object = attitude["yaw"] + angle_rad
-                print("hdg to obj %.1f" %math.degrees(angle_rad))
+                if (heading_to_object > Gcs.two_pi):
+                    heading_to_object -= Gcs.two_pi
+                elif heading_to_object < -Gcs.two_pi:
+                    heading_to_object += Gcs.two_pi
+                print("rel hdg to obj %.1f" %math.degrees(angle_rad))
+                print("abs hdg to obj %.1f" %math.degrees(heading_to_object))
                 obj_lat, obj_lon = position_with_distance_and_bearing(position["latitude"], position["longitude"], distance_m, heading_to_object)
                 print("curr/ll: %.5f/%.5f" %(position["latitude"]*180./math.pi, position["longitude"]*180./math.pi))
                 print("lat/lon: %.5f/%.5f" %(obj_lat*180./math.pi, obj_lon*180./math.pi))
 
-                lpf_alpha = 0.0# dt/Gcs.object_location_validity
+                if dt > Gcs.object_location_validity:
+                    lpf_alpha = 0.0
+                else:
+                    lpf_alpha = 0.9
 
-                print("dt/gcsolv/alpha: {}/{}]{}".format(dt, Gcs.object_location_validity, lpf_alpha))
                 self.object_latitude.add_value_with_alpha(obj_lat, lpf_alpha)
                 self.object_longitude.add_value_with_alpha(obj_lon, lpf_alpha)
 
                 if (capture_time - self.camera_send_time_previous) > self.camera_send_interval_s:
                     goal_altitude = position["altitude"] + (self.goal_agl - position["agl"])
                     if self.orbit_radius is None:
-                        if (heading_to_object > 0):
-                            self.orbit_radius = -50.0 #distance_m
+                        if (angle_rad > 0):
+                            self.orbit_radius = 70.0 #distance_m
                         else: 
-                            self.orbit_radius  = 50.0 #distance_m
+                            self.orbit_radius  = -70.0 #distance_m
                     print("Send orbit command: %.5f/%.5f/%.1f" %(self.object_latitude.value, self.object_longitude.value, self.orbit_radius))
                     self.operator.send_message("orbit_at_location",[self.orbit_radius, self.object_latitude.value, self.object_longitude.value, goal_altitude, 1])
                     self.camera_send_time_previous = capture_time
