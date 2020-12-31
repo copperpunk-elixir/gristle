@@ -5,7 +5,7 @@ import math
 def find_circle(img):
     # img = cv2.imread("test_image.png")
     # cv2.imshow('Raw',img)
-    min_circle_radius = 10
+    min_circle_radius = 8
     max_circle_radius = 50
     hsv_image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -46,13 +46,13 @@ def find_circle(img):
         dx = x - width_mid
         dy = height_mid-y
         # print("dx/dy: {}/{}".format(dx, dy))
-        theta = np.arctan2(dy, dx)
+        theta = np.arctan2(dx, dy)
         # print("angle from center to point: {}".format(theta*180/np.pi))
         distance = math.sqrt(dx*dx + dy*dy)
         # print("distance: %d" %round(distance))
         # print("cnter pt: {}".format(center_pt))
         # cv2.circle(img, center_pt, round(distance), (0,0,0))
-        cv2.circle(img, center_pt, round(distance), (0,0,0))
+        cv2.circle(img, (x,y), round(distance), (0,0,0))
         cv2.line(img, center_pt, (x,y), (128, 0, 0), 2)
         # self.annotated_image_pub.publish(self.bridge.cv2_to_imgmsg(red_only_img, "8UC1"))
         # return result

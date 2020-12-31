@@ -298,12 +298,14 @@ defmodule Navigation.PathManager do
   @spec process_load_orbit(atom(), struct(), float(), integer(), map()) :: map()
   def process_load_orbit(orbit_type, position, radius, confirmation, state) do
     Logger.debug("path manager load orbit: #{radius}")
+    if is_nil(position), do: Logger.warn("no orbit position")
     {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
     position = if is_nil(position), do: state.position, else: position
     if is_nil(position) or is_nil(state.course) do
       Logger.warn("no position. can't load orbit")
       state
     else
+      Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
       path_case = new_orbit_path_case(position, state.course, speed, radius, orbit_type)
       Logger.debug("valid load orbit: #{inspect(path_case)}")
       # Confirm orbit
