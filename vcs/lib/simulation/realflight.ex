@@ -13,9 +13,9 @@ defmodule Simulation.Realflight do
   @default_servo [0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0, 0.5, 0.5, 0.5, 0.5]
   @rf_stick_mult 1.07
 
-  def start() do
-    start_link([host_ip: "192.168.7.247", sim_loop_interval_ms: 1000000])
-  end
+  # def start() do
+  #   start_link([host_ip: "192.168.7.247", sim_loop_interval_ms: 1000000])
+  # end
 
   def start_link(config) do
     Logger.info("Start Simulation.Realflight GenServer")

@@ -165,6 +165,8 @@ msg_type_and_bytes = {
 	"clear_orbit": [1],
 	"goto_location": [4.0, 4.0, 4.0, 1],
 	"clear_goto_location": [1],
+	"telemetry_pvat": [4, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0],
+	"generic_sub": [1, 4],
 	"test": [4.0, 4.0, 4, -4] 
 }
 
@@ -175,6 +177,8 @@ msg_class_and_id = {
 	"clear_orbit": (0x52, 0x03),
 	"goto_location": (0x52, 0x04),
 	"clear_goto_location": (0x52, 0x05),
+	"telemetry_pvat": (0x45, 0x00),
+	"generic_sub": (0x60, 0x00),
 	"test": (0x01, 0x02)
 }
 

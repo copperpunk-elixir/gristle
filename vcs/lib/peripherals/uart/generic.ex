@@ -40,6 +40,7 @@ defmodule Peripherals.Uart.Generic do
           0x00 ->
             msg_type = {:telemetry, :pvat}
             [itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+
             position = %{latitude: lat, longitude: lon, altitude: alt, agl: agl}
             velocity = %{airspeed: airspeed, speed: speed, course: course}
             attitude = %{roll: roll, pitch: pitch, yaw: yaw}
@@ -169,6 +170,14 @@ defmodule Peripherals.Uart.Generic do
             [confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({:clear_orbit, confirmation>0}, module)
         end
+      0x60 ->
+        case msg_id do
+          0x00 ->
+            msg_type = :generic_sub
+            Logger.debug("op rx: generic_sub")
+            [sub_msg_id, interval_ms] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            Peripherals.Uart.Generic.Operator.subscribe_to_msg(sub_msg_id, interval_ms, module)
+        end
       _other -> Logger.warn("Bad message class: #{msg_class}")
     end
   end
@@ -185,19 +194,19 @@ defmodule Peripherals.Uart.Generic do
   end
 
   @spec construct_and_send_message_with_ref(any(), list(), any()) :: atom()
-  def construct_and_send_message_with_ref(msg_type, payload, uart_ref) do
-    # Logger.debug("#{inspect(msg_type)}: #{inspect(payload)}")
-    payload = Common.Utils.assert_list(payload)
-    msg = Telemetry.Ublox.construct_message(msg_type, payload)
+  def construct_and_send_message_with_ref(msg_type, values, uart_ref) do
+    # Logger.debug("#{inspect(msg_type)}: #{inspect(values)}")
+    values = Common.Utils.assert_list(values)
+    msg = Telemetry.Ublox.construct_message(msg_type, values)
     Circuits.UART.write(uart_ref, msg)
 #    Circuits.UART.drain(uart_ref)
   end
 
   @spec construct_and_send_message(any(), list(), atom()) :: atom()
-  def construct_and_send_message(msg_type, payload, module) do
-    Logger.debug("#{inspect(msg_type)}: #{inspect(payload)}")
-    payload = Common.Utils.assert_list(payload)
-    msg = Telemetry.Ublox.construct_message(msg_type, payload)
+  def construct_and_send_message(msg_type, values, module) do
+    Logger.debug("#{inspect(msg_type)}: #{inspect(values)}")
+    values = Common.Utils.assert_list(values)
+    msg = Telemetry.Ublox.construct_message(msg_type, values)
     send_message(msg, module)
   end
 

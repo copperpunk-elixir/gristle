@@ -8,16 +8,25 @@ defmodule Common.Utils.File do
     "/mnt"
   end
 
-  @spec mount_usb_drive() :: atom()
-  def mount_usb_drive() do
-    path = get_mount_path()
-    mount_usb_drive(path, 1, @mount_count_max)
+  @spec get_disk_path(atom()) :: binary()
+  def get_disk_path(drive) do
+    case drive do
+      :a -> "/dev/sda1"
+      :b -> "/dev/sdb1"
+    end
   end
 
-  @spec mount_usb_drive(binary(), integer(), integer()) :: tuple()
-  def mount_usb_drive(path, count, count_max) do
+  @spec mount_usb_drive(atom()) :: atom()
+  def mount_usb_drive(drive \\ :a) do
+    drive_location = get_disk_path(drive)
+    path = get_mount_path()
+    mount_usb_drive(drive_location, path, 1, @mount_count_max)
+  end
+
+  @spec mount_usb_drive(binary(), binary(), integer(), integer()) :: tuple()
+  def mount_usb_drive(drive_location, path, count, count_max) do
     Logger.debug("Mount USB drive to #{path}")
-    {_resp, error_code} = System.cmd("mount", ["/dev/sda1", path])
+    {_resp, error_code} = System.cmd("mount", [drive_location, path])
     if (error_code == 0) do
       :ok
     else
@@ -25,7 +34,7 @@ defmodule Common.Utils.File do
       if (count < count_max) do
         Logger.debug("Retry #{count+1}/#{count_max}")
         Process.sleep(1000)
-        mount_usb_drive(path, count+1, count_max)
+        mount_usb_drive(drive_location, path, count+1, count_max)
       end
     end
   end

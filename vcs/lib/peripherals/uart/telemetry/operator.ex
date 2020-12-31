@@ -32,6 +32,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       fast_loop_interval_ms: Keyword.fetch!(config, :fast_loop_interval_ms),
       medium_loop_interval_ms: Keyword.fetch!(config, :medium_loop_interval_ms),
       slow_loop_interval_ms: Keyword.fetch!(config, :slow_loop_interval_ms),
+      clock: Time.Clock.new(),
     }
 
     uart_port = Keyword.fetch!(config, :uart_port)
@@ -55,6 +56,12 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   end
 
   @impl GenServer
+  def handle_cast({:gps_time, gps_time}, state) do
+    clock = Time.Clock.set_datetime(state.clock, gps_time)
+    {:noreply, %{state | clock: clock}}
+  end
+
+  @impl GenServer
   def handle_cast({:send_message, message}, state) do
     Circuits.UART.write(state.uart_ref, message)
     {:noreply, state}
@@ -74,7 +81,8 @@ defmodule Peripherals.Uart.Telemetry.Operator do
 
   @impl GenServer
   def handle_info(:slow_loop, state) do
-    {now, today} = Time.Server.get_time_day()
+    {now, today} = Time.Server.get_time_day(state.clock)
+
     iTOW = Telemetry.Ublox.get_itow(now, today)
     #pvat
     position = Map.get(state, :position, %{})
