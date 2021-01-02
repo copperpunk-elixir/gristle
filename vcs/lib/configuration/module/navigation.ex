@@ -21,7 +21,8 @@ defmodule Configuration.Module.Navigation do
             chi_inf: 1.05,
             lookahead_dt: 1.0,
           ],
-          model_type: model_type
+          model_type: model_type,
+          peripheral_paths_update_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
         ] ++ vehicle_limits,
       path_planner: []
     ]

@@ -60,7 +60,8 @@ defmodule Display.Scenic.Gcs.Plane do
     {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_status, width: cluster_status_side, height: cluster_status_side, offset_x: cluster_status_offset_x, offset_y: cluster_status_offset_y, fill: :red})
 
     # Save Log
-    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
+    {graph, _offset_x, button_offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_peripheral_control_to_graph(graph, %{allow_id: {:peri_ctrl, :allow}, deny_id: {:peri_ctrl, :deny}, button_width: 150, button_height: 35, offset_x: 10, offset_y: button_offset_y+10, font_size: @font_size, text_width: 400})
 
 
     batteries = ["cluster", "motor"]
@@ -203,9 +204,22 @@ defmodule Display.Scenic.Gcs.Plane do
     Logger.debug("Save Log to file: #{state.save_log_file}")
     save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_file])
     save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
-    Peripherals.Uart.Generic.construct_and_send_proto_message(:save_log_proto, save_log_encoded, Telemetry)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:save_log_proto, save_log_encoded, Peripherals.Uart.Telemetry.Operator)
     {:cont, :event, state}
   end
+
+  @impl Scenic.Scene
+  def filter_event({:click, {:peri_ctrl, action}}, _from, state) do
+    Logger.debug("Change PeriCtrl #{action}")
+    control_value =
+      case action do
+        :allow -> 1
+        :deny -> 0
+      end
+    Peripherals.Uart.Generic.construct_and_send_message(:change_peripheral_control, [control_value], Peripherals.Uart.Telemetry.Operator)
+    {:cont, :event, state}
+  end
+
 
   @impl Scenic.Scene
   def filter_event({:click, _other}, _from, state) do

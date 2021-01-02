@@ -42,7 +42,9 @@ defmodule Peripherals.Uart.Generic.Operator do
         position_velocity: false,
       },
       clock: Time.Clock.new(),
-      publish_id_interval: %{}
+      publish_id_interval: %{},
+      sorter_classification: config[:sorter_classification],
+      sorter_time_validity_ms: config[:sorter_time_validity_ms]
     }
 
     uart_port = Keyword.fetch!(config, :uart_port)
@@ -121,7 +123,7 @@ defmodule Peripherals.Uart.Generic.Operator do
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
     # Logger.debug("rx'd data: #{inspect(data)}")
-    ublox = Peripherals.Uart.Generic.parse(state.ublox, :binary.bin_to_list(data), state.name)
+    ublox = Peripherals.Uart.Generic.parse(state.ublox, :binary.bin_to_list(data), state.name, state.sorter_classification, state.sorter_time_validity_ms)
     {:noreply, %{state | ublox: ublox}}
   end
 

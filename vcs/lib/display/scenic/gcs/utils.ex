@@ -139,6 +139,31 @@ defmodule Display.Scenic.Gcs.Utils do
         text_align: :left,
         width: config.text_width
       )
+    {graph, config.offset_x, config.offset_y+config.button_height}
+  end
+
+  def add_peripheral_control_to_graph(graph, config) do
+    graph =
+      button(
+        graph,
+        "Allow PeriCtrl",
+        id: config.allow_id,
+        width: config.button_width,
+        height: config.button_height,
+        theme: %{text: :white, background: :green, border: :green, active: :grey},
+        button_font_size: config.font_size,
+        translate: {config.offset_x, config.offset_y}
+      )
+    |>
+    button(
+      "Deny PeriCtrl",
+      id: config.deny_id,
+      width: config.button_width,
+      height: config.button_height,
+      theme: %{text: :white, background: :red, border: :red, active: :grey},
+      button_font_size: config.font_size,
+      translate: {config.offset_x + config.button_width+10, config.offset_y}
+    )
     {graph, config.offset_x, config.offset_y}
   end
 

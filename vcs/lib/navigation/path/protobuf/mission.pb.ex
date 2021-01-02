@@ -35,6 +35,7 @@ defmodule Navigation.Path.Protobuf.Mission.Waypoint do
   field :course, 6, required: true, type: :float
   field :goto, 7, optional: true, type: :string, default: ""
   field :type, 8, required: true, type: Navigation.Path.Protobuf.Mission.WaypointType, enum: true
+  field :peripheral_control_allowed, 9, required: true, type: :bool
 end
 
 defmodule Navigation.Path.Protobuf.Mission do

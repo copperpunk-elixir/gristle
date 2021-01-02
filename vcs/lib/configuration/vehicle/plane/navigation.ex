@@ -1,8 +1,8 @@
 defmodule Configuration.Vehicle.Plane.Navigation do
   require Logger
 
-  @spec get_goals_sorter_configs() :: list()
-  def get_goals_sorter_configs() do
+  @spec goals_sorter_configs() :: list()
+  def goals_sorter_configs() do
     [
       [
         name: {:goals, 1},
@@ -28,9 +28,20 @@ defmodule Configuration.Vehicle.Plane.Navigation do
     ]
   end
 
+  @spec peripheral_paths_sorter_config() :: list()
+  def peripheral_paths_sorter_config() do
+    [[
+      name: :peripheral_paths,
+      default_message_behavior: :default_value,
+      default_value: nil,
+      value_type: :map,
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+    ]]
+  end
+
   @spec get_sorter_configs() :: list()
   def get_sorter_configs() do
-    get_goals_sorter_configs()
+    goals_sorter_configs() ++ peripheral_paths_sorter_config()
   end
 
   @spec get_vehicle_limits(binary()) :: map()

@@ -21,7 +21,8 @@ defmodule Navigation.Dubins.ConfigPoint do
     :end_radius,
     :dubins,
     :goto_upon_completion,
-    :type
+    :type,
+    :peripheral_control_allowed
   ]
 
   @spec new(struct(), float()) :: struct()
@@ -35,7 +36,8 @@ defmodule Navigation.Dubins.ConfigPoint do
       course: waypoint.course,
       start_radius: radius,
       dubins: Navigation.Dubins.DubinsPath.new(),
-      type: waypoint.type
+      type: waypoint.type,
+      peripheral_control_allowed: waypoint.peripheral_control_allowed
     }
   end
 

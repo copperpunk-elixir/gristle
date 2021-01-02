@@ -1,15 +1,15 @@
 defmodule Peripherals.Uart.Generic do
   require Logger
 
-  @spec parse(struct(), list(), atom()) :: struct()
-  def parse(ublox, buffer, module) do
+  @spec parse(struct(), list(), atom(), list(), integer()) :: struct()
+  def parse(ublox, buffer, module, sorter_classification \\ nil, sorter_time_validity_ms \\ nil) do
     {[byte], buffer} = Enum.split(buffer,1)
     ublox = Telemetry.Ublox.parse(ublox, byte)
     ublox =
     if ublox.payload_ready == true do
       # Logger.debug("ready")
       {msg_class, msg_id} = Telemetry.Ublox.msg_class_and_id(ublox)
-      dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox), module)
+      dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox), module, sorter_classification, sorter_time_validity_ms)
       Telemetry.Ublox.clear(ublox)
     else
       ublox
@@ -17,12 +17,12 @@ defmodule Peripherals.Uart.Generic do
     if (Enum.empty?(buffer)) do
       ublox
     else
-      parse(ublox, buffer, module)
+      parse(ublox, buffer, module, sorter_classification, sorter_time_validity_ms)
     end
   end
 
-  @spec dispatch_message(integer(), integer(), list(), atom()) :: atom()
-  def dispatch_message(msg_class, msg_id, payload, module) do
+  @spec dispatch_message(integer(), integer(), list(), atom(), list(), integer()) :: atom()
+  def dispatch_message(msg_class, msg_id, payload, module, sorter_classification, sorter_time_validity_ms) do
     # Logger.debug("Rx'd msg: #{msg_class}/#{msg_id}")
     # Logger.debug("payload: #{inspect(payload)}")
     case msg_class do
@@ -92,11 +92,16 @@ defmodule Peripherals.Uart.Generic do
             value = Pids.Pid.get_parameter(process_variable, output_variable, parameter)
             msg = [process_variable, output_variable, parameter, value] |> Msgpax.pack!(iodata: false)
             construct_and_send_proto_message(:get_pid_gain, msg, module)
-          0x02 ->
-            # Msgpax
-            msg_type = :get_pid_gain
-            [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
-            Logger.warn("#{process_variable}-#{output_variable} #{parameter} = #{value}")
+          # 0x02 ->
+          #   # Msgpax
+          #   msg_type = :get_pid_gain
+          #   [process_variable, output_variable, parameter, value] = Pids.Msgpax.Utils.unpack(msg_type, payload)
+          #   Logger.warn("#{process_variable}-#{output_variable} #{parameter} = #{value}")
+          0x03 ->
+            msg_type = :change_peripheral_control
+            Logger.debug("tele rx: #{msg_type}")
+            [control_allowed] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({:change_peripheral_control, control_allowed > 0}, module)
           _other -> Logger.warn("Bad message id: #{msg_id}")
         end
       0x50 ->
@@ -149,21 +154,40 @@ defmodule Peripherals.Uart.Generic do
           0x00 ->
             Logger.debug("op rx: orbit")
             Logger.debug("from #{inspect(module)}")
+            Logger.info("class: #{inspect(sorter_classification)}")
             msg_type = :orbit_inline
             [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_global({:load_orbit, :inline, nil, radius, confirmation>0}, module)
+            if is_nil(sorter_classification) do
+              send_global({:load_orbit, :inline, nil, radius, confirmation>0}, module)
+            else
+              Logger.info("rx orbit inline")
+              path_command_map = Navigation.Path.Utils.orbit(:inline, nil, radius, confirmation>0)
+              send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
+            end
           0x01 ->
             Logger.debug("op rx: orbit centered")
             msg_type = :orbit_centered
             [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_global({:load_orbit, :centered, nil, radius, confirmation>0}, module)
+            if is_nil(sorter_classification) do
+              send_global({:load_orbit, :centered, nil, radius, confirmation>0}, module)
+            else
+              Logger.info("rx orbit centered")
+              path_command_map = Navigation.Path.Utils.orbit(:centered, nil, radius, confirmation>0)
+              send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
+            end
+
           0x02 ->
             Logger.debug("op rx: orbit at location")
             msg_type = :orbit_at_location
             [radius, latitude, longitude, altitude, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             position = Common.Utils.LatLonAlt.new(latitude, longitude, altitude)
-            send_global({:load_orbit, :centered, position, radius, confirmation>0}, module)
-
+            if is_nil(sorter_classification) do
+              send_global({:load_orbit, :centered, position, radius, confirmation>0}, module)
+            else
+              Logger.info("rx orbit centered")
+              path_command_map = Navigation.Path.Utils.orbit(:centered, position, radius, confirmation>0)
+              send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
+            end
           0x03 ->
             Logger.debug("op rx: clear orbit")
             msg_type = :clear_orbit
