@@ -49,7 +49,8 @@ defmodule Navigation.PathManager do
       stored_current_path_case: nil,
       orbit_active: false,
       peripheral_path: nil,
-      on_deck_peripheral_path: nil
+      on_deck_peripheral_path: nil,
+      peripheral_control_allowed: false
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
@@ -58,6 +59,7 @@ defmodule Navigation.PathManager do
     Comms.Operator.join_group(__MODULE__, :load_orbit, self())
     Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
     Comms.Operator.join_group(__MODULE__, :peripheral_paths_sorter, self())
+    Comms.Operator.join_group(__MODULE__, :change_peripheral_control, self())
     Registry.register(MessageSorterRegistry, :peripheral_paths, config[:peripheral_paths_update_interval_ms])
     {:noreply, state}
   end
@@ -71,15 +73,23 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
+  def handle_cast({:change_peripheral_control, control_allowed}, state) do
+    Logger.debug("PM pca: #{control_allowed}")
+    # If we are going from "allowed" to "not allowed", we must process as though the path is now nil
+    state =
+    if !control_allowed and state.peripheral_control_allowed do
+      Logger.warn("pca no longer allowed")
+      process_peripheral_path(state, nil)
+    else
+      state
+    end
+    {:noreply, %{state | peripheral_control_allowed: control_allowed}}
+  end
+
+  @impl GenServer
   def handle_cast({:message_sorter_value, :peripheral_paths, path_command, _status}, state) do
-    # state =
-    # if is_nil(path_command) or (path_command.path_id == state.peripheral_path_id) do
-    #   state
-    # else
-    #   Map.put(state, :on_deck_peripheral_path, path_command)
-    # end
-    Logger.debug("ppc: #{inspect(path_command)}")
-    {:noreply, %{state | on_deck_peripheral_path: path_command}}
+    on_deck_peripheral_path = if state.peripheral_control_allowed, do: path_command, else: nil
+    {:noreply, %{state | on_deck_peripheral_path: on_deck_peripheral_path}}
   end
 
   @impl GenServer
@@ -114,7 +124,7 @@ defmodule Navigation.PathManager do
     speed = velocity.speed
     course = velocity.course
     # airspeed = velocity.airspeed
-    state = peripheral_path_tasks(state)
+    state = if state.peripheral_control_allowed, do: process_peripheral_path(state, state.on_deck_peripheral_path), else: state
 
     current_case_index = if is_nil(state.current_path_case), do: -1, else: state.current_path_case.case_index
     state = move_vehicle(position, state, current_case_index)
@@ -200,11 +210,11 @@ defmodule Navigation.PathManager do
           current_cp = Enum.at(state.config_points, index)
           Navigation.Dubins.Utils.check_for_path_case_completion(position, current_cp, state.current_path_case)
       end
-    {current_cp_index, current_path_case} =
+    {current_cp_index, current_path_case, peripheral_control_allowed} =
       case temp_case_index do
         -1 ->
           # Logger.error("No config points. Follow path_case if it exists")
-          {nil, state.current_path_case}
+          {nil, state.current_path_case, state.peripheral_control_allowed}
         5 ->
           # Completed this control point
           # if there is a goto, then go to it
@@ -227,18 +237,19 @@ defmodule Navigation.PathManager do
                 index
             end
           case current_cp_index do
-            nil -> {nil, nil}
+            nil -> {nil, nil, state.peripheral_control_allowed}
             index ->
-              new_dubins = Enum.at(state.config_points, index) |> Map.get(:dubins)
+              new_config_point = Enum.at(state.config_points, index)
+              new_dubins = Map.get(new_config_point, :dubins)
               path_case_index = if (new_dubins.skip_case_0 == true), do: 1, else: 0
               path_case = Enum.at(new_dubins.path_cases, path_case_index)
-              {index, path_case}
+              {index, path_case, new_config_point.peripheral_control_allowed}
           end
         index ->
           current_cp = Enum.at(state.config_points, state.current_cp_index)
-          {state.current_cp_index, Enum.at(current_cp.dubins.path_cases, index)}
+          {state.current_cp_index, Enum.at(current_cp.dubins.path_cases, index), state.peripheral_control_allowed}
       end
-    state = %{state | current_cp_index: current_cp_index, current_path_case: current_path_case}
+    state = %{state | current_cp_index: current_cp_index, current_path_case: current_path_case, peripheral_control_allowed: peripheral_control_allowed}
     if (temp_case_index != path_case_index_prev) do
       move_vehicle(position, state, temp_case_index)
     else
@@ -274,37 +285,14 @@ defmodule Navigation.PathManager do
     agl_error
   end
 
-  @spec peripheral_path_tasks(map()) :: map()
-  def peripheral_path_tasks(state) do
-    if is_nil(state.current_path_case) do
-      Logger.info("No path case: process peripheral path")
-      process_peripheral_path(state)
-    else
-      current_cp_index = Map.get(state, :current_cp_index)
-      current_cp = if is_nil(current_cp_index), do: nil, else: Enum.at(state.config_points, current_cp_index)
-      cond do
-        is_nil(current_cp_index) ->
-          Logger.debug("no cp index")
-          process_peripheral_path(state)
-        current_cp.peripheral_control_allowed ->
-          Logger.debug("pc alwd")
-          process_peripheral_path(state)
-        true ->
-          Logger.debug("pc not alwd")
-          state
-      end
-    end
-  end
-
-  @spec process_peripheral_path(map()) :: map()
-  def process_peripheral_path(state) do
-    on_deck_path = state.on_deck_peripheral_path
+  @spec process_peripheral_path(map(), map()) :: map()
+  def process_peripheral_path(state, on_deck_path) do
+    # on_deck_path = state.on_deck_peripheral_path
     current_path = if is_nil(state.peripheral_path), do: %{}, else: state.peripheral_path
     path_id = if is_nil(on_deck_path), do: nil, else: on_deck_path.path_id
     # This is a new command
     cond do
       is_nil(on_deck_path) ->
-        # Logger.debug("no on deck path")
         case Map.get(current_path, :class) do
           :orbit -> process_clear_orbit(true, state)
           # :goto ->
@@ -314,6 +302,7 @@ defmodule Navigation.PathManager do
         |> Map.put(:peripheral_path, nil)
       path_id == Map.get(current_path, :path_id) -> state
       true ->
+        Logger.debug("process on deck path")
         case on_deck_path.class do
           :orbit -> process_load_orbit(on_deck_path.type, on_deck_path.position, on_deck_path.radius, on_deck_path.confirmation, state)
           _other ->
@@ -340,6 +329,7 @@ defmodule Navigation.PathManager do
     current_path_case = Enum.at(current_cp.dubins.path_cases,0)
     takeoff_altitude = Enum.at(config_points, 0) |> Map.get(:z2) |> Map.get(:altitude)
     landing_altitude = Enum.at(config_points, -1) |> Map.get(:z2) |> Map.get(:altitude)
+    peripheral_control_allowed = current_cp.peripheral_control_allowed
     Logger.debug("landing altitude: #{landing_altitude}")
     state = %{
       state |
@@ -349,7 +339,8 @@ defmodule Navigation.PathManager do
       current_path_distance: current_path_distance,
       takeoff_altitude: takeoff_altitude,
       landing_altitude: landing_altitude,
-      orbit_active: false
+      orbit_active: false,
+      peripheral_control_allowed: peripheral_control_allowed
     }
     if (confirmation) do
       pb_encoded = Navigation.Path.Mission.encode(mission, false, true)

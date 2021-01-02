@@ -354,8 +354,8 @@ defmodule Navigation.Path.Mission do
         landing_distances_heights: [{-150, 30}, {-10,3}, {20, 1.5}, {50,0}],
         landing_speeds: {13, 10},
         flight_speed_range: {12,18},
-        flight_agl_range: {30, 50},
-        wp_dist_range: {40, 60},
+        flight_agl_range: {50, 60},
+        wp_dist_range: {100, 200},
         planning_turn_rate: 0.20,
         planning_orbit_radius: 30
       },

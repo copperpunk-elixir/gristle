@@ -23,6 +23,7 @@ message Mission {
     required float course = 6;
     optional string goto = 7 [default = ""];
     required WaypointType type = 8;
+    required bool peripheral_control_allowed = 9;
   }
 
   repeated Waypoint waypoints = 3;

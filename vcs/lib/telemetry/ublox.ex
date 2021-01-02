@@ -189,9 +189,10 @@ defmodule Telemetry.Ublox do
       :control_state -> [4, 1]
       :tx_battery -> [4, 4, 4.0, 4.0, 4.0]
       :cluster_status -> [4, 1]
-      # :set_pid_gain -> [-4,-4,-4,4]
-      # :request_pid_gain -> [-4, -4, -4]
+      :set_pid_gain -> [-4,-4,-4,4]
+      :request_pid_gain -> [-4, -4, -4]
       # :get_pid_gain -> [-4, -4, -4, 4]
+      :change_peripheral_control -> [1]
       :rpc -> [4, 4]
       # :mission -> [-4, -4, -4, -4, -4, -4]
       :clear_mission -> [1]
@@ -219,9 +220,10 @@ defmodule Telemetry.Ublox do
       :control_state -> {0x45, 0x14}
       :tx_battery -> {0x45, 0x15}
       :cluster_status -> {0x45, 0x16}
-      # :set_pid_gain -> {0x46, 0x00}
-      # :request_pid_gain -> {0x46, 0x01}
+      :set_pid_gain -> {0x46, 0x00}
+      :request_pid_gain -> {0x46, 0x01}
       # :get_pid_gain -> {0x46, 0x02}
+      :change_peripheral_control -> {0x46, 0x03}
       :rpc  -> {0x50, 0x00}
       :mission_proto -> {0x50, 0x01}
       :clear_mission -> {0x50, 0x02}
