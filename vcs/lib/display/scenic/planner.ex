@@ -67,7 +67,7 @@ defmodule Display.Scenic.Planner do
   def handle_cast({:clear_mission, _iTOW}, state) do
     Logger.debug("planner clear mission")
     graph = Scenic.Graph.delete(state.graph, @primitive_id)
-    state = Map.put(state, :mission, %{})
+    state = Map.put(state, :mission, nil)
     |> Map.put(:origin, nil)
     |> Map.put(:graph, graph)
     {:noreply, state, push: graph }

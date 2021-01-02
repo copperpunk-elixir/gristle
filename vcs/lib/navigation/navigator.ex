@@ -54,6 +54,8 @@ defmodule Navigation.Navigator do
     {:noreply, state}
   end
 
+
+
   @impl GenServer
   def handle_cast({:message_sorter_value, {:goals, level}, goals, status}, state) do
     goals_default = if (level == state.default_pv_cmds_level), do: goals, else: state.goals_default

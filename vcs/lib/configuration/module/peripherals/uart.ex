@@ -23,6 +23,13 @@ defmodule Configuration.Module.Peripherals.Uart do
         "0" -> "ttyAMA0"
         port_num -> "ttyAMA#{String.to_integer(port_num)-2}"
       end
+    [device, metadata] =
+      case String.split(device, "-") do
+        [dev] -> [dev, ""]
+        [dev, meta] -> [dev, meta]
+        _other -> raise "Device name improper format"
+      end
+    Logger.debug("device/meta: #{device}/#{metadata}")
     case device do
       "Dsm" -> {Command.Rx, get_dsm_rx_config(uart_port)}
       "FrskyRx" -> {Command.Rx, get_frsky_rx_config(uart_port)}
@@ -36,7 +43,7 @@ defmodule Configuration.Module.Peripherals.Uart do
       "Xbee" -> {Telemetry, get_telemetry_config(uart_port)}
       "Sik" -> {Telemetry, get_telemetry_config(uart_port)}
       "PwmReader" -> {PwmReader, get_pwm_reader_config(uart_port)}
-      "Generic" -> {Generic, get_generic_config(uart_port)}
+      "Generic" -> {Generic, get_generic_config(uart_port, metadata)}
     end
   end
 
@@ -157,11 +164,14 @@ defmodule Configuration.Module.Peripherals.Uart do
     ]
   end
 
-  @spec get_generic_config(binary()) :: list()
-  def get_generic_config(uart_port) do
+  @spec get_generic_config(binary(), binary()) :: list()
+  def get_generic_config(uart_port, device_capability) do
+    sorter_classification = Configuration.Generic.generic_peripheral_classification(device_capability)
     [
       uart_port: uart_port_real_or_sim(uart_port, "CP2104"),
       port_options: [speed: 115_200],
+      sorter_classification: sorter_classification,
+      sorter_time_validity_ms: Configuration.Generic.generic_peripheral_time_validity_ms()
     ]
   end
 

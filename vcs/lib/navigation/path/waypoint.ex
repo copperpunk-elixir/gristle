@@ -1,7 +1,7 @@
 defmodule Navigation.Path.Waypoint do
   require Logger
-  @enforce_keys [:latitude, :longitude, :speed, :course, :altitude]
-  defstruct [:name, :latitude, :longitude, :speed, :course, :altitude, :type, :goto, :dubins]
+  @enforce_keys [:latitude, :longitude, :speed, :course, :altitude, :peripheral_control_allowed]
+  defstruct [:name, :latitude, :longitude, :speed, :course, :altitude, :type, :goto, :dubins, :peripheral_control_allowed]
 
   @flight_type :flight
   @ground_type :ground
@@ -9,8 +9,8 @@ defmodule Navigation.Path.Waypoint do
   @approach_type :approach
   @landing_type :landing
 
-  @spec new(float(), float(), number(), number(), number(), atom(), binary(), integer()) :: struct()
-  def new(latitude, longitude, altitude, speed, course, type, name \\ "", goto \\ nil) do
+  @spec new(float(), float(), number(), number(), number(), atom(), binary(), integer(), boolean()) :: struct()
+  def new(latitude, longitude, altitude, speed, course, type, name \\ "", goto \\ nil, peripheral_control_allowed \\ false) do
     %Navigation.Path.Waypoint{
       name: name,
       latitude: latitude,
@@ -20,18 +20,24 @@ defmodule Navigation.Path.Waypoint do
       course: course,
       type: type,
       goto: goto,
-      dubins: nil
+      dubins: nil,
+      peripheral_control_allowed: peripheral_control_allowed
     }
   end
 
-  @spec new_from_lla(struct(), number, number, atom(), binary(), integer()) ::struct()
-  def new_from_lla(lla, speed, course, type, name \\ "", goto \\ nil) do
-    new(lla.latitude, lla.longitude, lla.altitude, speed, course, type, name, goto)
+  @spec new_from_lla(struct(), number, number, atom(), binary(), integer(), boolean()) ::struct()
+  def new_from_lla(lla, speed, course, type, name \\ "", goto \\ nil, peripheral_control_allowed \\ false) do
+    new(lla.latitude, lla.longitude, lla.altitude, speed, course, type, name, goto, peripheral_control_allowed)
   end
 
   @spec new_flight(struct(), number, number, binary(), integer()) ::struct()
   def new_flight(lla, speed, course, name \\ "", goto \\ nil) do
-    new_from_lla(lla, speed, course, @flight_type, name, goto)
+    new_from_lla(lla, speed, course, @flight_type, name, goto, false)
+  end
+
+  @spec new_flight_peripheral(struct(), number, number, binary(), integer()) ::struct()
+  def new_flight_peripheral(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @flight_type, name, goto, true)
   end
 
   @spec new_ground(struct(), number, number, binary(), integer()) ::struct()

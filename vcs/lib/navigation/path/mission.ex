@@ -247,7 +247,7 @@ defmodule Navigation.Path.Mission do
       |> Map.put(:altitude, origin.altitude+rel_alt)
       # lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
       course = Common.Utils.Motion.constrain_angle_to_compass(Common.Utils.Math.deg2rad(rel_course) + reference_heading)
-      wp = Navigation.Path.Waypoint.new_flight(lla, wp_speed, course,"#{length(acc)+1}")
+      wp = Navigation.Path.Waypoint.new_flight_peripheral(lla, wp_speed, course,"#{length(acc)+1}")
       acc ++ [wp]
     end)
     first_wp = Enum.at(wps, 0)
@@ -310,7 +310,7 @@ defmodule Navigation.Path.Mission do
         # Logger.debug("distance/bearing: #{dist}/#{Common.Utils.Math.rad2deg(bearing)}")
         new_pos = Common.Utils.Location.lla_from_point_with_distance(last_wp, dist, bearing)
         |> Map.put(:altitude, alt)
-        new_wp = Navigation.Path.Waypoint.new_flight(new_pos, speed, course, "wp#{index}")
+        new_wp = Navigation.Path.Waypoint.new_flight_peripheral(new_pos, speed, course, "wp#{index}")
         [new_wp | acc]
       end)
       |> Enum.reverse()
@@ -403,7 +403,8 @@ defmodule Navigation.Path.Mission do
       speed: wp.speed,
       course: wp.course,
       goto: goto,
-      type: to_string(wp.type) |> String.upcase() |> String.to_atom()
+      type: to_string(wp.type) |> String.upcase() |> String.to_atom(),
+      peripheral_control_allowed: wp.peripheral_control_allowed
       ])
       acc ++ [wp_proto]
     end)

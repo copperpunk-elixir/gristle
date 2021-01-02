@@ -44,11 +44,12 @@ defmodule Navigation.PathManager do
       takeoff_altitude: 0,
       path_follower: Navigation.Path.PathFollower.new(Keyword.fetch!(config, :path_follower)),
       position: nil,
-      speed: nil,
-      course: nil,
+      velocity: nil,
       stored_current_cp_index: nil,
       stored_current_path_case: nil,
-      orbit_active: false
+      orbit_active: false,
+      peripheral_path: nil,
+      on_deck_peripheral_path: nil
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
@@ -56,7 +57,29 @@ defmodule Navigation.PathManager do
     Comms.Operator.join_group(__MODULE__, :clear_mission, self())
     Comms.Operator.join_group(__MODULE__, :load_orbit, self())
     Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
+    Comms.Operator.join_group(__MODULE__, :peripheral_paths_sorter, self())
+    Registry.register(MessageSorterRegistry, :peripheral_paths, config[:peripheral_paths_update_interval_ms])
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:peripheral_paths_sorter, classification, time_validity_ms, path_command_map}, state) do
+    Logger.debug("rx path  from #{inspect(classification)}: #{inspect(path_command_map)}")
+    path_command_map = Map.put(path_command_map, :path_id, System.system_time())
+    MessageSorter.Sorter.add_message(:peripheral_paths, classification, time_validity_ms, path_command_map)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:message_sorter_value, :peripheral_paths, path_command, _status}, state) do
+    # state =
+    # if is_nil(path_command) or (path_command.path_id == state.peripheral_path_id) do
+    #   state
+    # else
+    #   Map.put(state, :on_deck_peripheral_path, path_command)
+    # end
+    Logger.debug("ppc: #{inspect(path_command)}")
+    {:noreply, %{state | on_deck_peripheral_path: path_command}}
   end
 
   @impl GenServer
@@ -91,6 +114,8 @@ defmodule Navigation.PathManager do
     speed = velocity.speed
     course = velocity.course
     # airspeed = velocity.airspeed
+    state = peripheral_path_tasks(state)
+
     current_case_index = if is_nil(state.current_path_case), do: -1, else: state.current_path_case.case_index
     state = move_vehicle(position, state, current_case_index)
     current_path_case = state.current_path_case
@@ -151,7 +176,7 @@ defmodule Navigation.PathManager do
         end
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
-    {:noreply, %{state | position: position, speed: speed, course: course}}
+    {:noreply, %{state | position: position, velocity: velocity}}
   end
 
   @impl GenServer
@@ -166,6 +191,7 @@ defmodule Navigation.PathManager do
 
   @spec move_vehicle(map(), map(), integer()) :: map()
   def move_vehicle(position, state, path_case_index_prev) do
+    # If peripheral cases are allowed, check for one, and process it if available
     temp_case_index =
       case state.current_cp_index do
         nil -> -1
@@ -248,14 +274,65 @@ defmodule Navigation.PathManager do
     agl_error
   end
 
+  @spec peripheral_path_tasks(map()) :: map()
+  def peripheral_path_tasks(state) do
+    if is_nil(state.current_path_case) do
+      Logger.info("No path case: process peripheral path")
+      process_peripheral_path(state)
+    else
+      current_cp_index = Map.get(state, :current_cp_index)
+      current_cp = if is_nil(current_cp_index), do: nil, else: Enum.at(state.config_points, current_cp_index)
+      cond do
+        is_nil(current_cp_index) ->
+          Logger.debug("no cp index")
+          process_peripheral_path(state)
+        current_cp.peripheral_control_allowed ->
+          Logger.debug("pc alwd")
+          process_peripheral_path(state)
+        true ->
+          Logger.debug("pc not alwd")
+          state
+      end
+    end
+  end
+
+  @spec process_peripheral_path(map()) :: map()
+  def process_peripheral_path(state) do
+    on_deck_path = state.on_deck_peripheral_path
+    current_path = if is_nil(state.peripheral_path), do: %{}, else: state.peripheral_path
+    path_id = if is_nil(on_deck_path), do: nil, else: on_deck_path.path_id
+    # This is a new command
+    cond do
+      is_nil(on_deck_path) ->
+        # Logger.debug("no on deck path")
+        case Map.get(current_path, :class) do
+          :orbit -> process_clear_orbit(true, state)
+          # :goto ->
+          # :sca ->
+          _other -> state
+        end
+        |> Map.put(:peripheral_path, nil)
+      path_id == Map.get(current_path, :path_id) -> state
+      true ->
+        case on_deck_path.class do
+          :orbit -> process_load_orbit(on_deck_path.type, on_deck_path.position, on_deck_path.radius, on_deck_path.confirmation, state)
+          _other ->
+            Logger.warn("unsupported path class")
+            state
+        end
+        |> Map.put(:peripheral_path, on_deck_path)
+    end
+  end
+
   @spec process_load_mission(struct(), boolean(), map()) :: map()
   def process_load_mission(mission, confirmation, state) do
+    speed = get_in(state, [:velocity, :speed])
     mission =
-    if is_nil(state.speed) or (state.speed < 1.0) do
+    if is_nil(speed) or (speed < 1.0) do
       mission
     else
       Logger.warn("add current position")
-      Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, state.speed, state.course)
+      Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, speed, state.velocity.course)
     end
     # Logger.debug("path manager load mission: #{mission.name}")
     {config_points, current_path_distance} = Navigation.Dubins.Utils.config_points_from_waypoints(mission.waypoints, mission.vehicle_turn_rate)
@@ -297,16 +374,17 @@ defmodule Navigation.PathManager do
 
   @spec process_load_orbit(atom(), struct(), float(), integer(), map()) :: map()
   def process_load_orbit(orbit_type, position, radius, confirmation, state) do
+    course = get_in(state, [:velocity, :course])
     Logger.debug("path manager load orbit: #{radius}")
     if is_nil(position), do: Logger.warn("no orbit position")
     {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
     position = if is_nil(position), do: state.position, else: position
-    if is_nil(position) or is_nil(state.course) do
+    if is_nil(position) or is_nil(course) do
       Logger.warn("no position. can't load orbit")
       state
     else
       Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
-      path_case = new_orbit_path_case(position, state.course, speed, radius, orbit_type)
+      path_case = new_orbit_path_case(position, course, speed, radius, orbit_type)
       Logger.debug("valid load orbit: #{inspect(path_case)}")
       # Confirm orbit
       if confirmation do
