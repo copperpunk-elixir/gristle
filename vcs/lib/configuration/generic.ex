@@ -78,7 +78,7 @@ defmodule Configuration.Generic do
 
   @spec native_source?(list()) :: boolean()
   def native_source?(classification) do
-    [primary, secondary] = classification
+    [primary, _secondary] = classification
     primary == 0
   end
 

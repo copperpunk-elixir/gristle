@@ -71,9 +71,11 @@ defmodule Peripherals.Uart.Command.Rx.Frsky do
       (Enum.at(payload,19)>>>2) + (Enum.at(payload,20)<<<6),
       (Enum.at(payload,20)>>>5) + (Enum.at(payload,21)<<<3),
       ]
+
     channels = Enum.reduce(Enum.reverse(channels), [], fn (value, acc) ->
       # [(value &&& 0x07FF)] ++ acc
-      [((value &&& 0x07FF) -@pw_mid)/@pw_half_range] ++ acc
+      value_float = Common.Utils.Math.constrain(((value &&& 0x07FF) -@pw_mid)/@pw_half_range, -1.0, 1.0)
+      [value_float] ++ acc
     end)
     flag_byte = Enum.at(payload,22)
     # failsafe_active = ((flag_byte &&& 0x08) > 0)
@@ -82,6 +84,7 @@ defmodule Peripherals.Uart.Command.Rx.Frsky do
     #   acc <> "#{Common.Utils.eftb(Enum.at(channels, index),3)},"
     # end)
     # Logger.debug(str)
+    # Logger.warn(Common.Utils.eftb_list(channels,3))
     %{frsky | payload_ready: !frame_lost, channels: channels}
   end
 

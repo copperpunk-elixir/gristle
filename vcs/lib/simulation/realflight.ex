@@ -13,10 +13,6 @@ defmodule Simulation.Realflight do
   @default_servo [0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0, 0.5, 0.5, 0.5, 0.5]
   @rf_stick_mult 1.07
 
-  # def start() do
-  #   start_link([host_ip: "192.168.7.247", sim_loop_interval_ms: 1000000])
-  # end
-
   def start_link(config) do
     Logger.info("Start Simulation.Realflight GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
@@ -38,6 +34,12 @@ defmodule Simulation.Realflight do
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :pwm_input, self())
+
+    if config[:update_actuators_software] do
+      Comms.Operator.join_group(__MODULE__, :update_actuators, self())
+    end
+
     url = Keyword.fetch!(config, :host_ip) <>(":18083")
     Logger.debug("url: #{url}")
     state = %{
@@ -50,7 +52,9 @@ defmodule Simulation.Realflight do
       agl: 0,
       airspeed: 0,
       rcin: @default_servo,
-      servo_out: @default_servo
+      servo_out: @default_servo,
+      pwm_channels: Keyword.fetch!(config, :pwm_channels),
+      reversed_channels: Keyword.fetch!(config, :reversed_channels),
     }
     restore_controller(url)
     inject_controller_interface(url)
@@ -91,42 +95,37 @@ defmodule Simulation.Realflight do
 
       [aileron, 1-elevator, throttle, rudder, 0, flaps,0,0,0,0,0,0]
     end
-    # Logger.info("servo_out: #{inspect(servo_out)}")
+    Logger.info("servo_out: #{inspect(servo_out)}")
     {:noreply, %{state | servo_out: servo_out}}
   end
 
-  # @spec get_servo_value_from_actuator_map(map(), atom(), float()) :: float()
-  # def get_servo_value_from_actuator_map(actuator_map, key, default_value) do
-  #   case Map.get(output_map, key)
-  # end
+  @impl GenServer
+  def handle_cast({:pwm_input, scaled_values}, state) do
+    # Logger.debug("pwm ch: #{inspect(pwm_channels)}")
+    # Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
+    cmds_reverse = Enum.reduce(Enum.with_index(scaled_values), [], fn ({ch_value, index}, acc) ->
+      [ch_value] ++ acc
+    end)
+    cmds_reverse =
+      Enum.reduce(1..(11-length(scaled_values)), cmds_reverse, fn (_x, acc) ->
+        [0] ++ acc
+      end)
+    cmds = Enum.reverse(cmds_reverse)
+    |> List.insert_at(4,0)
+    # Logger.info(Common.Utils.eftb_list(cmds, 2))
+    {:noreply, %{state | servo_out: cmds}}
+  end
 
   @impl GenServer
   def handle_info(:exchange_data_loop, state) do
     state = exchange_data(state, state.servo_out)
     # state = exchange_data(state, state.rcin)
     publish_perfect_simulation_data(state)
-    # Remove channel 5, add fake channel 7, so that flaps and gear will be in the right place
-    # I apologize for the hack, but this keeps me from having to change the Command configuration.
-
-    # Logger.debug("#{inspect(state.rcin)}")
-    {rc_1_4, rc_5_12} = Enum.split(state.rcin, 4)
-    {rc_5_7, rc_8_12} = Enum.split(rc_5_12, 3)
-    rc_5_7 = Enum.drop(rc_5_7, 1) ++ [0.5]
-    rcin = rc_1_4 ++ rc_5_7 ++ rc_8_12
-    rx_output = Enum.map(rcin, fn x ->
-      (x - 0.5)*2
-    end )
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {:rx_output, rx_output, false}, :rx_output, self())
     {:noreply, state}
   end
 
   def fix_rx(x) do
     (x - 0.5)*@rf_stick_mult + 0.5
-  end
-
-  @spec update_actuators(map()) :: atom()
-  def update_actuators(actuators_and_outputs) do
-    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
   end
 
   @spec publish_perfect_simulation_data(map()) ::atom()
@@ -418,14 +417,5 @@ defmodule Simulation.Realflight do
       Map.put(acc, key, x_float*mult)
     end)
   end
-
-  def get_test_xml() do
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><SOAP-ENV:Body><ReturnData><m-previousInputsState><m-selectedChannels>-1</m-selectedChannels><m-channelValues-0to1 xsi:type=\"SOAP-ENC:Array\" SOAP-ENC:arrayType=\"xsd:double[12]\"><item>0.5</item><item>0.5</item><item>0</item><item>0.5</item><item>0.5</item><item>0</item><item>0</item><item>0</item><item>0</item><item>0.5</item><item>0.5</item><item>0.5</item></m-channelValues-0to1></m-previousInputsState><m-aircraftState><m-currentPhysicsTime-SEC>708.01227736799046</m-currentPhysicsTime-SEC><m-currentPhysicsSpeedMultiplier>1</m-currentPhysicsSpeedMultiplier><m-airspeed-MPS>0.0021798373622661884</m-airspeed-MPS><m-altitudeASL-MTR>0.14938228996838809</m-altitudeASL-MTR><m-altitudeAGL-MTR>0.14938228996838809</m-altitudeAGL-MTR><m-groundspeed-MPS>0.00014266304921026299</m-groundspeed-MPS><m-pitchRate-DEGpSEC>-0.49789883184564587</m-pitchRate-DEGpSEC><m-rollRate-DEGpSEC>0.77367656234457627</m-rollRate-DEGpSEC><m-yawRate-DEGpSEC>0.034366898669809132</m-yawRate-DEGpSEC><m-azimuth-DEG>71.528457641601562</m-azimuth-DEG><m-inclination-DEG>0.25129407644271851</m-inclination-DEG><m-roll-DEG>0.13396531343460083</m-roll-DEG><m-orientationQuaternion-X>0.0010961623629555106</m-orientationQuaternion-X><m-orientationQuaternion-Y>0.0022302858997136354</m-orientationQuaternion-Y><m-orientationQuaternion-Z>0.58445149660110474</m-orientationQuaternion-Z><m-orientationQuaternion-W>0.81142467260360718</m-orientationQuaternion-W><m-aircraftPositionX-MTR>34510.3515625</m-aircraftPositionX-MTR><m-aircraftPositionY-MTR>46654.50390625</m-aircraftPositionY-MTR><m-velocityWorldU-MPS>-0.00012938663712702692</m-velocityWorldU-MPS><m-velocityWorldV-MPS>6.0098616813775152E-005</m-velocityWorldV-MPS><m-velocityWorldW-MPS>0.0021751639433205128</m-velocityWorldW-MPS><m-velocityBodyU-MPS>-0.00010753551032394171</m-velocityBodyU-MPS><m-velocityBodyV-MPS>-9.8594442533794791E-005</m-velocityBodyV-MPS><m-velocityBodyW-MPS>0.0021749495062977076</m-velocityBodyW-MPS><m-accelerationWorldAX-MPS2>0.00080946780508384109</m-accelerationWorldAX-MPS2><m-accelerationWorldAY-MPS2>0.0046665812842547894</m-accelerationWorldAY-MPS2><m-accelerationWorldAZ-MPS2>8.8538541793823242</m-accelerationWorldAZ-MPS2><m-accelerationBodyAX-MPS2>0.018117452040314674</m-accelerationBodyAX-MPS2><m-accelerationBodyAY-MPS2>-0.060176290571689606</m-accelerationBodyAY-MPS2><m-accelerationBodyAZ-MPS2>-9.4150829315185547</m-accelerationBodyAZ-MPS2><m-windX-MPS>0</m-windX-MPS><m-windY-MPS>0</m-windY-MPS><m-windZ-MPS>0</m-windZ-MPS><m-propRPM>2075.375</m-propRPM><m-heliMainRotorRPM>-1</m-heliMainRotorRPM><m-batteryVoltage-VOLTS>12.519639647435969</m-batteryVoltage-VOLTS><m-batteryCurrentDraw-AMPS>0.44040951132774353</m-batteryCurrentDraw-AMPS><m-batteryRemainingCapacity-MAH>2473.21337890625</m-batteryRemainingCapacity-MAH><m-fuelRemaining-OZ>-1</m-fuelRemaining-OZ><m-isLocked>false</m-isLocked><m-hasLostComponents>false</m-hasLostComponents><m-anEngineIsRunning>true</m-anEngineIsRunning><m-isTouchingGround>true</m-isTouchingGround><m-flightAxisControllerIsActive>true</m-flightAxisControllerIsActive><m-currentAircraftStatus>CAS-WAITINGTOLAUNCH</m-currentAircraftStatus></m-aircraftState><m-notifications><m-resetButtonHasBeenPressed>false</m-resetButtonHasBeenPressed></m-notifications></ReturnData></SOAP-ENV:Body></SOAP-ENV:Envelope>"
-  end
-
-  def get_deficient_xml() do
-    "<?xml version=\"1.0\" encoding=\"UTF-8\"?><SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"><SOAP-ENV:Body><ReturnData><m-previousInputsState><m-selectedChannels>-1</m-selectedChannels><m-channelValues-0to1 xsi:type=\"SOAP-ENC:Array\" SOAP-ENC:arrayType=\"xsd:double[12]\"><item>0.5</item><item>0.5</item><item>0</item><item>0.5</item><item>0.5</item><item>0</item><item>0</item><item>0</item><item>0</item><item>0.5</item><item>0.5</item><item>0.5</item></m-channelValues-0to1></m-previousInputsState><m-aircraftState><m-currentPhysicsTime-SEC>708.01227736799046</m-currentPhysicsTime-SEC><m-currentPhysicsSpeedMultiplier>1</m-currentPhysicsSpeedMultiplier><m-airspeed-MPS>0.0021798373622661884</m-airspeed-MPS><m-altitudeAGL-MTR>0.14938228996838809</m-altitudeAGL-MTR><m-groundspeed-MPS>0.00014266304921026299</m-groundspeed-MPS><m-rollRate-DEGpSEC>0.77367656234457627</m-rollRate-DEGpSEC><m-yawRate-DEGpSEC>0.034366898669809132</m-yawRate-DEGpSEC><m-azimuth-DEG>71.528457641601562</m-azimuth-DEG><m-inclination-DEG>0.25129407644271851</m-inclination-DEG><m-roll-DEG>0.13396531343460083</m-roll-DEG><m-orientationQuaternion-Y>0.0022302858997136354</m-orientationQuaternion-Y><m-orientationQuaternion-Z>0.58445149660110474</m-orientationQuaternion-Z><m-orientationQuaternion-W>0.81142467260360718</m-orientationQuaternion-W><m-aircraftPositionX-MTR>34510.3515625</m-aircraftPositionX-MTR><m-aircraftPositionY-MTR>46654.50390625</m-aircraftPositionY-MTR><m-velocityWorldU-MPS>-0.00012938663712702692</m-velocityWorldU-MPS><m-velocityWorldV-MPS>6.0098616813775152E-005</m-velocityWorldV-MPS><m-velocityBodyU-MPS>-0.00010753551032394171</m-velocityBodyU-MPS><m-velocityBodyV-MPS>-9.8594442533794791E-005</m-velocityBodyV-MPS><m-velocityBodyW-MPS>0.0021749495062977076</m-velocityBodyW-MPS><m-accelerationWorldAX-MPS2>0.00080946780508384109</m-accelerationWorldAX-MPS2><m-accelerationWorldAY-MPS2>0.0046665812842547894</m-accelerationWorldAY-MPS2><m-accelerationWorldAZ-MPS2>8.8538541793823242</m-accelerationWorldAZ-MPS2><m-accelerationBodyAX-MPS2>0.018117452040314674</m-accelerationBodyAX-MPS2><m-accelerationBodyAY-MPS2>-0.060176290571689606</m-accelerationBodyAY-MPS2><m-accelerationBodyAZ-MPS2>-9.4150829315185547</m-accelerationBodyAZ-MPS2><m-windX-MPS>0</m-windX-MPS><m-windY-MPS>0</m-windY-MPS><m-windZ-MPS>0</m-windZ-MPS><m-propRPM>2075.375</m-propRPM><m-heliMainRotorRPM>-1</m-heliMainRotorRPM><m-batteryVoltage-VOLTS>12.519639647435969</m-batteryVoltage-VOLTS><m-batteryCurrentDraw-AMPS>0.44040951132774353</m-batteryCurrentDraw-AMPS><m-batteryRemainingCapacity-MAH>2473.21337890625</m-batteryRemainingCapacity-MAH><m-fuelRemaining-OZ>-1</m-fuelRemaining-OZ><m-isLocked>false</m-isLocked><m-hasLostComponents>false</m-hasLostComponents><m-anEngineIsRunning>true</m-anEngineIsRunning><m-isTouchingGround>true</m-isTouchingGround><m-flightAxisControllerIsActive>true</m-flightAxisControllerIsActive><m-currentAircraftStatus>CAS-WAITINGTOLAUNCH</m-currentAircraftStatus></m-aircraftState><m-notifications><m-resetButtonHasBeenPressed>false</m-resetButtonHasBeenPressed></m-notifications></ReturnData></SOAP-ENV:Body></SOAP-ENV:Envelope>"
-  end
-
 end
 

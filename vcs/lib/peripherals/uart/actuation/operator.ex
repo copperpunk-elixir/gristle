@@ -24,6 +24,9 @@ defmodule Peripherals.Uart.Actuation.Operator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
+    Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :update_actuators, self())
+
     Logger.debug("Actuation module: #{Keyword.fetch!(config, :interface_module)}")
     {:ok, uart_ref} = Circuits.UART.start_link()
     state = %{
@@ -59,10 +62,10 @@ defmodule Peripherals.Uart.Actuation.Operator do
     {:noreply, state}
   end
 
-  @spec update_actuators(map()) :: atom()
-  def update_actuators(actuators_and_outputs) do
-    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
-  end
+  # @spec update_actuators(map()) :: atom()
+  # def update_actuators(actuators_and_outputs) do
+  #   GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
+  # end
 
   def output_to_us(output, reversed, min_pw_us, max_pw_us) do
     # Output will arrive in range [-1,1]

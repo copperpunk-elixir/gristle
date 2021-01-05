@@ -35,6 +35,7 @@ defmodule Configuration.Module.Actuation do
     output_modules =
       case node_type do
         "sim" -> [Simulation.Realflight]#[Simulation.XplaneSend]
+        "server" -> [Simulation.Realflight, Peripherals.Uart.ActuationCommand.Operator]
         "all" -> [Peripherals.Uart.ActuationCommand.Operator]
         _other -> [Peripherals.Uart.Actuation.Operator]
       end

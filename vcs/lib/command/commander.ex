@@ -2,8 +2,8 @@ defmodule Command.Commander do
   use GenServer
   require Logger
 
-  @rx_control_state_channel 7
-  @pilot_control_mode_channel 11
+  @rx_control_state_channel 6
+  @pilot_control_mode_channel 7
 
   @pilot_manual 0
   @pilot_semi_auto 1
@@ -58,6 +58,7 @@ defmodule Command.Commander do
   @impl GenServer
   def handle_cast({:rx_output, channel_output, _failsafe_active}, state) do
     # Logger.debug("rx_output: #{inspect(channel_output)}")
+    # Logger.debug("cs/pcm_output: #{Enum.at(channel_output,@rx_control_state_channel)}/#{Enum.at(channel_output, @pilot_control_mode_channel)}")
     current_time = :erlang.monotonic_time(:millisecond)
     dt = (current_time - state.rx_output_time_prev)/1000.0
     state = convert_rx_output_to_cmds_and_publish(channel_output, dt, state)
@@ -72,11 +73,11 @@ defmodule Command.Commander do
   @spec convert_rx_output_to_cmds_and_publish(list(), float(), map()) :: atom()
   defp convert_rx_output_to_cmds_and_publish(rx_output, dt, state) do
     control_state_float = Enum.at(rx_output, @rx_control_state_channel)
-    # Logger.debug("rx_out: #{inspect(rx_output)}")
+    # Logger.debug("rx_out: #{Common.Utils.eftb_list(rx_output,2)}")
     # Logger.debug("csf: #{control_state_float}")
     pilot_control_mode_value = Enum.at(rx_output, @pilot_control_mode_channel)
     pilot_control_mode = cond do
-      pilot_control_mode_value > 0.0 -> @pilot_manual
+      pilot_control_mode_value > 0.5 -> @pilot_manual
       pilot_control_mode_value > -0.5 -> @pilot_semi_auto
       true -> @pilot_auto
     end

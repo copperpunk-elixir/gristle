@@ -44,16 +44,16 @@ config :nerves_ssh,
 # Only enable this for prod if you understand the risks.
 node_name = if Mix.env() != :prod, do: "vcs"
 
-# config :vintage_net,
-#   regulatory_domain: "US",
-#   config: [
-#     {"eth0",
-#      %{
-#        type: VintageNetEthernet,
-#        ipv4: %{method: :dhcp}
-#      }
-#     }
-#   ]
+config :vintage_net,
+  regulatory_domain: "US",
+  config: [
+    {"eth0",
+     %{
+       type: VintageNetEthernet,
+       ipv4: %{method: :dhcp}
+     }
+    }
+  ]
 # ,
     # {"wlan0", %{type: VintageNetWiFi,
     #             vintage_net_wifi: %{

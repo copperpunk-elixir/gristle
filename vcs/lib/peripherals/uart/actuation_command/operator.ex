@@ -28,6 +28,7 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :update_actuators, self())
 
     rx_module = Module.concat(Peripherals.Uart.Command.Rx, Keyword.fetch!(config, :rx_module))
     {:ok, uart_ref} = Circuits.UART.start_link()
@@ -59,6 +60,8 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
       pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
       Map.put(acc, actuator.channel_number, pulse_width_us)
     end)
+    # Logger.info("#{inspect(channels)}")
+    # Logger.debug(Common.Utils.eftb_map(channels, 0))
     apply(state.interface_module, :write_channels, [state.interface, channels])
     {:noreply, %{state | channels: channels}}
   end
@@ -130,10 +133,10 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
     end
   end
 
-  @spec update_actuators(map()) :: atom()
-  def update_actuators(actuators_and_outputs) do
-    GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
-  end
+  # @spec update_actuators(map()) :: atom()
+  # def update_actuators(actuators_and_outputs) do
+  #   GenServer.cast(__MODULE__, {:update_actuators, actuators_and_outputs})
+  # end
 
   def output_to_us(output, reversed, min_pw_us, max_pw_us) do
     # Output will arrive in range [-1,1]

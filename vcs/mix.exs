@@ -58,9 +58,9 @@ defmodule Vcs.MixProject do
       {:nerves_system_rpi3a, "~> 1.13", runtime: false, targets: :rpi3a},
       {:nerves_system_rpi4, "~> 1.13", runtime: false, targets: :rpi4},
       # Package dependencies
-      # {:vintage_net, "~> 0.9.2"},
+      {:vintage_net, "~> 0.9.2"},
       # {:vintage_net_wifi, "~> 0.9.1"},
-      # {:vintage_net_ethernet, "~> 0.9.0"},
+      {:vintage_net_ethernet, "~> 0.9.0"},
       {:elixir_uuid, "~> 1.2"},
       {:circuits_uart, "~> 1.4.2"},
       {:circuits_i2c, "~> 0.3.6"},

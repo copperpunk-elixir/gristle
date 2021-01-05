@@ -144,6 +144,20 @@ defmodule Common.Utils do
     :erlang.float_to_binary(Common.Utils.Math.deg2rad(number), [decimals: num_decimals])
   end
 
+  @spec eftb_list(list(), integer(), binary()) :: binary()
+  def eftb_list(numbers, num_decimals, separator \\ "/") do
+    Enum.reduce(numbers, "", fn (number, acc) ->
+      acc <> :erlang.float_to_binary(number/1, [decimals: num_decimals]) <> separator
+    end)
+  end
+
+  @spec eftb_map(map(), integer(), binary()) ::binary()
+  def eftb_map(keys_values, num_decimals, separator \\ ",") do
+    Enum.reduce(keys_values, "", fn ({key,value}, acc) ->
+      acc <> "#{inspect(key)}: " <> :erlang.float_to_binary(value/1, [decimals: num_decimals]) <> separator
+    end)
+  end
+
   @spec map_rad2deg(map()) :: map()
   def map_rad2deg(values) do
     Enum.reduce(values, %{}, fn ({key, value}, acc) ->

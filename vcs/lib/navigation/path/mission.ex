@@ -148,6 +148,7 @@ defmodule Navigation.Path.Mission do
 
   @spec get_complete_mission(binary(), binary(), binary(), binary(), integer(), struct(), struct()) :: struct()
   def get_complete_mission(airport, runway, model_type, track_type, num_wps, start_position \\ nil, start_course \\ nil) do
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     {start_position, start_course} =
     if is_nil(start_position) or is_nil(start_course) do
       get_runway_position_heading(airport, runway)
@@ -163,14 +164,21 @@ defmodule Navigation.Path.Mission do
           if num_wps > 0 do
             get_random_waypoints(model_type, starting_wp, first_flight_wp,num_wps)
           else
-            []
+            course = first_flight_wp.course
+            speed = first_flight_wp.speed
+            pos = Common.Utils.LatLonAlt.new(first_flight_wp.latitude, first_flight_wp.longitude, first_flight_wp.altitude)
+            distance = 2*speed / planning_turn_rate
+            new_course = Common.Utils.Motion.constrain_angle_to_compass(course + :math.pi)
+            new_pos_temp = Common.Utils.Location.lla_from_point_with_distance(pos, distance, course - :math.pi/2)
+            new_pos = Common.Utils.Location.lla_from_point_with_distance(new_pos_temp, distance, new_course)
+            new_wp = Navigation.Path.Waypoint.new_flight_peripheral(new_pos, speed, new_course, "wp1")
+            [new_wp]
           end
         type -> get_track_waypoints(airport, runway, type, model_type, false)
       end
     landing_wps = get_landing_waypoints(start_position, start_course, model_type)
     wps = takeoff_wps ++ flight_wps ++ landing_wps
     print_waypoints_relative(start_position, wps)
-    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     Navigation.Path.Mission.new_mission("#{airport} - #{runway}: #{track_type}",wps, planning_turn_rate)
   end
 

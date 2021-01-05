@@ -35,7 +35,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       elevator: [output_min: 0, output_max: 1.0, output_neutral: 0.5],
       rudder: [output_min: 0, output_max: 1.0, output_neutral: 0.5],
       throttle: [output_min: 0, output_max: 1.0, output_neutral: 0],
-      flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
+      flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       gear: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
       rollrate: [output_min: -3.9, output_max: 3.9, output_neutral: 0],
       pitchrate: [output_min: -2.35, output_max: 1.57, output_neutral: 0],

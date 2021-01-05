@@ -24,7 +24,7 @@ defmodule Actuation.SwInterface do
    def handle_cast({:begin, config}, _state) do
      state = %{
        actuators: Keyword.get(config, :actuators),
-       output_modules: Keyword.fetch!(config, :output_modules),
+       # output_modules: Keyword.fetch!(config, :output_modules),
        direct_actuator_cmds: %{},
        indirect_actuator_cmds: %{},
        indirect_override_actuator_cmds: %{}
@@ -95,9 +95,15 @@ defmodule Actuation.SwInterface do
         # Logger.debug("#{actuator_name}: #{output}")
         Map.put(acc, actuator_name, {actuator,output})
     end)
-    Enum.each(state.output_modules, fn module ->
-      apply(module, :update_actuators,[actuators_and_outputs])
-    end)
+    # if Map.has_key?(actuators_and_outputs, :flaps) do
+    #   {_act, value} = actuators_and_outputs.flaps
+    #   Logger.debug("flaps: #{Common.Utils.eftb(value, 3)}")
+    # end
+    # Enum.each(state.output_modules, fn module ->
+    #   apply(module, :update_actuators,[actuators_and_outputs])
+    # end)
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {:update_actuators, actuators_and_outputs}, self())
+
     {:noreply, state}
   end
 end
