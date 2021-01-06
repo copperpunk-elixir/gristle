@@ -4,6 +4,7 @@ defmodule Configuration.Module.Health do
     watchdogs =
       case model_type do
         "Cessna" -> [:motor, :cluster]
+        "CessnaZ2m" -> [:motor, :cluster]
         "T28" -> [:motor, :cluster]
         "T28Z2m" -> [:motor, :cluster]
       end

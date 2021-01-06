@@ -72,5 +72,5 @@ config :vintage_net,
 # Uncomment to use target specific configurations
 
 # import_config "#{Mix.target()}.exs"
-config :nerves, :erlinit,
-  ctty: "ttyAMA0"
+# config :nerves, :erlinit,
+#   ctty: "ttyAMA0"

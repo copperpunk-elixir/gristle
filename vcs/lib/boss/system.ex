@@ -101,6 +101,7 @@ defmodule Boss.System do
     case node_type do
       "gcs" -> nil
       "sim" -> nil
+      "server" -> nil
       _other -> RingLogger.attach()
     end
   end

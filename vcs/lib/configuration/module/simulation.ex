@@ -47,7 +47,7 @@ defmodule Configuration.Module.Simulation do
 
     [
       host_ip: "192.168.7.136",
-      sim_loop_interval_ms: 40,
+      sim_loop_interval_ms: 20,
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,
       update_actuators_software: false#(node_type == "sim")
