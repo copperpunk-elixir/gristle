@@ -6,7 +6,9 @@ Now somewhere out in the grass lies a giant red circle. Our camera has been equi
 <p align="center"><img src="gifs/planner_flight_school.gif" width="70%"></p>
 <p align="center"><img src="https://media.giphy.com/media/lYXpHMcSeQiK3Qcdku/giphy.gif" width="70%"></p>
 
-<br><p align="center"><img src="https://media.giphy.com/media/mzlPR06xgPaj4s8tK6/giphy.gif" width="70%">[1](https://i.imgur.com/FvrzOHA.mp4)</p>
+<br><p align="center"><img src="https://media.giphy.com/media/1gT0a6vrKGk42vrhqR/giphy-downsized.gif" width="70%">[1](https://media.giphy.com/media/1gT0a6vrKGk42vrhqR/giphy-downsized.gif)</p>
+
+<br><p align="center"><img src="https://media.giphy.com/media/cYR7mGx0HX2bbLasci/giphy-downsized.gif" width="70%">[2](https://media.giphy.com/media/cYR7mGx0HX2bbLasci/giphy-downsized.gif)</p>
 
 ## But whai?
 The object circling kinda looks like a record, right? Well good, because at this point I should be sounding like a broken one. What is the point of all this? 
