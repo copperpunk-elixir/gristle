@@ -166,11 +166,11 @@ defmodule Navigation.Path.Mission do
           else
             course = first_flight_wp.course
             speed = first_flight_wp.speed
-            pos = Common.Utils.LatLonAlt.new(first_flight_wp.latitude, first_flight_wp.longitude, first_flight_wp.altitude)
+            pos = Common.Utils.LatLonAlt.new(first_flight_wp.latitude, first_flight_wp.longitude, first_flight_wp.altitude+30)
             distance = 2*speed / planning_turn_rate
             new_course = Common.Utils.Motion.constrain_angle_to_compass(course + :math.pi)
             new_pos_temp = Common.Utils.Location.lla_from_point_with_distance(pos, distance, course - :math.pi/2)
-            new_pos = Common.Utils.Location.lla_from_point_with_distance(new_pos_temp, distance, new_course)
+            new_pos = Common.Utils.Location.lla_from_point_with_distance(new_pos_temp, 50, new_course)
             new_wp = Navigation.Path.Waypoint.new_flight_peripheral(new_pos, speed, new_course, "wp1")
             [new_wp]
           end

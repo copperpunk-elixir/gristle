@@ -2,7 +2,7 @@ import cv2
 import socket
 import numpy
 import select
-import matplotlib.pyplot as plt
+import time
 import src.image.simple_detect as sd
 
 class Camera:
@@ -15,6 +15,9 @@ class Camera:
         self.socket = sock
         self.read_timeout = timeout
         self.image_height = None
+        filename = "output_video_{}.mp4".format(round(time.time()))
+        print("filename: %s" %filename)
+        self.video_output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'mp4v'), 12, (700,700))
 
     def read(self):
         ready = select.select([self.socket], [], [], self.read_timeout)
@@ -24,6 +27,11 @@ class Camera:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             # print("received img")
             self.image_height = img.shape[1]
-            return sd.find_circle(img)
+            distance, angle, img_annotated = sd.find_circle(img)
+            self.video_output.write(img_annotated)
+            return distance, angle
+
         return None, None
         
+    def release_video(self):
+        self.video_output.release()

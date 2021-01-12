@@ -86,13 +86,24 @@ defmodule Simulation.Realflight do
     servo_out = if Enum.empty?(output_map) do
       state.servo_out
     else
+      output_map = Enum.reduce(output_map, %{}, fn ({actuator_name, {actuator, output}}, acc) ->
+        if actuator.reversed do
+          Map.put(acc, actuator_name, 1.0 - output)
+        else
+          Map.put(acc, actuator_name, output)
+        end
+      end)
       # Logger.debug("output map: #{inspect(output_map)}")
-      {_, aileron} = Map.get(output_map, :aileron, {nil, 0.5})
-      {_, elevator} = Map.get(output_map, :elevator, {nil, 0.5})
-      {_, throttle} = Map.get(output_map, :throttle, {nil, 0.0})
-      {_, rudder} = Map.get(output_map, :rudder, {nil, 0.5})
-      {_, flaps} = Map.get(output_map, :flaps, {nil, 0.0})
-
+      # {_, aileron} = Map.get(output_map, :aileron, {nil, 0.5})
+      # {_, elevator} = Map.get(output_map, :elevator, {nil, 0.5})
+      # {_, throttle} = Map.get(output_map, :throttle, {nil, 0.0})
+      # {_, rudder} = Map.get(output_map, :rudder, {nil, 0.5})
+      # {_, flaps} = Map.get(output_map, :flaps, {nil, 0.0})
+      aileron = Map.get(output_map, :aileron, 0.5)
+      elevator = Map.get(output_map, :elevator, 0.5)
+      throttle = Map.get(output_map, :throttle, 0.0)
+      rudder = Map.get(output_map, :rudder, 0.5)
+      flaps = Map.get(output_map, :flaps, 0.0)
       [aileron, 1-elevator, throttle, rudder, 0, flaps,0,0,0,0,0,0]
     end
     Logger.info("servo_out: #{inspect(servo_out)}")

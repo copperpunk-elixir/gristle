@@ -168,7 +168,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_generic_config(uart_port, device_capability) do
     sorter_classification = Configuration.Generic.generic_peripheral_classification(device_capability)
     [
-      uart_port: uart_port_real_or_sim(uart_port, "CP2104"),
+      uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
       port_options: [speed: 115_200],
       sorter_classification: sorter_classification,
       sorter_time_validity_ms: Configuration.Generic.generic_peripheral_time_validity_ms()

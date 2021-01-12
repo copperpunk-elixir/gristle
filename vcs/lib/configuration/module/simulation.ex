@@ -46,7 +46,7 @@ defmodule Configuration.Module.Simulation do
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
 
     [
-      host_ip: "192.168.7.136",
+      host_ip: "192.168.7.247",
       sim_loop_interval_ms: 20,
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,

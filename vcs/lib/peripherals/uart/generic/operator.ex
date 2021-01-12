@@ -108,11 +108,14 @@ defmodule Peripherals.Uart.Generic.Operator do
       end
 
     existing_timer = Map.get(state, timer_name)
-    unless is_nil(existing_timer) or (interval_ms != publish_interval) do
+    timer =
+    if is_nil(existing_timer) or (interval_ms != publish_interval) do
       Common.Utils.stop_loop(existing_timer)
+      Common.Utils.start_loop(self(), interval_ms, callback)
+    else
+      existing_timer
     end
 
-    timer = Common.Utils.start_loop(self(), interval_ms, callback)
     publish_id_interval = Map.put(publish_id_interval, msg_id, interval_ms)
     state =
       Map.put(state, timer_name, timer)

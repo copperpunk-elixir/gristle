@@ -57,3 +57,8 @@ I'm not really sure how best to do this, but here are the links to any media tha
 
 ## 12a. Real to Reel:
 1.  https://i.imgflip.com/2t4wmk.jpg
+
+## 12b. A Eye in the Sky:
+1.  https://i.imgur.com/FvrzOHA.mp4
+2.  https://youtu.be/GG43jyZ65R8
+3.  https://img.ifunny.co/images/c8747af585d04da048efcc0befa382a044c065db00b435e362c438bb20da22a6_1.jpg

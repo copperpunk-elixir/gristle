@@ -58,4 +58,4 @@ def find_circle(img):
         # return result
     cv2.imshow('circles',img)
     cv2.waitKey(1)
-    return (distance, theta)
+    return (distance, theta, img)

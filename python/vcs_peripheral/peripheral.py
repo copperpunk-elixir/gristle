@@ -45,6 +45,8 @@ class Gcs(tk.Frame):
         goto_button.grid(row=5, column=1)
         clear_goto_button = tk.Button(frame, text="Clear Goto", command=self.clear_goto_cb)
         clear_goto_button.grid(row=6, column=1)
+        exit_button = tk.Button(frame, text="EXIT", command=self.exit_cb)
+        exit_button.grid(row=7, column=1)
 
 
         frame.pack()
@@ -52,7 +54,8 @@ class Gcs(tk.Frame):
         self.goto_latitude_entry = goto_latitude_entry
         self.goto_longitude_entry = goto_longitude_entry
         self.goto_altitude_entry = goto_altitude_entry
-        self.operator = Operator(115200, "USB Serial")
+        # self.operator = Operator(115200, "USB Serial")
+        self.operator = Operator(115200, "CP2104")
         self.operator.open()
         self.operator.send_message("generic_sub", [0,50])
         if camera_timeout != None:
@@ -60,11 +63,13 @@ class Gcs(tk.Frame):
         else:
             self.camera = None
         self.camera_send_time_previous = time.time()
+        self.subscribe_pvat_time_previous = time.time()
         self.capture_time_previous = time.time()
         self.object_latitude = Lpf(0.9)
         self.object_longitude = Lpf(0.9)
-        self.goal_agl = 60.0
+        self.goal_agl = 70.0
         self.camera_send_interval_s = 5.0
+        self.subscribe_pvat_interval_s = 10.0
         self.orbit_radius = None
         # self.loop()
         self.after(1000, self.loop)
@@ -111,6 +116,11 @@ class Gcs(tk.Frame):
     def clear_goto_cb(self):
         self.operator.send_message("clear_goto_location", [1])
         print("SEND: Clear Goto")
+
+    def exit_cb(self):
+        print("Exiting")
+        self.camera.release_video()
+        sys.exit("User requested exit")
 
 
     def get_radius(self):
@@ -161,7 +171,7 @@ class Gcs(tk.Frame):
                 if dt > Gcs.object_location_validity:
                     lpf_alpha = 0.0
                 else:
-                    lpf_alpha = 0.9
+                    lpf_alpha = 0.95
 
                 self.object_latitude.add_value_with_alpha(obj_lat, lpf_alpha)
                 self.object_longitude.add_value_with_alpha(obj_lon, lpf_alpha)
@@ -178,10 +188,17 @@ class Gcs(tk.Frame):
                     self.camera_send_time_previous = capture_time
 
 
+    def subscribe_tasks(self):
+        current_time = time.time()
+        if (current_time - self.subscribe_pvat_time_previous) > self.subscribe_pvat_interval_s:
+            self.operator.send_message("generic_sub", [0,50])
+            self.subscribe_pvat_time_previous = current_time
+
     def loop(self):
         # while True:
         self.serial_tasks()
         self.camera_tasks()
+        self.subscribe_tasks()
         self.after(10, self.loop)
         # sleep(0.01)
 
