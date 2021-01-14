@@ -182,7 +182,7 @@ defmodule Display.Scenic.Gcs.Plane do
     current = Common.Utils.eftb(current_A, 2)
     mAh = Common.Utils.eftb(energy_mAh, 0)
     {battery_type, _battery_channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
-    Logger.debug("tx battery type: #{battery_type}")
+    # Logger.debug("tx battery type: #{battery_type}")
     graph =
       state.graph
       |> Scenic.Graph.modify({battery_type, :V}, &text(&1,voltage <> "V"))

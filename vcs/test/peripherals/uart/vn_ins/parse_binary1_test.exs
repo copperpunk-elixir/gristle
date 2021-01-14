@@ -3,13 +3,14 @@ defmodule Peripherals.VnIns.ParseBinary1Test do
 
   setup do
     RingLogger.attach()
-    Common.Utils.common_startup()
-    MessageSorter.System.start_link("T28")
+    Boss.System.common_prepare()
+    # MessageSorter.System.start_link("CessnaZ2m")
     {:ok, []}
   end
 
   test "Read Binary1 messages" do
-    config = Configuration.Module.Peripherals.Uart.get_vn_imu_config("ttyAMA3")
+    config = Configuration.Module.Peripherals.Uart.get_vn_imu_config("usb")
+
     {:ok, pid} = Peripherals.Uart.Estimation.VnIns.Operator.start_link(config)
     Process.sleep(3500000)
     assert true
