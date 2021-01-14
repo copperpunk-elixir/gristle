@@ -10,6 +10,7 @@ defmodule Common.Utils.Configuration do
       "CessnaZ2m" -> "Plane"
       "T28" -> "Plane"
       "T28Z2m" -> "Plane"
+      "QuadX" -> "Multirotor"
       _other -> raise "Unknown model"
     end
   end

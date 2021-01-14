@@ -27,12 +27,16 @@ defmodule Pids.Moderator do
     attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
       Map.put(acc, cv_pv, Enum.into(scalar, %{}))
     end)
+    vehicle_type = String.to_existing_atom(config[:vehicle_type])
+    bodyrate_module = Module.concat(Pids.Bodyrate, vehicle_type)
     state = %{
       attitude_scalar: attitude_scalar,
       act_msg_class: act_msg_class,
       act_msg_time_ms: act_msg_time_ms,
       pv_msg_class: pv_msg_class,
       pv_msg_time_ms: pv_msg_time_ms,
+      bodyrate_module: bodyrate_module,
+      motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
@@ -68,7 +72,8 @@ defmodule Pids.Moderator do
         level_1_output_map = Pids.Attitude.calculate_outputs(pv_cmd_map, pv_value_map.attitude, state.attitude_scalar)
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
-        actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt)
+        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
+
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map
@@ -79,8 +84,8 @@ defmodule Pids.Moderator do
         publish_cmds(pv_1_cmd_map, 1)
       1 ->
         # Logger.debug("PID Level 1")
-        actuator_outputs = Pids.Bodyrate.calculate_outputs(pv_cmd_map, pv_value_map.bodyrate, airspeed, dt)
-
+        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
+        # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         publish_cmds(pv_cmd_map, 1)
       0 ->
