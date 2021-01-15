@@ -29,6 +29,7 @@ defmodule Pids.Moderator do
     end)
     vehicle_type = String.to_existing_atom(config[:vehicle_type])
     bodyrate_module = Module.concat(Pids.Bodyrate, vehicle_type)
+    attitude_module = Module.concat(Pids.Attitude, vehicle_type)
     state = %{
       attitude_scalar: attitude_scalar,
       act_msg_class: act_msg_class,
@@ -36,6 +37,7 @@ defmodule Pids.Moderator do
       pv_msg_class: pv_msg_class,
       pv_msg_time_ms: pv_msg_time_ms,
       bodyrate_module: bodyrate_module,
+      attitude_module: attitude_module,
       motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
@@ -69,10 +71,12 @@ defmodule Pids.Moderator do
         publish_cmds(pv_cmd_map, 3)
       2 ->
         # Logger.debug("PID Level 2")
-        level_1_output_map = Pids.Attitude.calculate_outputs(pv_cmd_map, pv_value_map.attitude, state.attitude_scalar)
+        level_1_output_map = apply(state.attitude_module, :calculate_outputs, [pv_cmd_map, pv_value_map.attitude, state.attitude_scalar])
+
+        # Logger.debug(Common.Utils.eftb_map(level_1_output_map,2))
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
-        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
+        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
 
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do

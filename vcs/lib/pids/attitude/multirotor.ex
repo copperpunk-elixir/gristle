@@ -1,4 +1,4 @@
-defmodule Pids.Attitude do
+defmodule Pids.Attitude.Multirotor do
   require Logger
 
   @spec calculate_outputs(map(), map(), map()) :: map()
@@ -6,12 +6,7 @@ defmodule Pids.Attitude do
     rollrate_output = get_output_in_range(cmds.roll, values.roll, config.roll_rollrate)
     pitchrate_output = get_output_in_range(cmds.pitch, values.pitch, config.pitch_pitchrate)
     # Logger.debug("att cmds: #{inspect(cmds)}")
-    yawrate_output =
-    if Map.has_key?(cmds, :yaw) do
-      get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
-    else
-      cmds.roll*0.2
-    end
+    yawrate_output = get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
     thrust_output = cmds.thrust
     # output_str =
     #   Common.Utils.eftb_deg(rollrate_output,2) <> "/" <>

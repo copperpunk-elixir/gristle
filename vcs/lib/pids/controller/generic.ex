@@ -78,9 +78,9 @@ defmodule Pids.Controller.Generic do
     else
       output
     end
-    # if state.process_variable == :rollrate do
-    #   Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
-    # end
+    if state.process_variable == :rollrate do
+      Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
+    end
 
     pv_correction_prev = correction
     pv_integrator =
