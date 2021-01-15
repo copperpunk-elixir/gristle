@@ -5,8 +5,8 @@ defmodule Configuration.Generic do
   def get_loop_interval_ms(loop_type) do
     case loop_type do
       :super_fast -> 10
-      :fast -> 25
-      :medium -> 50
+      :fast -> 20
+      :medium -> 40
       :slow -> 200
       :extra_slow -> 1000
     end

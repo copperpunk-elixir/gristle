@@ -31,6 +31,8 @@ defmodule Configuration.Module.Actuation do
     |> apply_reversed_actuators(model_type, vehicle_module)
 
     # actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
+    actuator_sorter_intervals = apply(vehicle_module, :get_actuator_sorter_intervals,[])
+    Logger.warn(inspect(actuator_sorter_intervals))
 
     output_modules =
       case node_type do
@@ -41,7 +43,10 @@ defmodule Configuration.Module.Actuation do
       end
 
     [
-      actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
+      actuator_loop_interval_ms: actuator_sorter_intervals[:actuator_loop_interval_ms],
+      indirect_actuator_sorter_interval_ms: actuator_sorter_intervals[:indirect_actuator_sorter_interval_ms],
+      direct_actuator_sorter_interval_ms: actuator_sorter_intervals[:direct_actuator_sorter_interval_ms],
+      indirect_override_sorter_interval_ms: actuator_sorter_intervals[:indirect_actuator_sorter_interval_ms],
       actuators: %{
         indirect: indirect_actuators,
         direct: direct_actuators

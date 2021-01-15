@@ -7,9 +7,9 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
     integrator_airspeed_min = 5.0
     rate_integrator_airspeed_min = -1.0
     [
-      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.03, ki: 0.1, kd: 0.00005, integrator_range: 0.18, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
-      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.03, ki: 0.1, kd: 0.00005, integrator_range: 0.18, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
-      yawrate: [rudder: Keyword.merge([type: :Generic, kp: 1.00, ki: 0.1, kd: 0.0001, integrator_range: 0.52, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
+      rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.020, ki: 0.01, kd: 0.00010, integrator_range: 6.3, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
+      pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.020, ki: 0.01, kd: 0.00010, integrator_range: 6.3, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
+      yawrate: [rudder: Keyword.merge([type: :Generic, kp: 1.00, ki: 0.01, kd: 0.0001, integrator_range: 3.1, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
       course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.25, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
       course_ground: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
       tecs: [
@@ -39,9 +39,9 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
   def get_attitude() do
     constraints = get_constraints()
     [
-      roll_rollrate: Keyword.merge([scale: 1.0], constraints[:rollrate]),
-      pitch_pitchrate: Keyword.merge([scale: 1.0], constraints[:pitchrate]),
-      yaw_yawrate: Keyword.merge([scale: 3.0], constraints[:yawrate]),
+      roll_rollrate: Keyword.merge([scale: 4.0], constraints[:rollrate]),
+      pitch_pitchrate: Keyword.merge([scale: 4.0], constraints[:pitchrate]),
+      yaw_yawrate: Keyword.merge([scale: 2.0], constraints[:yawrate]),
     ]
   end
 
@@ -54,11 +54,11 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
       throttle: [output_min: 0, output_max: 1.0, output_neutral: 0],
       flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       gear: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
-      rollrate: [output_min: -40.0, output_max: 40.0, output_neutral: 0],
-      pitchrate: [output_min: -40.0, output_max: 40.0, output_neutral: 0],
-      yawrate: [output_min: -7.3, output_max: 7.3, output_neutral: 0],
-      roll: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
-      pitch: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
+      rollrate: [output_min: -5.0, output_max: 5.0, output_neutral: 0],
+      pitchrate: [output_min: -5.0, output_max: 5.0, output_neutral: 0],
+      yawrate: [output_min: -1.5, output_max: 1.5, output_neutral: 0],
+      roll: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
+      pitch: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
       yaw: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
@@ -100,19 +100,19 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
         rollrate: [
           aileron:
           fn(cmd, _value, _airspeed) ->
-            0.5*cmd/80.0
+            0*0.5*cmd/10.0
           end
         ],
         pitchrate: [
           elevator:
           fn (cmd, _value, _airspeed) ->
-            0.5*cmd/80.0
+            0*0.5*cmd/80.0
           end
         ],
         yawrate: [
           rudder:
           fn(cmd, _value, _airspeed) ->
-            0.5*cmd/7.3
+            0*0.5*cmd/7.3
           end
         ],
         course_flight: [

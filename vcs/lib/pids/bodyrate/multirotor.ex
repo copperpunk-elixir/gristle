@@ -21,11 +21,14 @@ defmodule Pids.Bodyrate.Multirotor do
       if throttle_output < 0.05 do
         0.0
       else
-        throttle_output +
-        cmd_multiplier(aileron_output, roll_mult, 1.0) +
-        cmd_multiplier(elevator_output, pitch_mult, 0.75) +
-        cmd_multiplier(rudder_output, yaw_mult, 0)
-        |> Common.Utils.Math.constrain(0, 1.0)
+        rp_output =
+          Common.Utils.Math.constrain(throttle_output, 0, 0.6) +
+        cmd_multiplier(aileron_output, roll_mult, 0.5) +
+        cmd_multiplier(elevator_output, pitch_mult, 0.5)
+        thrust_remaining = 1.0 - rp_output
+        yaw_output = cmd_multiplier(rudder_output, 0.5*yaw_mult, 0.125)
+        |> Common.Utils.Math.constrain(-thrust_remaining, thrust_remaining)
+        rp_output + yaw_output
       end
       Map.put(acc, motor_name, motor_output)
     end)

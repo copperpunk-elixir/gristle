@@ -77,7 +77,7 @@ defmodule Pids.Moderator do
         # output_map turns into input_map for Level I calcs
         pv_1_cmd_map = level_1_output_map
         actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
-
+        # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
           pv_cmd_map

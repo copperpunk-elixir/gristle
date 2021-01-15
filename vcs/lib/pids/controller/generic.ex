@@ -30,6 +30,9 @@ defmodule Pids.Controller.Generic do
     delta_output_max = state.output_max - state.output_neutral
     correction = pv_cmd - pv_value
     in_range = Common.Utils.Math.in_range?(correction, state.integrator_range_min, state.integrator_range_max)
+    if state.process_variable == :pitchrate do
+      Logger.info("#{correction}#{state.integrator_range_min}/#{state.integrator_range_max}")
+    end
     pv_add =
     if in_range do
       correction*dt
@@ -39,6 +42,9 @@ defmodule Pids.Controller.Generic do
 
     pv_integrator =
     if airspeed > state.integrator_airspeed_min do
+      if state.process_variable == :pitchrate do
+        Logger.debug("#{airspeed}/#{dt}/#{state.ki}/#{pv_add}/#{state.pv_integrator+pv_add}/#{state.pv_integrator}")
+      end
       state.pv_integrator + pv_add
     else
       0.0
@@ -78,8 +84,8 @@ defmodule Pids.Controller.Generic do
     else
       output
     end
-    if state.process_variable == :rollrate do
-      Logger.debug("cmd/value/corr/p/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
+    if state.process_variable == :pitchrate do
+      Logger.debug("cmd/value/corr/p/i/d/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
     end
 
     pv_correction_prev = correction
