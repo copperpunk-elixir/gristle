@@ -4,6 +4,11 @@ defmodule Pids.Controller.Generic do
   @spec begin(list()) :: tuple()
   def begin(config) do
     {process_variable, control_variable} = Keyword.get(config, :name)
+    output_min = Keyword.fetch!(config, :output_min)
+    output_max = Keyword.fetch!(config, :output_max)
+    output_neutral = Keyword.fetch!(config, :output_neutral)
+    delta_output_min = if is_nil(config[:delta_output_min]), do: output_min - output_neutral, else: config[:delta_output_min]
+    delta_output_max = if is_nil(config[:delta_output_min]), do: output_max - output_neutral, else: config[:delta_output_max]
     %{
       pid_module: __MODULE__,
       process_variable: process_variable,
@@ -12,9 +17,11 @@ defmodule Pids.Controller.Generic do
       ki: Keyword.get(config, :ki, 0),
       kd: Keyword.get(config, :kd, 0),
       ff: Keyword.get(config, :ff, nil),
-      output_min: Keyword.fetch!(config, :output_min),
-      output_max: Keyword.fetch!(config, :output_max),
-      output_neutral: Keyword.fetch!(config, :output_neutral),
+      output_min: output_min,
+      output_max: output_max,
+      output_neutral: output_neutral,
+      delta_output_min: delta_output_min,
+      delta_output_max: delta_output_max,
       integrator_range_min: -Keyword.get(config, :integrator_range, 0),
       integrator_range_max: Keyword.get(config, :integrator_range, 0),
       integrator_airspeed_min: Keyword.get(config, :integrator_airspeed_min, 10000),
@@ -26,13 +33,10 @@ defmodule Pids.Controller.Generic do
 
   @spec update(float(), float(), float(), float(), map()) :: map()
   def update(pv_cmd, pv_value, airspeed, dt, state) do
-    delta_output_min = state.output_min - state.output_neutral
-    delta_output_max = state.output_max - state.output_neutral
+    delta_output_min = state.delta_output_min
+    delta_output_max = state.delta_output_max
     correction = pv_cmd - pv_value
     in_range = Common.Utils.Math.in_range?(correction, state.integrator_range_min, state.integrator_range_max)
-    if state.process_variable == :pitchrate do
-      Logger.info("#{correction}#{state.integrator_range_min}/#{state.integrator_range_max}")
-    end
     pv_add =
     if in_range do
       correction*dt
@@ -42,9 +46,6 @@ defmodule Pids.Controller.Generic do
 
     pv_integrator =
     if airspeed > state.integrator_airspeed_min do
-      if state.process_variable == :pitchrate do
-        Logger.debug("#{airspeed}/#{dt}/#{state.ki}/#{pv_add}/#{state.pv_integrator+pv_add}/#{state.pv_integrator}")
-      end
       state.pv_integrator + pv_add
     else
       0.0
@@ -84,7 +85,7 @@ defmodule Pids.Controller.Generic do
     else
       output
     end
-    if state.process_variable == :pitchrate do
+    if state.process_variable == :tecs and state.control_variable==:pitch do
       Logger.debug("cmd/value/corr/p/i/d/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
     end
 
