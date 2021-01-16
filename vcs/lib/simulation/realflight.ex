@@ -227,7 +227,7 @@ defmodule Simulation.Realflight do
       position = extract_position(aircraft_state, state.position_origin)
       # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
       velocity = extract_velocity(aircraft_state)
-      # Logger.debug("velocity: #{inspect(velocity)}")
+      Logger.debug("velocity: #{Common.Utils.eftb_map(velocity, 2)}")
       attitude = extract_attitude(aircraft_state)
       # Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
       bodyrate = extract_bodyrate(aircraft_state)

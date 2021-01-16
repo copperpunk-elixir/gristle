@@ -48,6 +48,7 @@ defmodule Pids.Moderator do
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
+    Pids.Tecs.Arm.start_link()
     {:noreply, state}
   end
 
@@ -59,6 +60,8 @@ defmodule Pids.Moderator do
 
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
         course_cmd = Map.get(pv_cmd_map, course_key)
+        Logger.debug("course act-org: #{Common.Utils.eftb_deg(pv_value_map.course,1)}")
+        Logger.debug("course cmd-org: #{Common.Utils.eftb_deg(course_cmd,1)}")
         course_cmd_constrained = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
         pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd_constrained)
 

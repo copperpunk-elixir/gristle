@@ -10,12 +10,13 @@ defmodule Pids.Course.Multirotor do
       # yaw_cmd = Pids.Pid.update_pid(:course_ground, :yaw, cmds.course_ground, 0.0, airspeed, dt)
       %{roll: 0.0, yaw: cmds.course_ground}
     else
+      Logger.debug("course cmd-pre: #{Common.Utils.eftb_deg(cmds.course_flight,1)}")
       course_cmd = Common.Utils.Math.constrain(cmds.course_flight,-@yaw_max, @yaw_max)
-      # Logger.debug("course cmd: #{Common.Utils.eftb_deg(course_cmd,1)}")
+      Logger.debug("course cmd-pst: #{Common.Utils.eftb_deg(course_cmd,1)}")
       # yaw_cmd =  Pids.Pid.update_pid(:course_flight, :yaw, course_cmd, 0.0, airspeed, dt)
       # Logger.debug("crs/roll: #{Common.Utils.eftb_deg(course_cmd,1)}/#{Common.Utils.eftb_deg(roll_cmd,1)}")
       # roll_cmd = 0.25*cmds.course_flight
-      roll_cmd = :math.atan(0.5*course_cmd*airspeed/Common.Constants.gravity())
+      roll_cmd = 0.2*course_cmd*:math.sqrt(airspeed)
       %{roll: roll_cmd, yaw: course_cmd}
     end
     # output_str = Common.Utils.eftb_deg(roll_yaw_output.roll,2)

@@ -90,7 +90,7 @@ defmodule Pids.Controller.TecsEnergy do
       0.0
     end
     # Logger.debug("tecs eng: #{Common.Utils.eftb(output,2)}}")
-    Logger.debug("p/i/d/ff/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
+    # Logger.debug("p/i/d/ff/total: #{Common.Utils.eftb(cmd_p,3)}/#{Common.Utils.eftb(cmd_i,3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
     %{state | output: output, speed_prev: speed, pv_correction_prev: energy_corr, pv_integrator: pv_integrator}
 
   end
