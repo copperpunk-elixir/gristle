@@ -1,4 +1,4 @@
-defmodule Pids.Course.Plane do
+defmodule Pids.Steering.Plane do
   require Logger
   @roll_max 0.52
 

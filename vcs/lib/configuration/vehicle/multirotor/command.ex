@@ -28,7 +28,7 @@ defmodule Configuration.Vehicle.Multirotor.Command do
       0 => [:rollrate, :pitchrate, :yawrate, :thrust],
       1 => [:rollrate, :pitchrate, :yawrate, :thrust],
       2 => [:roll, :pitch, :yaw, :thrust],
-      3 => [:course_flight, :speed, :altitude],
+      3 => [:course_flight, :speed, :altitude, :yaw],
       # Manual only channels
       100 => [],
       # Manual and Semi-Auto channels

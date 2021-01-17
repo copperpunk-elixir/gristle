@@ -30,8 +30,7 @@ defmodule Pids.Moderator do
     vehicle_type = String.to_existing_atom(config[:vehicle_type])
     bodyrate_module = Module.concat(Pids.Bodyrate, vehicle_type)
     attitude_module = Module.concat(Pids.Attitude, vehicle_type)
-    course_module = Module.concat(Pids.Course, vehicle_type)
-    tecs_module = Module.concat(Pids.Tecs, vehicle_type)
+    high_level_module = Module.concat(Pids.HighLevel, vehicle_type)
     state = %{
       attitude_scalar: attitude_scalar,
       act_msg_class: act_msg_class,
@@ -40,8 +39,7 @@ defmodule Pids.Moderator do
       pv_msg_time_ms: pv_msg_time_ms,
       bodyrate_module: bodyrate_module,
       attitude_module: attitude_module,
-      course_module: course_module,
-      tecs_module: tecs_module,
+      high_level_module: high_level_module,
       motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
@@ -64,11 +62,9 @@ defmodule Pids.Moderator do
         # Logger.debug("course cmd-org: #{Common.Utils.eftb_deg(course_cmd,1)}")
         pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd)
         # Logger.debug("pre: #{Common.Utils.eftb_map(pv_cmd_map,2)}")
-        roll_yaw_course_output = apply(state.course_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
-        pitch_thrust_output = apply(state.tecs_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
-        level_2_output_map = Map.merge(roll_yaw_course_output, pitch_thrust_output)
+        level_2_output_map = apply(state.high_level_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
 
-        pv_cmd_map = Map.put(pv_cmd_map, course_key, roll_yaw_course_output.course)
+        # pv_cmd_map = Map.put(pv_cmd_map, course_key, roll_yaw_course_output.course)
         # Logger.debug("pst: #{Common.Utils.eftb_map(pv_cmd_map,2)}")
         # Logger.debug("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})

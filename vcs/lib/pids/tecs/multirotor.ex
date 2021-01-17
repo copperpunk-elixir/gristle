@@ -42,7 +42,7 @@ defmodule Pids.Tecs.Multirotor do
     # Logger.info("e/e_sp: #{Common.Utils.eftb(energy_rate_sp,1)}/#{Common.Utils.eftb(energy_rate,1)}")
     thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_rate_sp, energy_rate, airspeed, dt)
 
-    pitch_output = -Pids.Pid.update_pid(:tecs, :pitch, speed_cmd, speed, airspeed, dt)
-    %{pitch: pitch_output, thrust: thrust_output}
+    tilt_output = -Pids.Pid.update_pid(:tecs, :tilt, speed_cmd, speed, airspeed, dt)
+    %{tilt: tilt_output, thrust: thrust_output}
   end
 end
