@@ -13,7 +13,7 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
       # course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.25, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
       # course_ground: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
       tecs: [
-        thrust: Keyword.merge([type: :Generic, kp: 0.005, ki: 0.001, kd: 0*0.010, integrator_range: 5, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:tecs, :thrust)], constraints[:thrust]),
+        thrust: Keyword.merge([type: :Generic, kp: 0.007, ki: 0.001, kd: 0*0.010, integrator_range: 5, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:tecs, :thrust)], constraints[:thrust]),
         pitch: Keyword.merge([type: :Generic, kp: 0.03, ki: 0*0.01, kd: 0.00010, integrator_range: 6.3, integrator_airspeed_min: rate_integrator_airspeed_min, ff: get_feed_forward(:tecs, :pitch)], constraints[:pitch])
       ]
     ]

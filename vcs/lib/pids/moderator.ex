@@ -60,14 +60,16 @@ defmodule Pids.Moderator do
 
         course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
         course_cmd = Map.get(pv_cmd_map, course_key)
-        Logger.debug("course act-org: #{Common.Utils.eftb_deg(pv_value_map.course,1)}")
-        Logger.debug("course cmd-org: #{Common.Utils.eftb_deg(course_cmd,1)}")
-        course_cmd_constrained = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - pv_value_map.course)
-        pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd_constrained)
-
-        roll_yaw_output = apply(state.course_module, :calculate_outputs, [pv_cmd_map, airspeed, dt])
+        # Logger.debug("course act-org: #{Common.Utils.eftb_deg(pv_value_map.course,1)}")
+        # Logger.debug("course cmd-org: #{Common.Utils.eftb_deg(course_cmd,1)}")
+        pv_cmd_map = Map.put(pv_cmd_map, course_key, course_cmd)
+        # Logger.debug("pre: #{Common.Utils.eftb_map(pv_cmd_map,2)}")
+        roll_yaw_course_output = apply(state.course_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
         pitch_thrust_output = apply(state.tecs_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
-        level_2_output_map = Map.merge(roll_yaw_output, pitch_thrust_output)
+        level_2_output_map = Map.merge(roll_yaw_course_output, pitch_thrust_output)
+
+        pv_cmd_map = Map.put(pv_cmd_map, course_key, roll_yaw_course_output.course)
+        # Logger.debug("pst: #{Common.Utils.eftb_map(pv_cmd_map,2)}")
         # Logger.debug("PID Level 3")
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
         pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
@@ -76,6 +78,7 @@ defmodule Pids.Moderator do
           Map.put(pv_cmd_map, :yaw, 0)
         end
         publish_cmds(pv_cmd_map, 3)
+        # Logger.debug(Common.Utils.eftb_map(pv_cmd_map,2))
       2 ->
         # Logger.debug("PID Level 2")
         level_1_output_map = apply(state.attitude_module, :calculate_outputs, [pv_cmd_map, pv_value_map.attitude, state.attitude_scalar])

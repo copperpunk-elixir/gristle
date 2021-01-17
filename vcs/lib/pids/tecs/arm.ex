@@ -1,4 +1,5 @@
 defmodule Pids.Tecs.Arm do
+  require Logger
   use Agent
 
   def start_link() do
@@ -25,6 +26,7 @@ defmodule Pids.Tecs.Arm do
   end
 
   def disarm() do
+    Logger.warn("disarm!")
     Agent.update(__MODULE__, &Map.put(&1, :armed, false))
     Agent.update(__MODULE__, &Map.put(&1, :takeoff, false))
   end

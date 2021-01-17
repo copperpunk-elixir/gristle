@@ -29,6 +29,7 @@ defmodule Display.Scenic.Planner do
         "CessnaZ2m" -> 100
         "T28" -> 100
         "T28Z2m" -> 100
+        "QuadX" -> 30
         _other -> 734
       end
     state = %{
