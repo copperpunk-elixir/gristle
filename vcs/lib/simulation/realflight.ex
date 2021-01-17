@@ -123,7 +123,7 @@ defmodule Simulation.Realflight do
       end)
     cmds = Enum.reverse(cmds_reverse)
     |> List.insert_at(4,0)
-    # Logger.info(Common.Utils.eftb_list(cmds, 2))
+    # Logger.debug(Common.Utils.eftb_list(cmds, 2))
     {:noreply, %{state | servo_out: cmds}}
   end
 
@@ -227,10 +227,11 @@ defmodule Simulation.Realflight do
       position = extract_position(aircraft_state, state.position_origin)
       # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
       velocity = extract_velocity(aircraft_state)
-      # Logger.debug("velocity: #{inspect(velocity)}")
+      # Logger.debug("velocity: #{Common.Utils.eftb_map(velocity, 2)}")
       attitude = extract_attitude(aircraft_state)
       # Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
       bodyrate = extract_bodyrate(aircraft_state)
+      # Logger.debug(Common.Utils.eftb_map(bodyrate, 2))
       # Logger.debug("bodyrate: #{inspect(Common.Utils.map_rad2deg(bodyrate))}")
       agl = extract_agl(aircraft_state)
       # Logger.debug("agl: #{agl}")
@@ -355,7 +356,8 @@ defmodule Simulation.Realflight do
     if Enum.empty?(rate_data) do
       %{}
     else
-      convert_all_to_float(rate_data, :math.pi()/180)
+      bodyrate =convert_all_to_float(rate_data, :math.pi()/180)
+      Map.replace!(bodyrate, :yawrate, -bodyrate.yawrate)
     end
   end
 

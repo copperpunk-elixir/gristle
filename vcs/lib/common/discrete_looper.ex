@@ -43,7 +43,7 @@ defmodule Common.DiscreteLooper do
         if Enum.empty?(pids), do: members_acc, else: Map.put(members_acc, single_interval_ms, pids)
       end)
     else
-      Logger.warn("Interval #{new_interval_ms} is invalid")
+      Logger.warn("Interval #{new_interval_ms} is invalid: #{looper_interval_ms}")
       members
     end
   end

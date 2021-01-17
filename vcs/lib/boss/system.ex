@@ -117,10 +117,12 @@ defmodule Boss.System do
   def define_atoms() do
     atoms_as_strings = [
       "Plane",
+      "Multirotor",
       "Cessna",
       "CessnaZ2m",
       "T28",
       "T28Z2m",
+      "QuadX",
       "Ina260",
       "Ina219",
       "Sixfab",

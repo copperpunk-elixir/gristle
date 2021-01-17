@@ -11,6 +11,7 @@ defmodule Common.Utils.Motion do
       :math.atan2(v_east, v_north)
       |> constrain_angle_to_compass()
     else
+      # Logger.info("too slow: #{speed}")
       yaw
     end
     {speed, course}

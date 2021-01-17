@@ -2,6 +2,11 @@ defmodule Common.Utils.Math do
   require Bitwise
   require Logger
 
+  @spec sign(number) :: integer()
+  def sign(x) do
+    if x >= 0, do: 1, else: -1
+  end
+
   @spec constrain(number(), number(), number()) :: number()
   def constrain(x, min_value, max_value) do
     case x do

@@ -4,9 +4,9 @@ defmodule Configuration.Generic do
   @spec get_loop_interval_ms(atom()) :: integer()
   def get_loop_interval_ms(loop_type) do
     case loop_type do
-      :super_fast -> 5
-      :fast -> 25
-      :medium -> 50
+      :super_fast -> 10
+      :fast -> 20
+      :medium -> 40
       :slow -> 200
       :extra_slow -> 1000
     end

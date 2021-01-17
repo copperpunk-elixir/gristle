@@ -26,6 +26,7 @@ defmodule Control.Controller do
       pv_cmds: %{},
       pv_cmds_store: %{},
       control_state: -1,
+      yaw: nil,
       airspeed: 0,
     }
     Comms.System.start_operator(__MODULE__)
@@ -53,7 +54,7 @@ defmodule Control.Controller do
     pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
     # Logger.debug("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
     Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
-    {:noreply, state}
+    {:noreply, %{state | yaw: attitude.yaw}}
   end
 
   @impl GenServer
@@ -62,9 +63,12 @@ defmodule Control.Controller do
     # Logger.debug("cs: #{state.control_state}")
     airspeed = velocity.airspeed
     if (state.control_state == 3) do
-      pv_value_map = Map.merge(velocity, %{altitude: position.altitude})
-      # Logger.debug("pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(state.pv_cmds)}")
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, 3}, self())
+      yaw = state.yaw
+      unless is_nil yaw do
+        pv_value_map = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw})
+        # Logger.debug("pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(state.pv_cmds)}")
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, 3}, self())
+      end
     end
     {:noreply, %{state | airspeed: airspeed}}
   end

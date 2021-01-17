@@ -31,6 +31,8 @@ defmodule Configuration.Module.Actuation do
     |> apply_reversed_actuators(model_type, vehicle_module)
 
     # actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
+    actuator_sorter_intervals = apply(vehicle_module, :get_actuator_sorter_intervals,[])
+    Logger.warn(inspect(actuator_sorter_intervals))
 
     output_modules =
       case node_type do
@@ -41,7 +43,10 @@ defmodule Configuration.Module.Actuation do
       end
 
     [
-      actuator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
+      actuator_loop_interval_ms: actuator_sorter_intervals[:actuator_loop_interval_ms],
+      indirect_actuator_sorter_interval_ms: actuator_sorter_intervals[:indirect_actuator_sorter_interval_ms],
+      direct_actuator_sorter_interval_ms: actuator_sorter_intervals[:direct_actuator_sorter_interval_ms],
+      indirect_override_sorter_interval_ms: actuator_sorter_intervals[:indirect_actuator_sorter_interval_ms],
       actuators: %{
         indirect: indirect_actuators,
         direct: direct_actuators
@@ -81,6 +86,7 @@ defmodule Configuration.Module.Actuation do
       "CessnaZ2m" -> {1000, 2000}
       "T28Z2m" -> {1000, 2000}
       "T28" -> {1100, 1900}
+      "QuadX" -> {1000, 2000}
       _other -> {1100, 1900}
     end
   end
@@ -101,6 +107,10 @@ defmodule Configuration.Module.Actuation do
       :throttle -> 0.0
       :flaps -> 0.0
       :gear -> 0.0
+      :motor1 -> 0.0
+      :motor2 -> 0.0
+      :motor3 -> 0.0
+      :motor4 -> 0.0
     end
   end
 
@@ -152,6 +162,17 @@ defmodule Configuration.Module.Actuation do
                     5 => :gear,
                   }
               }
+      "QuadX" -> %{
+                 indirect: %{
+                   0 => :motor1,
+                   1 => :motor2,
+                   2 => :motor3,
+                   3 => :motor4
+                 },
+                 direct: %{
+                   4 => :gear
+                 }
+             }
     end
   end
 
@@ -186,7 +207,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     indirect_override_sorter = [
@@ -194,7 +215,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
@@ -204,7 +225,7 @@ defmodule Configuration.Module.Actuation do
         default_message_behavior: :default_value,
         default_value: failsafe_value,
         value_type: :number,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ]
       [sorter] ++ acc
       # Map.put(acc, actuator_name, failsafe_value)

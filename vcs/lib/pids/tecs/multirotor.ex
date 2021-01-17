@@ -1,4 +1,4 @@
-defmodule Pids.Tecs do
+defmodule Pids.Tecs.Multirotor do
   require Logger
 
   @spec calculate_outputs(map(), map(), float(), float()) :: map()
@@ -30,37 +30,19 @@ defmodule Pids.Tecs do
     kinetic_energy_rate_sp = speed*speed_dot_sp
     potential_energy_rate = vv*Common.Constants.gravity()
 
+    altitude_corr = alt_cmd-altitude
+    alt_rate = altitude_corr*0.5
+
+    potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
+    energy_rate_sp = kinetic_energy_rate_sp + potential_energy_rate_sp
+    kinetic_energy_rate = speed*dV
+    energy_rate = kinetic_energy_rate + potential_energy_rate
     # TECS calcs
     # Energy (thrust)
-    energy_cmds =%{
-      energy: energy_sp,
-      kinetic_energy_rate: kinetic_energy_rate_sp,
-      altitude_corr: alt_cmd-altitude,
-      speed: speed_cmd
-    }
-    energy_values = %{
-      energy: energy,
-      potential_energy_rate: potential_energy_rate,
-      speed: speed
-    }
+    # Logger.info("e/e_sp: #{Common.Utils.eftb(energy_rate_sp,1)}/#{Common.Utils.eftb(energy_rate,1)}")
+    thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_rate_sp, energy_rate, airspeed, dt)
 
-    thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_cmds, energy_values, airspeed, dt)
-
-    # Balance (pitch)
-    balance_cmds = %{
-      kinetic_energy: kinetic_energy_sp,
-      kinetic_energy_rate: kinetic_energy_rate_sp,
-      altitude_corr: alt_cmd - altitude,
-      speed: speed_cmd
-    }
-    balance_values = %{
-      kinetic_energy: kinetic_energy,
-      potential_energy: potential_energy,
-      potential_energy_rate: potential_energy_rate,
-      speed: speed
-    }
-
-    pitch_output = Pids.Pid.update_pid(:tecs, :pitch, balance_cmds, balance_values, airspeed, dt)
+    pitch_output = -Pids.Pid.update_pid(:tecs, :pitch, speed_cmd, speed, airspeed, dt)
     %{pitch: pitch_output, thrust: thrust_output}
   end
 end

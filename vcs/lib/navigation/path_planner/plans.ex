@@ -26,6 +26,7 @@ defmodule Navigation.PathPlanner.Plans do
     {track_type, num_wps} = get_track_wps_default(track_type_or_num_wps)
     runway =
       case track_type do
+        "heli" -> "9L"
         "none" -> "18L"
         "racetrack_left" -> "18L"
         "hourglass_left" -> "18L"
@@ -33,6 +34,7 @@ defmodule Navigation.PathPlanner.Plans do
         "hourglass_right" -> "36R"
       end
     model_type = Common.Utils.Configuration.get_model_type()
+    track_type = if track_type == "heli", do: "none", else: track_type
     if relative do
       Gcs.Operator.load_mission_relative("flight_school", runway, model_type, track_type, num_wps, true)
     else
