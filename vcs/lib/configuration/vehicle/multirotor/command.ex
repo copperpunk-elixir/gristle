@@ -3,7 +3,7 @@ defmodule Configuration.Vehicle.Multirotor.Command do
 
   @spec get_commands() :: list()
   def get_commands() do
-    [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
+    [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :yaw_offset, :course_flight, :speed, :altitude]
   end
 
   @spec get_rx_output_channel_map(map(), map()) :: list()
@@ -14,7 +14,7 @@ defmodule Configuration.Vehicle.Multirotor.Command do
       0 => [:rollrate, :roll, :course_flight],
       1 => [:pitchrate, :pitch, :altitude],
       2 => [:thrust, :speed],
-      3 => [:yawrate, :yaw],
+      3 => [:yawrate, :yaw, :yaw_offset],
       4 => [:gear],
       5 => [],
       # 7 => [:select]
@@ -28,7 +28,7 @@ defmodule Configuration.Vehicle.Multirotor.Command do
       0 => [:rollrate, :pitchrate, :yawrate, :thrust],
       1 => [:rollrate, :pitchrate, :yawrate, :thrust],
       2 => [:roll, :pitch, :yaw, :thrust],
-      3 => [:course_flight, :speed, :altitude, :yaw],
+      3 => [:course_flight, :speed, :altitude, :yaw_offset],
       # Manual only channels
       100 => [],
       # Manual and Semi-Auto channels

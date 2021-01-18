@@ -77,7 +77,7 @@ defmodule Pids.Controller.Generic do
     # Logger.debug("corr/dt/p/i/d/total: #{correction}/#{dt}/#{cmd_p}/#{cmd_i}/#{cmd_d}/#{output}")
     output = Common.Utils.Math.constrain(output, state.output_min, state.output_max)
     output = if state.process_variable == :speed do
-      max_delta_output = 0.02
+      max_delta_output = 2.02
       delta_output = output-state.output
       |> Common.Utils.Math.constrain(-max_delta_output, max_delta_output)
       # Logger.debug("corr/p/i/d/total: #{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(state.output+delta_output, 3)}")
@@ -85,9 +85,9 @@ defmodule Pids.Controller.Generic do
     else
       output
     end
-    # if state.process_variable == :tecs and state.control_variable == :thrust do
-    #   Logger.debug("cmd/value/corr/p/i/d/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
-    # end
+    if state.process_variable == :tecs and state.control_variable == :thrust do
+      Logger.debug("cmd/value/corr/p/i/d/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output-state.output_neutral, 3)}")
+    end
 
     pv_correction_prev = correction
     pv_integrator =
