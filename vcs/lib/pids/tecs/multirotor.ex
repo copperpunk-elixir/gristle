@@ -18,14 +18,7 @@ defmodule Pids.Tecs.Multirotor do
     # kinetic_energy = 0.5*speed*speed
 
     dV = Common.Utils.Math.constrain(speed_cmd-speed,-5.0, 5.0)
-    Logger.debug("dv: #{dV}")
-    # speed_sp = speed_cmd
-    # potential_energy_sp = Common.Constants.gravity()*alt_cmd
-    # kinetic_energy_sp = 0.5*speed_sp*speed_sp
-    # Logger.info("pe/pe_sp: #{Common.Utils.eftb(potential_energy,1)}/#{Common.Utils.eftb(potential_energy_sp,1)}")
-
-    # energy = potential_energy + kinetic_energy
-    # energy_sp = potential_energy_sp + kinetic_energy_sp
+    # Logger.debug("dv: #{dV}")
     speed_dot_sp = dV*dt
 
     kinetic_energy_rate_sp = speed*speed_dot_sp
@@ -37,7 +30,7 @@ defmodule Pids.Tecs.Multirotor do
     potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
     energy_rate_sp = kinetic_energy_rate_sp + potential_energy_rate_sp
     kinetic_energy_rate = 0*speed
-    Logger.debug("KEr/PEr: #{Common.Utils.eftb(kinetic_energy_rate_sp, 2)}/#{Common.Utils.eftb(potential_energy_rate_sp, 2)}")
+    # Logger.debug("KEr/PEr: #{Common.Utils.eftb(kinetic_energy_rate_sp, 2)}/#{Common.Utils.eftb(potential_energy_rate_sp, 2)}")
     energy_rate = kinetic_energy_rate + potential_energy_rate
     # TECS calcs
     # Energy (thrust)

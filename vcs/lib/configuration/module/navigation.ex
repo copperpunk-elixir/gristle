@@ -6,7 +6,7 @@ defmodule Configuration.Module.Navigation do
       Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
       |> Module.concat(Navigation)
     vehicle_limits = apply(vehicle_module, :get_vehicle_limits, [model_type])
-
+    path_follower = apply(vehicle_module, :get_path_follower, [])
     [
       node_type: node_type,
       navigator: [
@@ -15,12 +15,7 @@ defmodule Configuration.Module.Navigation do
       ],
       path_manager:
         [
-          path_follower: [
-            k_path: 0.05,
-            k_orbit: 2.0,
-            chi_inf: 1.05,
-            lookahead_dt: 1.0,
-          ],
+          path_follower: path_follower,
           model_type: model_type,
           peripheral_paths_update_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
         ] ++ vehicle_limits,

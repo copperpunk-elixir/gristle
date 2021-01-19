@@ -26,7 +26,7 @@ defmodule Pids.Bodyrate.Multirotor do
         cmd_multiplier(aileron_output, roll_mult, 0.5) +
         cmd_multiplier(elevator_output, pitch_mult, 0.5)
         thrust_remaining = 1.0 - rp_output
-        yaw_output = cmd_multiplier(rudder_output, 0.5*yaw_mult, 0.125)
+        yaw_output = cmd_multiplier(rudder_output, 0.5*yaw_mult, 0.5)
         |> Common.Utils.Math.constrain(-thrust_remaining, thrust_remaining)
         rp_output + yaw_output
       end

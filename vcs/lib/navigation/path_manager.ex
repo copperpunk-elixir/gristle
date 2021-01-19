@@ -134,7 +134,7 @@ defmodule Navigation.PathManager do
       # Logger.debug("cpc_i: #{current_path_case.case_index}")
       # Logger.debug("cpc: #{inspect(current_path_case)}")
       {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, speed, current_path_case)
-      goals = %{speed: speed_cmd, altitude: altitude_cmd}
+      goals = %{speed: speed_cmd, altitude: altitude_cmd, yaw_offset: 0.0}
       path_case_type = current_path_case.type
       goals =
         case path_case_type do
