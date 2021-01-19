@@ -18,17 +18,9 @@ defmodule Pids.Steering.Plane do
       roll_cmd = Pids.Pid.update_pid(:course_flight, :roll, course_cmd, 0.0, airspeed, dt)
       # Logger.debug("crs/roll: #{Common.Utils.eftb_deg(course_cmd,1)}/#{Common.Utils.eftb_deg(roll_cmd,1)}")
       yaw_cmd = 0.5*course_cmd
-      Logger.debug("yaw cmd: #{Common.Utils.eftb(yaw_cmd, 2)}")
+      # Logger.debug("yaw cmd: #{Common.Utils.eftb(yaw_cmd, 2)}")
       %{roll: roll_cmd, yaw: yaw_cmd, course: course_cmd}
     end
-    # output_str = Common.Utils.eftb_deg(roll_yaw_output.roll,2)
-    # output_str =
-    # if Map.has_key?(roll_yaw_output, :yaw) do
-    #   output_str <> "/" <> Common.Utils.eftb_deg(roll_yaw_output.yaw,2)
-    # else
-    #   output_str
-    # end
-    # Logger.debug("course output: roll/(yaw): #{output_str}")
     roll_yaw_output
   end
 

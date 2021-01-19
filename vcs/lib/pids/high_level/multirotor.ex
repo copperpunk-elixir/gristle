@@ -3,7 +3,7 @@ defmodule Pids.HighLevel.Multirotor do
   def calculate_outputs(pv_cmd_map, pv_value_map, airspeed, dt) do
     # Calculate tilt-angle based on speed requirement
     thrust = Pids.Tecs.Multirotor.calculate_outputs(pv_cmd_map, pv_value_map, airspeed, dt)
-    # pv_cmd_map = Map.put(pv_cmd_map, :tilt, tilt_and_thrust_output.tilt)
+
     # Calculate roll, pitch, yaw, based on tilt output and course
     roll_pitch_yaw_course = Pids.Steering.Multirotor.calculate_outputs(pv_cmd_map, pv_value_map, airspeed, dt)
     Map.put(roll_pitch_yaw_course, :thrust, thrust)

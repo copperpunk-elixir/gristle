@@ -6,7 +6,7 @@ defmodule Simulation.XplaneSend do
   @cmd_header <<68, 65, 84, 65, 0>>
   @zeros_1 <<0,0,0,0>>
   @zeros_3 <<0,0,0,0,0,0,0,0,0,0,0,0>>
-  @zeros_4 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
+  # @zeros_4 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
   @zeros_5 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
   @zeros_7 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
 
@@ -141,69 +141,6 @@ defmodule Simulation.XplaneSend do
     |> Kernel.<>(Common.Utils.Math.uint_from_fp(-999,32))
     :gen_udp.send(socket, dest_ip, port, buffer)
   end
-
- #  @spec send_attitude(map(), any(), integer()) :: atom()
- #  def send_attitude(values, socket, port) do
- #    Logger.debug("send attitude: #{inspect(values)} to #{port}")
- #    buffer = @cmd_header <> <<17, 0, 0, 0>>
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.pitch,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.roll,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.yaw,32))
- #    |> Kernel.<>(@zeros_5)
- #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0>>)
- #    :gen_udp.send(socket, {127,0,0,1}, port, buffer)
- #  end
-
- #  @spec send_bodyrate(map(), any(), integer()) :: atom()
- #  def send_bodyrate(values, socket, port) do
- #    Logger.debug("send bodyrate: #{inspect(values)}")
- #    buffer = @cmd_header <> <<16, 0, 0, 0>>
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.pitchrate,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.rollrate,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.yawrate,32))
- #    |> Kernel.<>(@zeros_5)
- #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>)
- #    :gen_udp.send(socket, {127,0,0,1}, port, buffer)
- #  end
-
- #  @spec send_accel(map(), any(), integer()) :: atom()
- #  def send_accel(values, socket, port) do
- #    Logger.debug("send accel: #{inspect(values)}")
- #    buffer = @cmd_header <> <<4, 0, 0, 0>>
- #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>)
- #    |> Kernel.<>(@zeros_4)
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.z,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.x,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.y,32))
- #    |> Kernel.<>(@zeros_1)
- #    :gen_udp.send(socket, {127,0,0,1}, port, buffer)
- #  end
-
- #  @spec send_position(map(), any(), integer()) :: atom()
- #  def send_position(values, socket, port) do
- #    Logger.debug("send position: #{inspect(values)}")
- #    buffer = @cmd_header <> <<20, 0, 0, 0>>
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(Common.Utils.Math.rad2deg(values.latitude),32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(Common.Utils.Math.rad2deg(values.longitude),32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.altitude,32))
- #    |> Kernel.<>(@zeros_5)
- #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0>>)
- #    :gen_udp.send(socket, {127,0,0,1}, port, buffer)
- #  end
-
- # @spec send_velocity(map(), any(), integer()) :: atom()
- #  def send_velocity(values, socket, port) do
- #    Logger.debug("send velocity: #{inspect(values)}")
- #    buffer = @cmd_header <> <<21, 0, 0, 0>>
- #    # |> Kernel.<>(<<0,0,0,0,0,0,0,0,0,0,0,0>>)
- #    |> Kernel.<>(@zeros_5)
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(values.east,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(-values.down,32))
- #    |> Kernel.<>(Common.Utils.Math.uint_from_fp(-values.north,32))
- #    :gen_udp.send(socket, {127,0,0,1}, port, buffer)
- #  end
-
-
 
  @spec send_message(atom(), map()) :: atom()
   def send_message(message_type, value) do

@@ -35,7 +35,7 @@ defmodule Configuration.Module.Simulation do
   end
 
   @spec get_realflight_config(binary(), binary()) :: list()
-  def get_realflight_config(model_type, node_type) do
+  def get_realflight_config(model_type, _node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     sim_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Simulation)
@@ -46,7 +46,7 @@ defmodule Configuration.Module.Simulation do
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
 
     [
-      host_ip: "192.168.7.136",
+      host_ip: "192.168.7.247",
       sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:super_fast),
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,

@@ -2,8 +2,6 @@ defmodule Workshop.DummyGenserver do
   use GenServer
   require Logger
 
-  @default_call_timeout 20
-
   def start_link(config) do
     Logger.info("Start DummyGenServer: #{inspect(config[:name])} GenServer")
     Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config[:name]))
@@ -21,13 +19,14 @@ defmodule Workshop.DummyGenserver do
     {:noreply, state}
   end
 
-  def join_registry(name, registry, key, value \\ nil) do
-    GenServer.cast(via_tuple(name), {:join_registry, registry, key, value})
-  end
-
+  @impl GenServer
   def handle_info(:timer, state) do
     Logger.debug("timer called")
     {:noreply, state}
+  end
+
+  def join_registry(name, registry, key, value \\ nil) do
+    GenServer.cast(via_tuple(name), {:join_registry, registry, key, value})
   end
 
   def via_tuple(name) do

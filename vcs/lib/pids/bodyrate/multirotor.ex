@@ -8,14 +8,6 @@ defmodule Pids.Bodyrate.Multirotor do
     aileron_output = Pids.Pid.update_pid(:rollrate, :aileron, cmds.rollrate, values.rollrate, airspeed, dt)
     elevator_output = Pids.Pid.update_pid(:pitchrate, :elevator, cmds.pitchrate, values.pitchrate, airspeed, dt)
     rudder_output = Pids.Pid.update_pid(:yawrate, :rudder, cmds.yawrate, values.yawrate, airspeed, dt)
-    # Logger.debug("pitch cmd/val: #{Common.Utils.eftb_deg(cmds.pitchrate,0)}/#{Common.Utils.eftb_deg(values.pitchrate,0)}")
-    output_str =
-      Common.Utils.eftb(aileron_output,2) <> "/" <>
-      Common.Utils.eftb(elevator_output,2) <> "/" <>
-      Common.Utils.eftb(throttle_output,2) <> "/" <>
-      Common.Utils.eftb(rudder_output, 2)
-    # Logger.debug("rr cmd/value: #{Common.Utils.eftb_deg(cmds.rollrate,1)}/#{Common.Utils.eftb_deg(values.rollrate,1)}")
-    # Logger.debug("bodyrate output: ail/elev/thr/rud: #{output_str}")
     Enum.reduce(motor_moments, %{}, fn ({motor_name, {roll_mult, pitch_mult, yaw_mult}}, acc) ->
       motor_output =
       if throttle_output < 0.05 do

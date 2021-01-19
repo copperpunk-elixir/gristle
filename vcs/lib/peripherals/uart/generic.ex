@@ -1,15 +1,15 @@
 defmodule Peripherals.Uart.Generic do
   require Logger
 
-  @spec parse(struct(), list(), atom(), list(), integer()) :: struct()
-  def parse(ublox, buffer, module, sorter_classification \\ nil, sorter_time_validity_ms \\ nil) do
+  @spec parse(struct(), list(), atom(), list()) :: struct()
+  def parse(ublox, buffer, module, sorter_classification \\ nil) do
     {[byte], buffer} = Enum.split(buffer,1)
     ublox = Telemetry.Ublox.parse(ublox, byte)
     ublox =
     if ublox.payload_ready == true do
       # Logger.debug("ready")
       {msg_class, msg_id} = Telemetry.Ublox.msg_class_and_id(ublox)
-      dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox), module, sorter_classification, sorter_time_validity_ms)
+      dispatch_message(msg_class, msg_id, Telemetry.Ublox.payload(ublox), module, sorter_classification)
       Telemetry.Ublox.clear(ublox)
     else
       ublox
@@ -17,12 +17,12 @@ defmodule Peripherals.Uart.Generic do
     if (Enum.empty?(buffer)) do
       ublox
     else
-      parse(ublox, buffer, module, sorter_classification, sorter_time_validity_ms)
+      parse(ublox, buffer, module, sorter_classification)
     end
   end
 
-  @spec dispatch_message(integer(), integer(), list(), atom(), list(), integer()) :: atom()
-  def dispatch_message(msg_class, msg_id, payload, module, sorter_classification, sorter_time_validity_ms) do
+  @spec dispatch_message(integer(), integer(), list(), atom(), list()) :: atom()
+  def dispatch_message(msg_class, msg_id, payload, module, sorter_classification) do
     # Logger.debug("Rx'd msg: #{msg_class}/#{msg_id}")
     # Logger.debug("payload: #{inspect(payload)}")
     case msg_class do
@@ -39,7 +39,7 @@ defmodule Peripherals.Uart.Generic do
         case msg_id do
           0x00 ->
             msg_type = {:telemetry, :pvat}
-            [itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, lat, lon, alt, agl, airspeed, speed, course, roll, pitch, yaw] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
 
             position = %{latitude: lat, longitude: lon, altitude: alt, agl: agl}
             velocity = %{airspeed: airspeed, speed: speed, course: course}
@@ -49,31 +49,31 @@ defmodule Peripherals.Uart.Generic do
             send_global({{:telemetry, :pvat}, position, velocity, attitude}, module)
           0x11 ->
             msg_type = {:tx_goals, 1}
-            [itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, rollrate, pitchrate, yawrate, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             goals = %{rollrate: rollrate, pitchrate: pitchrate, yawrate: yawrate, thrust: thrust}
             send_global_with_group(:tx_goals, {{:tx_goals, 1}, goals}, module)
           0x12 ->
             msg_type = {:tx_goals, 2}
-            [itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, roll, pitch, yaw, thrust] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             goals = %{roll: roll, pitch: pitch, yaw: yaw, thrust: thrust}
             send_global_with_group(:tx_goals, {{:tx_goals, 2}, goals}, module)
           0x13 ->
             msg_type = {:tx_goals, 3}
-            [itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, speed, course, altitude] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             goals = %{speed: speed, course: course, altitude: altitude}
             send_global_with_group(:tx_goals, {{:tx_goals, 3}, goals}, module)
           0x14 ->
             msg_type = :control_state
-            [itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, control_state] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             send_global({:control_state, control_state}, module)
           0x15 ->
             msg_type = :tx_battery
-            [itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, battery_id, voltage, current, energy_discharged] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             # Logger.debug("battery #{battery_id} msg rx'd")
             send_global({:tx_battery, battery_id, voltage, current, energy_discharged}, module)
           0x16 ->
             msg_type = :cluster_status
-            [itow, cluster_status] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            [_itow, cluster_status] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             # cluster_healthy = if (cluster_healthy_base2 == 1), do: true, else: false
             send_global({:cluster_status, cluster_status}, module)
           _other ->  Logger.warn("Bad message id: #{msg_id}")
@@ -118,7 +118,7 @@ defmodule Peripherals.Uart.Generic do
           0x01 ->
             # Protobuf mission
             Logger.debug("proto mission received!")
-            msg_type = :mission_proto
+            # msg_type = :mission_proto
             mission_pb = Navigation.Path.Protobuf.Utils.decode_mission(payload)
             mission = Navigation.Path.Protobuf.Utils.new_mission(mission_pb)
             if mission_pb.display do
@@ -129,8 +129,8 @@ defmodule Peripherals.Uart.Generic do
           0x02 ->
             msg_type = :clear_mission
             Logger.debug("Clear mission")
-            [iTOW] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
-            send_global({:clear_mission, iTOW}, module)
+            [itow] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
+            send_global({:clear_mission, itow}, module)
           0x03 ->
             # msg_type = :save_log_proto
             Logger.debug("save log proto received")

@@ -6,7 +6,7 @@ defmodule Simulation.XplaneReceive do
   @deg2rad 0.017453293
   @ft2m 0.3048
   @knots2mps 0.51444444
-  @rad2deg 57.295779513
+  # @rad2deg 57.295779513
 
 
   def start_link(config) do
@@ -203,9 +203,4 @@ defmodule Simulation.XplaneReceive do
       acc + (Enum.at(x_list,index)<<<(8*index))
     end)
   end
-
-  defp eftb(num, dec) do
-    Common.Utils.eftb(num,dec)
-  end
-
 end

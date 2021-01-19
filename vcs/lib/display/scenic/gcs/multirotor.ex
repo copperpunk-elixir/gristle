@@ -9,7 +9,6 @@ defmodule Display.Scenic.Gcs.Multirotor do
   @degrees "°"
   # @radians "rads"
   @dps "°/s"
-  @radpersec "rps"
   @meters "m"
   @mps "m/s"
   @pct "%"
@@ -27,6 +26,7 @@ defmodule Display.Scenic.Gcs.Multirotor do
   """
 
   # ============================================================================
+  @impl true
   def init(_, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
     {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
@@ -49,7 +49,7 @@ defmodule Display.Scenic.Gcs.Multirotor do
     graph = Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
     {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
     {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
-    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
     goals_offset_x = 60 + label_value_width
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["speed", "course", "altitude"], ids: [:speed_cmd, :course_cmd, :altitude_cmd], font_size: @font_size})
     {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "roll", "pitch", "yaw"], ids: [:thrust_2_cmd, :roll_cmd, :pitch_cmd, :yaw_cmd], font_size: @font_size})
@@ -89,7 +89,7 @@ defmodule Display.Scenic.Gcs.Multirotor do
 
   # --------------------------------------------------------
   # receive PV updates from the vehicle
-  # @impl GenServer
+  @impl true
   def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
     # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
     roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
