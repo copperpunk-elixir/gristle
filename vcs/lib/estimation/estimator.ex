@@ -1,7 +1,7 @@
 defmodule Estimation.Estimator do
   use GenServer
   require Logger
-  @min_speed_for_course 1
+  @min_speed_for_course 0.1
 
   def start_link(config) do
     Logger.info("Start Estimation.Estimator GenServer")

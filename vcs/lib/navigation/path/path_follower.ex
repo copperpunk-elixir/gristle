@@ -86,9 +86,9 @@ defmodule Navigation.Path.PathFollower do
       course_cmd = phi + path_case.turn_direction*(@pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
       |> Common.Utils.Motion.constrain_angle_to_compass()
 
-      e_py = orbit_d - path_case.rho
+      # e_py = orbit_d - path_case.rho
       # Logger.debug("orbit_d/rho: #{Common.Utils.eftb(orbit_d,2)}/#{Common.Utils.eftb(path_case.rho,2)}")
-      d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
+      # d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(d_course,1)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     end

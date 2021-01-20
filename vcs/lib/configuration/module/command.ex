@@ -47,6 +47,7 @@ defmodule Configuration.Module.Command do
           :roll -> :aileron
           :pitch -> :elevator
           :yaw -> :rudder
+          :yaw_offset -> :rudder
           :course_flight -> :aileron
           :course_ground -> :rudder
           :altitude -> :elevator

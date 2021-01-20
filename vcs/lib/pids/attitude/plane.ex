@@ -13,17 +13,7 @@ defmodule Pids.Attitude.Plane do
       cmds.roll*0.2
     end
     thrust_output = cmds.thrust
-    # output_str =
-    #   Common.Utils.eftb_deg(rollrate_output,2) <> "/" <>
-    #   Common.Utils.eftb_deg(pitchrate_output,2) <> "/" <>
-    #   Common.Utils.eftb(thrust_output,2) <> "/" <>
-    #   Common.Utils.eftb_deg(yawrate_output, 2)
-    # Logger.debug("attitude output: RR/PR/thr/YR: #{output_str}")
-    # unless is_nil(cmds.roll) or is_nil(values.roll) do
-      # Logger.debug("roll cmd/act: #{Common.Utils.eftb_deg(cmds.roll,1)}/#{Common.Utils.eftb_deg(values.roll,1)}")
-      # Logger.debug("pitch cmd/act: #{Common.Utils.eftb_deg(cmds.pitch,1)}/#{Common.Utils.eftb_deg(values.pitch,1)}")
-    # Logger.debug("pitch cmd/act/err: #{Common.Utils.eftb_deg(cmds.pitch,1)}/#{Common.Utils.eftb_deg(values.pitch,1)}/#{Common.Utils.eftb_deg(cmds.pitch-values.pitch,1)}")
-    # end
+
     %{rollrate: rollrate_output, pitchrate: pitchrate_output, yawrate: yawrate_output, thrust: thrust_output}
   end
 

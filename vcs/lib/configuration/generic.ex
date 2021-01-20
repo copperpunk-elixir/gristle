@@ -95,9 +95,4 @@ defmodule Configuration.Generic do
      end)
     [primary_class, secondary_class]
   end
-
-  @spec generic_peripheral_time_validity_ms() :: integer()
-  def generic_peripheral_time_validity_ms() do
-    1000
-  end
 end

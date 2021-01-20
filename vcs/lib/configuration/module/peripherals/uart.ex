@@ -170,8 +170,7 @@ defmodule Configuration.Module.Peripherals.Uart do
     [
       uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
       port_options: [speed: 115_200],
-      sorter_classification: sorter_classification,
-      sorter_time_validity_ms: Configuration.Generic.generic_peripheral_time_validity_ms()
+      sorter_classification: sorter_classification
     ]
   end
 

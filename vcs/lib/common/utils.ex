@@ -159,6 +159,13 @@ defmodule Common.Utils do
     end)
   end
 
+  @spec eftb_map_deg(map(), integer(), binary()) ::binary()
+  def eftb_map_deg(keys_values, num_decimals, separator \\ ",") do
+    Enum.reduce(keys_values, "", fn ({key,value}, acc) ->
+      acc <> "#{inspect(key)}: " <> :erlang.float_to_binary(Common.Utils.Math.rad2deg(value), [decimals: num_decimals]) <> separator
+    end)
+  end
+
   @spec map_rad2deg(map()) :: map()
   def map_rad2deg(values) do
     Enum.reduce(values, %{}, fn ({key, value}, acc) ->

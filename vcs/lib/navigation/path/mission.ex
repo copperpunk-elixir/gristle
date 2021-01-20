@@ -135,9 +135,9 @@ defmodule Navigation.Path.Mission do
         start_position = %{start_position | altitude: start_position.altitude + 3.0}
         takeoff_roll = %{takeoff_roll | altitude: takeoff_roll.altitude + 3.0}
         wp0 = Navigation.Path.Waypoint.new_flight(start_position, climbout_speed, course, "Start")
-        # wp1 = Navigation.Path.Waypoint.new_climbout(takeoff_roll, climbout_speed, course, "takeoff")
+        wp1 = Navigation.Path.Waypoint.new_flight(takeoff_roll, climbout_speed, course, "takeoff")
         wp2 = Navigation.Path.Waypoint.new_flight(climb_position, cruise_speed, course, "climbout")
-        [wp0, wp2]
+        [wp0, wp1, wp2]
     end
   end
 
@@ -158,9 +158,11 @@ defmodule Navigation.Path.Mission do
         ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,2), touchdown_speed, course, "descent")]
         ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,3), 0, course, "touchdown")]
       "Multirotor" ->
-        [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,0), approach_speed, course, "approach")]
-        ++ [Navigation.Path.Waypoint.new_landing(Enum.at(landing_points,1), approach_speed, course, "descent")]
-        ++ [Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,2), touchdown_speed, course, "touchdown")]
+        cruise_speed = get_model_spec(model_type, :cruise_speed)
+        [Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,0), cruise_speed, course, "pre-approach")]
+        ++ [Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,1), approach_speed, course, "approach")]
+        ++ [Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,2), approach_speed, course, "descent")]
+        ++ [Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,3), touchdown_speed, course, "touchdown")]
 
     end
     # wp0 = Navigation.Path.Waypoint.new_flight(Enum.at(landing_points,0), approach_speed, course, "pre-approach")
@@ -419,18 +421,18 @@ defmodule Navigation.Path.Mission do
         planning_turn_rate: 0.80
       },
       "QuadX" => %{
-        takeoff_roll: 0.5,
+        takeoff_roll: 5,
         climbout_distance: 25,
         climbout_height: 10,
-        climbout_speed: 3,
+        climbout_speed: 2,
         cruise_speed: 5,
         min_loiter_speed: 5,
-        landing_distances_heights: [{-50, 5}, {-15, 2}, {0,0*-1.0}],
-        landing_speeds: {3, 2.0},
+        landing_distances_heights: [{-50, 7}, {-30, 5}, {-10, 1}, {0,0.0}],
+        landing_speeds: {3, 1.5},
         flight_speed_range: {5,5},
         flight_agl_range: {5, 5},
         wp_dist_range: {100, 100},
-        planning_turn_rate: 0.20,
+        planning_turn_rate: 0.25,
         planning_orbit_radius: 10
       },
 

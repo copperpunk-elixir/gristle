@@ -252,7 +252,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @spec parse_good_message(list(), list(), map()) :: map()
   defp parse_good_message(buffer,field_mask, ins) do
     field_mask = <<field_mask::unsigned-integer-16>>
-    <<_resv_bit::1, _time_gps_pps_bit::1, _sync_in_cnt_bit::1, ins_status_bit::1, _delta_theta_bit::1, mag_pres_bit::1, _imu_bit::1, accel_bit::1,velocity_bit::1, position_bit::1, angular_rate_bit::1, _qtn_bit::1, ypr_bit::1, _time_sync_bit::1, gps_time_bit::1, _time_startup_bit::1>> = field_mask
+    <<_resv_bit::1, _time_gps_pps_bit::1, _sync_in_cnt_bit::1, ins_status_bit::1, _delta_theta_bit::1, mag_pres_bit::1, _imu_bit::1, _accel_bit::1,velocity_bit::1, position_bit::1, angular_rate_bit::1, _qtn_bit::1, ypr_bit::1, _time_sync_bit::1, gps_time_bit::1, _time_startup_bit::1>> = field_mask
 
     {gps_time_ns, buffer} =
     if (gps_time_bit == 1) do

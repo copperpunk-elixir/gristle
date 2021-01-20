@@ -3,11 +3,7 @@ defmodule Simulation.Realflight do
   use Bitwise
   use GenServer
 
-  @deg2rad 0.017453293
-  @pi_2 1.57079633
-  @ft2m 0.3048
-  @knots2mps 0.51444444
-  @rad2deg 57.295779513
+  # @rad2deg 57.295779513
   @default_latitude 41.769201
   @default_longitude -122.506394
   @default_servo [0.5, 0.5, 0, 0.5, 0.5, 0, 0.5, 0, 0.5, 0.5, 0.5, 0.5]
@@ -94,11 +90,6 @@ defmodule Simulation.Realflight do
         end
       end)
       # Logger.debug("output map: #{inspect(output_map)}")
-      # {_, aileron} = Map.get(output_map, :aileron, {nil, 0.5})
-      # {_, elevator} = Map.get(output_map, :elevator, {nil, 0.5})
-      # {_, throttle} = Map.get(output_map, :throttle, {nil, 0.0})
-      # {_, rudder} = Map.get(output_map, :rudder, {nil, 0.5})
-      # {_, flaps} = Map.get(output_map, :flaps, {nil, 0.0})
       aileron = Map.get(output_map, :aileron, 0.5)
       elevator = Map.get(output_map, :elevator, 0.5)
       throttle = Map.get(output_map, :throttle, 0.0)
@@ -114,7 +105,7 @@ defmodule Simulation.Realflight do
   def handle_cast({:pwm_input, scaled_values}, state) do
     # Logger.debug("pwm ch: #{inspect(pwm_channels)}")
     # Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
-    cmds_reverse = Enum.reduce(Enum.with_index(scaled_values), [], fn ({ch_value, index}, acc) ->
+    cmds_reverse = Enum.reduce(Enum.with_index(scaled_values), [], fn ({ch_value, _index}, acc) ->
       [ch_value] ++ acc
     end)
     cmds_reverse =

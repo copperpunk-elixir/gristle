@@ -35,7 +35,7 @@ defmodule Configuration.Module.Simulation do
   end
 
   @spec get_realflight_config(binary(), binary()) :: list()
-  def get_realflight_config(model_type, node_type) do
+  def get_realflight_config(model_type, _node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     sim_module = Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
     |> Module.concat(Simulation)

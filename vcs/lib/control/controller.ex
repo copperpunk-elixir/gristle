@@ -21,7 +21,7 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:begin, config}, _state) do
+  def handle_cast({:begin, _config}, _state) do
     state = %{
       pv_cmds: %{},
       pv_cmds_store: %{},
@@ -36,7 +36,6 @@ defmodule Control.Controller do
     Registry.register(MessageSorterRegistry, {:pv_cmds, 1}, Configuration.Generic.get_loop_interval_ms(:medium))
     Registry.register(MessageSorterRegistry, {:pv_cmds, 2}, Configuration.Generic.get_loop_interval_ms(:medium))
     Registry.register(MessageSorterRegistry, {:pv_cmds, 3}, Configuration.Generic.get_loop_interval_ms(:medium))
-    # Common.Utils.start_loop(self(), Keyword.fetch!(config, :process_variable_cmd_loop_interval_ms), :control_loop)
     {:noreply, state}
   end
 
@@ -74,7 +73,7 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :control_state, control_state, status}, state) do
+  def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
     {:noreply, %{state | control_state: control_state}}
   end
 
