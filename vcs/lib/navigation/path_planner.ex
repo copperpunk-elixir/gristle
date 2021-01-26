@@ -23,6 +23,13 @@ defmodule Navigation.PathPlanner do
     Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, @telemetry_module)
   end
 
+  @spec send_lawnmower_mission(binary(), binary(), binary(), integer(), float(), float(), boolean()) :: atom()
+  def send_lawnmower_mission(airport, runway, model_type, num_rows, row_width, row_length, confirmation) do
+    mission = Navigation.Path.Mission.get_lawnmower_mission(airport, runway, model_type, num_rows, row_width, row_length)
+    pb_encoded = Navigation.Path.Mission.encode(mission, confirmation)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:mission_proto, pb_encoded, @telemetry_module)
+  end
+
   @spec send_flight_mission(binary(), binary(), binary(), binary(), boolean()) :: atom()
   def send_flight_mission(airport, runway, model_type, track_type, confirmation) do
     mission = Navigation.Path.Mission.get_flight_mission(airport, runway, model_type, track_type)

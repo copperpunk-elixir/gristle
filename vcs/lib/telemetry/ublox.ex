@@ -52,6 +52,7 @@ defmodule Telemetry.Ublox do
           {chka, chkb} = add_to_checksum(ublox, byte)
           %{ublox | state: @got_length2, msg_len: msglen, count: 0, chka: chka, chkb: chkb}
         else
+          Logger.error("payload overload")
           %{ublox | state: @got_none}
         end
       state == @got_length2 ->

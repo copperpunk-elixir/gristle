@@ -292,6 +292,52 @@ defmodule Navigation.Path.Mission do
     wps ++ [final_wp]
   end
 
+  @spec get_lawnmower_mission(binary(), binary(), binary(), integer(), float(), float()) :: struct()
+  def get_lawnmower_mission(airport, runway, model_type, num_rows, row_width, row_length) do
+    # planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    planning_turn_rate = 0.5
+    wps = get_lawnmower_waypoints(airport, runway, model_type, num_rows, row_width, row_length)
+    Navigation.Path.Mission.new_mission("#{airport} - #{runway}: lawnmower",wps, planning_turn_rate)
+  end
+
+  @spec get_lawnmower_waypoints(binary(), binary(), binary(), integer(), float(), float()) :: list()
+  def get_lawnmower_waypoints(airport, runway, model_type, num_rows, row_width, row_length) do
+    # wp_speed = get_model_spec(model_type, :cruise_speed)
+    wp_speed = 5
+    {origin, _runway_heading} = get_runway_position_heading(airport, runway)
+    reference_headings = %{
+      "cone_field" => 0
+    }
+
+    reference_heading = Map.get(reference_headings, airport) |> Common.Utils.Math.deg2rad()
+
+    {_, wps} =
+      Enum.reduce(0..num_rows-1, {reference_heading, []}, fn (row, {current_heading, acc}) ->
+        Logger.debug("row/course: #{row}/#{Common.Utils.eftb_deg(current_heading,1)}")
+        rel_y = (row*row_width)*:math.sin(reference_heading + :math.pi/2)
+        rel_x1 = if (rem(row,2) == 1), do: row_length, else: 0.0
+        rel_x2 = rel_x1 + row_length*:math.cos(current_heading)
+        {dx1, dy1} =  Common.Utils.Math.rotate_point(rel_x1, rel_y, reference_heading)
+        # {rel_x, rel_y, rel_alt} = get_in(wps_relative, [airport, wp_name])
+        {dx2, dy2} = Common.Utils.Math.rotate_point(rel_x2, rel_y, reference_heading)
+        # Logger.warn("relx/rely: #{rel_x}/#{rel_y}")
+        Logger.warn("dx1/dy1: #{dx1}/#{dy1}")
+        Logger.warn("dx2/dy2: #{dx2}/#{dy2}")
+        lla_1 = Common.Utils.Location.lla_from_point(origin, dx1, dy1)
+        |> Map.put(:altitude, origin.altitude)
+        lla_2 = Common.Utils.Location.lla_from_point(origin, dx2, dy2)
+        |> Map.put(:altitude, origin.altitude)
+
+        # lla = Common.Utils.LatLonAlt.new_deg(lat, lon, alt)
+        # course = Common.Utils.Motion.constrain_angle_to_compass(current_heading + reference_heading)
+        wp1 = Navigation.Path.Waypoint.new_flight_peripheral(lla_1, wp_speed, current_heading,"#{length(acc)+1}")
+        wp2 = Navigation.Path.Waypoint.new_flight_peripheral(lla_2, wp_speed, current_heading,"#{length(acc)+2}")
+        new_heading = Common.Utils.Motion.constrain_angle_to_compass(current_heading + :math.pi)
+        {new_heading, acc ++ [wp1, wp2]}
+      end)
+    wps
+  end
+
   @spec get_runway_position_heading(binary(), binary()) :: tuple()
   def get_runway_position_heading(airport, runway) do
     origin_heading = %{
@@ -315,12 +361,15 @@ defmodule Navigation.Path.Mission do
       },
       "fpv_racing" => %{
         "27R" => {Common.Utils.LatLonAlt.new_deg(41.76302, -122.48963, 1186.6), 270}
+      },
+      "cone_field" => %{
+        "18R" => {Common.Utils.LatLonAlt.new_deg(42.0, -120.0, 0.0), 180.0},
+        "36L" => {Common.Utils.LatLonAlt.new_deg(42.0, -120.0, 0.0), 0.0}
       }
     }
     {origin, heading} = get_in(origin_heading, [airport, runway])
     {origin, Common.Utils.Math.deg2rad(heading)}
   end
-
 
   @spec get_random_waypoints(binary(), struct(), struct(), integer(), boolean()) :: struct()
   def get_random_waypoints(model_type, ground_wp, first_flight_wp, num_wps, loop \\ false) do
@@ -435,6 +484,13 @@ defmodule Navigation.Path.Mission do
         planning_turn_rate: 0.25,
         planning_orbit_radius: 10
       },
+      "Tractor" => %{
+        cruise_speed: 5,
+        flight_speed_range: {5,5},
+        wp_dist_range: {100, 100},
+        planning_turn_rate: 0.5,
+        planning_orbit_radius: 10
+      }
 
     }
     get_in(model, [model_type, spec])

@@ -41,9 +41,25 @@ defmodule Navigation.PathPlanner.Plans do
       Navigation.PathPlanner.send_complete_mission("flight_school", runway, model_type, track_type, num_wps, true)
     end
   end
+
   @spec load_flight_school_relative(any()) :: atom()
   def load_flight_school_relative(track_type_or_num_wps \\ nil) do
     load_flight_school(track_type_or_num_wps, true)
+  end
+
+  @spec load_lawnmower(binary(), boolean()) :: atom()
+  def load_lawnmower(airport \\ "cone_field", relative \\ false) do
+    {runway, num_rows, row_width, row_length} =
+      case airport do
+        "cone_field" -> {"36L", 10, 25, 200}
+      end
+    model_type = Common.Utils.Configuration.get_model_type()
+    if relative do
+      raise "Relative not supported yet"
+      # Gcs.Operator.load_mission_relative("flight_school", runway, model_type, track_type, num_wps, true)
+    else
+      Navigation.PathPlanner.send_lawnmower_mission("cone_field", runway, model_type, num_rows, row_width, row_length, true)
+    end
   end
 
   @spec load_seatac_34L(integer()) ::atom()
