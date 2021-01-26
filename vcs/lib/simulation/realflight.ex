@@ -54,7 +54,7 @@ defmodule Simulation.Realflight do
     }
     restore_controller(url)
     inject_controller_interface(url)
-    # Common.Utils.start_loop(self(), config[:sim_loop_interval_ms], :exchange_data_loop)
+    Common.Utils.start_loop(self(), config[:sim_loop_interval_ms], :exchange_data_loop)
     {:noreply, state}
   end
 
