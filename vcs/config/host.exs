@@ -19,8 +19,8 @@ config :shoehorn,
   init: [:nerves_runtime, :vintage_net, :nerves_ssh],
   app: Mix.Project.config()[:app]
 
-# config :vintage_net,
-  # persistence: VintageNet.Persistence.Null
+config :vintage_net,
+  persistence: VintageNet.Persistence.Null
 
 config :mdns_lite,
   host: :hostname

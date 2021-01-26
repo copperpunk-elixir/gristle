@@ -82,7 +82,7 @@ defmodule Cluster.Heartbeat do
     if state.store_cluster_status do
       Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
     end
-    Logger.debug("#{inspect(state.hb_map)} status: #{cluster_status}")
+    # Logger.debug("#{inspect(state.hb_map)} status: #{cluster_status}")
     {:noreply, %{state | all_nodes: all_nodes, cluster_status: cluster_status}}
   end
 

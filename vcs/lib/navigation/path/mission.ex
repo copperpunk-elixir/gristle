@@ -197,7 +197,7 @@ defmodule Navigation.Path.Mission do
             new_wp = Navigation.Path.Waypoint.new_flight_peripheral(new_pos, speed, new_course, "wp1")
             [new_wp]
           end
-        type -> get_track_waypoints(airport, runway, type, model_type, false)
+        type -> get_track_waypoints(airport, runway, type, model_type, true)
       end
     landing_wps = get_landing_waypoints(start_position, start_course, model_type)
     # Logger.debug(inspect(landing_wps))
