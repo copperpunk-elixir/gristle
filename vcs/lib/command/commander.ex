@@ -204,7 +204,7 @@ defmodule Command.Commander do
         course = Map.get(pv_values, :course, 0)
         speed = Map.get(pv_values,:speed, 0)
         altitude = Map.get(pv_values, :altitude, 0)
-        %{speed: speed, course_flight: course, altitude: altitude}
+        %{speed: speed, course_flight: course, course_ground: course, altitude: altitude}
       _other ->
         %{}
     end

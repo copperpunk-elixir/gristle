@@ -5,6 +5,7 @@ defmodule Display.Scenic.Gcs.Car do
   import Scenic.Primitives
   # @body_offset 80
   @font_size 24
+  @battery_font_size 20
   @degrees "°"
   @dps "°/s"
   @meters "m"
@@ -24,9 +25,10 @@ defmodule Display.Scenic.Gcs.Car do
   """
 
   # ============================================================================
+  @impl true
   def init(_, opts) do
     Logger.debug("Sensor.init: #{inspect(opts)}")
-    {:ok, %Scenic.ViewPort.Status{size: {_vp_width, _}}} =
+    {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()
 
@@ -35,95 +37,190 @@ defmodule Display.Scenic.Gcs.Car do
     label_value_height = 50
     goals_width = 400
     goals_height = 50
+    battery_width = 400
+    battery_height = 40
+    cluster_status_side = 100
     # build the graph
-    graph =
-      Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
-      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 10, labels: ["latitude", "longitude", "altitude"], ids: [:lat, :lon, :alt], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 2*label_value_height, offset_x: 10, offset_y: 3*label_value_height+40, labels: ["speed", "course"], ids: [:speed, :course], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_columns_to_graph(%{width: label_value_width, height: 3*label_value_height, offset_x: 10, offset_y: 5*label_value_height+70, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 10, labels: ["speed", "course"], ids: [:speed_cmd, :course_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 2*goals_height + 40, labels: ["thrust", "yaw"], ids: [:thrust_2_cmd, :yaw_cmd], font_size: @font_size})
-      |> Display.Scenic.Gcs.Utils.add_rows_to_graph(%{goal_id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: 60+label_value_width, offset_y: 4*goals_height + 70, labels: ["thrust", "yawrate"], ids: [:thrust_1_cmd, :yawrate_cmd], font_size: @font_size})
+    offset_x_origin = 10
+    offset_y_origin = 10
+    spacer_y = 20
+
+    graph = Scenic.Graph.build(font: :roboto, font_size: 16, theme: :dark)
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 4*label_value_height, offset_x: offset_x_origin, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["latitude", "longitude", "altitude", "AGL"], ids: [:lat, :lon, :alt, :agl], font_size: @font_size})
+    {graph, offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["airspeed", "speed", "course"], ids: [:airspeed, :speed, :course], font_size: @font_size})
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_columns_to_graph(graph, %{width: label_value_width, height: 3*label_value_height, offset_x: offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["roll", "pitch", "yaw"], ids: [:roll, :pitch, :yaw], font_size: @font_size})
+    goals_offset_x = 60 + label_value_width
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 3}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y_origin, spacer_y: spacer_y, labels: ["speed", "course"], ids: [:speed_cmd, :course_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 2}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "yaw"], ids: [:thrust_2_cmd, :yaw_cmd], font_size: @font_size})
+    {graph, _offset_x, offset_y} = Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:goals, 1}, width: goals_width, height: 2*goals_height, offset_x: goals_offset_x, offset_y: offset_y, spacer_y: spacer_y, labels: ["thrust", "yawrate"], ids: [:thrust_1_cmd, :yawrate_cmd], font_size: @font_size})
+
+    cluster_status_offset_x = vp_width - cluster_status_side - 40
+    cluster_status_offset_y = vp_height - cluster_status_side - 20
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_rectangle_to_graph(graph, %{id: :cluster_status, width: cluster_status_side, height: cluster_status_side, offset_x: cluster_status_offset_x, offset_y: cluster_status_offset_y, fill: :red})
+
+    # Save Log
+    {graph, _offset_x, button_offset_y} = Display.Scenic.Gcs.Utils.add_save_log_to_graph(graph, %{button_id: :save_log, text_id: :save_log_filename, button_width: 100, button_height: 35, offset_x: 10, offset_y: vp_height-100, font_size: @font_size, text_width: 400})
+    {graph, _offset_x, _offset_y} = Display.Scenic.Gcs.Utils.add_peripheral_control_to_graph(graph, %{allow_id: {:peri_ctrl, :allow}, deny_id: {:peri_ctrl, :deny}, button_width: 150, button_height: 35, offset_x: 10, offset_y: button_offset_y+10, font_size: @font_size, text_width: 400})
+
+
+    batteries = ["cluster", "motor"]
+    {graph, _offset_x, _offset_y} =
+      Enum.reduce(batteries, {graph, goals_offset_x, offset_y}, fn (battery, {graph, off_x, off_y}) ->
+        ids = [{battery, :V}, {battery, :I}, {battery, :mAh}]
+        # battery_str = Atom.to_string(battery)
+        labels = [battery <> " V", battery <> " I", battery <> " mAh"]
+        Display.Scenic.Gcs.Utils.add_rows_to_graph(graph, %{id: {:battery, battery}, width: battery_width, height: 2*battery_height, offset_x: off_x, offset_y: off_y, spacer_y: spacer_y, labels: labels, ids: ids, font_size: @battery_font_size})
+      end)
 
     # subscribe to the simulated temperature sensor
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, :pv_estimate, self())
+    Comms.Operator.join_group(__MODULE__, {:telemetry, :pvat}, self())
     Comms.Operator.join_group(__MODULE__, :tx_goals, self())
-
-    {:ok, graph, push: graph}
+    Comms.Operator.join_group(__MODULE__, :control_state, self())
+    Comms.Operator.join_group(__MODULE__, :tx_battery, self())
+    Comms.Operator.join_group(__MODULE__, :cluster_status, self())
+    state = %{
+      graph: graph,
+      save_log_file: ""
+    }
+    {:ok, state, push: graph}
   end
 
   # --------------------------------------------------------
   # receive PV updates from the vehicle
-  def handle_cast({:pv_estimate, pv_value_map}, graph) do
-    position =pv_value_map.position
-    # velocity = pv_value_map.velocity
-    attitude = pv_value_map.attitude
-    calculated_values = pv_value_map.calculated
-
-    roll = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.roll),1)
-    pitch = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.pitch),1)
-    yaw = Common.Utils.eftb(Common.Utils.Math.rad2deg(attitude.yaw),1)
-
-    lat = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.latitude),5)
-    lon = Common.Utils.eftb(Common.Utils.Math.rad2deg(position.longitude),5)
-    alt = Common.Utils.eftb(position.altitude,2)
-
-    # v_down = Common.Utils.eftb(velocity.down,1)
-    speed = Common.Utils.eftb(calculated_values.speed,1)
-
-    course=
-      Common.Utils.Math.rad2deg(calculated_values.course)
+ @impl true
+  def handle_cast({{:telemetry, :pvat}, position, velocity, attitude}, state) do
+    # Logger.debug("position: #{Common.Utils.LatLonAlt.to_string(position)}")
+    roll = Map.get(attitude, :roll,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
+    pitch = Map.get(attitude, :pitch,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
+    yaw =
+      Map.get(attitude, :yaw,0) |>
+      Common.Utils.Motion.constrain_angle_to_compass()
+      |> Common.Utils.Math.rad2deg()
       |> Common.Utils.eftb(1)
 
-    graph = Scenic.Graph.modify(graph, :lat, &text(&1, lat <> @degrees))
+    lat = Map.get(position, :latitude,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(5)
+    lon = Map.get(position, :longitude,0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(5)
+    alt = Map.get(position, :altitude,0) |> Common.Utils.eftb(2)
+    agl = Map.get(position, :agl, 0) |> Common.Utils.eftb(2)
+
+    # v_down = Common.Utils.eftb(velocity.down,1)
+    airspeed = Map.get(velocity, :airspeed, 0) |> Common.Utils.eftb(1)
+    # Logger.debug("disp #{airspeed}")
+    speed = Map.get(velocity, :speed,0) |> Common.Utils.eftb(1)
+
+    course=
+    Map.get(velocity, :course, 0)
+    |> Common.Utils.Motion.constrain_angle_to_compass()
+    |> Common.Utils.Math.rad2deg()
+    |> Common.Utils.eftb(1)
+
+    graph = Scenic.Graph.modify(state.graph, :lat, &text(&1, lat <> @degrees))
     |> Scenic.Graph.modify(:lon, &text(&1, lon <> @degrees))
     |> Scenic.Graph.modify(:alt, &text(&1, alt <> @meters))
+    |> Scenic.Graph.modify(:agl, &text(&1, agl <> @meters))
+    |> Scenic.Graph.modify(:airspeed, &text(&1, airspeed <> @mps))
     |> Scenic.Graph.modify(:speed, &text(&1, speed <> @mps))
     |> Scenic.Graph.modify(:course, &text(&1, course <> @degrees))
     |> Scenic.Graph.modify(:roll, &text(&1, roll <> @degrees))
     |> Scenic.Graph.modify(:pitch, &text(&1, pitch <> @degrees))
     |> Scenic.Graph.modify(:yaw, &text(&1, yaw <> @degrees))
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
 
-  def handle_cast({{:tx_goals, level}, cmds}, graph) do
+
+  def handle_cast({{:tx_goals, level}, cmds}, state) do
+    graph = state.graph
     graph =
       cond do
       level <=1 ->
-          yawrate = Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yawrate),0)
-          thrust = Common.Utils.eftb(cmds.thrust*100,0)
-          graph
-          |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @dps))
-          |> Scenic.Graph.modify(:thrust_1_cmd, &text(&1,thrust <> @pct))
+        yawrate = Map.get(cmds, :yawrate, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        thrust = Map.get(cmds, :thrust,0)*100 |> Common.Utils.eftb(0)
+        graph
+        |> Scenic.Graph.modify(:yawrate_cmd, &text(&1,yawrate <> @dps))
+        |> Scenic.Graph.modify(:thrust_1_cmd, &text(&1,thrust <> @pct))
       level == 2 ->
-          yaw= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.yaw),0)
-          thrust = Common.Utils.eftb(cmds.thrust*100,0)
-          graph
-          |> Scenic.Graph.modify(:yaw_cmd, &text(&1,yaw<> @degrees))
-          |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
+        yaw = Map.get(cmds, :yaw, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(0)
+        thrust = Map.get(cmds, :thrust, 0)*100 |> Common.Utils.eftb(0)
+        graph
+        |> Scenic.Graph.modify(:yaw_cmd, &text(&1,yaw<> @degrees))
+        |> Scenic.Graph.modify(:thrust_2_cmd, &text(&1,thrust <> @pct))
       level == 3 ->
-          speed= Common.Utils.eftb(cmds.speed,1)
-          course= Common.Utils.eftb(Common.Utils.Math.rad2deg(cmds.course),0)
-          graph
-          |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
-          |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
+        speed= Map.get(cmds, :speed, 0) |> Common.Utils.eftb(1)
+        course= Map.get(cmds, :course, 0) |> Common.Utils.Math.rad2deg() |> Common.Utils.eftb(1)
+        graph
+        |> Scenic.Graph.modify(:speed_cmd, &text(&1,speed<> @mps))
+        |> Scenic.Graph.modify(:course_cmd, &text(&1,course<> @degrees))
       true -> graph
       end
+    {:noreply, %{state | graph: graph}, push: graph}
+  end
 
-    graph = Enum.reduce(4..-1, graph, fn (goal_level, acc) ->
-      if goal_level == level do
-        {stroke_color, display_level} =
-          case level do
-            -1 -> {:red, 1}
-            0 -> {:yellow, 1}
-            _other -> {:green, goal_level}
-          end
-        Scenic.Graph.modify(acc, {:goals, display_level}, &update_opts(&1, stroke: {@rect_border, stroke_color}))
+  def handle_cast({:control_state, control_state}, state) do
+    graph = Enum.reduce(3..1, state.graph, fn (goal_level, acc) ->
+      if goal_level == control_state do
+        Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :green}))
       else
         Scenic.Graph.modify(acc, {:goals, goal_level}, &update_opts(&1, stroke: {@rect_border, :white}))
       end
     end)
-    {:noreply, graph, push: graph}
+    {:noreply, %{state | graph: graph}, push: graph}
   end
+
+  def handle_cast({:tx_battery, battery_id, voltage_V, current_A, energy_mAh}, state) do
+    voltage = Common.Utils.eftb(voltage_V, 2)
+    current = Common.Utils.eftb(current_A, 2)
+    mAh = Common.Utils.eftb(energy_mAh, 0)
+    {battery_type, _battery_channel} = Health.Hardware.Battery.get_type_channel_for_id(battery_id)
+    # Logger.debug("tx battery type: #{battery_type}")
+    graph =
+      state.graph
+      |> Scenic.Graph.modify({battery_type, :V}, &text(&1,voltage <> "V"))
+      |> Scenic.Graph.modify({battery_type, :I}, &text(&1,current <> "A"))
+      |> Scenic.Graph.modify({battery_type, :mAh}, &text(&1,mAh <> "mAh"))
+    {:noreply, %{state | graph: graph}, push: graph}
+  end
+
+  def handle_cast({:cluster_status, cluster_status}, state) do
+    fill = if (cluster_status == 1), do: :green, else: :red
+    graph =
+      state.graph
+    |> Scenic.Graph.modify(:cluster_status, &update_opts(&1, fill: fill))
+    {:noreply, %{state | graph: graph}, push: graph}
+  end
+
+  @impl Scenic.Scene
+  def filter_event({:click, :save_log}, _from, state) do
+    Logger.debug("Save Log to file: #{state.save_log_file}")
+    save_log_proto = Display.Scenic.Gcs.Protobuf.SaveLog.new([filename: state.save_log_file])
+    save_log_encoded =Display.Scenic.Gcs.Protobuf.SaveLog.encode(save_log_proto)
+    Peripherals.Uart.Generic.construct_and_send_proto_message(:save_log_proto, save_log_encoded, Peripherals.Uart.Telemetry.Operator)
+    {:cont, :event, state}
+  end
+
+  @impl Scenic.Scene
+  def filter_event({:click, {:peri_ctrl, action}}, _from, state) do
+    Logger.debug("Change PeriCtrl #{action}")
+    control_value =
+      case action do
+        :allow -> 1
+        :deny -> 0
+      end
+    Peripherals.Uart.Generic.construct_and_send_message(:change_peripheral_control, [control_value], Peripherals.Uart.Telemetry.Operator)
+    {:cont, :event, state}
+  end
+
+
+  @impl Scenic.Scene
+  def filter_event({:click, _other}, _from, state) do
+    {:cont, :event, state}
+  end
+
+
+  @impl Scenic.Scene
+  def filter_event({:value_changed, :save_log_filename, filename}, _from, state) do
+    {:cont, :event, %{state | save_log_file: filename}}
+  end
+
+
 end

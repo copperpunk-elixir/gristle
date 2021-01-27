@@ -87,6 +87,7 @@ defmodule Configuration.Module.Actuation do
       "T28Z2m" -> {1000, 2000}
       "T28" -> {1100, 1900}
       "QuadX" -> {1000, 2000}
+      "Cobra" -> {1000, 2000}
       _other -> {1100, 1900}
     end
   end
@@ -111,6 +112,7 @@ defmodule Configuration.Module.Actuation do
       :motor2 -> 0.0
       :motor3 -> 0.0
       :motor4 -> 0.0
+      :brake -> 0.0
     end
   end
 
@@ -173,6 +175,16 @@ defmodule Configuration.Module.Actuation do
                    4 => :gear
                  }
              }
+      "Cobra" -> %{
+                 indirect: %{
+                   0 => :rudder,
+                   1 => :brake,
+                   2 => :throttle,
+                 },
+                 direct: %{
+                 }
+             }
+
     end
   end
 

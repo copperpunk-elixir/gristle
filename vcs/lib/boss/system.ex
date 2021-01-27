@@ -118,11 +118,13 @@ defmodule Boss.System do
     atoms_as_strings = [
       "Plane",
       "Multirotor",
+      "Car",
       "Cessna",
       "CessnaZ2m",
       "T28",
       "T28Z2m",
       "QuadX",
+      "Cobra",
       "Ina260",
       "Ina219",
       "Sixfab",

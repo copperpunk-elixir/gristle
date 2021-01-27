@@ -1,65 +1,62 @@
 defmodule Configuration.Vehicle.Car.Navigation do
   require Logger
 
-  @spec get_goals_sorter_configs() :: list()
-  def get_goals_sorter_configs() do
+  @spec goals_sorter_configs() :: list()
+  def goals_sorter_configs() do
     [
-      %{
-        name: {:goals, -1},
-        default_message_behavior: :default_value,
-        default_value: %{thrust: 0, yawrate: 0},
-        value_type: :map
-      },
-      %{
-        name: {:goals, 0},
-        default_message_behavior: :default_value,
-        default_value: %{thrust: 0, yawrate: 0},
-        value_type: :map
-      },
-      %{
+      [
         name: {:goals, 1},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, yawrate: 0},
-        value_type: :map
-      },
-      %{
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      ],
+      [
         name: {:goals, 2},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, yaw: 0},
-        value_type: :map
-      },
-      %{
+        default_value: %{thrust: 0, yaw: 0.0},
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      ],
+      [
         name: {:goals, 3},
         default_message_behavior: :default_value,
-        default_value: %{course: 0, speed: 0},
-        value_type: :map
-      },
-      %{
-        name: {:goals, 4},
-        default_message_behavior: :default_value,
-        default_value: %{latitude: 0, longitude: 0, course: 0, speed: 0},
-        value_type: :map
-      }
+        default_value: %{course_ground: 0, speed: 0},
+        value_type: :map,
+        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      ]
     ]
+  end
+
+  @spec peripheral_paths_sorter_config() :: list()
+  def peripheral_paths_sorter_config() do
+    [[
+      name: :peripheral_paths,
+      default_message_behavior: :default_value,
+      default_value: nil,
+      value_type: :map,
+      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+    ]]
   end
 
   @spec get_sorter_configs() :: list()
   def get_sorter_configs() do
-    get_goals_sorter_configs()
+    goals_sorter_configs() ++ peripheral_paths_sorter_config()
   end
 
-  @spec get_vehicle_limits() :: map()
-  def get_vehicle_limits() do
-    %{
-      vehicle_turn_rate: 0.2,
-      vehicle_loiter_speed: 5,
-      takeoff_speed: 45,
-      climb_speed: 50,
-      vehicle_agl_ground_threshold: 1.0,
-      vehicle_pitch_for_climbout: 0.1745,
-      vehicle_max_ground_speed: 30
-    }
+  @spec get_vehicle_limits(binary()) :: map()
+  def get_vehicle_limits(model_type) do
+    model_module = Module.concat(__MODULE__, String.to_existing_atom(model_type))
+    apply(model_module, :get_vehicle_limits, [])
   end
 
+  @spec get_path_follower() :: list()
+  def get_path_follower() do
+    [
+      k_path: 0.1,
+      k_orbit: 2.0,
+      chi_inf: 1.05,
+      lookahead_dt: 1.0,
+    ]
+  end
 end
-

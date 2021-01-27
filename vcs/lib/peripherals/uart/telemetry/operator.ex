@@ -98,16 +98,16 @@ defmodule Peripherals.Uart.Telemetry.Operator do
     level_2 = Map.get(state, :level_2, %{})
     level_3 = Map.get(state, :level_3, %{})
     unless(Enum.empty?(level_1)) do
-      values = [iTOW, level_1.rollrate, level_1.pitchrate, level_1.yawrate, level_1.thrust]
+      values = [iTOW, Map.get(level_1, :rollrate, 0), Map.get(level_1, :pitchrate, 0), level_1.yawrate, level_1.thrust]
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 1}, values, state.uart_ref)
     end
     unless(Enum.empty?(level_2)) do
-      values = [iTOW, level_2.roll, level_2.pitch, level_2.yaw, level_2.thrust]
+      values = [iTOW, Map.get(level_2, :roll, 0), Map.get(level_2, :pitch, 0), level_2.yaw, level_2.thrust]
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 2}, values, state.uart_ref)
     end
     unless(Enum.empty?(level_3)) do
       course = Map.get(level_3, :course_flight, Map.get(level_3, :course_ground))
-      values = [iTOW, level_3.speed, course, level_3.altitude]
+      values = [iTOW, level_3.speed, course, Map.get(level_3, :altitude, 0)]
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 3}, values, state.uart_ref)
     end
     control_state = Map.get(state, :control_state, nil)
