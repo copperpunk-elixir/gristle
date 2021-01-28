@@ -3,7 +3,7 @@ defmodule Configuration.Vehicle.Car.Command do
 
   @spec get_commands() :: list()
   def get_commands() do
-    [:throttle, :rudder, :thrust, :yawrate, :yaw, :course_ground, :speed]
+    [:throttle, :rudder, :brake, :thrust, :yawrate, :yaw, :course_ground, :speed]
   end
 
   @spec get_rx_output_channel_map(map(), map()) :: list()
@@ -21,10 +21,10 @@ defmodule Configuration.Vehicle.Car.Command do
       0 => [:thrust],
     }
     cs_channels = %{
-      -1 => [:yawrate, :thrust],
-      0 => [:yawrate, :thrust],
-      1 => [:yawrate, :thrust],
-      2 => [:yaw, :thrust],
+      -1 => [:yawrate, :thrust, :brake],
+      0 => [:yawrate, :thrust, :brake],
+      1 => [:yawrate, :thrust, :brake],
+      2 => [:yaw, :thrust, :brake],
       3 => [:course_ground, :speed],
       # Manual only channels
       100 => [],

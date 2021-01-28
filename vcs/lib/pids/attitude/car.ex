@@ -4,8 +4,7 @@ defmodule Pids.Attitude.Car do
   @spec calculate_outputs(map(), map(), map()) :: map()
   def calculate_outputs(cmds, _values, config) do
     yawrate_output = get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
-    thrust_output = cmds.thrust
-    %{yawrate: yawrate_output, thrust: thrust_output}
+    %{yawrate: yawrate_output, thrust: cmds.thrust, brake: cmds.brake}
   end
 
   @spec get_output_in_range(float(), float(), map()) :: float()

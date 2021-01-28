@@ -42,8 +42,14 @@ defmodule Navigation.Path.Waypoint do
 
   @spec new_ground(struct(), number, number, binary(), integer()) ::struct()
   def new_ground(lla, speed, course, name \\ "", goto \\ nil) do
-    new_from_lla(lla, speed, course, @ground_type, name, goto)
+    new_from_lla(lla, speed, course, @ground_type, name, goto, false)
   end
+
+  @spec new_ground_peripheral(struct(), number, number, binary(), integer()) ::struct()
+  def new_ground_peripheral(lla, speed, course, name \\ "", goto \\ nil) do
+    new_from_lla(lla, speed, course, @ground_type, name, goto, true)
+  end
+
 
   @spec new_climbout(struct(), number, number, binary(), integer()) ::struct()
   def new_climbout(lla, speed, course, name \\ "", goto \\ nil) do

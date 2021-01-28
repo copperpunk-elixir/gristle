@@ -51,7 +51,7 @@ defmodule Navigation.PathPlanner.Plans do
   def load_lawnmower(airport \\ "cone_field", relative \\ false) do
     {runway, num_rows, row_width, row_length} =
       case airport do
-        "cone_field" -> {"36L", 10, 25, 200}
+        "cone_field" -> {"36L", 2, 8, 50}
       end
     model_type = Common.Utils.Configuration.get_model_type()
     if relative do

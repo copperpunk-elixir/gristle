@@ -53,9 +53,9 @@ defmodule Configuration.Vehicle.Car.Navigation do
   @spec get_path_follower() :: list()
   def get_path_follower() do
     [
-      k_path: 0.1,
+      k_path: 0.25,
       k_orbit: 2.0,
-      chi_inf: 1.05,
+      chi_inf: 1.57,
       lookahead_dt: 1.0,
     ]
   end

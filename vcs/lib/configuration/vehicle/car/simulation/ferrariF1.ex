@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Car.Simulation.Cobra do
+defmodule Configuration.Vehicle.Car.Simulation.FerrariF1 do
   @spec get_pwm_channels() :: map()
   def get_pwm_channels() do
     %{

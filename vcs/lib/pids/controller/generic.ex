@@ -73,7 +73,7 @@ defmodule Pids.Controller.Generic do
     output = state.output + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    # if state.process_variable == :tecs and state.control_variable == :thrust do
+    # if state.process_variable == :yawrate do# and state.control_variable == :thrust do
     #     Logger.debug("dO: #{Common.Utils.eftb(delta_output,3)}")
     #     Logger.debug("cmd/value/corr/p/i/d/ff/total: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(output, 3)}")
     # end

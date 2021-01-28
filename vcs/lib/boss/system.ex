@@ -124,7 +124,7 @@ defmodule Boss.System do
       "T28",
       "T28Z2m",
       "QuadX",
-      "Cobra",
+      "FerrariF1",
       "Ina260",
       "Ina219",
       "Sixfab",

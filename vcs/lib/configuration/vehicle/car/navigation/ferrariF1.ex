@@ -1,4 +1,4 @@
-defmodule Configuration.Vehicle.Car.Navigation.Cobra do
+defmodule Configuration.Vehicle.Car.Navigation.FerrariF1 do
   require Logger
 
   @spec get_vehicle_limits() :: list()
