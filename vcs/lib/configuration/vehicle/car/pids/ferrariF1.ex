@@ -45,7 +45,7 @@ defmodule Configuration.Vehicle.Car.Pids.FerrariF1 do
           rudder:
           fn(cmd, _value, _airspeed) ->
             # Logger.debug("yawrate cmd: #{Common.Utils.eftb_deg(cmd,1)}")
-            0.5*cmd/4.0
+            0.5*cmd/3.5
           end
         ],
         tecs: [

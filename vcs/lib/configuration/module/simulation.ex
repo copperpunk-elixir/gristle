@@ -47,7 +47,7 @@ defmodule Configuration.Module.Simulation do
 
     [
       host_ip: "192.168.7.247",
-      sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:super_fast),
+      sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,
       update_actuators_software: false#(node_type == "sim")

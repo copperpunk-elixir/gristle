@@ -302,6 +302,9 @@ defmodule Navigation.Path.Mission do
   @spec get_lawnmower_waypoints(binary(), binary(), binary(), integer(), float(), float()) :: list()
   def get_lawnmower_waypoints(airport, runway, model_type, num_rows, row_width, row_length) do
     wp_speed = get_model_spec(model_type, :cruise_speed)
+    planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
+    radius = wp_speed/planning_turn_rate
+    Logger.info("radius: #{radius}")
     {origin, _runway_heading} = get_runway_position_heading(airport, runway)
     reference_headings = %{
       "cone_field" => 0
@@ -314,7 +317,7 @@ defmodule Navigation.Path.Mission do
         Logger.debug("row/course: #{row}/#{Common.Utils.eftb_deg(current_heading,1)}")
         rel_y = (row*row_width)*:math.sin(reference_heading + :math.pi/2)
         rel_x1 = if (rem(row,2) == 1), do: row_length, else: 0.0
-        rel_x2 = rel_x1 + row_length*:math.cos(current_heading)
+        rel_x2 = rel_x1 + (row_length+1.5*radius)*:math.cos(current_heading)
         {dx1, dy1} =  Common.Utils.Math.rotate_point(rel_x1, rel_y, reference_heading)
         # {rel_x, rel_y, rel_alt} = get_in(wps_relative, [airport, wp_name])
         {dx2, dy2} = Common.Utils.Math.rotate_point(rel_x2, rel_y, reference_heading)
@@ -364,7 +367,7 @@ defmodule Navigation.Path.Mission do
       },
       "cone_field" => %{
         "18R" => {Common.Utils.LatLonAlt.new_deg(42.0, -120.0, 0.0), 180.0},
-        "36L" => {Common.Utils.LatLonAlt.new_deg(41.76129, -122.49014, 1188.14), 0.0}
+        "36L" => {Common.Utils.LatLonAlt.new_deg(41.76129, -122.49024, 1188.31), 0.0}
       }
     }
     {origin, heading} = get_in(origin_heading, [airport, runway])
@@ -488,8 +491,8 @@ defmodule Navigation.Path.Mission do
         cruise_speed: 3,
         flight_speed_range: {3,3},
         wp_dist_range: {100, 100},
-        planning_turn_rate: 1.0,
-        planning_orbit_radius: 5
+        planning_turn_rate: 0.5,
+        planning_orbit_radius: 20
       }
 
     }
