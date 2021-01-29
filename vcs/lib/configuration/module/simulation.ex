@@ -46,8 +46,8 @@ defmodule Configuration.Module.Simulation do
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
 
     [
-      host_ip: "192.168.7.136",
-      sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:super_fast),
+      host_ip: "192.168.7.247",
+      sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,
       update_actuators_software: false#(node_type == "sim")

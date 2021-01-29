@@ -11,6 +11,7 @@ defmodule Common.Utils.Configuration do
       "T28" -> "Plane"
       "T28Z2m" -> "Plane"
       "QuadX" -> "Multirotor"
+      "FerrariF1" -> "Car"
       _other -> raise "Unknown model"
     end
   end

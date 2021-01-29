@@ -74,7 +74,8 @@ defmodule Pids.Moderator do
         # Logger.info("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
         publish_cmds(pv_cmd_map, 3)
       2 ->
-        # Logger.warn("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
+        # Logger.warn("2cmd #{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
+        # Logger.warn("2val #{Common.Utils.eftb_map_deg(pv_value_map,2)}")
         level_1_output_map = apply(state.attitude_module, :calculate_outputs, [pv_cmd_map, pv_value_map.attitude, state.attitude_scalar])
 
         # Logger.debug(Common.Utils.eftb_map(level_1_output_map,2))

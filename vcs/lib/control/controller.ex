@@ -33,9 +33,9 @@ defmodule Control.Controller do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Registry.register(MessageSorterRegistry, :control_state, 200)
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 1}, Configuration.Generic.get_loop_interval_ms(:medium))
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 2}, Configuration.Generic.get_loop_interval_ms(:medium))
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 3}, Configuration.Generic.get_loop_interval_ms(:medium))
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 1}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 2}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {:pv_cmds, 3}, Configuration.Generic.get_loop_interval_ms(:fast))
     {:noreply, state}
   end
 
@@ -48,11 +48,13 @@ defmodule Control.Controller do
         3 -> {{:pv_cmds_values, 2}, state.pv_cmds}
         2 -> {{:pv_cmds_values, 2}, state.pv_cmds}
         1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
-        _other -> {nil, nil}
+        _other -> {nil, %{}}
       end
     pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
     # Logger.debug("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
+    unless Enum.empty?(pv_cmds) do
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
+    end
     {:noreply, %{state | yaw: attitude.yaw}}
   end
 

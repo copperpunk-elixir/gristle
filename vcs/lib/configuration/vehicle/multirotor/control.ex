@@ -24,7 +24,7 @@ defmodule Configuration.Vehicle.Multirotor.Control do
       [
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
-        default_value: %{thrust: 0, roll: 0.175, pitch: 0.05, yaw: 0.09},
+        default_value: %{thrust: 0, roll: 0.0, pitch: 0.05, yaw: 0.0},
         value_type: :map,
         publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],

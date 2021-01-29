@@ -222,7 +222,7 @@ defmodule Simulation.Realflight do
       attitude = extract_attitude(aircraft_state)
       # Logger.debug("attitude: #{inspect(Common.Utils.map_rad2deg(attitude))}")
       bodyrate = extract_bodyrate(aircraft_state)
-      # Logger.debug(Common.Utils.eftb_map(bodyrate, 2))
+      # Logger.debug(Common.Utils.eftb_map_deg(bodyrate, 2))
       # Logger.debug("bodyrate: #{inspect(Common.Utils.map_rad2deg(bodyrate))}")
       agl = extract_agl(aircraft_state)
       # Logger.debug("agl: #{agl}")
