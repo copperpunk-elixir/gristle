@@ -191,7 +191,7 @@ class Gcs(tk.Frame):
     def subscribe_tasks(self):
         current_time = time.time()
         if (current_time - self.subscribe_pvat_time_previous) > self.subscribe_pvat_interval_s:
-            self.operator.send_message("generic_sub", [0,50])
+            self.operator.send_message("generic_sub", [0,40])
             self.subscribe_pvat_time_previous = current_time
 
     def loop(self):

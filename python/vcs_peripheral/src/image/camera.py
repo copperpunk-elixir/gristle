@@ -17,7 +17,7 @@ class Camera:
         self.image_height = None
         filename = "output_video_{}.mp4".format(round(time.time()))
         print("filename: %s" %filename)
-        self.video_output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'mp4v'), 12, (700,700))
+        self.video_output = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'mp4v'), 24, (700,700))
 
     def read(self):
         ready = select.select([self.socket], [], [], self.read_timeout)

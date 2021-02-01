@@ -104,6 +104,7 @@ defmodule MessageSorter.Sorter do
   def handle_info(:update_subscriber_loop, state) do
     subs = Registry.lookup(registry(), state.name)
     # Logger.info("subs: #{inspect(subs)}")
+    # Logger.debug("sorter update members: #{inspect(state.name)}")
     publish_looper = Common.DiscreteLooper.update_all_members(state.publish_looper, subs)
     {:noreply, %{state | publish_looper: publish_looper}}
   end
