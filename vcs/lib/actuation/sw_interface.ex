@@ -22,9 +22,12 @@ defmodule Actuation.SwInterface do
 
    @impl GenServer
    def handle_cast({:begin, config}, _state) do
+     actuators_direct_and_indirect = Keyword.get(config, :actuators, %{})
+     direct_actuators = Map.get(actuators_direct_and_indirect, :direct, %{})
+     indirect_actuators = Map.get(actuators_direct_and_indirect, :indirect, %{})
+     actuators = Map.merge(direct_actuators, indirect_actuators)
      state = %{
-       actuators: Keyword.get(config, :actuators),
-       # output_modules: Keyword.fetch!(config, :output_modules),
+       actuators: actuators,
        direct_actuator_cmds: %{},
        indirect_actuator_cmds: %{},
        indirect_override_actuator_cmds: %{}
@@ -34,7 +37,7 @@ defmodule Actuation.SwInterface do
      Comms.Operator.join_group(__MODULE__, :indirect_override_cmds_sorter, self())
 
      actuator_loop_interval_ms = Keyword.fetch!(config, :actuator_loop_interval_ms)
-     Enum.each(state.actuators.direct, fn {actuator_name, _actuator} ->
+     Enum.each(direct_actuators, fn {actuator_name, _actuator} ->
        Registry.register(MessageSorterRegistry, {:direct_actuator_cmds, actuator_name}, Keyword.fetch!(config, :direct_actuator_sorter_interval_ms))
      end)
      Registry.register(MessageSorterRegistry, :indirect_actuator_cmds, Keyword.fetch!(config, :indirect_actuator_sorter_interval_ms))
@@ -88,22 +91,15 @@ defmodule Actuation.SwInterface do
     # Logger.debug("aom: #{inspect(actuator_output_map)}")
 
     # Loop over actuator_output_map. Only move those actuators with values
-    actuators = Map.merge(state.actuators.direct, state.actuators.indirect)
+    actuators = state.actuators
     actuators_and_outputs =
-      Enum.reduce(actuator_output_map,%{}, fn ({actuator_name, output}, acc) ->
+      Enum.reduce(actuator_output_map, %{}, fn ({actuator_name, output}, acc) ->
         actuator = Map.fetch!(actuators, actuator_name)
         # Logger.debug("#{actuator_name}: #{output}")
         Map.put(acc, actuator_name, {actuator,output})
     end)
-    # if Map.has_key?(actuators_and_outputs, :flaps) do
-    #   {_act, value} = actuators_and_outputs.flaps
-    #   Logger.debug("flaps: #{Common.Utils.eftb(value, 3)}")
-    # end
-    # Enum.each(state.output_modules, fn module ->
-    #   apply(module, :update_actuators,[actuators_and_outputs])
-    # end)
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {:update_actuators, actuators_and_outputs}, self())
 
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {:update_actuators, actuators_and_outputs}, self())
     {:noreply, state}
   end
 end

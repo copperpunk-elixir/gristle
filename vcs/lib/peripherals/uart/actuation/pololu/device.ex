@@ -76,9 +76,4 @@ defmodule Peripherals.Uart.Actuation.Pololu.Device do
       end
     end)
   end
-
-  @spec set_interface_ref(struct(), any()) :: atom()
-  def set_interface_ref(device, interface_ref) do
-    %{device | interface_ref: interface_ref}
-  end
 end
