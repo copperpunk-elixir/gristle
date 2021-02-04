@@ -82,4 +82,13 @@ defmodule Common.Utils.Configuration do
     directory = "peripherals/" <> subdirectory
     Common.Utils.File.get_filenames_with_extension(extension, directory)
   end
+
+  @spec split_safely(binary(), binary()) :: list()
+  def split_safely(value, delimitter)do
+    Logger.warn("split: #{value} with #{delimitter}")
+    case String.split(value, delimitter) do
+      [node_type, meta] -> [node_type, meta]
+      [node_type] -> [node_type, nil]
+    end
+  end
 end

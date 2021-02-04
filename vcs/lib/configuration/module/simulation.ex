@@ -1,11 +1,42 @@
 defmodule Configuration.Module.Simulation do
+  require Logger
+
   @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, node_type) do
+    [_, sim_host] = String.split(node_type, "_")
+    modules = get_modules(model_type, node_type, sim_host)
     [
-      receive: get_simulation_xplane_receive_config(),
-      send: get_simulation_xplane_send_config(model_type),
-      realflight: get_realflight_config(model_type, node_type)
+      # receive: get_simulation_xplane_receive_config(),
+      # send: get_simulation_xplane_send_config(model_type),
+      # realflight: get_realflight_config(model_type, node_type),
+      # static: get_static_config(model_type, node_type)
+      children: get_children(modules, model_type, node_type)
     ]
+  end
+
+  @spec get_modules(binary(), binary(), binary()) :: list()
+  def get_modules(model_type, node_type, sim_host) do
+    Logger.info("get modules for sim host: #{sim_host}")
+    case sim_host do
+      "static" -> [Simulation.Static]
+      "realflight" -> [Simulation.Realflight]
+      "xplane" -> [Simulation.XplaneReceive, Simulation.XplaneSend]
+    end
+  end
+
+  @spec get_children(list(), binary(), binary()) :: list()
+  def get_children(modules, model_type, node_type) do
+    Logger.debug("modules: #{inspect(modules)}")
+    Enum.reduce(modules, [], fn (module, acc) ->
+      config =
+        case module do
+          Simulation.Static -> {module,  get_static_config(model_type, node_type)}
+          Simulation.Realflight -> {module, get_realflight_config(model_type, node_type)}
+          Simulation.XplaneReceive -> {module, get_simulation_xplane_receive_config()}
+          Simulation.XplaneSend -> {module, get_simulation_xplane_send_config(model_type)}
+        end
+      [config] ++ acc
+    end)
   end
 
   @spec get_simulation_xplane_receive_config() :: list()
@@ -51,6 +82,13 @@ defmodule Configuration.Module.Simulation do
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,
       update_actuators_software: false#(node_type == "sim")
+    ]
+  end
+
+  @spec get_static_config(binary(), binary()) :: list()
+  def get_static_config(_model_type, _node_type) do
+    [
+      sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
   end
 end

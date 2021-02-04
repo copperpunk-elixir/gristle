@@ -76,6 +76,7 @@ defmodule Boss.System do
 
   @spec get_modules_for_node(binary()) :: list()
   def get_modules_for_node(node_type) do
+    [node_type, _metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
     case node_type do
       "gcs" ->[Display.Scenic, Peripherals.Uart, Gcs]
       "sim" ->[
