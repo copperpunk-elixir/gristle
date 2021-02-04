@@ -3,6 +3,8 @@ defmodule Configuration.Module.Peripherals.Uart do
   @spec get_config(atom(), atom()) :: list()
   def get_config(_model_type, node_type) do
     # subdirectory = Atom.to_string(node_type)
+    [node_type, _node_metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
+    Logger.warn("uart node type: #{node_type}")
     peripherals = Common.Utils.Configuration.get_uart_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
     Enum.reduce(peripherals, [], fn (peripheral, acc) ->

@@ -1,4 +1,6 @@
 defmodule Configuration.Module.Cluster do
+  require Logger
+
   @spec get_config(binary(), binary()) :: list()
   def get_config(_model_type, _node_type) do
     [
@@ -16,14 +18,15 @@ defmodule Configuration.Module.Cluster do
 
   @spec get_node_and_ward(binary()) :: tuple()
   def get_node_and_ward(node_type) do
-    case node_type do
+    [node_type, _metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
+        case node_type do
       "gcs" -> {-1,-1}
       "all" -> {0,0}
       "sim" -> {-1,-1}
       "server" -> {0,0}
 
-      "left_side" -> {0,1}
-      "right_side" -> {1,0}
+      "left-side" -> {0,1}
+      "right-side" -> {1,0}
 
       "steering" -> {0,1}
       "throttle" -> {1,0}

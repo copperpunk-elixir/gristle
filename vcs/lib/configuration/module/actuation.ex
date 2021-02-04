@@ -11,6 +11,7 @@ defmodule Configuration.Module.Actuation do
 
   @spec get_actuation_sw_config(binary(), binary()) :: list()
   def get_actuation_sw_config(model_type, node_type) do
+    [node_type, node_metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
     vehicle_module =
       Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
@@ -34,10 +35,14 @@ defmodule Configuration.Module.Actuation do
     actuator_sorter_intervals = apply(vehicle_module, :get_actuator_sorter_intervals,[])
     Logger.warn(inspect(actuator_sorter_intervals))
 
+
+
     output_modules =
       case node_type do
-        "sim" -> [Simulation.Realflight]#[Simulation.XplaneSend]
-        "server" -> [Simulation.Realflight, Peripherals.Uart.ActuationCommand.Operator]
+        "sim" ->  Configuration.Module.Simulation.get_modules(model_type, node_type, node_metadata)#[Simulation.Realflight]#[Simulation.XplaneSend]
+        "server" ->
+          Configuration.Module.Simulation.get_modules(model_type, node_type, node_metadata)
+          ++ [Peripherals.Uart.ActuationCommand.Operator]
         "all" -> [Peripherals.Uart.ActuationCommand.Operator]
         _other -> [Peripherals.Uart.Actuation.Operator]
       end
@@ -194,8 +199,8 @@ defmodule Configuration.Module.Actuation do
       "all" -> get_all_actuator_channels_and_names(model_type)
       "sim" -> get_all_actuator_channels_and_names(model_type)
 
-      "left_side" -> get_all_actuator_channels_and_names(model_type)
-      "right_side" -> get_all_actuator_channels_and_names(model_type)
+      "left-side" -> get_all_actuator_channels_and_names(model_type)
+      "right-side" -> get_all_actuator_channels_and_names(model_type)
 
       "steering" -> get_all_actuator_channels_and_names(model_type)
       "throttle" -> get_all_actuator_channels_and_names(model_type)

@@ -3,6 +3,7 @@ defmodule Configuration.Module.Peripherals.Gpio do
 
   @spec get_config(atom(), atom()) :: list()
   def get_config(_model_type, node_type) do
+    [node_type, _node_metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
     peripherals = Common.Utils.Configuration.get_gpio_peripherals(node_type)
     Logger.debug("gpio per: #{inspect(peripherals)}")
     Enum.reduce(peripherals, [], fn (module, acc) ->
