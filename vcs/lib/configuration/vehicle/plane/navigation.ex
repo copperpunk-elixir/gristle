@@ -50,13 +50,9 @@ defmodule Configuration.Vehicle.Plane.Navigation do
     apply(model_module, :get_vehicle_limits, [])
   end
 
-  @spec get_path_follower() :: list()
-  def get_path_follower() do
-    [
-      k_path: 0.05,
-      k_orbit: 2.0,
-      chi_inf: 1.05,
-      lookahead_dt: 1.0,
-    ]
+  @spec get_path_follower(binary()) :: list()
+  def get_path_follower(model_type) do
+    model_module = Module.concat(__MODULE__, String.to_existing_atom(model_type))
+    apply(model_module, :get_path_follower, [])
   end
 end

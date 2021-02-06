@@ -60,7 +60,7 @@ defmodule Navigation.Path.PathFollower do
       |> Common.Utils.Motion.constrain_angle_to_compass()
       # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,2)}/#{Common.Utils.eftb_deg(course_cmd,1)}")
       d_course = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd- course)
-      Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,3)}/#{Common.Utils.eftb_deg(d_course,2)}")
+      # Logger.debug("e_py/course_cmd: #{Common.Utils.eftb(e_py,3)}/#{Common.Utils.eftb_deg(d_course,2)}")
       {path_case.v_des, course_cmd, altitude_cmd}
     else
       altitude_cmd = path_case.c.altitude
