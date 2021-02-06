@@ -3,7 +3,7 @@ defmodule Common.Application do
   require Logger
 
   def start(_type, _args) do
-    Boss.System.common_start()
+    Boss.System.start()
     {:ok, self()}
   end
 end

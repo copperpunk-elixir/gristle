@@ -108,7 +108,7 @@ defmodule Navigation.PathPlanner.Plans do
   def land_flight_school(direction \\ :left) do
     runway = if (direction == :left), do: "18L", else: "36R"
     model_type = Common.Utils.Configuration.get_model_type()
-    Logger.info("model_type: #{inspect(model_type)}")
+    # Logger.debug("model_type: #{inspect(model_type)}")
     Navigation.PathPlanner.send_landing_mission("flight_school", runway, model_type, true)
   end
 end

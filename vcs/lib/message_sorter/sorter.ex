@@ -5,7 +5,7 @@ defmodule MessageSorter.Sorter do
   @registry MessageSorterRegistry
 
   def start_link(config) do
-    Logger.info("Start MessageSorter: #{inspect(config[:name])} GenServer")
+    Logger.debug("Start MessageSorter: #{inspect(config[:name])}")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, via_tuple(config[:name]))
     GenServer.cast(via_tuple(config[:name]), {:begin, config})
     {:ok, pid}
@@ -91,7 +91,7 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:get_value_async, name, sender_pid}, state) do
-    Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
+    # Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
     {state, value, status} = get_current_value(state)
     GenServer.cast(sender_pid, {:message_sorter_value, name, value, status})
     {:noreply, state}

@@ -3,12 +3,12 @@ defmodule Peripherals.Uart.Generic.Operator do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Uart.Generic.Operator GenServer")
-    Logger.info("config: #{inspect(config)}")
+    Logger.debug("Start Uart.Generic.Operator")
+    # Logger.debug("config: #{inspect(config)}")
     name = via_tuple(Keyword.fetch!(config, :uart_port))
-    Logger.warn("Generic.Operator name: #{inspect(name)}")
+    # Logger.debug("Generic.Operator name: #{inspect(name)}")
     config = Keyword.put(config, :name, name)
-    Logger.info("new config: #{inspect(config)}")
+    # Logger.info("new config: #{inspect(config)}")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, name)
     GenServer.cast(name, {:begin, config})
     {:ok, process_id}
@@ -28,7 +28,7 @@ defmodule Peripherals.Uart.Generic.Operator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    Logger.warn("generic config begin: #{inspect(config)}")
+    # Logger.warn("generic config begin: #{inspect(config)}")
     name = Keyword.fetch!(config, :name)
     Comms.System.start_operator(name)
     Comms.Operator.join_group(name, :gps_time, self())

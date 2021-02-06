@@ -3,7 +3,7 @@ defmodule Cluster.System do
   require Logger
 
   def start_link(config \\ %{}) do
-    Logger.info("Cluster Supervisor start_link()")
+    Logger.debug("Start Cluster Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
@@ -19,4 +19,3 @@ defmodule Cluster.System do
   end
 
 end
-

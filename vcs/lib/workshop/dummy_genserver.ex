@@ -3,7 +3,7 @@ defmodule Workshop.DummyGenserver do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start DummyGenServer: #{inspect(config[:name])} GenServer")
+    Logger.debug("Start DummyGenServer: #{inspect(config[:name])}")
     Common.Utils.start_link_redundant(GenServer, __MODULE__, config, via_tuple(config[:name]))
   end
 

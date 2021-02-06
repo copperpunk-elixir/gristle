@@ -3,7 +3,7 @@ defmodule Cluster.Network do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Cluster.Network GenServer")
+    Logger.debug("Start Cluster.Network")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
@@ -36,25 +36,24 @@ defmodule Cluster.Network do
       connected_to_network: false
     }
     Comms.System.start_operator(__MODULE__)
-    if Keyword.fetch!(config, :vintage_net_access) and !is_nil(state.interface) do
+    if Mix.target() != :host and !is_nil(state.interface) do
       Logger.debug("Connect to network interface: #{inspect(state.interface)}")
       VintageNet.configure(state.interface, Keyword.fetch!(config, :vintage_net_config))
       GenServer.cast(__MODULE__, :connect_to_network)
     else
       Logger.debug("Network connection not required.")
-      Boss.System.start_node_processes()
+      Boss.Operator.start_node_processes()
     end
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast(:connect_to_network, state) do
-    connected = VintageNet.get(["interface", state.interface, "lower_up"])
-    connected =  if (connected), do: true, else: false
-    if connected == true do
+    connected = (VintageNet.get(["interface", state.interface, "lower_up"]) == true)
+    if connected do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      Boss.System.start_node_processes()
+      Boss.Operator.start_node_processes()
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
@@ -131,28 +130,22 @@ defmodule Cluster.Network do
     {:reply, state.connected_to_network, state}
   end
 
-  @spec get_ip_address() :: tuple()
-  def get_ip_address() do
-    GenServer.call(__MODULE__, :get_ip_address)
+  @spec get_ip_address(binary()) :: tuple()
+  def get_ip_address(interface) do
+    all_ip_configs = VintageNet.get(["interface", interface, "addresses"])
+    # Logger.debug("all ip configs: #{inspect(all_ip_configs)}")
+    get_inet_ip_address(all_ip_configs)
   end
 
-  @spec get_ip_address(binary()) :: tuple()
-  defp get_ip_address(interface) do
-    ip_addresses = VintageNet.get(["interface", interface, "addresses"])
-    Logger.debug("ip addreses: #{inspect(ip_addresses)}")
-    case ip_addresses do
-      nil ->
-        Logger.debug("#{interface} is not connected yet")
-        nil
-      addresses ->
-        Enum.reduce(addresses, nil, fn (address, acc) ->
-          if address.family == :inet do
-            Logger.debug("Found #{inspect(address.address)} for family: #{address.family}")
-            address.address
-          else
-            acc
-          end
-        end)
+  @spec get_inet_ip_address(list()) :: tuple()
+  def get_inet_ip_address(all_ip_configs) do
+    {[config], remaining} = Enum.split(all_ip_configs, 1)
+    cond do
+      config.family == :inet ->
+        Logger.debug("Found #{inspect(config.address)} for family: #{config.family}")
+        config.address
+      Enum.empty?(remaining) -> nil
+      true -> get_inet_ip_address(remaining)
     end
   end
 

@@ -11,7 +11,7 @@ defmodule Simulation.XplaneSend do
   @zeros_7 <<0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0>>
 
   def start_link(config) do
-    Logger.info("Start Simulation.XplaneSend GenServer")
+    Logger.debug("Start Simulation.XplaneSend")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

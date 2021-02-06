@@ -3,7 +3,7 @@ defmodule Actuation.SwInterface do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Actuation SwInterface GenServer")
+    Logger.debug("Start Actuation SwInterface")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}

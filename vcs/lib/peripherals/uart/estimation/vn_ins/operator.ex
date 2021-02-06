@@ -8,7 +8,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   @rad2deg 57.295779513
 
   def start_link(config) do
-    Logger.info("Start Uart.Estimation.VsIns.Operator GenServer")
+    Logger.debug("Start Uart.Estimation.VsIns.Operator")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

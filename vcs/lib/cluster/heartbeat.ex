@@ -5,7 +5,7 @@ defmodule Cluster.Heartbeat do
   @node_sorter {:hb, :node}
 
   def start_link(config) do
-    Logger.info("Start Cluster.Heartbeat GenServer")
+    Logger.debug("Start Cluster.Heartbeat")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
@@ -52,12 +52,12 @@ defmodule Cluster.Heartbeat do
   @impl GenServer
   def handle_cast({:message_sorter_messages, @node_sorter, all_node_messages}, state) do
     # Logger.debug("message sorter message: #{inspect(all_node_messages)}")
+    # Nodes and Wards stored as key/value pair, i.e., %{node => ward}
     all_nodes_wards =
       Enum.reduce(all_node_messages, %{}, fn (message, acc) ->
         {node, ward} = message.value
         Map.put(acc, node, ward)
       end)
-
     {:noreply, %{state | all_nodes_wards: all_nodes_wards}}
   end
 
@@ -69,13 +69,13 @@ defmodule Cluster.Heartbeat do
     all_expected_nodes = state.all_expected_nodes
     # Logger.info("all nodes #{inspect(state.all_nodes_wards)}")
     healthy_nodes = Map.take(state.all_nodes_wards, all_expected_nodes) |> Map.keys()
-    {cluster_status, unhealthy_nodes} =
-    if length(healthy_nodes) == num_nodes do
-      {1, []}
-    else
-      {0, all_expected_nodes -- healthy_nodes}
+    cluster_status = if length(healthy_nodes) == num_nodes, do: 1, else: 0
+
+    if cluster_status < 1 do
+      unhealthy_nodes = all_expected_nodes -- healthy_nodes
+      Logger.warn("unhealthy nodes: #{inspect(unhealthy_nodes)}")
     end
-    unless Enum.empty?(unhealthy_nodes), do: Logger.warn("unhealthy nodes: #{inspect(unhealthy_nodes)}")
+
     if state.store_cluster_status do
       Peripherals.Uart.Telemetry.Operator.store_data(%{cluster_status: cluster_status})
     end

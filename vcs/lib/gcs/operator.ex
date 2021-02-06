@@ -3,7 +3,7 @@ defmodule Gcs.Operator do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Gcs.Operator GenServer")
+    Logger.debug("Start Gcs.Operator GenServer")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(pid, {:begin, config})
     {:ok, pid}

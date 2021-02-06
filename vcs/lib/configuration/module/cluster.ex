@@ -49,7 +49,6 @@ defmodule Configuration.Module.Cluster do
     {interface, vintage_net_config} = get_interface_and_config()
     [
       interface: interface,
-      vintage_net_access: vintage_net_access?(),
       vintage_net_config: vintage_net_config,
       broadcast_ip_loop_interval_ms: 1000,
       cookie: get_cookie(),
@@ -63,17 +62,6 @@ defmodule Configuration.Module.Cluster do
     :guestoftheday
   end
 
-  @spec vintage_net_access?() :: boolean()
-  def vintage_net_access?() do
-    if String.contains?(get_computer_name(), "system76"), do: false, else: true
-  end
-
-  @spec get_computer_name() :: binary()
-  def get_computer_name do
-    {:ok, computer_name} = :inet.gethostname()
-    to_string(computer_name)
-  end
-
   @spec get_interface_and_config() :: tuple()
   def get_interface_and_config() do
     interface_type=
@@ -82,7 +70,8 @@ defmodule Configuration.Module.Cluster do
         _other -> nil
       end
 
-    computer_name = get_computer_name()
+    computer_name = :inet.gethostname() |> elem(1) |> to_string()
+
     case interface_type do
       "wired" ->
         interface =

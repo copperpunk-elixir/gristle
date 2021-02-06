@@ -23,11 +23,11 @@ defmodule Configuration.Module.Command do
     |> Module.concat(String.to_existing_atom(model_type))
 
     Enum.reduce(commands, %{}, fn (channel, acc) ->
-      Logger.warn("#{channel}")
+      # Logger.warn("#{channel}")
       constraints =
         apply(model_module, :get_constraints, [])
         |> Keyword.get(channel)
-      Logger.warn(inspect(constraints))
+      # Logger.warn(inspect(constraints))
       mid = Keyword.get(constraints, :output_mid, constraints[:output_neutral])
       Map.put(acc, channel, %{min: constraints[:output_min], mid: mid, max: constraints[:output_max]})
     end)

@@ -27,7 +27,7 @@ defmodule Display.Scenic.Gcs.Car do
   # ============================================================================
   @impl true
   def init(_, opts) do
-    Logger.debug("Sensor.init: #{inspect(opts)}")
+    # Logger.debug("Sensor.init: #{inspect(opts)}")
     {:ok, %Scenic.ViewPort.Status{size: {vp_width, vp_height}}} =
       opts[:viewport]
       |> Scenic.ViewPort.info()

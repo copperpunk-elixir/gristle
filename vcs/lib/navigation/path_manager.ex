@@ -5,7 +5,7 @@ defmodule Navigation.PathManager do
   @pi_2 1.5708796
 
   def start_link(config) do
-    Logger.info("Start Navigation.PathManager GenServer")
+    Logger.debug("Start Navigation.PathManager")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(pid, {:begin, config})
     {:ok, pid}
@@ -78,7 +78,7 @@ defmodule Navigation.PathManager do
     # If we are going from "allowed" to "not allowed", we must process as though the path is now nil
     state =
     if !control_allowed and state.peripheral_control_allowed do
-      Logger.warn("pca no longer allowed")
+      Logger.debug("pca no longer allowed")
       process_peripheral_path(state, nil)
     else
       state
@@ -222,7 +222,7 @@ defmodule Navigation.PathManager do
           current_cp_index =
             case current_cp.goto_upon_completion do
               nil ->
-                Logger.info("no goto, move to cp_index: #{state.current_cp_index + 1}")
+                Logger.debug("no goto, move to cp_index: #{state.current_cp_index + 1}")
                 cp_index = state.current_cp_index + 1
                 if cp_index >= length(state.config_points) do
                   # No more waypoints
@@ -320,7 +320,7 @@ defmodule Navigation.PathManager do
     if is_nil(speed) or (speed < 1.0) do
       mission
     else
-      Logger.warn("add current position")
+      Logger.debug("add current position")
       Navigation.Path.Mission.add_current_position_to_mission(mission, state.position, speed, state.velocity.course)
     end
     # Logger.debug("path manager load mission: #{mission.name}")

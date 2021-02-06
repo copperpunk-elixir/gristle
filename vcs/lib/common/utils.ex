@@ -18,11 +18,11 @@ defmodule Common.Utils do
       end
     case result do
       {:ok, pid} ->
-        Logger.debug("#{module}: #{inspect(name)} successfully started")
+        # Logger.debug("#{module}: #{inspect(name)} successfully started")
         wait_for_genserver_start(pid)
         {:ok, pid}
       {:error, {:already_started, pid}} ->
-        Logger.debug("#{module}: #{inspect(name)} already started at #{inspect(pid)}. This is fine.")
+        # Logger.debug("#{module}: #{inspect(name)} already started at #{inspect(pid)}. This is fine.")
         {:ok, pid}
     end
   end
@@ -42,7 +42,7 @@ defmodule Common.Utils do
       end
     case result do
       {:ok, pid} ->
-        Logger.debug("#{module}: #{inspect(name)} successfully started")
+        # Logger.debug("#{module}: #{inspect(name)} successfully started")
         wait_for_genserver_start(pid)
         {:ok, pid}
       {:error, {:already_started, pid}} ->
@@ -53,7 +53,7 @@ defmodule Common.Utils do
   end
 
   def wait_for_genserver_start(process_name, current_time \\ 0, timeout \\ 60000) do
-    Logger.debug("Wait for GenServer process: #{inspect(process_name)}")
+    # Logger.debug("Wait for GenServer process: #{inspect(process_name)}")
     if GenServer.whereis(process_name) == nil do
       if current_time < timeout do
         Process.sleep(100)
@@ -105,10 +105,10 @@ defmodule Common.Utils do
   def start_loop(process_id, loop_interval_ms, loop_callback) do
       case :timer.send_interval(loop_interval_ms, process_id, loop_callback) do
         {:ok, timer} ->
-          Logger.debug("#{inspect(loop_callback)} timer started!")
+          # Logger.debug("#{inspect(loop_callback)} timer started!")
           timer
         {_, reason} ->
-          Logger.debug("Could not start #{(loop_callback)} timer: #{inspect(reason)} ")
+          Logger.warn("Could not start #{(loop_callback)} timer: #{inspect(reason)} ")
           nil
       end
   end
@@ -118,7 +118,7 @@ defmodule Common.Utils do
       {:ok, _} ->
         nil
       {_, reason} ->
-        Logger.debug("Could not stop #{inspect(timer)} timer: #{inspect(reason)} ")
+        Logger.warn("Could not stop #{inspect(timer)} timer: #{inspect(reason)} ")
         timer
     end
   end

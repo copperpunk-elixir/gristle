@@ -21,7 +21,7 @@ defmodule Navigation.Path.Protobuf.Utils do
   @spec decode_mission(binary()) :: struct()
   def decode_mission(msg) do
     mission_pb = Navigation.Path.Protobuf.Mission.decode(:binary.list_to_bin(msg))
-    Logger.info("misson: #{mission_pb.name}")
+    # Logger.debug("misson: #{mission_pb.name}")
     mission_pb
   end
 end

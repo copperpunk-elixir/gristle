@@ -31,7 +31,7 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   0xfa, 0xfd, 0xf4, 0xf3}
 
   def start_link(config) do
-    Logger.info("Start Uart.Estimation.TerarangerEvo.Operator GenServer")
+    Logger.debug("Start Uart.Estimation.TerarangerEvo.Operator")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer,__MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

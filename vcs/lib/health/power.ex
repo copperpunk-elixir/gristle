@@ -3,7 +3,7 @@ defmodule Health.Power do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Health.Power GenServer")
+    Logger.debug("Start Health.Power GenServer")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}

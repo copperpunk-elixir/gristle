@@ -7,7 +7,7 @@ defmodule Peripherals.Uart.PwmReader.Operator do
 
 
   def start_link(config) do
-    Logger.info("Start Uart.PwmReader.Operator GenServer")
+    Logger.debug("Start Uart.PwmReader.Operator")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}

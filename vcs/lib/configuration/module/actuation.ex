@@ -33,9 +33,7 @@ defmodule Configuration.Module.Actuation do
 
     # actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
     actuator_sorter_intervals = apply(vehicle_module, :get_actuator_sorter_intervals,[])
-    Logger.warn(inspect(actuator_sorter_intervals))
-
-
+    # Logger.warn(inspect(actuator_sorter_intervals))
 
     output_modules =
       case node_type do
@@ -210,7 +208,7 @@ defmodule Configuration.Module.Actuation do
   @spec get_actuation_sorter_configs(binary()) :: list()
   def get_actuation_sorter_configs(model_type) do
     actuator_names = get_all_actuator_channels_and_names(model_type)
-    Logger.debug("actuator names: #{inspect(actuator_names)}")
+    # Logger.debug("actuator names: #{inspect(actuator_names)}")
     # {_channels, indirect_failsafes} = get_channels_failsafes(actuator_names.indirect)
     # {_channels, direct_failsafes} = get_channels_failsafes(actuator_names.direct)
     # indirect_names_with_index = Enum.with_index(actuator_names)

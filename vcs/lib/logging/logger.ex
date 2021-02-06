@@ -3,7 +3,7 @@ defmodule Logging.Logger do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Logging.Logger GenServer")
+    Logger.debug("Start Logging.Logger")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

@@ -3,7 +3,7 @@ defmodule Control.Controller do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Control.Controller GenServer")
+    Logger.debug("Start Control.Controller GenServer")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}

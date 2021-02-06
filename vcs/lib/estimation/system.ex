@@ -3,7 +3,7 @@ defmodule Estimation.System do
   require Logger
 
   def start_link(config) do
-    Logger.info("Estimation Supervisor start_link()")
+    Logger.debug("Start Estimation Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
@@ -14,7 +14,7 @@ defmodule Estimation.System do
       [
         {Estimation.Estimator, config[:estimator]}
       ]
-    Logger.info("estimator children: #{inspect(children)}")
+    # Logger.info("estimator children: #{inspect(children)}")
     Supervisor.init(children, strategy: :one_for_one)
   end
 end

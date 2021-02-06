@@ -3,7 +3,7 @@ defmodule Navigation.System do
   require Logger
 
   def start_link(config) do
-    Logger.info("Navigation Supervisor start_link()")
+    Logger.debug("Start Navigation Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end

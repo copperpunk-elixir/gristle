@@ -14,7 +14,7 @@ defmodule Configuration.Generic do
 
   @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
   def get_message_sorter_classification_time_validity_ms(sender, sorter) do
-    Logger.debug("sender: #{inspect(sender)}")
+    # Logger.debug("sender: #{inspect(sender)}")
     classification_all = %{
       {:hb, :node} => %{
         Cluster.Heartbeat => [1,1]
@@ -72,7 +72,7 @@ defmodule Configuration.Generic do
       Map.get(classification_all, sorter, %{})
       |> Map.get(sender, nil)
     # time_validity = Map.get(time_validity_all, sorter, 0)
-    Logger.debug("class/time: #{inspect(classification)}/#{time_validity}")
+    # Logger.debug("class/time: #{inspect(classification)}/#{time_validity}")
     {classification, time_validity}
   end
 

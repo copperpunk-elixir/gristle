@@ -4,7 +4,7 @@ defmodule Peripherals.Uart.Actuation.Operator do
 
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
-    Logger.info("Start Uart.Actuation.Operator GenServer")
+    Logger.debug("Start Uart.Actuation.Operator")
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
