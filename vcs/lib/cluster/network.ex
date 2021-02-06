@@ -31,7 +31,6 @@ defmodule Cluster.Network do
       dest_port: Keyword.fetch!(config, :dest_port),
       cookie: Keyword.fetch!(config, :cookie),
       broadcast_ip_loop_interval_ms: Keyword.fetch!(config, :broadcast_ip_loop_interval_ms),
-      broadcast_ip_loop_timer: nil,
       interface: Keyword.fetch!(config, :interface),
       connected_to_network: false
     }
@@ -78,56 +77,32 @@ defmodule Cluster.Network do
           Logger.debug("#{unique_node_name_with_domain}")
           Cluster.Network.NodeConnection.start_node(unique_node_name_with_domain, state.cookie)
           {socket, src_port} =  open_socket(state.src_port, 0)
-          GenServer.cast(__MODULE__, :start_broadcast_ip_loop)
+          Logger.debug("start broadcast_ip loop")
+          Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
           %{state | ip_address: ip_address, node_name_with_domain: unique_node_name_with_domain, socket: socket, src_port: src_port}
       end
     {:noreply, state}
   end
 
-
-  @impl GenServer
-  def handle_cast(:start_broadcast_ip_loop, state) do
-    Logger.debug("start broadcast_ip loop")
-    broadcast_ip_loop_timer = Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
-    {:noreply, %{state | broadcast_ip_loop_timer: broadcast_ip_loop_timer}}
-  end
-
   @impl GenServer
   def handle_info(:broadcast_ip_loop, state) do
     # Logger.debug("node list: #{inspect(Node.list)}")
-    broadcast_ip_loop_timer =
-    if Node.list == [] and state.socket != nil do
+    if Enum.empty?(Node.list) and !is_nil(state.socket) do
       Cluster.Network.NodeConnection.broadcast_node(state.socket, state.ip_address, state.node_name_with_domain, state.dest_port)
-      state.broadcast_ip_loop_timer
     else
       # Stop the timer
       case :timer.cancel(state.broadcast_ip_loop_timer) do
-        {:ok, _} ->
-          Logger.debug("Broadcast timer stopped")
-          nil
-        {_, reason} ->
-          Logger.debug("Could not stop broadcast timer: #{inspect(reason)}")
-          state.broadcast_ip_loop_timer
+        {:ok, _} -> Logger.debug("Broadcast timer stopped")
+        {_, reason} -> Logger.debug("Could not stop broadcast timer: #{inspect(reason)}")
       end
     end
-    {:noreply, %{state | broadcast_ip_loop_timer: broadcast_ip_loop_timer}}
+    {:noreply, state}
   end
 
   @impl GenServer
   def handle_info({:udp, socket, src_ip, src_port, msg}, state) do
     Cluster.Network.NodeConnection.process_udp_message(socket, src_ip, src_port, msg, state.ip_address, state.src_port)
     {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_ip_address, _from, state) do
-    ip_address = get_ip_address(state.interface)
-    {:reply, ip_address, state}
-  end
-
-  @impl GenServer
-  def handle_call(:is_connected, _from, state) do
-    {:reply, state.connected_to_network, state}
   end
 
   @spec get_ip_address(binary()) :: tuple()
@@ -160,10 +135,5 @@ defmodule Cluster.Network do
       {:error, :eaddrinuse} -> open_socket(src_port+1, attempts+1)
       other -> raise "Unknown error: #{inspect(other)}"
     end
-  end
-
-  @spec connected_to_network?() :: boolean()
-  def connected_to_network?() do
-    GenServer.call(__MODULE__, :is_connected)
   end
 end
