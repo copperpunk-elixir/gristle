@@ -32,7 +32,7 @@ defmodule Workshop.MsgSorterRx do
   @impl GenServer
   def handle_cast({:join_message_sorter, name, interval_ms}, state) do
     Logger.info("MsgSorterRx join sorter: #{inspect(name)}")
-    Registry.register(MessageSorterRegistry, name, interval_ms)
+    Registry.register(MessageSorterRegistry, {name, :value}, interval_ms)
     # MessageSorter.Sorter.join(name, self(), interval_ms)
     {:noreply, state}
   end

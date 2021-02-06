@@ -49,7 +49,7 @@ defmodule Simulation.Static do
 
   @impl GenServer
   def handle_cast({:pwm_input, scaled_values}, state) do
-    Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
+    # Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
     {:noreply, state}
   end
 

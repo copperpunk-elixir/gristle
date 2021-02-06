@@ -38,10 +38,10 @@ defmodule Actuation.SwInterface do
 
      actuator_loop_interval_ms = Keyword.fetch!(config, :actuator_loop_interval_ms)
      Enum.each(direct_actuators, fn {actuator_name, _actuator} ->
-       Registry.register(MessageSorterRegistry, {:direct_actuator_cmds, actuator_name}, Keyword.fetch!(config, :direct_actuator_sorter_interval_ms))
+       Registry.register(MessageSorterRegistry, {{:direct_actuator_cmds, actuator_name}, :value}, Keyword.fetch!(config, :direct_actuator_sorter_interval_ms))
      end)
-     Registry.register(MessageSorterRegistry, :indirect_actuator_cmds, Keyword.fetch!(config, :indirect_actuator_sorter_interval_ms))
-     Registry.register(MessageSorterRegistry, :indirect_override_actuator_cmds, Keyword.fetch!(config, :indirect_override_sorter_interval_ms))
+     Registry.register(MessageSorterRegistry, {:indirect_actuator_cmds, :value}, Keyword.fetch!(config, :indirect_actuator_sorter_interval_ms))
+     Registry.register(MessageSorterRegistry, {:indirect_override_actuator_cmds, :value}, Keyword.fetch!(config, :indirect_override_sorter_interval_ms))
 
      Common.Utils.start_loop(self(), actuator_loop_interval_ms, :actuator_loop)
      {:noreply, state}

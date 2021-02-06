@@ -32,10 +32,10 @@ defmodule Control.Controller do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Registry.register(MessageSorterRegistry, :control_state, 200)
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 1}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 2}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {:pv_cmds, 3}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, 1}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, 2}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, 3}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
     {:noreply, state}
   end
 

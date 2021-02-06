@@ -9,21 +9,21 @@ defmodule Configuration.Vehicle.Multirotor.Navigation do
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, rollrate: 0, pitchrate: 0, yawrate: 0},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],
       [
         name: {:goals, 2},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, roll: 0.0, pitch: 0.0, yaw: 0.0},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],
       [
         name: {:goals, 3},
         default_message_behavior: :default_value,
         default_value: %{course_flight: 0, speed: 0, altitude: 0},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ]
     ]
   end
@@ -35,7 +35,7 @@ defmodule Configuration.Vehicle.Multirotor.Navigation do
       default_message_behavior: :default_value,
       default_value: nil,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
+      publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
     ]]
   end
 

@@ -224,7 +224,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+      publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     indirect_override_sorter = [
@@ -232,7 +232,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+      publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
@@ -242,7 +242,7 @@ defmodule Configuration.Module.Actuation do
         default_message_behavior: :default_value,
         default_value: failsafe_value,
         value_type: :number,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ]
       [sorter] ++ acc
       # Map.put(acc, actuator_name, failsafe_value)

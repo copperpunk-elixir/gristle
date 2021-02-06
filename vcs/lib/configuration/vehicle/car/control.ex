@@ -19,21 +19,21 @@ defmodule Configuration.Vehicle.Car.Control do
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, yawrate: 0, brake: 0.25},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ],
       [
         name: {:pv_cmds, 2},
         default_message_behavior: :default_value,
         default_value: %{thrust: 0, yaw: 0},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ],
       [
         name: {:pv_cmds, 3},
         default_message_behavior: :default_value,
         default_value: %{course_ground: 0, speed: 0},
         value_type: :map,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ]
     ]
   end
@@ -45,7 +45,7 @@ defmodule Configuration.Vehicle.Car.Control do
       default_message_behavior: :default_value,
       default_value: 2,
       value_type: :number,
-      publish_interval_ms: 100
+      publish_value_interval_ms: 100
     ]
   end
 

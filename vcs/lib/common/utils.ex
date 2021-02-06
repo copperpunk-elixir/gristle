@@ -105,10 +105,10 @@ defmodule Common.Utils do
   def start_loop(process_id, loop_interval_ms, loop_callback) do
       case :timer.send_interval(loop_interval_ms, process_id, loop_callback) do
         {:ok, timer} ->
-          Logger.debug("#{loop_callback} timer started!")
+          Logger.debug("#{inspect(loop_callback)} timer started!")
           timer
         {_, reason} ->
-          Logger.debug("Could not start #{loop_callback} timer: #{inspect(reason)} ")
+          Logger.debug("Could not start #{(loop_callback)} timer: #{inspect(reason)} ")
           nil
       end
   end

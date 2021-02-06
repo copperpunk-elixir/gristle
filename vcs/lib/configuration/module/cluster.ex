@@ -12,33 +12,35 @@ defmodule Configuration.Module.Cluster do
   @spec get_heartbeat_config() :: list()
   def get_heartbeat_config do
     node_type = Common.Utils.Configuration.get_node_type()
-    {node, ward} = get_node_and_ward(node_type)
-    get_heartbeat_config(node, ward)
+    {node, ward, num_nodes} = get_node_and_ward(node_type)
+    get_heartbeat_config(node, ward, num_nodes)
   end
 
   @spec get_node_and_ward(binary()) :: tuple()
   def get_node_and_ward(node_type) do
     [node_type, _metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
         case node_type do
-      "gcs" -> {-1,-1}
-      "all" -> {0,0}
-      "sim" -> {-1,-1}
-      "server" -> {0,0}
+      "gcs" -> {-1,-1, 1}
+      "all" -> {0,0, 1}
+      "sim" -> {0,0, 1}
+      "server" -> {0,0,1}
 
-      "left-side" -> {0,1}
-      "right-side" -> {1,0}
+      "left-side" -> {0,1,2}
+      "right-side" -> {1,0,2}
 
-      "steering" -> {0,1}
-      "throttle" -> {1,0}
+      "steering" -> {0,1,2}
+      "throttle" -> {1,0,2}
     end
   end
 
-  @spec get_heartbeat_config(integer(), integer()) :: list()
-  def get_heartbeat_config(node, ward) do
+  @spec get_heartbeat_config(integer(), integer(), integer()) :: list()
+  def get_heartbeat_config(node, ward, num_nodes) do
     [
-      heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:extra_slow),
+      heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+      heartbeat_node_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
       node: node,
-      ward: ward
+      ward: ward,
+      num_nodes: num_nodes
     ]
   end
 
@@ -126,5 +128,18 @@ defmodule Configuration.Module.Cluster do
         method: :dhcp
       }
     }
+  end
+
+  @spec get_heartbeat_sorter_configs() :: list()
+  def get_heartbeat_sorter_configs() do
+    [
+      [
+      name: {:hb, :node},
+      default_message_behavior: :default_value,
+      default_value: nil,
+      value_type: :tuple,
+      publish_messages_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow)
+      ]
+    ]
   end
 end

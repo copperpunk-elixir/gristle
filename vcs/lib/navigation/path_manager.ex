@@ -60,7 +60,7 @@ defmodule Navigation.PathManager do
     Comms.Operator.join_group(__MODULE__, :clear_orbit, self())
     Comms.Operator.join_group(__MODULE__, :peripheral_paths_sorter, self())
     Comms.Operator.join_group(__MODULE__, :change_peripheral_control, self())
-    Registry.register(MessageSorterRegistry, :peripheral_paths, config[:peripheral_paths_update_interval_ms])
+    Registry.register(MessageSorterRegistry, {:peripheral_paths, :value}, config[:peripheral_paths_update_interval_ms])
     {:noreply, state}
   end
 

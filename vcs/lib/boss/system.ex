@@ -99,6 +99,7 @@ defmodule Boss.System do
 
   @spec attach_ringlogger(atom()) :: atom()
   def attach_ringlogger(node_type) do
+    [node_type, _metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
     case node_type do
       "gcs" -> nil
       "sim" -> nil
