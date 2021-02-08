@@ -3,7 +3,7 @@ defmodule Peripherals.Gpio.Logging.Operator do
   require Logger
 
   def start_link(config) do
-    Logger.start("Start Gpio.Logging.Operator")
+    Logger.debug("Start Gpio.Logging.Operator")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

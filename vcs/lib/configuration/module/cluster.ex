@@ -2,16 +2,15 @@ defmodule Configuration.Module.Cluster do
   require Logger
 
   @spec get_config(binary(), binary()) :: list()
-  def get_config(_model_type, _node_type) do
+  def get_config(_model_type, node_type) do
     [
-      heartbeat: get_heartbeat_config(),
+      heartbeat: get_heartbeat_config(node_type),
       network: get_network_config()
     ]
   end
 
-  @spec get_heartbeat_config() :: list()
-  def get_heartbeat_config do
-    node_type = Common.Utils.Configuration.get_node_type()
+  @spec get_heartbeat_config(binary()) :: list()
+  def get_heartbeat_config(node_type) do
     {node, ward, num_nodes} = get_node_and_ward(node_type)
     get_heartbeat_config(node, ward, num_nodes)
   end
@@ -62,17 +61,19 @@ defmodule Configuration.Module.Cluster do
     :guestoftheday
   end
 
-  @spec get_interface_and_config() :: tuple()
-  def get_interface_and_config() do
-    interface_type=
+  @spec get_interface_type() :: binary()
+  def get_interface_type() do
       case Common.Utils.File.get_filenames_with_extension(".network") do
         [interface_type] -> interface_type
         _other -> nil
       end
+  end
 
+  @spec get_interface_and_config() :: tuple()
+  def get_interface_and_config() do
     computer_name = :inet.gethostname() |> elem(1) |> to_string()
 
-    case interface_type do
+    case get_interface_type() do
       "wired" ->
         interface =
         cond do
