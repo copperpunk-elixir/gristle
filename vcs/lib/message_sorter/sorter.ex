@@ -2,10 +2,10 @@ defmodule MessageSorter.Sorter do
   use GenServer
   require Logger
 
-  @default_call_timeout 20
+  @registry MessageSorterRegistry
 
   def start_link(config) do
-    Logger.info("Start MessageSorter: #{inspect(config[:name])} GenServer")
+    Logger.debug("Start MessageSorter: #{inspect(config[:name])}")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, via_tuple(config[:name]))
     GenServer.cast(via_tuple(config[:name]), {:begin, config})
     {:ok, pid}
@@ -31,14 +31,24 @@ defmodule MessageSorter.Sorter do
         :decay -> {:decay, config[:decay_value]}
       end
 
-    publish_looper =
-      case Keyword.get(config, :publish_interval_ms) do
+    publish_value_looper =
+      case Keyword.get(config, :publish_value_interval_ms) do
         nil -> nil
         interval_ms ->
-          Common.Utils.start_loop(self(), interval_ms, :publish_loop)
-          Common.Utils.start_loop(self(), 1000, :update_subscriber_loop)
+          Common.Utils.start_loop(self(), interval_ms, {:publish_loop, :value})
+          Common.Utils.start_loop(self(), 1000, {:update_subscriber_loop, :value})
           Common.DiscreteLooper.new(interval_ms)
       end
+
+    publish_messages_looper =
+      case Keyword.get(config, :publish_messages_interval_ms) do
+        nil -> nil
+        interval_ms ->
+          Common.Utils.start_loop(self(), interval_ms, {:publish_loop, :messages})
+          Common.Utils.start_loop(self(), 1000, {:update_subscriber_loop, :messages})
+          Common.DiscreteLooper.new(interval_ms)
+      end
+
 
     state = %{
       name: config[:name],
@@ -47,14 +57,13 @@ defmodule MessageSorter.Sorter do
       default_message_behavior: default_message_behavior,
       default_value: default_value,
       value_type: Keyword.fetch!(config, :value_type),
-      publish_looper: publish_looper
+      publish_loopers: %{value: publish_value_looper, messages: publish_messages_looper}
     }
     {:noreply, state}
   end
 
   @impl GenServer
   def handle_cast({:add_message, classification, expiration_mono_ms, value}, state) do
-    # Logger.debug("add_message: #{inspect(self())}")
     # Check if message has a valid classification
     messages =
     if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
@@ -82,55 +91,53 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:get_value_async, name, sender_pid}, state) do
-    Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
-    {state, value, status} = process_get_value(state)
+    # Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
+    {state, value, status} = get_current_value(state)
     GenServer.cast(sender_pid, {:message_sorter_value, name, value, status})
     {:noreply, state}
   end
 
   @impl GenServer
-  def handle_info(:publish_loop, state) do
-    publish_looper = Common.DiscreteLooper.step(state.publish_looper)
-    {state, value, status} = process_get_value(state)
+  def handle_info({:publish_loop, :value}, state) do
+    publish_looper = Common.DiscreteLooper.step(state.publish_loopers.value)
+
+    {state, value, status} = get_current_value(state)
     name = state.name
     Enum.each(Common.DiscreteLooper.get_members_now(publish_looper), fn dest ->
       # Logger.debug("Send #{inspect(value)}/#{status} to #{inspect(dest)}")
       GenServer.cast(dest, {:message_sorter_value, name, value, status})
     end)
-    {:noreply, %{state | publish_looper: publish_looper}}
+    publish_loopers = Map.put(state.publish_loopers, :value, publish_looper)
+    {:noreply, %{state | publish_loopers: publish_loopers}}
   end
 
   @impl GenServer
-  def handle_info(:update_subscriber_loop, state) do
-    subs = Registry.lookup(registry(), state.name)
+  def handle_info({:publish_loop, :messages}, state) do
+    publish_looper = Common.DiscreteLooper.step(state.publish_loopers.messages)
+    messages = get_all_messages(state)
+    name = state.name
+    Enum.each(Common.DiscreteLooper.get_members_now(publish_looper), fn dest ->
+      # Logger.debug("Send #{inspect(value)}/#{status} to #{inspect(dest)}")
+      GenServer.cast(dest, {:message_sorter_messages, name, messages})
+    end)
+    publish_loopers = Map.put(state.publish_loopers, :messages, publish_looper)
+    {:noreply, %{state | publish_loopers: publish_loopers}}
+  end
+
+  @impl GenServer
+  def handle_info({:update_subscriber_loop, sub_type}, state) do
+    subs = Registry.lookup(@registry, {state.name, sub_type})
     # Logger.info("subs: #{inspect(subs)}")
-    # Logger.debug("sorter update members: #{inspect(state.name)}")
-    publish_looper = Common.DiscreteLooper.update_all_members(state.publish_looper, subs)
-    {:noreply, %{state | publish_looper: publish_looper}}
+    # Logger.debug("sorter update members: #{inspect(state.name)}/#{sub_type}")
+    # Logger.debug("pub looper pre: #{inspect(publish_looper)}")
+    publish_looper = Common.DiscreteLooper.update_all_members(Map.get(state.publish_loopers, sub_type), subs)
+    # Logger.debug("pub looper post: #{inspect(publish_looper)}")
+    publish_loopers = Map.put(state.publish_loopers, sub_type, publish_looper)
+    {:noreply, %{state | publish_loopers: publish_loopers}}
   end
 
-  @impl GenServer
-  def handle_call(:get_all_messages, _from, state) do
-    messages = prune_old_messages(state.messages)
-    {:reply, messages, %{state | messages: messages}}
-  end
-
-  @impl GenServer
-  def handle_call(:get_message, _from, state) do
-    messages = prune_old_messages(state.messages)
-    msg = get_most_urgent_msg(messages)
-    {:reply, msg, %{state | messages: messages}}
-  end
-
-  @impl GenServer
-  def handle_call({:get_value, with_status}, _from, state) do
-    {state, value, status} = process_get_value(state)
-    result = if (with_status), do: {value, status}, else: value
-    {:reply, result, state}
-  end
-
-  @spec process_get_value(map()) :: any()
-  def process_get_value(state) do
+  @spec get_current_value(map()) :: any()
+  def get_current_value(state) do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
     {value, value_status} =
@@ -145,6 +152,11 @@ defmodule MessageSorter.Sorter do
     {%{state | messages: messages, last_value: value}, value, value_status}
   end
 
+  @spec get_all_messages(map()) :: list()
+  def get_all_messages(state) do
+    prune_old_messages(state.messages)
+  end
+
   def add_message(name, classification, time_validity_ms, value) do
     # Logger.debug("MSG sorter: #{inspect(name)}. add message: #{inspect(value)}")
     expiration_mono_ms = get_expiration_mono_ms(time_validity_ms)
@@ -153,32 +165,6 @@ defmodule MessageSorter.Sorter do
 
   def add_message(name, msg_struct) do
     GenServer.cast(via_tuple(name), {:add_message, msg_struct.classification, msg_struct.expiration_mono_ms, msg_struct.value})
-  end
-
-  def get_message(name) do
-    # Logger.debug("Get message: from #{inspect(name)}")
-    GenServer.call(via_tuple(name), :get_message, @default_call_timeout)
-  end
-
-  def get_all_messages(name, timeout \\ @default_call_timeout) do
-    GenServer.call(via_tuple(name), :get_all_messages, timeout)
-  end
-
-  def get_value(name, timeout \\ @default_call_timeout) do
-    Common.Utils.safe_call(via_tuple(name), {:get_value, false}, timeout, nil)
-  end
-
-  def get_value_with_status(name, timeout \\ @default_call_timeout) do
-    Common.Utils.safe_call(via_tuple(name),{:get_value, true}, timeout, {nil, :no_sorter})
-  end
-
-  def get_value_if_current(name, timeout \\ @default_call_timeout) do
-    {value, status} = Common.Utils.safe_call(via_tuple(name),{:get_value, true}, timeout, {nil, :no_sorter})
-    if (status == :current) do
-      value
-    else
-      nil
-    end
   end
 
   @spec get_value_async(any(), any()) :: atom()
@@ -237,11 +223,12 @@ defmodule MessageSorter.Sorter do
       :number -> is_number(value)
       :map -> is_map(value)
       :atom -> is_atom(value)
+      :tuple -> is_tuple(value)
       _other -> false
     end
   end
 
   def registry() do
-    MessageSorterRegistry
+    @registry
   end
 end

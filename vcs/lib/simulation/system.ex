@@ -3,7 +3,7 @@ defmodule Simulation.System do
   require Logger
 
   def start_link(config) do
-    Logger.info("Simulation Supervisor start_link()")
+    Logger.debug("Start Simulation Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end

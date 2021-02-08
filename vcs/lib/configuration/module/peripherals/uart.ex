@@ -4,7 +4,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_config(_model_type, node_type) do
     # subdirectory = Atom.to_string(node_type)
     [node_type, _node_metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
-    Logger.warn("uart node type: #{node_type}")
+    # Logger.warn("uart node type: #{node_type}")
     peripherals = Common.Utils.Configuration.get_uart_peripherals(node_type)
     Logger.debug("peripherals: #{inspect(peripherals)}")
     Enum.reduce(peripherals, [], fn (peripheral, acc) ->
@@ -17,7 +17,7 @@ defmodule Configuration.Module.Peripherals.Uart do
 
   @spec get_module_key_and_config(binary(), binary()) :: tuple()
   def get_module_key_and_config(device, port) do
-    Logger.debug("port: #{port}")
+    # Logger.debug("port: #{port}")
     uart_port =
       case port do
         "usb" -> "usb"
@@ -31,7 +31,7 @@ defmodule Configuration.Module.Peripherals.Uart do
         [dev, meta] -> [dev, meta]
         _other -> raise "Device name improper format"
       end
-    Logger.debug("device/meta: #{device}/#{metadata}")
+    # Logger.debug("device/meta: #{device}/#{metadata}")
     case device do
       "Dsm" -> {Command.Rx, get_dsm_rx_config(uart_port)}
       "FrskyRx" -> {Command.Rx, get_frsky_rx_config(uart_port)}

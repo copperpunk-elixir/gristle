@@ -8,7 +8,7 @@ defmodule Peripherals.Uart.Estimation.IsIns.Operator do
   @default_baud 1_000_000
 
   def start_link(config) do
-    Logger.info("Start Uart.Estimation.IsIns GenServer")
+    Logger.debug("Start Uart.Estimation.IsIns")
     {:ok, pid} = GenServer.start_link(__MODULE__, config, name: __MODULE__)
     GenServer.cast(__MODULE__, :begin)
     {:ok, pid}

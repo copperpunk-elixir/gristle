@@ -13,7 +13,7 @@ defmodule Simulation.Static do
   @default_bodyrate %{rollrate: 0.174, pitchrate: -0.348, yawrate: 0.0524}
 
   def start_link(config) do
-    Logger.info("Start Simulation.Realflight GenServer")
+    Logger.debug("Start Simulation.Static")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
@@ -49,7 +49,7 @@ defmodule Simulation.Static do
 
   @impl GenServer
   def handle_cast({:pwm_input, scaled_values}, state) do
-    Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
+    # Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
     {:noreply, state}
   end
 

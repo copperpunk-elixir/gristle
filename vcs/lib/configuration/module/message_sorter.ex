@@ -20,18 +20,19 @@ defmodule Configuration.Module.MessageSorter do
       Enum.concat(acc,apply(vehicle_module, :get_sorter_configs,[]))
     end)
     |> Enum.concat(Configuration.Module.Actuation.get_actuation_sorter_configs(model_type))
+    |> Enum.concat(Configuration.Module.Cluster.get_heartbeat_sorter_configs())
     |> Enum.concat(get_generic_sorter_configs())
   end
 
   @spec get_generic_sorter_configs() :: list()
   def get_generic_sorter_configs() do
     [
-      [
-        name: {:hb, :node},
-        default_message_behavior: :default_value,
-        default_value: nil,
-        value_type: :map
-      ],
+      # [
+      #   name: {:hb, :node},
+      #   default_message_behavior: :default_value,
+      #   default_value: nil,
+      #   value_type: :map
+      # ],
       [
         name: :estimator_health,
         default_message_behavior: :default_value,

@@ -4,7 +4,7 @@ defmodule Watchdog.Active do
 
   def start_link(config) do
     name = Keyword.fetch!(config, :name)
-    Logger.info("Start Watchdog.Active: #{name} GenServer")
+    Logger.debug("Start Watchdog.Active: #{name}")
     {:ok, process_id} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, via_tuple(name))
     GenServer.cast(via_tuple(name), {:begin, config})
     {:ok, process_id}
@@ -68,7 +68,7 @@ defmodule Watchdog.Active do
 
   @spec send_status(atom(), atom(), boolean()) ::atom()
   def send_status(name, local_or_global, is_fed) do
-    Logger.warn("#{name} watchdog is fed?: #{is_fed}")
+    Logger.debug("#{name} watchdog is fed?: #{is_fed}")
     function =
       case local_or_global do
         :local -> :send_local_msg_to_group

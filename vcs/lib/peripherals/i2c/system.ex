@@ -3,7 +3,7 @@ defmodule Peripherals.I2c.System do
   require Logger
 
   def start_link(config) do
-    Logger.info("Peripherals.I2c start_link()")
+    Logger.debug("Start Peripherals.I2c Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end

@@ -304,7 +304,7 @@ defmodule Navigation.Path.Mission do
     wp_speed = get_model_spec(model_type, :cruise_speed)
     planning_turn_rate = get_model_spec(model_type, :planning_turn_rate)
     radius = wp_speed/planning_turn_rate
-    Logger.info("radius: #{radius}")
+    # Logger.info("radius: #{radius}")
     {origin, _runway_heading} = get_runway_position_heading(airport, runway)
     reference_headings = %{
       "cone_field" => 0
@@ -322,8 +322,8 @@ defmodule Navigation.Path.Mission do
         # {rel_x, rel_y, rel_alt} = get_in(wps_relative, [airport, wp_name])
         {dx2, dy2} = Common.Utils.Math.rotate_point(rel_x2, rel_y, reference_heading)
         # Logger.warn("relx/rely: #{rel_x}/#{rel_y}")
-        Logger.warn("dx1/dy1: #{dx1}/#{dy1}")
-        Logger.warn("dx2/dy2: #{dx2}/#{dy2}")
+        # Logger.debug("dx1/dy1: #{dx1}/#{dy1}")
+        # Logger.debug("dx2/dy2: #{dx2}/#{dy2}")
         lla_1 = Common.Utils.Location.lla_from_point(origin, dx1, dy1)
         |> Map.put(:altitude, origin.altitude)
         lla_2 = Common.Utils.Location.lla_from_point(origin, dx2, dy2)

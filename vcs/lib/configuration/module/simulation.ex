@@ -16,7 +16,7 @@ defmodule Configuration.Module.Simulation do
 
   @spec get_modules(binary(), binary(), binary()) :: list()
   def get_modules(model_type, node_type, sim_host) do
-    Logger.info("get modules for sim host: #{sim_host}")
+    # Logger.info("get modules for sim host: #{sim_host}")
     case sim_host do
       "static" -> [Simulation.Static]
       "realflight" -> [Simulation.Realflight]
@@ -26,7 +26,7 @@ defmodule Configuration.Module.Simulation do
 
   @spec get_children(list(), binary(), binary()) :: list()
   def get_children(modules, model_type, node_type) do
-    Logger.debug("modules: #{inspect(modules)}")
+    # Logger.debug("modules: #{inspect(modules)}")
     Enum.reduce(modules, [], fn (module, acc) ->
       config =
         case module do

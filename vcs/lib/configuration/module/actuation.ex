@@ -33,9 +33,7 @@ defmodule Configuration.Module.Actuation do
 
     # actuators = apply_reversed_actuators(model_type, vehicle_module, actuators)
     actuator_sorter_intervals = apply(vehicle_module, :get_actuator_sorter_intervals,[])
-    Logger.warn(inspect(actuator_sorter_intervals))
-
-
+    # Logger.warn(inspect(actuator_sorter_intervals))
 
     output_modules =
       case node_type do
@@ -210,7 +208,7 @@ defmodule Configuration.Module.Actuation do
   @spec get_actuation_sorter_configs(binary()) :: list()
   def get_actuation_sorter_configs(model_type) do
     actuator_names = get_all_actuator_channels_and_names(model_type)
-    Logger.debug("actuator names: #{inspect(actuator_names)}")
+    # Logger.debug("actuator names: #{inspect(actuator_names)}")
     # {_channels, indirect_failsafes} = get_channels_failsafes(actuator_names.indirect)
     # {_channels, direct_failsafes} = get_channels_failsafes(actuator_names.direct)
     # indirect_names_with_index = Enum.with_index(actuator_names)
@@ -224,7 +222,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+      publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     indirect_override_sorter = [
@@ -232,7 +230,7 @@ defmodule Configuration.Module.Actuation do
       default_message_behavior: :default_value,
       default_value: indirect_failsafe_map,
       value_type: :map,
-      publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+      publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
     ]
 
     direct_sorters = Enum.reduce(actuator_names.direct, [], fn({_ch_num, actuator_name}, acc) ->
@@ -242,7 +240,7 @@ defmodule Configuration.Module.Actuation do
         default_message_behavior: :default_value,
         default_value: failsafe_value,
         value_type: :number,
-        publish_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
+        publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast)
       ]
       [sorter] ++ acc
       # Map.put(acc, actuator_name, failsafe_value)

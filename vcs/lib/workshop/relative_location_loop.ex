@@ -3,7 +3,7 @@ defmodule Workshop.RelativeLocationLoop do
   require Logger
 
   def start_link(airport \\ "flight_school", runway \\ "18L") do
-    Logger.info("Start RelativeLocationLoop: GenServer")
+    Logger.debug("Start RelativeLocationLoop")
     config = [airport: airport, runway: runway]
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, config, __MODULE__)
     GenServer.cast(pid, {:begin, config})

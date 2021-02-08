@@ -13,7 +13,7 @@ defmodule Command.Commander do
   @cs_direct_auto 102 #speed/course/altitude
 
   def start_link(config) do
-    Logger.info("Start Command.Commander GenServer")
+    Logger.debug("Start Command.Commander")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}

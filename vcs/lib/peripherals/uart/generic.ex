@@ -152,15 +152,15 @@ defmodule Peripherals.Uart.Generic do
         # Peripheral/GCS commands
         case msg_id do
           0x00 ->
-            Logger.debug("op rx: orbit")
-            Logger.debug("from #{inspect(module)}")
-            Logger.info("class: #{inspect(sorter_classification)}")
+            Logger.debug("op rx orbit inline")
+            # Logger.debug("from #{inspect(module)}")
+            # Logger.debug("class: #{inspect(sorter_classification)}")
             msg_type = :orbit_inline
             [radius, confirmation] = Telemetry.Ublox.deconstruct_message(msg_type, payload)
             if is_nil(sorter_classification) do
               send_global({:load_orbit, :inline, nil, radius, confirmation>0}, module)
             else
-              Logger.info("rx orbit inline")
+              # Logger.debug("rx orbit inline")
               path_command_map = Navigation.Path.Utils.orbit(:inline, nil, radius, confirmation>0)
               send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
             end
@@ -171,7 +171,7 @@ defmodule Peripherals.Uart.Generic do
             if is_nil(sorter_classification) do
               send_global({:load_orbit, :centered, nil, radius, confirmation>0}, module)
             else
-              Logger.info("rx orbit centered")
+              # Logger.debug("rx orbit centered")
               path_command_map = Navigation.Path.Utils.orbit(:centered, nil, radius, confirmation>0)
               send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
             end
@@ -184,7 +184,7 @@ defmodule Peripherals.Uart.Generic do
             if is_nil(sorter_classification) do
               send_global({:load_orbit, :centered, position, radius, confirmation>0}, module)
             else
-              Logger.info("rx orbit centered")
+              # Logger.debug("rx orbit centered")
               path_command_map = Navigation.Path.Utils.orbit(:centered, position, radius, confirmation>0)
               send_global({:peripheral_paths_sorter, sorter_classification, 10_000, path_command_map}, module)
             end

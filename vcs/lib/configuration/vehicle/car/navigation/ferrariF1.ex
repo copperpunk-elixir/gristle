@@ -10,4 +10,14 @@ defmodule Configuration.Vehicle.Car.Navigation.FerrariF1 do
       vehicle_takeoff_speed: 1000,
     ]
   end
+
+  @spec get_path_follower() :: list()
+  def get_path_follower() do
+    [
+      k_path: 0.125,
+      k_orbit: 1.0,
+      chi_inf: 1.57,
+      lookahead_dt: 1.0,
+    ]
+  end
 end

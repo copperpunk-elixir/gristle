@@ -3,7 +3,7 @@ defmodule Workshop.MsgSorterRx do
   require Logger
 
   def start_link(name) do
-    Logger.info("Start Workshop.MsgSorterRx: GenServer")
+    Logger.debug("Start Workshop.MsgSorterRx")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, via_tuple(name))
     GenServer.cast(via_tuple(name), {:begin, nil})
     {:ok, pid}
@@ -31,8 +31,8 @@ defmodule Workshop.MsgSorterRx do
 
   @impl GenServer
   def handle_cast({:join_message_sorter, name, interval_ms}, state) do
-    Logger.info("MsgSorterRx join sorter: #{inspect(name)}")
-    Registry.register(MessageSorterRegistry, name, interval_ms)
+    Logger.debug("MsgSorterRx join sorter: #{inspect(name)}")
+    Registry.register(MessageSorterRegistry, {name, :value}, interval_ms)
     # MessageSorter.Sorter.join(name, self(), interval_ms)
     {:noreply, state}
   end
@@ -40,7 +40,7 @@ defmodule Workshop.MsgSorterRx do
   @impl GenServer
   def handle_cast({:request_value, sorter_name}, state) do
     MessageSorter.Sorter.get_value_async(sorter_name, self())
-    Logger.info("sorterrx request from: #{inspect(self())}")
+    Logger.debug("sorterrx request from: #{inspect(self())}")
     {:noreply, state}
   end
 

@@ -3,7 +3,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Uart.Telemetry.Operator GenServer")
+    Logger.debug("Start Uart.Telemetry.Operator")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}

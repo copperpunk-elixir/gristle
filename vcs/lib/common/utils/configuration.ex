@@ -85,7 +85,7 @@ defmodule Common.Utils.Configuration do
 
   @spec split_safely(binary(), binary()) :: list()
   def split_safely(value, delimitter)do
-    Logger.warn("split: #{value} with #{delimitter}")
+    # Logger.warn("split: #{value} with #{delimitter}")
     case String.split(value, delimitter) do
       [node_type, meta] -> [node_type, meta]
       [node_type] -> [node_type, nil]

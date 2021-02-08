@@ -3,7 +3,7 @@ defmodule Pids.Moderator do
   require Logger
 
   def start_link(config) do
-    Logger.info("Start Pids.Moderator GenServer")
+    Logger.debug("Start Pids.Moderator")
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(pid, {:begin, config})
     {:ok, pid}

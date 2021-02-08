@@ -4,7 +4,7 @@ defmodule Common.DiscreteLooper do
 
   @spec new(integer()) :: struct()
   def new(interval_ms) do
-    Logger.info("Creating DiscreteLooper with inteval: #{interval_ms}")
+    # Logger.info("Creating DiscreteLooper with inteval: #{interval_ms}")
     %Common.DiscreteLooper{
       interval_ms: interval_ms,
       time_ms: 0,

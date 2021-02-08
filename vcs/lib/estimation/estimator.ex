@@ -4,7 +4,7 @@ defmodule Estimation.Estimator do
   @min_speed_for_course 0.1
 
   def start_link(config) do
-    Logger.info("Start Estimation.Estimator GenServer")
+    Logger.debug("Start Estimation.Estimator GenServer")
     {:ok, process_id} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, process_id}
@@ -131,7 +131,7 @@ defmodule Estimation.Estimator do
   @impl GenServer
   def handle_cast({{:watchdog_status, name}, is_fed}, state) do
     watchdog_fed = Map.put(state.watchdog_fed, name, is_fed)
-    Logger.info("rx watchdog state for #{name}: #{is_fed}")
+    Logger.debug("rx watchdog state for #{name}: #{is_fed}")
     {:noreply, %{state | watchdog_fed: watchdog_fed}}
   end
 

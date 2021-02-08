@@ -5,7 +5,7 @@ defmodule Navigation.Navigator do
   @default_pv_cmds_level 2
 
   def start_link(config) do
-    Logger.info("Start Navigation.Navigator GenServer")
+    Logger.debug("Start Navigation.Navigator")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
@@ -40,9 +40,9 @@ defmodule Navigation.Navigator do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :goals_sorter, self())
     navigator_loop_interval_ms = Keyword.fetch!(config, :navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {:goals, 1}, navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {:goals, 2}, navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {:goals, 3}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, 1}, :value}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, 2}, :value}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, 3}, :value}, navigator_loop_interval_ms)
     Common.Utils.start_loop(self(), navigator_loop_interval_ms, :navigator_loop)
     {:noreply, state}
   end

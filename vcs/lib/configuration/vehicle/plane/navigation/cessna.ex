@@ -12,4 +12,14 @@ defmodule Configuration.Vehicle.Plane.Navigation.Cessna do
       vehicle_max_ground_speed: 35
     ]
   end
+
+  @spec get_path_follower() :: list
+  def get_path_follower() do
+    [
+      k_path: 0.05,
+      k_orbit: 3.5,
+      chi_inf: 0.52,
+      lookahead_dt: 0.5,
+    ]
+  end
 end

@@ -10,7 +10,7 @@ defmodule Simulation.Realflight do
   @rf_stick_mult 1.07
 
   def start_link(config) do
-    Logger.info("Start Simulation.Realflight GenServer")
+    Logger.debug("Start Simulation.Realflight")
     {:ok, pid} = Common.Utils.start_link_redundant(GenServer, __MODULE__, nil, __MODULE__)
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
@@ -97,7 +97,7 @@ defmodule Simulation.Realflight do
       flaps = Map.get(output_map, :flaps, 0.0)
       [aileron, 1-elevator, throttle, rudder, 0, flaps,0,0,0,0,0,0]
     end
-    Logger.info("servo_out: #{inspect(servo_out)}")
+    # Logger.debug("servo_out: #{inspect(servo_out)}")
     {:noreply, %{state | servo_out: servo_out}}
   end
 
@@ -244,7 +244,6 @@ defmodule Simulation.Realflight do
 
   @spec restore_controller() :: atom()
   def restore_controller() do
-    Logger.info("here")
     GenServer.cast(__MODULE__, {:post, :restore, nil})
   end
 
@@ -422,4 +421,3 @@ defmodule Simulation.Realflight do
     end)
   end
 end
-

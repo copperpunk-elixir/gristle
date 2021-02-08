@@ -3,7 +3,7 @@ defmodule Logging.System do
   require Logger
 
   def start_link(config) do
-    Logger.info("Logging Supervisor start_link()")
+    Logger.debug("Start Logging Supervisor")
     Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end

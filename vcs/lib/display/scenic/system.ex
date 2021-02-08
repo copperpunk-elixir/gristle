@@ -2,7 +2,7 @@ defmodule Display.Scenic.System do
   use Supervisor
   require Logger
   def start_link(config) do
-    Logger.info("Display Supervisor start_link()")
+    Logger.debug("Start Display Supervisor")
     display_module = Keyword.get(config, :display_module, Display.Scenic)
 
     #GCS
