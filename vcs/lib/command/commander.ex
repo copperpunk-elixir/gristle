@@ -183,11 +183,11 @@ defmodule Command.Commander do
       :yaw ->
         Map.get(reference_cmds, :yaw, 0) + value_to_add
         |> Common.Utils.Math.constrain(min_value, max_value)
-      :course_flight ->
-        Map.get(reference_cmds, :course_flight, 0) + value_to_add
+      :course_tilt ->
+        Map.get(reference_cmds, :course_tilt, 0) + value_to_add
         |> Common.Utils.Motion.constrain_angle_to_compass()
-      :course_ground ->
-        Map.get(reference_cmds, :course_ground, 0) + value_to_add
+      :course_rotate ->
+        Map.get(reference_cmds, :course_rotate, 0) + value_to_add
         |> Common.Utils.Motion.constrain_angle_to_compass()
       :speed ->
         Map.get(reference_cmds, :speed, 0) + value_to_add
@@ -208,7 +208,7 @@ defmodule Command.Commander do
         course = Map.get(pv_values, :course, 0)
         speed = Map.get(pv_values,:speed, 0)
         altitude = Map.get(pv_values, :altitude, 0)
-        %{speed: speed, course_flight: course, course_ground: course, altitude: altitude}
+        %{speed: speed, course_tilt: course, course_rotate: course, altitude: altitude}
       _other ->
         %{}
     end

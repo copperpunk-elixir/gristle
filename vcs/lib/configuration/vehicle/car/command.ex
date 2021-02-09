@@ -4,13 +4,13 @@ defmodule Configuration.Vehicle.Car.Command do
 
   @spec get_relative_channels() :: list()
   def get_relative_channels() do
-    [:course_ground]
+    [:course_rotate]
   end
 
   @spec get_actuation_channel_assignments() :: map()
   def get_actuation_channel_assignments() do
     %{
-      0 => [:rudder, :yawrate, :yaw, :course_ground],
+      0 => [:rudder, :yawrate, :yaw, :course_rotate],
       1 => [:brake],
       2 => [:throttle, :thrust, :speed],
       # 7 => [:select]
@@ -22,7 +22,7 @@ defmodule Configuration.Vehicle.Car.Command do
     %{
       CU.cs_rates => [:yawrate, :thrust, :brake],
       CU.cs_attitude => [:yaw, :thrust, :brake],
-      CU.cs_sca => [:course_ground, :speed],
+      CU.cs_sca => [:course_rotate, :speed],
       # Manual only channels
       CU.cs_direct_manual => [:rudder, :throttle, :brake],
       # Manual and Semi-Auto channels
@@ -37,7 +37,7 @@ defmodule Configuration.Vehicle.Car.Command do
         yawrate: :rudder,
         thrust: :throttle,
         yaw: :rudder,
-        course_ground: :rudder,
+        course_rotate: :rudder,
         speed: :throttle,
         throttle: :throttle,
         rudder: :rudder,

@@ -61,10 +61,10 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
       roll: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
       pitch: [output_min: -0.38, output_max: 0.38, output_neutral: 0.0],
       yaw: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
-      yaw_offset: [output_min: -:math.pi(), output_max: :math.pi(), output_neutral: 0.0],
+      # yaw_offset: [output_min: -:math.pi(), output_max: :math.pi(), output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5, delta_output_min: -0.01, delta_output_max: 0.01],
-      course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
-      course_flight: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
+      course_rotate: [output_min: -3.14, output_max: 3.14, output_neutral: 0],
+      course_tilt: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
       speed: [output_min: 0, output_max: 8, output_neutral: 0, output_mid: 5.0],
       altitude: [output_min: -10, output_max: 10, output_neutral: 0]
     ]

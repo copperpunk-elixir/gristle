@@ -4,16 +4,16 @@ defmodule Configuration.Vehicle.Multirotor.Command do
 
   @spec get_relative_channels() :: list()
   def get_relative_channels() do
-    [:course_flight, :altitude]
+    [:course_tilt, :altitude]
   end
 
   @spec get_actuation_channel_assignments() :: map()
   def get_actuation_channel_assignments() do
     %{
-      0 => [:rollrate, :roll, :course_flight],
+      0 => [:rollrate, :roll, :course_tilt],
       1 => [:pitchrate, :pitch, :altitude],
       2 => [:thrust, :speed],
-      3 => [:yawrate, :yaw, :yaw_offset],
+      3 => [:yawrate, :yaw, :course_rotate],
       4 => [:gear],
       5 => [],
       # 7 => [:select]
@@ -25,7 +25,7 @@ defmodule Configuration.Vehicle.Multirotor.Command do
     %{
       CU.cs_rates => [:rollrate, :pitchrate, :yawrate, :thrust],
       CU.cs_attitude => [:roll, :pitch, :yaw, :thrust],
-      CU.cs_sca => [:course_flight, :speed, :altitude, :yaw_offset],
+      CU.cs_sca => [:course_tilt, :speed, :altitude, :course_rotate],
       # Manual only channels
       CU.cs_direct_manual => [],
       # Manual and Semi-Auto channels
@@ -44,9 +44,9 @@ defmodule Configuration.Vehicle.Multirotor.Command do
       roll: :aileron,
       pitch: :elevator,
       yaw: :rudder,
-      yaw_offset: :rudder,
-      course_flight: :aileron,
-      course_ground: :rudder,
+      # yaw_offset: :rudder,
+      course_tilt: [:aileron, :elevator],
+      course_rotate: :rudder,
       altitude: :elevator,
       speed: :throttle,
       aileron: :aileron,

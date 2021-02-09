@@ -55,22 +55,22 @@ defmodule Pids.Moderator do
     case level do
       3 ->
         # pv_cmd_map will always contain course
-        course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
+        # course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
         # pv_cmd_map = Map.take(pv_cmd_map, [course_key, :speed, :altitude, :yaw_offset])
         # pv_value_map = Map.take(pv_value_map, [:course, :speed, :altitude, :vertical, :yaw])
         # course_cmd = Map.get(pv_cmd_map, course_key)
         level_2_output_map = apply(state.high_level_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
 
-        pv_cmd_map = Map.put(pv_cmd_map, course_key, level_2_output_map.course)
+        pv_cmd_map = Map.put(pv_cmd_map, :course, level_2_output_map.course)
         # pv_cmd_map = Map.put(pv_cmd_map, course_key, roll_yaw_course_output.course)
         # Logger.debug("#{Common.Utils.eftb_map_deg(level_2_output_map,2)}")
 
         send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
-        pv_cmd_map = if Map.has_key?(level_2_output_map, :yaw) do
-          Map.put(pv_cmd_map, :yaw, level_2_output_map.yaw)
-        else
-          Map.put(pv_cmd_map, :yaw, 0)
-        end
+        # pv_cmd_map = if Map.has_key?(level_2_output_map, :yaw) do
+        #   Map.put(pv_cmd_map, :yaw, level_2_output_map.yaw)
+        # else
+        #   Map.put(pv_cmd_map, :yaw, 0)
+        # end
         # Logger.info("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
         publish_cmds(pv_cmd_map, 3)
       2 ->

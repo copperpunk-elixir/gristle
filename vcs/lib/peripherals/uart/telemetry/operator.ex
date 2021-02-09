@@ -106,8 +106,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 2}, values, state.uart_ref)
     end
     unless(Enum.empty?(level_3)) do
-      course = Map.get(level_3, :course_flight, Map.get(level_3, :course_ground))
-      values = [iTOW, level_3.speed, course, Map.get(level_3, :altitude, 0)]
+      values = [iTOW, level_3.speed, level_3.course, Map.get(level_3, :altitude, 0)]
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 3}, values, state.uart_ref)
     end
     control_state = Map.get(state, :control_state, nil)
