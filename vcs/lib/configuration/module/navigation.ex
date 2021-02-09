@@ -2,9 +2,7 @@ defmodule Configuration.Module.Navigation do
   @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    vehicle_module =
-      Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
-      |> Module.concat(Navigation)
+    vehicle_module = Common.Utils.mod_bin_mod_concat(Configuration.Vehicle, vehicle_type, Navigation)
     vehicle_limits = get_vehicle_limits(vehicle_module, model_type)
     path_follower = get_path_follower(vehicle_module, model_type)
 

@@ -59,13 +59,10 @@ defmodule Configuration.Vehicle.Car.Pids.FerrariF1 do
             # Logger.debug("speed cmd/value: #{Common}")
             cond do
               (value - cmd) > 5 ->
-                Logger.debug("here1")
                 Common.Utils.Math.constrain(0.1*(value-cmd), 0, 0.5)
               cmd < 1 and value < 1 ->
-                Logger.debug("here2")
                 1.0
               true ->
-                Logger.debug("here3")
                 0.0
             end
           end

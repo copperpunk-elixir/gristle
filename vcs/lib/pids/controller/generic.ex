@@ -73,9 +73,9 @@ defmodule Pids.Controller.Generic do
     output = state.output + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    if state.process_variable == :course_flight do# and state.control_variable == :thrust do
-      Logger.debug("AS/cmd/value/corr/p/i/d/ff/dO/out: #{Common.Utils.eftb(airspeed,2)}/#{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(delta_output, 3)}/#{Common.Utils.eftb(output, 3)}")
-    end
+    # if state.process_variable == :course_flight do# and state.control_variable == :thrust do
+    #   Logger.debug("AS/cmd/value/corr/p/i/d/ff/dO/out: #{Common.Utils.eftb(airspeed,2)}/#{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(delta_output, 3)}/#{Common.Utils.eftb(output, 3)}")
+    # end
 
     pv_correction_prev = correction
     pv_integrator =
