@@ -1,5 +1,6 @@
 defmodule Configuration.Vehicle.Plane.Pids.T28 do
   require Logger
+  require Common.Constants
 
   @spec get_pids() :: list()
   def get_pids() do
@@ -101,7 +102,7 @@ defmodule Configuration.Vehicle.Plane.Pids.T28 do
           roll:
           fn (cmd, _value, airspeed) ->
             # Logger.debug("ff cmd/as/output: #{Common.Utils.Math.rad2deg(cmd)]/#{airspeed]/#{Common.Utils.Math.rad2deg(:math.atan(cmd*airspeed/Common.Constants.gravity()))]")
-            :math.atan(0.5*cmd*airspeed/Common.Constants.gravity())
+            :math.atan(0.5*cmd*airspeed/Common.Constants.gravity)
           end
         ],
         tecs: [

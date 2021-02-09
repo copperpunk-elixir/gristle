@@ -66,4 +66,43 @@ defmodule Configuration.Vehicle.Car.Command do
     {channel_number, channel_name, rel_abs, output_min, output_mid, output_max, Map.get(multipliers, channel_name)}
   end
 
+  def all_commands_and_related_actuators() do
+      %{
+        rollrate: :aileron,
+        pitchrate: :elevator,
+        yawrate: :rudder,
+        thrust: :throttle,
+        roll: :aileron,
+        pitch: :elevator,
+        yaw: :rudder,
+        yaw_offset: :rudder,
+        course_flight: :aileron,
+        course_ground: :rudder,
+        altitude: :elevator,
+        speed: :throttle,
+        aileron: :aileron,
+        elevator: :elevator,
+        throttle: :throttle,
+        rudder: :rudder,
+      }
+  end
+
+  @spec get_commands() :: list()
+  def get_commands() do
+    Enum.map(all_commands_and_related_actuators(), fn {command, _actuation} -> command end)
+  end
+
+
+  @spec get_command_multipliers(binary) :: map()
+  def get_command_multipliers(model_type) do
+    reversed_actuators = apply(Module.concat(Configuration.Vehicle.Plane.Actuation, model_type), :get_reversed_actuators, [])
+    Enum.reduce(all_commands_and_related_actuators(), %{}, fn ({command, actuator}, acc) ->
+      if Enum.member?(reversed_actuators, actuator) do
+        Map.put(acc, command, -1)
+      else
+        Map.put(acc, command, 1)
+      end
+    end)
+  end
+
 end

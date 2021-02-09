@@ -1,6 +1,7 @@
 defmodule Peripherals.Uart.Estimation.CpIns.Operator do
   use GenServer
   require Logger
+  require Common.Constants
 
   @default_baud 115200
 
@@ -74,7 +75,7 @@ defmodule Peripherals.Uart.Estimation.CpIns.Operator do
     dv_east =velocity.east - velocity_prev.east
     dv_down =velocity.down - velocity_prev.down
 
-    accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity()}
+    accel_inertial = {dv_north/dt, dv_east/dt, -dv_down/dt + Common.Constants.gravity}
     # {ax_i, ay_i, az_i} = accel_inertial
     # Logger.debug("iner_accel: #{Common.Utils.eftb(ax_i,3)}/#{Common.Utils.eftb(ay_i,3)}/#{Common.Utils.eftb(az_i,3)}")
     {ax, ay, az}= Common.Utils.Motion.inertial_to_body_euler(values.attitude, accel_inertial)

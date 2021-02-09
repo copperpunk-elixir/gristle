@@ -1,5 +1,6 @@
 defmodule Pids.Controller.TecsBalance do
   require Logger
+  require Common.Constants
 
   @spec begin(list()) :: tuple()
   def begin(config) do
@@ -45,7 +46,7 @@ defmodule Pids.Controller.TecsBalance do
     potential_energy = values.potential_energy
     potential_energy_rate = values.potential_energy_rate
 
-    potential_energy_rate_sp = alt_rate_sp*Common.Constants.gravity()
+    potential_energy_rate_sp = alt_rate_sp*Common.Constants.gravity
     potential_energy_sp = values.potential_energy + potential_energy_rate_sp*dt
 
     balance_cmd = potential_energy_sp
