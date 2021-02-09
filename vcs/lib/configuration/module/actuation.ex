@@ -37,9 +37,9 @@ defmodule Configuration.Module.Actuation do
 
     output_modules =
       case node_type do
-        "sim" ->  Configuration.Module.Simulation.get_modules(model_type, node_type, node_metadata)#[Simulation.Realflight]#[Simulation.XplaneSend]
+        "sim" ->  Configuration.Module.Simulation.get_modules(node_metadata)#[Simulation.Realflight]#[Simulation.XplaneSend]
         "server" ->
-          Configuration.Module.Simulation.get_modules(model_type, node_type, node_metadata)
+          Configuration.Module.Simulation.get_modules(node_metadata)
           ++ [Peripherals.Uart.ActuationCommand.Operator]
         "all" -> [Peripherals.Uart.ActuationCommand.Operator]
         _other -> [Peripherals.Uart.Actuation.Operator]
@@ -132,6 +132,7 @@ defmodule Configuration.Module.Actuation do
                    3 => :rudder},
                  direct: %{
                    4 => :flaps,
+                   5 => :gear
                  }
              }
       "T28" -> %{

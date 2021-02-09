@@ -8,7 +8,7 @@ defmodule Pids.Bodyrate.Car do
     #   Common.Utils.eftb(cmds.thrust,2) <> "/" <>
     #   Common.Utils.eftb(cmds.brake, 2)
     # Logger.debug("thr/brake: #{output_str}")
-    Logger.debug("yaw cmd/act/rud: #{Common.Utils.eftb_deg(cmds.yawrate,1)}/#{Common.Utils.eftb_deg(values.yawrate,1)}/#{Common.Utils.eftb(rudder_output,3)}")
+    # Logger.debug("yaw cmd/act/rud: #{Common.Utils.eftb_deg(cmds.yawrate,1)}/#{Common.Utils.eftb_deg(values.yawrate,1)}/#{Common.Utils.eftb(rudder_output,3)}")
     %{rudder: rudder_output, throttle: cmds.thrust, brake: cmds.brake}
   end
 

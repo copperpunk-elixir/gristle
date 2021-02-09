@@ -24,6 +24,7 @@ defmodule MessageSorter.Sorter do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
+    name = config[:name]
     {default_message_behavior, default_value} =
       case Keyword.get(config, :default_message_behavior) do
         :last -> {:last, nil}
@@ -37,7 +38,7 @@ defmodule MessageSorter.Sorter do
         interval_ms ->
           Common.Utils.start_loop(self(), interval_ms, {:publish_loop, :value})
           Common.Utils.start_loop(self(), 1000, {:update_subscriber_loop, :value})
-          Common.DiscreteLooper.new(interval_ms)
+          Common.DiscreteLooper.new({name, :value}, interval_ms)
       end
 
     publish_messages_looper =
@@ -46,12 +47,12 @@ defmodule MessageSorter.Sorter do
         interval_ms ->
           Common.Utils.start_loop(self(), interval_ms, {:publish_loop, :messages})
           Common.Utils.start_loop(self(), 1000, {:update_subscriber_loop, :messages})
-          Common.DiscreteLooper.new(interval_ms)
+          Common.DiscreteLooper.new({name, :messages}, interval_ms)
       end
 
 
     state = %{
-      name: config[:name],
+      name: name,
       messages: [],
       last_value: Keyword.get(config, :initial_value, nil),
       default_message_behavior: default_message_behavior,

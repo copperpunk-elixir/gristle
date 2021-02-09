@@ -105,7 +105,6 @@ defmodule Command.Commander do
       end
 
       # Direct Cmds
-      # Logger.debug("dir cmds: #{inspect(direct_cmds)}")
       unless Enum.empty?(direct_cmds) do
         Comms.Operator.send_global_msg_to_group(__MODULE__, {:direct_actuator_cmds_sorter, state.direct_cmds_class, state.direct_cmds_time_ms, direct_cmds}, self())
       end

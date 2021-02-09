@@ -103,6 +103,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
           roll:
           fn (cmd, _value, airspeed) ->
             # Logger.debug("ff cmd/as/output: #{Common.Utils.Math.rad2deg(cmd)]/#{airspeed]/#{Common.Utils.Math.rad2deg(:math.atan(cmd*airspeed/Common.Constants.gravity()))}")
+            # TODO - Add logic for low-speed flight. We would want more control authority, not less.
             :math.atan(0.5*cmd*airspeed/Common.Constants.gravity)
           end
         ],

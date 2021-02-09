@@ -4,7 +4,7 @@ defmodule Configuration.Module.Simulation do
   @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, node_type) do
     [_, sim_host] = String.split(node_type, "_")
-    modules = get_modules(model_type, node_type, sim_host)
+    modules = get_modules(sim_host)
     [
       # receive: get_simulation_xplane_receive_config(),
       # send: get_simulation_xplane_send_config(model_type),
@@ -14,8 +14,8 @@ defmodule Configuration.Module.Simulation do
     ]
   end
 
-  @spec get_modules(binary(), binary(), binary()) :: list()
-  def get_modules(model_type, node_type, sim_host) do
+  @spec get_modules(binary()) :: list()
+  def get_modules(sim_host) do
     # Logger.info("get modules for sim host: #{sim_host}")
     case sim_host do
       "static" -> [Simulation.Static]

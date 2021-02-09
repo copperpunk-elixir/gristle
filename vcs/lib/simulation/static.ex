@@ -9,8 +9,8 @@ defmodule Simulation.Static do
   @default_altitude 1186.0
   @default_agl 1.23
   @default_velocity %{north: 0.0, east: 0.0, down: 0.0}
-  @default_attitude %{roll: 0.0, pitch: 0.0524, yaw: -0.1048}
-  @default_bodyrate %{rollrate: 0.174, pitchrate: -0.348, yawrate: 0.0524}
+  @default_attitude %{roll: 0.174, pitch: 0.0524, yaw: -0.1048}
+  @default_bodyrate %{rollrate: 0.0, pitchrate: 0.0, yawrate: 0.0}
 
   def start_link(config) do
     Logger.debug("Start Simulation.Static")
@@ -49,7 +49,7 @@ defmodule Simulation.Static do
 
   @impl GenServer
   def handle_cast({:pwm_input, scaled_values}, state) do
-    # Logger.info("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
+    # Logger.debug("scaled: #{Common.Utils.eftb_list(scaled_values, 3)}")
     {:noreply, state}
   end
 
