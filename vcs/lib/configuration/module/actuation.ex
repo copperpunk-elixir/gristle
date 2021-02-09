@@ -206,8 +206,8 @@ defmodule Configuration.Module.Actuation do
     end
   end
 
-  @spec get_actuation_sorter_configs(binary()) :: list()
-  def get_actuation_sorter_configs(model_type) do
+  @spec get_sorter_configs(binary()) :: list()
+  def get_sorter_configs(model_type) do
     actuator_names = get_all_actuator_channels_and_names(model_type)
     # Logger.debug("actuator names: #{inspect(actuator_names)}")
     # {_channels, indirect_failsafes} = get_channels_failsafes(actuator_names.indirect)

@@ -27,7 +27,6 @@ defmodule Estimation.Estimator do
       watchdog_fed: %{att_rate: false, pos_vel: false, range: false, airspeed: false},
       imu_loop_interval_ms: Keyword.fetch!(config, :imu_loop_interval_ms),
       ins_loop_interval_ms: Keyword.fetch!(config, :ins_loop_interval_ms),
-      estimator_health: :unknown,
       min_speed_for_course: @min_speed_for_course,
       bodyrate: %{},
       attitude: %{},

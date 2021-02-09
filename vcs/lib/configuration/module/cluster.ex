@@ -120,8 +120,8 @@ defmodule Configuration.Module.Cluster do
     }
   end
 
-  @spec get_heartbeat_sorter_configs() :: list()
-  def get_heartbeat_sorter_configs() do
+  @spec get_sorter_configs(binary()) :: list()
+  def get_sorter_configs(_model_type) do
     [
       [
       name: {:hb, :node},
