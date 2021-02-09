@@ -1,16 +1,15 @@
 defmodule Configuration.Vehicle.Plane.Command do
   require Logger
+  require Command.Utils, as: CU
 
-  @spec get_commands() :: list()
-  def get_commands() do
-    [:aileron, :elevator, :throttle, :rudder, :flaps, :gear, :thrust, :rollrate, :pitchrate, :yawrate, :roll, :pitch, :yaw, :course_flight, :speed, :altitude]
+  @spec get_relative_channels() :: list()
+  def get_relative_channels() do
+    [:course_flight, :altitude]
   end
 
-  @spec get_rx_output_channel_map(map(), map()) :: list()
-  def get_rx_output_channel_map(output_limits, command_multipliers) do
-    # channel_number, channel, absolute/relative, min, max
-    relative_channels = [:course_flight, :altitude]
-    channel_assignments = %{
+  @spec get_actuation_channel_assignments() :: map()
+  def get_actuation_channel_assignments() do
+    %{
       0 => [:aileron, :rollrate, :roll, :course_flight],
       1 => [:elevator, :pitchrate, :pitch, :altitude],
       2 => [:throttle, :thrust, :speed],
@@ -19,54 +18,51 @@ defmodule Configuration.Vehicle.Plane.Command do
       5 => [:gear],
       # 7 => [:select]
     }
-    frozen_channels = %{
-      -1 => [:rollrate, :pitchrate, :yawrate, :thrust],
-      0 => [:thrust],
-    }
-    cs_channels = %{
-      -1 => [:rollrate, :pitchrate, :yawrate, :thrust],
-      0 => [:rollrate, :pitchrate, :yawrate, :thrust],
-      1 => [:rollrate, :pitchrate, :yawrate, :thrust],
-      2 => [:roll, :pitch, :yaw, :thrust],
-      3 => [:course_flight, :speed, :altitude],
+  end
+
+  @spec get_command_channel_assignments() :: map()
+  def get_command_channel_assignments() do
+    %{
+      CU.cs_rates => [:rollrate, :pitchrate, :yawrate, :thrust],
+      CU.cs_attitude => [:roll, :pitch, :yaw, :thrust],
+      CU.cs_sca => [:course_flight, :speed, :altitude],
       # Manual only channels
-      100 => [:aileron, :elevator, :rudder, :throttle],
+      CU.cs_direct_manual => [:aileron, :elevator, :rudder, :throttle],
       # Manual and Semi-Auto channels
-      101 => [:flaps, :gear],
+      CU.cs_direct_semi_auto => [:flaps, :gear],
       # Auto only channels
-      102 => []
+      CU.cs_direct_auto => []
     }
-    cs_values = [-1, 0, 1, 2, 3, 100, 101, 102]
-    Enum.reduce(cs_values, %{}, fn (cs, acc) ->
-      channels = Map.get(cs_channels, cs)
-      ch_config =
-        Enum.reduce(channel_assignments, [], fn ({ch_num, chs}, acc2) ->
-          all_chs = channels ++ chs
-          # Logger.debug("all ch: #{inspect(all_chs)}")
-          output = all_chs -- Enum.uniq(all_chs)
-          if Enum.empty?(output) do
-            acc2
-          else
-            output = Enum.at(output, 0)
-            relative_or_absolute = if Enum.member?(relative_channels, output), do: :relative, else: :absolute
-            frozen_chs = Map.get(frozen_channels, cs, [])
-            frozen = Enum.member?(frozen_chs, output)
-            ch_config = get_channel_config(output_limits, command_multipliers, output, ch_num, relative_or_absolute, frozen)
-            acc2 ++ [ch_config]
-          end
-        end)
-      Map.put(acc, cs, ch_config)
-    end)
   end
 
-  @spec get_channel_config(map(), map(), atom(), integer(), atom(), boolean()) :: tuple()
-  def get_channel_config(limits, multipliers, channel_name, channel_number, rel_abs, frozen \\ false) do
-    {output_min, output_mid, output_max} = if frozen do
-      {0.0, 0.0, 0.0}
-    else
-      {get_in(limits, [channel_name, :min]), get_in(limits, [channel_name, :mid]), get_in(limits, [channel_name, :max])}
-    end
-    {channel_number, channel_name, rel_abs, output_min, output_mid, output_max, Map.get(multipliers, channel_name)}
+  def get_all_commands_and_related_actuators() do
+      %{
+        rollrate: :aileron,
+        pitchrate: :elevator,
+        yawrate: :rudder,
+        thrust: :throttle,
+        roll: :aileron,
+        pitch: :elevator,
+        yaw: :rudder,
+        yaw_offset: :rudder,
+        course_flight: :aileron,
+        course_ground: :rudder,
+        altitude: :elevator,
+        speed: :throttle,
+        aileron: :aileron,
+        elevator: :elevator,
+        throttle: :throttle,
+        rudder: :rudder,
+        flaps: :flaps,
+        gear: :gear,
+        brake: :brake
+      }
   end
 
+  @spec get_commands() :: list()
+  def get_commands() do
+    Enum.map(get_all_commands_and_related_actuators(), fn {command, _actuation} -> command end)
+    |> List.delete(:yaw_offset)
+    |> List.delete(:brake)
+  end
 end

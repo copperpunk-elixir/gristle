@@ -1,5 +1,6 @@
 defmodule Pids.Controller.TecsEnergy do
   require Logger
+  require Common.Constants
 
   @spec begin(list()) :: tuple()
   def begin(config) do
@@ -39,7 +40,7 @@ defmodule Pids.Controller.TecsEnergy do
 
     altitude_corr = cmds.altitude_corr
     alt_rate = altitude_corr*state.altitude_kp
-    potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
+    potential_energy_rate_sp = alt_rate*Common.Constants.gravity
 
     kinetic_energy_rate = speed*speed_dot
     energy_rate = kinetic_energy_rate + values.potential_energy_rate

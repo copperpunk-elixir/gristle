@@ -27,7 +27,7 @@ defmodule Configuration.Vehicle.Car.Pids.FerrariF1 do
   def get_constraints() do
     [
       rudder: [output_min: 0.0, output_max: 1.0, output_neutral: 0.5],
-      throttle: [output_min: 0, output_max: 1.0, output_neutral: 0],
+      throttle: [output_min: 0, output_max: 1.0, output_neutral: 0, output_mid: 0.5],
       yawrate: [output_min: -3.2, output_max: 3.2, output_neutral: 0],
       yaw: [output_min: -1.04, output_max: 1.04, output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5, delta_output_min: -0.1, delta_output_max: 0.1],

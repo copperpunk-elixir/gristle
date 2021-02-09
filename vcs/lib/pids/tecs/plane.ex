@@ -1,5 +1,6 @@
 defmodule Pids.Tecs.Plane do
   require Logger
+  require Common.Constants
 
   @spec calculate_outputs(map(), map(), float(), float()) :: map()
   def calculate_outputs(cmds, values, airspeed, dt) do
@@ -14,12 +15,12 @@ defmodule Pids.Tecs.Plane do
 
     # Logger.debug("alt cmd/value/err: #{Common.Utils.eftb(alt_cmd,1)}/#{Common.Utils.eftb(altitude,1)}/#{Common.Utils.eftb(alt_cmd - altitude,1)}")
     # Energy Cals
-    potential_energy = Common.Constants.gravity()*altitude
+    potential_energy = Common.Constants.gravity*altitude
     kinetic_energy = 0.5*speed*speed
 
     dV = Common.Utils.Math.constrain(speed_cmd-speed,-5.0, 5.0)
     speed_sp = speed_cmd
-    potential_energy_sp = Common.Constants.gravity()*alt_cmd
+    potential_energy_sp = Common.Constants.gravity*alt_cmd
     kinetic_energy_sp = 0.5*speed_sp*speed_sp
     # Logger.info("pe/pe_sp: #{Common.Utils.eftb(potential_energy,1)}/#{Common.Utils.eftb(potential_energy_sp,1)}")
 
@@ -28,7 +29,7 @@ defmodule Pids.Tecs.Plane do
     speed_dot_sp = dV*dt
 
     kinetic_energy_rate_sp = speed*speed_dot_sp
-    potential_energy_rate = vv*Common.Constants.gravity()
+    potential_energy_rate = vv*Common.Constants.gravity
 
     # TECS calcs
     # Energy (thrust)

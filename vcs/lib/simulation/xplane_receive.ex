@@ -1,5 +1,6 @@
 defmodule Simulation.XplaneReceive do
   require Logger
+  require Common.Constants
   use Bitwise
   use GenServer
 
@@ -112,9 +113,9 @@ defmodule Simulation.XplaneReceive do
             accel_z_mpss =
               list_to_int(accel_z_g_int32,4) |> Common.Utils.Math.fp_from_uint(32)
               |> Kernel.-(1)
-              |> Kernel.*(Common.Constants.gravity())
-            accel_x_mpss = list_to_int(accel_x_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity())
-            accel_y_mpss = list_to_int(accel_y_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity())
+              |> Kernel.*(Common.Constants.gravity)
+            accel_x_mpss = list_to_int(accel_x_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity)
+            accel_y_mpss = list_to_int(accel_y_g_uint32,4) |> Common.Utils.Math.fp_from_uint(32) |> Kernel.*(Common.Constants.gravity)
             # Add accel due to gravity
             # Logger.debug("accel_mpss xyz: #{eftb(accel_x_mpss,3)}/#{eftb(accel_y_mpss, 3)}/#{eftb(accel_z_mpss, 3)}")
             attitude = if Enum.empty?(state.attitude), do: %{roll: 0.0, pitch: 0.0, yaw: 0.0}, else: state.attitude

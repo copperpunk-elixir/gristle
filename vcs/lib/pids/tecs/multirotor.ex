@@ -1,5 +1,6 @@
 defmodule Pids.Tecs.Multirotor do
   require Logger
+  require Common.Constants
 
   @spec calculate_outputs(map(), map(), float(), float()) :: map()
   def calculate_outputs(cmds, values, airspeed, dt) do
@@ -19,11 +20,11 @@ defmodule Pids.Tecs.Multirotor do
     speed_dot_sp = dV*dt
 
     kinetic_energy_rate_sp = speed*speed_dot_sp
-    potential_energy_rate = vv*Common.Constants.gravity()
+    potential_energy_rate = vv*Common.Constants.gravity
 
     alt_rate = (alt_cmd-altitude)*0.5
 
-    potential_energy_rate_sp = alt_rate*Common.Constants.gravity()
+    potential_energy_rate_sp = alt_rate*Common.Constants.gravity
     energy_rate_sp = kinetic_energy_rate_sp + potential_energy_rate_sp
     # THIS IS WRONG
     # This PID should probably be it's own kind

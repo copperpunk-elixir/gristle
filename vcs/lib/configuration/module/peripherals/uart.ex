@@ -1,5 +1,7 @@
 defmodule Configuration.Module.Peripherals.Uart do
   require Logger
+  require Common.Constants
+
   @spec get_config(atom(), atom()) :: list()
   def get_config(_model_type, node_type) do
     # subdirectory = Atom.to_string(node_type)
@@ -140,7 +142,7 @@ defmodule Configuration.Module.Peripherals.Uart do
   def get_cp_ins_config(uart_port) do
     [
       uart_port: uart_port_real_or_sim(uart_port, "USB Serial"),
-      antenna_offset: Common.Constants.pi_2(),
+      antenna_offset: Common.Constants.pi_2,
       imu_loop_interval_ms: 20,
       ins_loop_interval_ms: 200,
       heading_loop_interval_ms: 200

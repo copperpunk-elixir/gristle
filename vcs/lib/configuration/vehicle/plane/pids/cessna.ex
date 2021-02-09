@@ -1,5 +1,6 @@
 defmodule Configuration.Vehicle.Plane.Pids.Cessna do
   require Logger
+  require Common.Constants
 
   @spec get_pids() :: list()
   def get_pids() do
@@ -34,19 +35,19 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       aileron: [output_min: 0, output_max: 1.0, output_neutral: 0.5],
       elevator: [output_min: 0, output_max: 1.0, output_neutral: 0.5],
       rudder: [output_min: 0, output_max: 1.0, output_neutral: 0.5],
-      throttle: [output_min: 0, output_max: 1.0, output_neutral: 0],
-      flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
-      gear: [output_min: 0, output_max: 1.0, output_neutral: 0.0],
+      throttle: [output_min: 0, output_max: 1.0, output_neutral: 0, output_mid: 0.5],
+      flaps: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
+      gear: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
       rollrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
       pitchrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
       yawrate: [output_min: -1.57, output_max: 1.57, output_neutral: 0],
       roll: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
       pitch: [output_min: -0.52, output_max: 0.52, output_neutral: 0.0],
       yaw: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
-      thrust: [output_min: 0, output_max: 1, output_neutral: 0.0],
+      thrust: [output_min: 0, output_max: 1, output_neutral: 0.0, output_mid: 0.5],
       course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
       course_flight: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
-      speed: [output_min: 0, output_max: 55, output_neutral: 0],
+      speed: [output_min: 0, output_max: 55, output_neutral: 0, output_mid: 27.5],
       altitude: [output_min: -10, output_max: 10, output_neutral: 0]
     ]
   end
@@ -102,7 +103,8 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
           roll:
           fn (cmd, _value, airspeed) ->
             # Logger.debug("ff cmd/as/output: #{Common.Utils.Math.rad2deg(cmd)]/#{airspeed]/#{Common.Utils.Math.rad2deg(:math.atan(cmd*airspeed/Common.Constants.gravity()))}")
-            :math.atan(0.5*cmd*airspeed/Common.Constants.gravity())
+            # TODO - Add logic for low-speed flight. We would want more control authority, not less.
+            :math.atan(0.5*cmd*airspeed/Common.Constants.gravity)
           end
         ],
         tecs: [
