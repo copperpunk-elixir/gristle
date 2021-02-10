@@ -17,9 +17,7 @@ defmodule Pids.Steering.Multirotor do
     vy_cmd = vN_cmd*m_sin_yaw + vE_cmd*m_cos_yaw
     vx = vN*m_cos_yaw - vE*m_sin_yaw
     vy = vN*m_sin_yaw + vE*m_cos_yaw
-    # Logger.info("vN_cmd/vE_cmd: #{Common.Utils.eftb(vN_cmd, 2)}/#{Common.Utils.eftb(vE_cmd, 2)}")
-    # Logger.info("vxcmd/vycmd: #{Common.Utils.eftb(vx_cmd, 2)}/#{Common.Utils.eftb(vy_cmd, 2)}")
-    # Logger.info("vx/vy: #{Common.Utils.eftb(vx, 2)}/#{Common.Utils.eftb(vy, 2)}")
+
     pitch_cmd = -Pids.Pid.update_pid(:course, :pitch, vx_cmd, vx, airspeed, dt)
     roll_cmd = Pids.Pid.update_pid(:course, :roll, vy_cmd, vy, airspeed, dt)
 

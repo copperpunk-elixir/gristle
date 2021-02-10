@@ -134,7 +134,8 @@ defmodule Navigation.PathManager do
       # Logger.debug("cpc_i: #{current_path_case.case_index}")
       # Logger.debug("cpc: #{inspect(current_path_case)}")
       {speed_cmd, course_cmd, altitude_cmd} = Navigation.Path.PathFollower.follow(state.path_follower, position, course, speed, current_path_case)
-      goals = %{speed: speed_cmd, altitude: altitude_cmd, course_rotate: 0}
+      course_rotate_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - course)
+      goals = %{speed: speed_cmd, altitude: altitude_cmd, course_rotate: course_rotate_cmd}
       path_case_type = current_path_case.type
       goals =
         case path_case_type do
@@ -154,8 +155,7 @@ defmodule Navigation.PathManager do
                 altitude_cmd = position.altitude + agl_error
                 Map.put(goals, :altitude, altitude_cmd)
               end
-              |> Map.put(:course_rotate, Common.Utils.Motion.turn_left_or_right_for_correction(course_cmd - course))
-              |> Map.put(:course_tilt, 0)
+              |> Map.put(:course_tilt, course)
             else
               Map.put(goals, :course_tilt, course_cmd)
             end
@@ -163,18 +163,19 @@ defmodule Navigation.PathManager do
             agl_error = agl_error(altitude_cmd, state.landing_altitude, position.agl)
             altitude_cmd = position.altitude + agl_error
             if (position.agl < state.vehicle_agl_ground_threshold) do
-              Map.put(goals, :course_rotate, course_cmd)
-              |> Map.put(:course_tilt, 0)
+              Map.put(goals, :course_tilt, course)
             else
               Map.put(goals, :course_tilt, course_cmd)
             end
             |> Map.put(:altitude, altitude_cmd)
+
           :approach->
             agl_error = agl_error(altitude_cmd, state.landing_altitude, position.agl)
             altitude_cmd = position.altitude + agl_error
             Map.put(goals, :course_tilt, course_cmd)
             |> Map.put(:altitude, altitude_cmd)
         end
+
       # Send goals to message sorter
       MessageSorter.Sorter.add_message({:goals, 3}, state.goals_classification, state.goals_time_validity_ms, goals)
       # Direct Commands

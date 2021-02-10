@@ -77,7 +77,8 @@ defmodule Configuration.Module.Simulation do
     reversed_channels = apply(actuation_module, :get_reversed_actuators, [model_type])
 
     [
-      host_ip: "192.168.7.247",
+      # host_ip: "192.168.7.247", # eGPU
+      host_ip: "192.168.7.136",
       sim_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:fast),
       pwm_channels: pwm_channels,
       reversed_channels: reversed_channels,

@@ -10,8 +10,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       rollrate: [aileron: Keyword.merge([type: :Generic, kp: 0.02, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:rollrate, :aileron)], constraints[:aileron])],
       pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.02, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
       yawrate: [rudder: Keyword.merge([type: :Generic, kp: 0.08, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
-      course_flight: [roll: Keyword.merge([type: :Generic, kp: 0.25, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_flight, :roll)], constraints[:roll])],
-      course_ground: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
+      course_tilt: [roll: Keyword.merge([type: :Generic, kp: 0.25, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_tilt, :roll)], constraints[:roll])],
       tecs: [
         thrust: Keyword.merge(get_tecs_energy(), constraints[:thrust]),
         pitch: Keyword.merge(get_tecs_balance(), constraints[:pitch])
@@ -45,8 +44,8 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
       pitch: [output_min: -0.78, output_max: 0.52, output_neutral: 0.0, output_mid: 0.0],
       yaw: [output_min: -0.78, output_max: 0.78, output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5],
-      course_ground: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
-      course_flight: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
+      course_rotate: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
+      course_tilt: [output_min: -0.52, output_max: 0.52, output_neutral: 0],
       speed: [output_min: 0, output_max: 20, output_neutral: 0, output_mid: 10.0],
       altitude: [output_min: -10, output_max: 10, output_neutral: 0]
     ]
@@ -99,7 +98,7 @@ defmodule Configuration.Vehicle.Plane.Pids.CessnaZ2m do
             0.5*cmd/1.57
           end
         ],
-        course_flight: [
+        course_tilt: [
           roll:
           fn (cmd, _value, airspeed) ->
             # Logger.debug("ff cmd/as/output: #{Common.Utils.Math.rad2deg(cmd)]/#{airspeed]/#{Common.Utils.Math.rad2deg(:math.atan(cmd*airspeed/Common.Constants.gravity()))}")

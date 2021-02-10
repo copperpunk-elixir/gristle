@@ -11,7 +11,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       pitchrate: [elevator: Keyword.merge([type: :Generic, kp: 0.3, ki: 1.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:pitchrate, :elevator)], constraints[:elevator])],
       yawrate: [rudder: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.0, integrator_range: 0.26, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:yawrate, :rudder)], constraints[:rudder])],
       course_tilt: [roll: Keyword.merge([type: :Generic, kp: 0.0, ki: 0.0, integrator_range: 0.052,  integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_tilt, :roll)], constraints[:roll])],
-      course_rotate: [yaw: Keyword.merge([type: :Generic, kp: 1.0, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min], constraints[:yaw])],
+      course_rotate: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_rotate, :yaw)], constraints[:yaw])],
       tecs: [
         thrust: Keyword.merge(get_tecs_energy(), constraints[:thrust]),
         pitch: Keyword.merge(get_tecs_balance(), constraints[:pitch])
@@ -108,6 +108,9 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
             # TODO - Add logic for low-speed flight. We would want more control authority, not less.
             :math.atan(0.5*cmd*airspeed/Common.Constants.gravity)
           end
+        ],
+        course_rotate: [
+          yaw: fn (cmd, _value, _airspeed) -> cmd end
         ],
         tecs: [
           thrust:
