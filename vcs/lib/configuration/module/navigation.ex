@@ -1,4 +1,6 @@
 defmodule Configuration.Module.Navigation do
+  require Command.Utils, as: CU
+
   @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
@@ -10,7 +12,7 @@ defmodule Configuration.Module.Navigation do
       node_type: node_type,
       navigator: [
         navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
-        default_pv_cmds_level: 2
+        default_pv_cmds_level: CU.cs_attitude
       ],
       path_manager:
         [
@@ -50,7 +52,7 @@ defmodule Configuration.Module.Navigation do
     goals_default_values = apply(vehicle_module, :get_pv_cmds_sorter_default_values, [])
     goals_interval = Configuration.Generic.get_loop_interval_ms(:medium)
 
-    Enum.map(1..3, fn level ->
+    Enum.map(CU.cs_rates..CU.cs_sca, fn level ->
       [
         name: {:goals, level},
         default_message_behavior: :default_value,
@@ -71,6 +73,4 @@ defmodule Configuration.Module.Navigation do
       publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
     ]
   end
-
-
 end

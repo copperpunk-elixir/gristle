@@ -26,7 +26,7 @@ defmodule Configuration.Module.Control do
     pv_cmds_default_values = apply(vehicle_module, :get_pv_cmds_sorter_default_values, [])
     pv_cmds_interval = Configuration.Generic.get_loop_interval_ms(:fast)
 
-    Enum.map(1..3, fn level ->
+    Enum.map(CU.cs_rates..CU.cs_sca, fn level ->
       [
         name: {:pv_cmds, level},
         default_message_behavior: :default_value,
@@ -42,7 +42,7 @@ defmodule Configuration.Module.Control do
     [
       name: :control_state,
       default_message_behavior: :default_value,
-      default_value: 2,
+      default_value: CU.cs_attitude,
       value_type: :number,
       publish_value_interval_ms: 100
     ]

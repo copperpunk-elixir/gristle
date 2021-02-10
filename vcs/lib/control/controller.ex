@@ -35,9 +35,9 @@ defmodule Control.Controller do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 1}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 2}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 3}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_attitude}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_sca}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
     {:noreply, state}
   end
 
@@ -69,14 +69,14 @@ defmodule Control.Controller do
   def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
     # Logger.debug("Control rx vel/pos/dt: #{inspect(position)}/#{inspect(velocity)}/#{dt}")
     airspeed = velocity.airspeed
-    if (state.control_state == 3) do
+    if (state.control_state == CU.cs_sca) do
       yaw = state.yaw
       unless is_nil(yaw) do
         pv_value_map = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw})
         pv_keys = get_in(state, [:pv_keys, state.control_state])
         pv_cmds = Map.take(state.pv_cmds, pv_keys)
         # Logger.debug("pv pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(pv_cmds)}")
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, 3}, self())
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, CU.cs_sca}, pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, CU.cs_sca}, self())
       end
     end
     {:noreply, %{state | airspeed: airspeed}}
@@ -90,12 +90,12 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
     pv_cmds_store = Map.put(state.pv_cmds_store, level, pv_cmds)
-    pv_cmds_all = retrieve_pv_cmds_from_1_to_control_state(state.control_state, pv_cmds_store)
+    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(state.control_state, pv_cmds_store)
     {:noreply, %{state | pv_cmds_store: pv_cmds_store, pv_cmds: pv_cmds_all}}
   end
 
-  def retrieve_pv_cmds_from_1_to_control_state(control_state, pv_cmds_store) do
-    Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
+  def retrieve_pv_cmds_up_to_control_state(control_state, pv_cmds_store) do
+    Enum.reduce(CU.cs_rates..max(control_state,CU.cs_rates),%{}, fn (level, acc) ->
       Map.merge(acc, Map.get(pv_cmds_store, level, %{}))
     end)
   end
