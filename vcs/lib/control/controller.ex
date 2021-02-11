@@ -48,7 +48,7 @@ defmodule Control.Controller do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
-    Pids.Tecs.Arm.start_link()
+    Control.Arm.start_link()
 
     Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
     Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
