@@ -3,13 +3,11 @@ defmodule Pids.Attitude.Multirotor do
 
   @spec calculate_outputs(map(), map(), map()) :: map()
   def calculate_outputs(cmds, values, config) do
+    # Logger.debug("att cmds: #{inspect(cmds)}")
     rollrate_output = get_output_in_range(cmds.roll, values.roll, config.roll_rollrate)
     pitchrate_output = get_output_in_range(cmds.pitch, values.pitch, config.pitch_pitchrate)
-    # Logger.debug("att cmds: #{inspect(cmds)}")
     yawrate_output = get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
-    thrust_output = cmds.thrust
-
-    %{rollrate: rollrate_output, pitchrate: pitchrate_output, yawrate: yawrate_output, thrust: thrust_output}
+    %{rollrate: rollrate_output, pitchrate: pitchrate_output, yawrate: yawrate_output, thrust: cmds.thrust}
   end
 
   @spec get_output_in_range(float(), float(), map()) :: float()

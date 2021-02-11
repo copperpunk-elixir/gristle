@@ -5,9 +5,9 @@ defmodule Pids.Steering.Multirotor do
 
   @spec calculate_outputs(map(), map(), float(), float()) :: map()
   def calculate_outputs(cmds, values, airspeed, dt) do
-    course_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - values.course)
-    vN_cmd = cmds.speed*:math.cos(cmds.course_flight)
-    vE_cmd = cmds.speed*:math.sin(cmds.course_flight)
+    course_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_tilt - values.course)
+    vN_cmd = cmds.speed*:math.cos(cmds.course_tilt)
+    vE_cmd = cmds.speed*:math.sin(cmds.course_tilt)
     vN = values.speed*:math.cos(values.course)
     vE = values.speed*:math.sin(values.course)
 
@@ -17,20 +17,18 @@ defmodule Pids.Steering.Multirotor do
     vy_cmd = vN_cmd*m_sin_yaw + vE_cmd*m_cos_yaw
     vx = vN*m_cos_yaw - vE*m_sin_yaw
     vy = vN*m_sin_yaw + vE*m_cos_yaw
-    # Logger.info("vN_cmd/vE_cmd: #{Common.Utils.eftb(vN_cmd, 2)}/#{Common.Utils.eftb(vE_cmd, 2)}")
-    # Logger.info("vxcmd/vycmd: #{Common.Utils.eftb(vx_cmd, 2)}/#{Common.Utils.eftb(vy_cmd, 2)}")
-    # Logger.info("vx/vy: #{Common.Utils.eftb(vx, 2)}/#{Common.Utils.eftb(vy, 2)}")
+
     pitch_cmd = -Pids.Pid.update_pid(:course, :pitch, vx_cmd, vx, airspeed, dt)
     roll_cmd = Pids.Pid.update_pid(:course, :roll, vy_cmd, vy, airspeed, dt)
 
     {yaw_cmd, course_cmd} =
     if values.speed > @min_speed_for_course do
-      dyaw = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.yaw_offset + values.course - values.yaw)
+      dyaw = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_rotate + values.course - values.yaw)
       |> Common.Utils.Math.constrain(-@yaw_max, @yaw_max)
       {dyaw, course_cmd}
     else
-      yaw_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_flight - values.yaw)
-      |> Kernel.+(cmds.yaw_offset)
+      yaw_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_tilt - values.yaw)
+      |> Kernel.+(cmds.course_rotate)
       |> Common.Utils.Math.constrain(-@yaw_max, @yaw_max)
       {yaw_cmd, yaw_cmd}
     end

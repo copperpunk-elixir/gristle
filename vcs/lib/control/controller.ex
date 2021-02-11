@@ -1,6 +1,7 @@
 defmodule Control.Controller do
   use GenServer
   require Logger
+  require Command.Utils, as: CU
 
   def start_link(config) do
     Logger.debug("Start Control.Controller GenServer")
@@ -21,11 +22,12 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:begin, _config}, _state) do
+  def handle_cast({:begin, config}, _state) do
     state = %{
+      pv_keys: config[:pv_keys],
       pv_cmds: %{},
       pv_cmds_store: %{},
-      control_state: -1,
+      control_state: 0,
       yaw: nil,
       airspeed: 0,
     }
@@ -33,9 +35,9 @@ defmodule Control.Controller do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 1}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 2}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, 3}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_attitude}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_sca}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
     {:noreply, state}
   end
 
@@ -43,15 +45,22 @@ defmodule Control.Controller do
   def handle_cast({{:pv_values, :attitude_bodyrate}, attitude, bodyrate, dt}, state) do
     # Logger.debug("Control rx att/attrate/dt: #{inspect(attitude)}/#{inspect(bodyrate)}/#{dt}")
     # Logger.debug("cs: #{state.control_state}")
-    {destination_group, pv_cmds} =
+    pv_cmd_level = if (state.control_state == CU.cs_sca), do: CU.cs_attitude, else: state.control_state
       case state.control_state do
-        3 -> {{:pv_cmds_values, 2}, state.pv_cmds}
-        2 -> {{:pv_cmds_values, 2}, state.pv_cmds}
-        1 -> {{:pv_cmds_values, 1}, state.pv_cmds}
-        _other -> {nil, %{}}
+        CU.cs_sca -> CU.cs_attitude
+        CU.cs_attitude -> CU.cs_attitude
+        CU.cs_rates -> CU.cs_rates
+        _other -> nil
       end
+
+    destination_group = {:pv_cmds_values, pv_cmd_level}
+    pv_keys = Map.get(state.pv_keys, pv_cmd_level, [])
+    # Logger.debug("pv cmd lev #{pv_cmd_level}")
+    # Logger.debug("pv_cmds all #{Common.Utils.eftb_map_deg(state.pv_cmds,2)}")
+    pv_cmds = Map.take(state.pv_cmds, pv_keys)
+    # Logger.debug("keys #{inspect(pv_keys)}")
+    # Logger.debug("pv_cmds red #{Common.Utils.eftb_map_deg(pv_cmds,2)}")
     pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
-    # Logger.debug("dest grp/cmds: #{inspect(destination_group)}/#{inspect(pv_cmds)}")
     unless Enum.empty?(pv_cmds) do
       Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
     end
@@ -61,14 +70,14 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
     # Logger.debug("Control rx vel/pos/dt: #{inspect(position)}/#{inspect(velocity)}/#{dt}")
-    # Logger.debug("cs: #{state.control_state}")
     airspeed = velocity.airspeed
-    if (state.control_state == 3) do
+    if (state.control_state == CU.cs_sca) do
       yaw = state.yaw
-      unless is_nil yaw do
+      unless is_nil(yaw) do
         pv_value_map = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw})
-        # Logger.debug("pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(state.pv_cmds)}")
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, 3}, state.pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, 3}, self())
+        pv_keys = get_in(state, [:pv_keys, state.control_state])
+        pv_cmds = Map.take(state.pv_cmds, pv_keys)
+        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, CU.cs_sca}, pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, CU.cs_sca}, self())
       end
     end
     {:noreply, %{state | airspeed: airspeed}}
@@ -76,19 +85,21 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
-    {:noreply, %{state | control_state: control_state}}
+    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(control_state, state.pv_cmds_store)
+    {:noreply, %{state | control_state: control_state, pv_cmds: pv_cmds_all}}
   end
 
   @impl GenServer
   def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
+    # Logger.info("rx level: #{level}")
     pv_cmds_store = Map.put(state.pv_cmds_store, level, pv_cmds)
-    pv_cmds_all = retrieve_pv_cmds_from_1_to_control_state(state.control_state, pv_cmds_store)
+    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(state.control_state, pv_cmds_store)
     {:noreply, %{state | pv_cmds_store: pv_cmds_store, pv_cmds: pv_cmds_all}}
   end
 
-  def retrieve_pv_cmds_from_1_to_control_state(control_state, pv_cmds_store) do
-    Enum.reduce(1..max(control_state,1),%{}, fn (level, acc) ->
-      Map.merge(acc, Map.get(pv_cmds_store, level, %{}))
+  def retrieve_pv_cmds_up_to_control_state(control_state, pv_cmds) do
+    Enum.reduce(CU.cs_rates..control_state,%{}, fn (level, acc) ->
+      Map.merge(acc, Map.get(pv_cmds, level, %{}))
     end)
   end
 end

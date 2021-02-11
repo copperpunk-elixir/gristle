@@ -11,36 +11,22 @@ defmodule Configuration.Module.MessageSorter do
   @spec get_sorter_configs(binary()) :: list()
   def get_sorter_configs(model_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    base_module = Configuration.Vehicle
+
     vehicle_modules = [Control, Navigation]
-    Enum.reduce(vehicle_modules, [], fn (module, acc) ->
-      vehicle_module =
-        Module.concat(base_module, String.to_existing_atom(vehicle_type))
-        |>Module.concat(module)
-      Enum.concat(acc,apply(vehicle_module, :get_sorter_configs,[]))
-    end)
-    |> Enum.concat(Configuration.Module.Actuation.get_actuation_sorter_configs(model_type))
-    |> Enum.concat(Configuration.Module.Cluster.get_heartbeat_sorter_configs())
-    |> Enum.concat(get_generic_sorter_configs())
+    generic_modules = [Actuation, Cluster]
+
+    vehicle_sorter_configs =
+      Enum.reduce(vehicle_modules, [], fn (module, acc) ->
+        module = Module.concat(Configuration.Module, module)
+        Enum.concat(acc,apply(module, :get_sorter_configs,[vehicle_type]))
+      end)
+
+    module_sorter_configs =
+      Enum.reduce(generic_modules, [], fn (module, acc) ->
+        module = Module.concat(Configuration.Module, module)
+        Enum.concat(acc,apply(module, :get_sorter_configs,[model_type]))
+      end)
+
+    vehicle_sorter_configs ++ module_sorter_configs
   end
-
-  @spec get_generic_sorter_configs() :: list()
-  def get_generic_sorter_configs() do
-    [
-      # [
-      #   name: {:hb, :node},
-      #   default_message_behavior: :default_value,
-      #   default_value: nil,
-      #   value_type: :map
-      # ],
-      [
-        name: :estimator_health,
-        default_message_behavior: :default_value,
-        default_value: 0,
-        value_type: :number
-      ],
-
-    ]
-  end
-
 end

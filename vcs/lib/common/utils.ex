@@ -221,4 +221,11 @@ defmodule Common.Utils do
       end
     end
   end
+
+  @spec mod_bin_mod_concat(atom(), binary(), atom()) :: atom()
+  def mod_bin_mod_concat(module1, binary2, module3) do
+      Module.concat(module1, String.to_existing_atom(binary2))
+      |> Module.concat(module3)
+  end
 end
+

@@ -32,7 +32,7 @@ defmodule Configuration.Vehicle.Car.Pids.FerrariF1 do
       yaw: [output_min: -1.04, output_max: 1.04, output_neutral: 0.0],
       thrust: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5, delta_output_min: -0.1, delta_output_max: 0.1],
       brake: [output_min: 0, output_max: 1.0, output_neutral: 0.0, output_mid: 0.5, delta_output_min: -0.1, delta_output_max: 0.1],
-      course_ground: [output_min: -2.08, output_max: 2.08, output_neutral: 0],
+      course_rotate: [output_min: -2.08, output_max: 2.08, output_neutral: 0],
       speed: [output_min: 0, output_max: 20, output_neutral: 0, output_mid: 10.0],
     ]
   end
@@ -59,13 +59,10 @@ defmodule Configuration.Vehicle.Car.Pids.FerrariF1 do
             # Logger.debug("speed cmd/value: #{Common}")
             cond do
               (value - cmd) > 5 ->
-                Logger.debug("here1")
                 Common.Utils.Math.constrain(0.1*(value-cmd), 0, 0.5)
               cmd < 1 and value < 1 ->
-                Logger.debug("here2")
                 1.0
               true ->
-                Logger.debug("here3")
                 0.0
             end
           end
