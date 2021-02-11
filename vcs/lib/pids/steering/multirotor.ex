@@ -3,8 +3,8 @@ defmodule Pids.Steering.Multirotor do
   @yaw_max 0.52
   @min_speed_for_course 1.0
 
-  @spec calculate_outputs(map(), map(), float(), float()) :: map()
-  def calculate_outputs(cmds, values, airspeed, dt) do
+  @spec calculate_outputs(map(), map(), float()) :: map()
+  def calculate_outputs(cmds, values, dt) do
     course_cmd = Common.Utils.Motion.turn_left_or_right_for_correction(cmds.course_tilt - values.course)
     vN_cmd = cmds.speed*:math.cos(cmds.course_tilt)
     vE_cmd = cmds.speed*:math.sin(cmds.course_tilt)
@@ -18,8 +18,8 @@ defmodule Pids.Steering.Multirotor do
     vx = vN*m_cos_yaw - vE*m_sin_yaw
     vy = vN*m_sin_yaw + vE*m_cos_yaw
 
-    pitch_cmd = -Pids.Pid.update_pid(:course, :pitch, vx_cmd, vx, airspeed, dt)
-    roll_cmd = Pids.Pid.update_pid(:course, :roll, vy_cmd, vy, airspeed, dt)
+    pitch_cmd = -Pids.Pid.update_pid(:course, :pitch, vx_cmd, vx, values.airspeed, dt)
+    roll_cmd = Pids.Pid.update_pid(:course, :roll, vy_cmd, vy, values.airspeed, dt)
 
     {yaw_cmd, course_cmd} =
     if values.speed > @min_speed_for_course do

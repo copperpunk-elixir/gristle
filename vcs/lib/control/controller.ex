@@ -23,17 +23,33 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
+    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
+    {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
+      Map.put(acc, cv_pv, Enum.into(scalar, %{}))
+    end)
+    vehicle_type = String.to_existing_atom(config[:vehicle_type])
+
     state = %{
-      pv_keys: config[:pv_keys],
       pv_cmds: %{},
-      pv_cmds_store: %{},
       control_state: 0,
       yaw: nil,
       airspeed: 0,
+      attitude_scalar: attitude_scalar,
+      act_msg_class: act_msg_class,
+      act_msg_time_ms: act_msg_time_ms,
+      pv_msg_class: pv_msg_class,
+      pv_msg_time_ms: pv_msg_time_ms,
+      bodyrate_module: Module.concat(Pids.Bodyrate, vehicle_type),
+      attitude_module: Module.concat(Pids.Attitude, vehicle_type),
+      high_level_module: Module.concat(Pids.HighLevel, vehicle_type),
+      motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Control.Arm.start_link()
+
     Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
     Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
     Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_attitude}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
@@ -42,27 +58,43 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
+  def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
+    {:noreply, %{state | control_state: control_state}}
+  end
+
+  @impl GenServer
+  def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
+    # Logger.info("rx level: #{level}")
+    pv_cmds = Map.put(state.pv_cmds, level, pv_cmds)
+    {:noreply, %{state | pv_cmds: pv_cmds}}
+  end
+
+  @impl GenServer
   def handle_cast({{:pv_values, :attitude_bodyrate}, attitude, bodyrate, dt}, state) do
     # Logger.debug("Control rx att/attrate/dt: #{inspect(attitude)}/#{inspect(bodyrate)}/#{dt}")
     # Logger.debug("cs: #{state.control_state}")
-    pv_cmd_level = if (state.control_state == CU.cs_sca), do: CU.cs_attitude, else: state.control_state
+
+    {cmd_level, values, function} =
       case state.control_state do
-        CU.cs_sca -> CU.cs_attitude
-        CU.cs_attitude -> CU.cs_attitude
-        CU.cs_rates -> CU.cs_rates
-        _other -> nil
+        CU.cs_sca ->
+          values = Map.merge(attitude, bodyrate)
+          |> Map.put(:airspeed, state.airspeed)
+          {CU.cs_attitude, values, :process_attitude}
+        CU.cs_attitude ->
+          values = Map.merge(attitude, bodyrate)
+          |> Map.put(:airspeed, state.airspeed)
+          {CU.cs_attitude, values, :process_attitude}
+        CU.cs_rates ->
+          values = Map.put(bodyrate, :airspeed, state.airspeed)
+          {CU.cs_rates, values, :process_rates}
+        other -> {other, %{}, nil}
       end
 
-    destination_group = {:pv_cmds_values, pv_cmd_level}
-    pv_keys = Map.get(state.pv_keys, pv_cmd_level, [])
     # Logger.debug("pv cmd lev #{pv_cmd_level}")
-    # Logger.debug("pv_cmds all #{Common.Utils.eftb_map_deg(state.pv_cmds,2)}")
-    pv_cmds = Map.take(state.pv_cmds, pv_keys)
-    # Logger.debug("keys #{inspect(pv_keys)}")
-    # Logger.debug("pv_cmds red #{Common.Utils.eftb_map_deg(pv_cmds,2)}")
-    pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
+    pv_cmds = Map.get(state.pv_cmds, cmd_level, %{})
     unless Enum.empty?(pv_cmds) do
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
+      # Logger.debug("pv cmds #{cmd_level}: #{Common.Utils.eftb_map(pv_cmds, 3)}")
+      apply(__MODULE__, function, [pv_cmds, values, dt, state])
     end
     {:noreply, %{state | yaw: attitude.yaw}}
   end
@@ -74,32 +106,59 @@ defmodule Control.Controller do
     if (state.control_state == CU.cs_sca) do
       yaw = state.yaw
       unless is_nil(yaw) do
-        pv_value_map = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw})
-        pv_keys = get_in(state, [:pv_keys, state.control_state])
-        pv_cmds = Map.take(state.pv_cmds, pv_keys)
-        Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, CU.cs_sca}, pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, CU.cs_sca}, self())
+        values = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw, airspeed: airspeed})
+        pv_cmds = Map.get(state.pv_cmds, CU.cs_sca, %{})
+        unless Enum.empty?(pv_cmds) do
+          # Logger.debug("pv cmds 3: #{Common.Utils.eftb_map(pv_cmds, 3)}")
+          process_speed_course_altitude(pv_cmds, values, dt, state)
+        end
       end
     end
     {:noreply, %{state | airspeed: airspeed}}
   end
 
-  @impl GenServer
-  def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
-    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(control_state, state.pv_cmds_store)
-    {:noreply, %{state | control_state: control_state, pv_cmds: pv_cmds_all}}
+  @spec process_rates(map(), map(), float(),  map()) :: atom()
+  def process_rates(rates_cmds, values, dt, state) do
+    actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [rates_cmds, values, dt, state.motor_moments])
+    # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
+    send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
+    store_cmds_with_telemetry(rates_cmds, CU.cs_rates)
+    :ok
   end
 
-  @impl GenServer
-  def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
-    # Logger.info("rx level: #{level}")
-    pv_cmds_store = Map.put(state.pv_cmds_store, level, pv_cmds)
-    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(state.control_state, pv_cmds_store)
-    {:noreply, %{state | pv_cmds_store: pv_cmds_store, pv_cmds: pv_cmds_all}}
+  @spec process_attitude(map(), map(), float(), map()) :: atom()
+  def process_attitude(attitude_cmds, values, dt, state) do
+    rates_output = apply(state.attitude_module, :calculate_outputs, [attitude_cmds, values, state.attitude_scalar])
+    # Logger.debug(Common.Utils.eftb_map(level_1_output_map,2))
+    # output_map turns into input_map for Level I calcs
+    rates_cmds = rates_output
+    actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [rates_cmds, values, dt, state.motor_moments])
+    # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
+    send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
+    store_cmds_with_telemetry(attitude_cmds, CU.cs_attitude)
+    store_cmds_with_telemetry(rates_cmds, CU.cs_rates)
+    :ok
   end
 
-  def retrieve_pv_cmds_up_to_control_state(control_state, pv_cmds) do
-    Enum.reduce(CU.cs_rates..control_state,%{}, fn (level, acc) ->
-      Map.merge(acc, Map.get(pv_cmds, level, %{}))
-    end)
+  @spec process_speed_course_altitude(map(), map(), float(), map()) :: atom()
+  def process_speed_course_altitude(sca_cmds, values, dt, state) do
+    attitude_output = apply(state.high_level_module, :calculate_outputs, [sca_cmds, values, dt])
+    # Logger.debug("#{Common.Utils.eftb_map_deg(level_2_output_map,2)}")
+
+    sca_cmds = Map.put(sca_cmds, :course, attitude_output.course)
+    # Logger.info("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
+
+    send_cmds(attitude_output, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, CU.cs_attitude})
+    store_cmds_with_telemetry(sca_cmds, CU.cs_sca)
+    :ok
+  end
+
+  defp send_cmds(output_map, msg_class, msg_time_ms, cmd_type) do
+    MessageSorter.Sorter.add_message(cmd_type, msg_class, msg_time_ms, output_map)
+  end
+
+  @spec store_cmds_with_telemetry(map(), integer()) :: atom()
+  def store_cmds_with_telemetry(cmds, level) do
+    Peripherals.Uart.Telemetry.Operator.store_data(%{{:cmds, level} => cmds})
   end
 end

@@ -10,10 +10,10 @@ defmodule Pids.System do
 
   @impl Supervisor
   def init(config) do
-    pid_children = get_pids(config[:pids])
-    children = [
-      {Pids.Moderator, Keyword.drop(config, [:pids])},
-    ] ++ pid_children
+    children = get_pids(config[:pids])
+    # children = [
+    #   {Pids.Moderator, Keyword.drop(config, [:pids])},
+    # ] ++ pid_children
     Supervisor.init(children, strategy: :one_for_one)
   end
 

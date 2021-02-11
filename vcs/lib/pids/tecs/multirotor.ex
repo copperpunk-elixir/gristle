@@ -2,8 +2,8 @@ defmodule Pids.Tecs.Multirotor do
   require Logger
   require Common.Constants
 
-  @spec calculate_outputs(map(), map(), float(), float()) :: map()
-  def calculate_outputs(cmds, values, airspeed, dt) do
+  @spec calculate_outputs(map(), map(), float()) :: map()
+  def calculate_outputs(cmds, values, dt) do
     # Values
     speed = values.speed
     vv = values.vertical
@@ -33,6 +33,6 @@ defmodule Pids.Tecs.Multirotor do
     energy_rate = kinetic_energy_rate + potential_energy_rate
 
     # Logger.info("e/e_sp: #{Common.Utils.eftb(energy_rate_sp,1)}/#{Common.Utils.eftb(energy_rate,1)}")
-    Pids.Pid.update_pid(:tecs, :thrust, energy_rate_sp, energy_rate, airspeed, dt)
+    Pids.Pid.update_pid(:tecs, :thrust, energy_rate_sp, energy_rate, values.airspeed, dt)
   end
 end

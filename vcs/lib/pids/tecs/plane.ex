@@ -2,8 +2,8 @@ defmodule Pids.Tecs.Plane do
   require Logger
   require Common.Constants
 
-  @spec calculate_outputs(map(), map(), float(), float()) :: map()
-  def calculate_outputs(cmds, values, airspeed, dt) do
+  @spec calculate_outputs(map(), map(), float()) :: map()
+  def calculate_outputs(cmds, values, dt) do
     # Values
     speed = values.speed
     vv = values.vertical
@@ -45,7 +45,7 @@ defmodule Pids.Tecs.Plane do
       speed: speed
     }
 
-    thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_cmds, energy_values, airspeed, dt)
+    thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_cmds, energy_values, values.airspeed, dt)
 
     # Balance (pitch)
     balance_cmds = %{
@@ -61,7 +61,7 @@ defmodule Pids.Tecs.Plane do
       speed: speed
     }
 
-    pitch_output = Pids.Pid.update_pid(:tecs, :pitch, balance_cmds, balance_values, airspeed, dt)
+    pitch_output = Pids.Pid.update_pid(:tecs, :pitch, balance_cmds, balance_values, values.airspeed, dt)
     %{pitch: pitch_output, thrust: thrust_output}
   end
 end

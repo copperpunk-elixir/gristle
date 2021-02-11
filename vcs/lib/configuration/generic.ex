@@ -20,7 +20,7 @@ defmodule Configuration.Generic do
         Cluster.Heartbeat => [1,1]
       },
       :indirect_actuator_cmds => %{
-        Pids.Moderator => [1,1],
+        Control.Controller => [1,1],
         # Navigation.Navigator => [0,2]
       },
       :indirect_override_cmds => %{
@@ -43,7 +43,7 @@ defmodule Configuration.Generic do
       #   Pids.Moderator => [0,2]
       # },
       :pv_cmds => %{
-        Pids.Moderator => [1,1],
+        Control.Controller => [1,1],
         Navigation.Navigator => [1,2]
       },
       :goals => %{

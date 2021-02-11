@@ -96,8 +96,8 @@ defmodule Configuration.Vehicle.Multirotor.Pids.QuadX do
           thrust:
           fn (_cmd, _value, _speed_cmd) ->
             cond do
-              Pids.Tecs.Arm.get(:takeoff) -> 0.5
-              Pids.Tecs.Arm.get(:armed) -> 0.1
+              Control.Arm.get(:takeoff) -> 0.5
+              Control.Arm.get(:armed) -> 0.1
               true -> -1
             end
           end,

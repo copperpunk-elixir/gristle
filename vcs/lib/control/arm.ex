@@ -1,4 +1,4 @@
-defmodule Pids.Tecs.Arm do
+defmodule Control.Arm do
   require Logger
   use Agent
 

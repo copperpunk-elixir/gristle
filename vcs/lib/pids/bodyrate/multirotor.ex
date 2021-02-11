@@ -1,10 +1,10 @@
 defmodule Pids.Bodyrate.Multirotor do
   require Logger
 
-  @spec calculate_outputs(map(), map(), float(), float(), map()) :: map()
-  def calculate_outputs(cmds, values, airspeed, dt, motor_moments) do
+  @spec calculate_outputs(map(), map(), float(), map()) :: map()
+  def calculate_outputs(cmds, values, dt, motor_moments) do
     throttle_output = cmds.thrust
-    airspeed = if (throttle_output < 0.05), do: -100000, else: airspeed
+    airspeed = if (throttle_output < 0.05), do: -100000, else: values.airspeed
     aileron_output = Pids.Pid.update_pid(:rollrate, :aileron, cmds.rollrate, values.rollrate, airspeed, dt)
     elevator_output = Pids.Pid.update_pid(:pitchrate, :elevator, cmds.pitchrate, values.pitchrate, airspeed, dt)
     rudder_output = Pids.Pid.update_pid(:yawrate, :rudder, cmds.yawrate, values.yawrate, airspeed, dt)

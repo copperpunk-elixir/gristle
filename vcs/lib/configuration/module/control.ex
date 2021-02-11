@@ -4,12 +4,23 @@ defmodule Configuration.Module.Control do
   @spec get_config(binary(), binary()) :: list()
   def get_config(model_type, _node_type) do
     vehicle_type = Common.Utils.Configuration.get_vehicle_type(model_type)
-    vehicle_module = Common.Utils.mod_bin_mod_concat(Configuration.Vehicle, vehicle_type, Command)
-    command_channel_assignments = apply(vehicle_module, :get_command_channel_assignments, [])
-    pv_keys = Map.take(command_channel_assignments, [CU.cs_rates, CU.cs_attitude, CU.cs_sca])
+    pid_module =
+      Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
+      |> Module.concat(Pids)
+
+    attitude = apply(pid_module, :get_attitude, [model_type])
+    motor_moments =
+    if vehicle_type == "Multirotor" do
+      apply(pid_module, :get_motor_moments, [model_type])
+    else
+      nil
+    end
+
     [
       controller: [
-        pv_keys: pv_keys
+        attitude_scalar: attitude,
+        vehicle_type: vehicle_type,
+        motor_moments: motor_moments
       ]
     ]
   end
