@@ -66,7 +66,7 @@ defmodule Peripherals.Uart.Generic.Operator do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :attitude_bodyrate}, attitude, bodyrate, _dt}, state) do
+  def handle_cast({{:estimation_values, :attitude_bodyrate}, attitude, bodyrate, _dt}, state) do
     new_values = Map.put(state.new_values, :attitude_bodyrate, true)
 
     state =
@@ -79,7 +79,7 @@ defmodule Peripherals.Uart.Generic.Operator do
 
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position, velocity, _dt}, state) do
+  def handle_cast({{:estimation_values, :position_velocity}, position, velocity, _dt}, state) do
     # Logger.debug("Control rx vel/pos/dt: #{inspect(position)}/#{inspect(velocity)}/#{dt}")
     # Logger.debug("cs: #{state.control_state}")
     new_values = Map.put(state.new_values, :position_velocity, true)
@@ -100,19 +100,19 @@ defmodule Peripherals.Uart.Generic.Operator do
       case msg_id do
         0x00 ->
           if is_nil(publish_interval) do
-            Comms.Operator.join_group(state.name, {:pv_values, :position_velocity}, self())
-            Comms.Operator.join_group(state.name, {:pv_values, :attitude_bodyrate}, self())
+            Comms.Operator.join_group(state.name, {:estimation_values, :position_velocity}, self())
+            Comms.Operator.join_group(state.name, {:estimation_values, :attitude_bodyrate}, self())
           end
           {:telemetry_pvat_timer, :telemetry_pvat_loop}
       end
 
     existing_timer = Map.get(state, timer_name)
-    timer =
-    if is_nil(existing_timer) or (interval_ms != publish_interval) do
-      Common.Utils.stop_loop(existing_timer)
-      Common.Utils.start_loop(self(), interval_ms, callback)
-    else
-      existing_timer
+    timer = cond do
+      is_nil(existing_timer) -> Common.Utils.start_loop(self(), interval_ms, callback)
+      interval_ms != publish_interval ->
+        Common.Utils.stop_loop(existing_timer)
+        Common.Utils.start_loop(self(), interval_ms, callback)
+      true -> existing_timer
     end
 
     publish_id_interval = Map.put(publish_id_interval, msg_id, interval_ms)

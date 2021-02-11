@@ -24,36 +24,36 @@ defmodule Control.Controller do
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
     {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
-    {pv_msg_class, pv_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    {control_cmds_msg_class, control_cmds_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
     attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
       Map.put(acc, cv_pv, Enum.into(scalar, %{}))
     end)
     vehicle_type = String.to_existing_atom(config[:vehicle_type])
 
     state = %{
-      pv_cmds: %{},
+      control_cmds: %{},
       control_state: 0,
       yaw: nil,
       airspeed: 0,
       attitude_scalar: attitude_scalar,
       act_msg_class: act_msg_class,
       act_msg_time_ms: act_msg_time_ms,
-      pv_msg_class: pv_msg_class,
-      pv_msg_time_ms: pv_msg_time_ms,
+      control_cmds_msg_class: control_cmds_msg_class,
+      control_cmds_msg_time_ms: control_cmds_msg_time_ms,
       bodyrate_module: Module.concat(Pids.Bodyrate, vehicle_type),
       attitude_module: Module.concat(Pids.Attitude, vehicle_type),
       high_level_module: Module.concat(Pids.HighLevel, vehicle_type),
       motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :attitude_bodyrate}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:estimation_values, :attitude_bodyrate}, self())
+    Comms.Operator.join_group(__MODULE__, {:estimation_values, :position_velocity}, self())
     Control.Arm.start_link()
 
     Registry.register(MessageSorterRegistry, {:control_state, :value}, 200)
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_attitude}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
-    Registry.register(MessageSorterRegistry, {{:pv_cmds, CU.cs_sca}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:control_cmds, CU.cs_rates}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:control_cmds, CU.cs_attitude}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
+    Registry.register(MessageSorterRegistry, {{:control_cmds, CU.cs_sca}, :value}, Configuration.Generic.get_loop_interval_ms(:fast))
     {:noreply, state}
   end
 
@@ -63,14 +63,14 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
+  def handle_cast({:message_sorter_value, {:control_cmds, level}, control_cmds, _status}, state) do
     # Logger.info("rx level: #{level}")
-    pv_cmds = Map.put(state.pv_cmds, level, pv_cmds)
-    {:noreply, %{state | pv_cmds: pv_cmds}}
+    control_cmds = Map.put(state.control_cmds, level, control_cmds)
+    {:noreply, %{state | control_cmds: control_cmds}}
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :attitude_bodyrate}, attitude, bodyrate, dt}, state) do
+  def handle_cast({{:estimation_values, :attitude_bodyrate}, attitude, bodyrate, dt}, state) do
     # Logger.debug("Control rx att/attrate/dt: #{inspect(attitude)}/#{inspect(bodyrate)}/#{dt}")
     # Logger.debug("cs: #{state.control_state}")
 
@@ -90,27 +90,27 @@ defmodule Control.Controller do
         other -> {other, %{}, nil}
       end
 
-    # Logger.debug("pv cmd lev #{pv_cmd_level}")
-    pv_cmds = Map.get(state.pv_cmds, cmd_level, %{})
-    unless Enum.empty?(pv_cmds) do
-      # Logger.debug("pv cmds #{cmd_level}: #{Common.Utils.eftb_map(pv_cmds, 3)}")
-      apply(__MODULE__, function, [pv_cmds, values, dt, state])
+    # Logger.debug("control cmd lev #{pv_cmd_level}")
+    control_cmds = Map.get(state.control_cmds, cmd_level, %{})
+    unless Enum.empty?(control_cmds) do
+      # Logger.debug("control_cmds#{cmd_level}: #{Common.Utils.eftb_map(control_cmds, 3)}")
+      apply(__MODULE__, function, [control_cmds, values, dt, state])
     end
     {:noreply, %{state | yaw: attitude.yaw}}
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position, velocity, dt}, state) do
+  def handle_cast({{:estimation_values, :position_velocity}, position, velocity, dt}, state) do
     # Logger.debug("Control rx vel/pos/dt: #{inspect(position)}/#{inspect(velocity)}/#{dt}")
     airspeed = velocity.airspeed
     if (state.control_state == CU.cs_sca) do
       yaw = state.yaw
       unless is_nil(yaw) do
         values = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw, airspeed: airspeed})
-        pv_cmds = Map.get(state.pv_cmds, CU.cs_sca, %{})
-        unless Enum.empty?(pv_cmds) do
-          # Logger.debug("pv cmds 3: #{Common.Utils.eftb_map(pv_cmds, 3)}")
-          process_speed_course_altitude(pv_cmds, values, dt, state)
+        control_cmds = Map.get(state.control_cmds, CU.cs_sca, %{})
+        unless Enum.empty?(control_cmds) do
+          # Logger.debug("control cmds 3: #{Common.Utils.eftb_map(control_cmds, 3)}")
+          process_speed_course_altitude(control_cmds, values, dt, state)
         end
       end
     end
@@ -146,9 +146,9 @@ defmodule Control.Controller do
     # Logger.debug("#{Common.Utils.eftb_map_deg(level_2_output_map,2)}")
 
     sca_cmds = Map.put(sca_cmds, :course, attitude_output.course)
-    # Logger.info("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
+    # Logger.info("#{Common.Utils.eftb_map_deg(sca_cmds,2)}")
 
-    send_cmds(attitude_output, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, CU.cs_attitude})
+    send_cmds(attitude_output, state.control_cmds_msg_class, state.control_cmds_msg_time_ms, {:control_cmds, CU.cs_attitude})
     store_cmds_with_telemetry(sca_cmds, CU.cs_sca)
     :ok
   end

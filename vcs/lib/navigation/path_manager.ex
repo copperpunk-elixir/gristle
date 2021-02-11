@@ -53,7 +53,7 @@ defmodule Navigation.PathManager do
       peripheral_control_allowed: false
     }
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:estimation_values, :position_velocity}, self())
     Comms.Operator.join_group(__MODULE__, :load_mission, self())
     Comms.Operator.join_group(__MODULE__, :clear_mission, self())
     Comms.Operator.join_group(__MODULE__, :load_orbit, self())
@@ -117,7 +117,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position, velocity, _dt}, state) do
+  def handle_cast({{:estimation_values, :position_velocity}, position, velocity, _dt}, state) do
     # Determine path_case
     # Get vehicle_cmds
     # Send to Navigator
@@ -191,16 +191,6 @@ defmodule Navigation.PathManager do
       MessageSorter.Sorter.add_message({:direct_actuator_cmds, :flaps}, state.flaps_cmd_class, state.flaps_cmd_time_ms, flaps_cmd)
     end
     {:noreply, %{state | position: position, velocity: velocity}}
-  end
-
-  @impl GenServer
-  def handle_call(:get_config_points, _from, state) do
-    {:reply, state.config_points, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_current_path_distance, _from, state) do
-    {:reply, state.current_path_distance, state}
   end
 
   @spec move_vehicle(map(), map(), integer()) :: map()
@@ -425,15 +415,5 @@ defmodule Navigation.PathManager do
     else
       state
     end
-  end
-
-  @spec get_config_points() :: struct()
-  def get_config_points() do
-    GenServer.call(__MODULE__, :get_config_points)
-  end
-
-  @spec get_current_path_distance() :: float()
-  def get_current_path_distance() do
-    GenServer.call(__MODULE__, :get_current_path_distance)
   end
 end

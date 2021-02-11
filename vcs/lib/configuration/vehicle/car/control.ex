@@ -2,8 +2,8 @@ defmodule Configuration.Vehicle.Car.Control do
   require Logger
   require Command.Utils, as: CU
 
-  @spec get_pv_cmds_sorter_default_values() :: map()
-  def get_pv_cmds_sorter_default_values() do
+  @spec get_control_cmds_sorter_default_values() :: map()
+  def get_control_cmds_sorter_default_values() do
     %{
       CU.cs_rates => %{thrust: 0, yawrate: 0, brake: 0.25},
       CU.cs_attitude => %{thrust: 0, yaw: 0},

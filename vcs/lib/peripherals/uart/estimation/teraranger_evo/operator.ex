@@ -83,17 +83,12 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     state = if (state.new_range_data_to_publish) do
-      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_measured, :range}, state.range}, {:pv_measured, :range}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:estimation_measured, :range}, state.range}, self())
       %{state | new_range_data_to_publish: false}
     else
       state
     end
     {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_range, _from, state) do
-    {:reply, state.range, state}
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -210,11 +205,6 @@ defmodule Peripherals.Uart.Estimation.TerarangerEvo.Operator do
   @spec publish_range(float()) :: atom()
   def publish_range(range) do
     GenServer.cast(__MODULE__, {:write, range})
-  end
-
-  @spec get_range() :: float()
-  def get_range() do
-    GenServer.call(__MODULE__, :get_range)
   end
 
   @spec max_range() :: float()

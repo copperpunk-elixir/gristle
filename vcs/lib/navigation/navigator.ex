@@ -3,7 +3,7 @@ defmodule Navigation.Navigator do
   require Logger
   require Command.Utils, as: CU
 
-  @default_pv_cmds_level CU.cs_attitude
+  @default_control_cmds_level CU.cs_attitude
 
   def start_link(config) do
     Logger.debug("Start Navigation.Navigator")
@@ -25,13 +25,13 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {pv_cmds_msg_classification, pv_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :pv_cmds)
+    {control_cmds_msg_classification, control_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
     {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
     state = %{
-      default_pv_cmds_level: Keyword.get(config, :default_pv_cmds_level, @default_pv_cmds_level),
+      default_control_cmds_level: Keyword.get(config, :default_control_cmds_level, @default_control_cmds_level),
       navigator_loop_timer: nil,
-      pv_cmds_msg_classification: pv_cmds_msg_classification,
-      pv_cmds_msg_time_validity_ms: pv_cmds_msg_time_validity_ms,
+      control_cmds_msg_classification: control_cmds_msg_classification,
+      control_cmds_msg_time_validity_ms: control_cmds_msg_time_validity_ms,
       control_state_msg_classification: control_state_msg_classification,
       control_state_msg_time_validity_ms: control_state_msg_time_validity_ms,
       goals_store: %{},
@@ -59,7 +59,7 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({:message_sorter_value, {:goals, level}, goals, status}, state) do
-    goals_default = if (level == state.default_pv_cmds_level), do: goals, else: state.goals_default
+    goals_default = if (level == state.default_control_cmds_level), do: goals, else: state.goals_default
     goals = if (status == :current), do: goals, else: %{}
     {:noreply, %{state | goals_store: Map.put(state.goals_store, level, goals), goals_default: goals_default}}
   end
@@ -68,16 +68,16 @@ defmodule Navigation.Navigator do
   @impl GenServer
   def handle_info(:navigator_loop, state) do
     # Start with Goals cs_rates, move through goals cs_sca
-    # If there a no current commands, then take the command from default_pv_cmds_level
-    default_result = {state.goals_default, state.default_pv_cmds_level}
+    # If there a no current commands, then take the command from default_control_cmds_level
+    default_result = {state.goals_default, state.default_control_cmds_level}
     goals_store = state.goals_store
-    {pv_cmds, control_state} = Enum.reduce(CU.cs_sca..CU.cs_rates, default_result, fn (pv_cmd_level, acc) ->
-      cmd_values = Map.get(goals_store, pv_cmd_level, %{})
-      if Enum.empty?(cmd_values), do: acc, else: {cmd_values, pv_cmd_level}
+    {control_cmds, control_state} = Enum.reduce(CU.cs_sca..CU.cs_rates, default_result, fn (control_cmd_level, acc) ->
+      cmd_values = Map.get(goals_store, control_cmd_level, %{})
+      if Enum.empty?(cmd_values), do: acc, else: {cmd_values, control_cmd_level}
     end)
 
     MessageSorter.Sorter.add_message(:control_state, state.control_state_msg_classification, state.control_state_msg_time_validity_ms, control_state)
-    MessageSorter.Sorter.add_message({:pv_cmds, control_state}, state.pv_cmds_msg_classification, state.pv_cmds_msg_time_validity_ms, pv_cmds)
+    MessageSorter.Sorter.add_message({:control_cmds, control_state}, state.control_cmds_msg_classification, state.control_cmds_msg_time_validity_ms, control_cmds)
     Peripherals.Uart.Telemetry.Operator.store_data(%{control_state: control_state})
     {:noreply, state}
   end

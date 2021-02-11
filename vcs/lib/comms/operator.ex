@@ -63,21 +63,6 @@ defmodule Comms.Operator do
   end
 
   @impl GenServer
-  def handle_call({:get_members, group, global_or_local}, _from, state) do
-    {:reply, get_group_members(state.groups, group, global_or_local), state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_all_groups_and_members, _from, state) do
-    {:reply, state.groups, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_message_count, _from, state) do
-    {:reply, state.message_count, state}
-  end
-
-  @impl GenServer
   def handle_info(:refresh_groups, state) do
     groups =
       Enum.reduce(:pg2.which_groups, %{}, fn (group, acc) ->
@@ -138,25 +123,9 @@ defmodule Comms.Operator do
     Enum.member?(members, pid)
   end
 
-  def get_global_members(operator_name, group) do
-    GenServer.call(via_tuple(operator_name), {:get_members, group, :global})
-  end
-
-  def get_local_members(operator_name, group) do
-    GenServer.call(via_tuple(operator_name), {:get_members, group, :local})
-  end
-
-  defp get_group_members(groups, group, global_or_local) do
+  def get_group_members(groups, group, global_or_local) do
     Map.get(groups, group, %{})
     |> Map.get(global_or_local, [])
-  end
-
-  def get_all_groups_and_members(operator_name) do
-    GenServer.call(via_tuple(operator_name), :get_all_groups_and_members)
-  end
-
-  def get_message_count(operator_name) do
-    GenServer.call(via_tuple(operator_name), :get_message_count)
   end
 
   def via_tuple(name) do

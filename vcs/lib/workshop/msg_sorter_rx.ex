@@ -44,19 +44,9 @@ defmodule Workshop.MsgSorterRx do
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_call({:get_value, name}, _from, state) do
-    {:reply, get_in(state, [:values, name]), state}
-  end
-
   @spec join_message_sorter(any(), any(), integer()) :: atom()
   def join_message_sorter(process_name, sorter_name, interval_ms) do
     GenServer.cast(via_tuple(process_name), {:join_message_sorter, sorter_name, interval_ms})
-  end
-
-  @spec get_value(any(), any()) :: any()
-  def get_value(process_name, sorter_name) do
-    GenServer.call(via_tuple(process_name), {:get_value, sorter_name})
   end
 
   @spec request_value(any(), any()) :: atom()

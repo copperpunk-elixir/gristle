@@ -58,12 +58,6 @@ defmodule Logging.Logger do
     {:noreply, %{state | clock: clock}}
   end
 
-  @impl GenServer
-  def handle_call(:get_log_directory, _from, state) do
-    log_directory = state.root_directory <> "log/"
-    {:reply, log_directory, state}
-  end
-
   @spec save_log(binary()) ::atom()
   def save_log(file_suffix \\ "") do
     Logger.debug("Logging.Logger save log: #{file_suffix}")
@@ -80,11 +74,6 @@ defmodule Logging.Logger do
   def unmount_remote() do
     payload = [0x02, 0]
     Peripherals.Uart.Generic.construct_and_send_message(:rpc, payload, Telemetry)
-  end
-
-  @spec get_log_directory() :: binary()
-  def get_log_directory do
-    GenServer.call(__MODULE__, :get_log_directory)
   end
 
   @spec get_directory(struct(), binary(), binary()) :: binary()

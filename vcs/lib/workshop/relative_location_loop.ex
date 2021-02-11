@@ -18,7 +18,7 @@ defmodule Workshop.RelativeLocationLoop do
   @impl GenServer
   def handle_cast({:begin, config}, state) do
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
+    Comms.Operator.join_group(__MODULE__, {:estimation_values, :position_velocity}, self())
     Common.Utils.start_loop(self(), 1000, :print_location_loop)
     {origin, _} = Navigation.Path.Mission.get_runway_position_heading(config[:airport], config[:runway])
     state = Map.put(state, :origin, origin)
@@ -26,7 +26,7 @@ defmodule Workshop.RelativeLocationLoop do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_values, :position_velocity}, position, _velocity, _dt}, state) do
+  def handle_cast({{:estimation_values, :position_velocity}, position, _velocity, _dt}, state) do
     state = Map.put(state, :position, position)
     {:noreply, state}
   end

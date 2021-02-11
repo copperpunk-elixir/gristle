@@ -5,6 +5,10 @@ defmodule Time.Clock do
 
   @epoch ~U[1980-01-01 00:00:00Z]
 
+  defmacro epoch do
+    quote do: ~U[1980-01-01 00:00:00Z]
+  end
+
   def new() do
     %Time.Clock{}
   end
@@ -38,10 +42,4 @@ defmodule Time.Clock do
   def calculate_source_time(time_since_epoch_ns) do
     DateTime.add(@epoch, time_since_epoch_ns, :nanosecond)
   end
-
-  @spec get_epoch() :: struct()
-  def get_epoch() do
-    @epoch
-  end
-
 end

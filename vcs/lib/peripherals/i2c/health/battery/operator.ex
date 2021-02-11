@@ -68,11 +68,6 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
     {:noreply, %{state | battery: battery}}
   end
 
-    @impl GenServer
-  def handle_call(:get_battery, _from , state) do
-    {:reply, state.battery, state}
-  end
-
   @spec update_battery_voltage(any(), atom(), struct()) :: struct()
   def update_battery_voltage(i2c_ref, battery_module, battery) do
     voltage = apply(battery_module, :read_voltage, [i2c_ref])
@@ -98,11 +93,6 @@ defmodule Peripherals.I2c.Health.Battery.Operator do
   @spec request_read_current(binary(), binary()) :: atom()
   def request_read_current(battery_type, battery_channel) do
     GenServer.cast(via_tuple(battery_type, battery_channel), :read_current)
-  end
-
-  @spec get_battery(binary(), binary()) :: struct()
-  def get_battery(battery_type, battery_channel) do
-    Common.Utils.safe_call(via_tuple(battery_type, battery_channel), :get_battery, 100, nil)
   end
 
   @spec via_tuple(atom(), integer()) :: tuple()
