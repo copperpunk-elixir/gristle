@@ -3,18 +3,12 @@ defmodule Pids.Attitude.Plane do
 
   @spec calculate_outputs(map(), map(), map()) :: map()
   def calculate_outputs(cmds, values, config) do
+    # Logger.debug("att cmds: #{inspect(cmds)}")
     rollrate_output = get_output_in_range(cmds.roll, values.roll, config.roll_rollrate)
     pitchrate_output = get_output_in_range(cmds.pitch, values.pitch, config.pitch_pitchrate)
-    # Logger.debug("att cmds: #{inspect(cmds)}")
-    yawrate_output =
-    if Map.has_key?(cmds, :yaw) do
-      get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
-    else
-      cmds.roll*0.2
-    end
-    thrust_output = cmds.thrust
+    yawrate_output = get_output_in_range(cmds.yaw, 0.0, config.yaw_yawrate)
 
-    %{rollrate: rollrate_output, pitchrate: pitchrate_output, yawrate: yawrate_output, thrust: thrust_output}
+    %{rollrate: rollrate_output, pitchrate: pitchrate_output, yawrate: yawrate_output, thrust: cmds.thrust}
   end
 
   @spec get_output_in_range(float(), float(), map()) :: float()

@@ -1,6 +1,7 @@
 defmodule Peripherals.Uart.Telemetry.Operator do
   use GenServer
   require Logger
+  require Command.Utils, as: CU
 
   def start_link(config) do
     Logger.debug("Start Uart.Telemetry.Operator")
@@ -94,20 +95,20 @@ defmodule Peripherals.Uart.Telemetry.Operator do
       Peripherals.Uart.Generic.construct_and_send_message_with_ref({:telemetry, :pvat}, values, state.uart_ref)
     end
     #tx_goals
-    level_1 = Map.get(state, :level_1, %{})
-    level_2 = Map.get(state, :level_2, %{})
-    level_3 = Map.get(state, :level_3, %{})
-    unless(Enum.empty?(level_1)) do
-      values = [iTOW, Map.get(level_1, :rollrate, 0), Map.get(level_1, :pitchrate, 0), level_1.yawrate, level_1.thrust]
-      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 1}, values, state.uart_ref)
+    cmds_rates = Map.get(state, {:cmds, CU.cs_rates}, %{})
+    cmds_attitude = Map.get(state, {:cmds, CU.cs_attitude}, %{})
+    cmds_sca = Map.get(state, {:cmds, CU.cs_sca}, %{})
+    unless(Enum.empty?(cmds_rates)) do
+      values = [iTOW, Map.get(cmds_rates, :rollrate, 0), Map.get(cmds_rates, :pitchrate, 0), cmds_rates.yawrate, cmds_rates.thrust]
+      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, CU.cs_rates}, values, state.uart_ref)
     end
-    unless(Enum.empty?(level_2)) do
-      values = [iTOW, Map.get(level_2, :roll, 0), Map.get(level_2, :pitch, 0), level_2.yaw, level_2.thrust]
-      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 2}, values, state.uart_ref)
+    unless(Enum.empty?(cmds_attitude)) do
+      values = [iTOW, Map.get(cmds_attitude, :roll, 0), Map.get(cmds_attitude, :pitch, 0), cmds_attitude.yaw, cmds_attitude.thrust]
+      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, CU.cs_attitude}, values, state.uart_ref)
     end
-    unless(Enum.empty?(level_3)) do
-      values = [iTOW, level_3.speed, level_3.course, Map.get(level_3, :altitude, 0)]
-      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, 3}, values, state.uart_ref)
+    unless(Enum.empty?(cmds_sca)) do
+      values = [iTOW, cmds_sca.speed, cmds_sca.course, Map.get(cmds_sca, :altitude, 0)]
+      Peripherals.Uart.Generic.construct_and_send_message_with_ref({:tx_goals, CU.cs_sca}, values, state.uart_ref)
     end
     control_state = Map.get(state, :control_state, nil)
     unless is_nil(control_state) do

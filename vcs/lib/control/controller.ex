@@ -55,10 +55,12 @@ defmodule Control.Controller do
 
     destination_group = {:pv_cmds_values, pv_cmd_level}
     pv_keys = Map.get(state.pv_keys, pv_cmd_level, [])
-    # Logger.debug("pv keys: #{inspect(pv_keys)}")
+    # Logger.debug("pv cmd lev #{pv_cmd_level}")
+    # Logger.debug("pv_cmds all #{Common.Utils.eftb_map_deg(state.pv_cmds,2)}")
     pv_cmds = Map.take(state.pv_cmds, pv_keys)
+    # Logger.debug("keys #{inspect(pv_keys)}")
+    # Logger.debug("pv_cmds red #{Common.Utils.eftb_map_deg(pv_cmds,2)}")
     pv_value_map = %{attitude: attitude, bodyrate: bodyrate}
-    # Logger.debug("ab pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(pv_cmds)}")
     unless Enum.empty?(pv_cmds) do
       Comms.Operator.send_local_msg_to_group(__MODULE__, {destination_group, pv_cmds, pv_value_map, state.airspeed, dt}, destination_group, self())
     end
@@ -75,7 +77,6 @@ defmodule Control.Controller do
         pv_value_map = Map.merge(velocity, %{altitude: position.altitude, yaw: yaw})
         pv_keys = get_in(state, [:pv_keys, state.control_state])
         pv_cmds = Map.take(state.pv_cmds, pv_keys)
-        # Logger.debug("pv pv_value_map/cmds: #{inspect(pv_value_map)}/#{inspect(pv_cmds)}")
         Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_cmds_values, CU.cs_sca}, pv_cmds, pv_value_map, airspeed, dt},{:pv_cmds_values, CU.cs_sca}, self())
       end
     end
@@ -84,19 +85,21 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
-    {:noreply, %{state | control_state: control_state}}
+    pv_cmds_all = retrieve_pv_cmds_up_to_control_state(control_state, state.pv_cmds_store)
+    {:noreply, %{state | control_state: control_state, pv_cmds: pv_cmds_all}}
   end
 
   @impl GenServer
   def handle_cast({:message_sorter_value, {:pv_cmds, level}, pv_cmds, _status}, state) do
+    # Logger.info("rx level: #{level}")
     pv_cmds_store = Map.put(state.pv_cmds_store, level, pv_cmds)
     pv_cmds_all = retrieve_pv_cmds_up_to_control_state(state.control_state, pv_cmds_store)
     {:noreply, %{state | pv_cmds_store: pv_cmds_store, pv_cmds: pv_cmds_all}}
   end
 
-  def retrieve_pv_cmds_up_to_control_state(control_state, pv_cmds_store) do
-    Enum.reduce(CU.cs_rates..max(control_state,CU.cs_rates),%{}, fn (level, acc) ->
-      Map.merge(acc, Map.get(pv_cmds_store, level, %{}))
+  def retrieve_pv_cmds_up_to_control_state(control_state, pv_cmds) do
+    Enum.reduce(CU.cs_rates..control_state,%{}, fn (level, acc) ->
+      Map.merge(acc, Map.get(pv_cmds, level, %{}))
     end)
   end
 end

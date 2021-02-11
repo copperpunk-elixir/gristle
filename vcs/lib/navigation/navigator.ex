@@ -1,8 +1,9 @@
 defmodule Navigation.Navigator do
   use GenServer
   require Logger
+  require Command.Utils, as: CU
 
-  @default_pv_cmds_level 2
+  @default_pv_cmds_level CU.cs_attitude
 
   def start_link(config) do
     Logger.debug("Start Navigation.Navigator")
@@ -40,9 +41,9 @@ defmodule Navigation.Navigator do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :goals_sorter, self())
     navigator_loop_interval_ms = Keyword.fetch!(config, :navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {{:goals, 1}, :value}, navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {{:goals, 2}, :value}, navigator_loop_interval_ms)
-    Registry.register(MessageSorterRegistry, {{:goals, 3}, :value}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, CU.cs_rates}, :value}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, CU.cs_attitude}, :value}, navigator_loop_interval_ms)
+    Registry.register(MessageSorterRegistry, {{:goals, CU.cs_sca}, :value}, navigator_loop_interval_ms)
     Common.Utils.start_loop(self(), navigator_loop_interval_ms, :navigator_loop)
     {:noreply, state}
   end
@@ -66,11 +67,11 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_info(:navigator_loop, state) do
-    # Start with Goals 3, move through goals 1
+    # Start with Goals cs_rates, move through goals cs_sca
     # If there a no current commands, then take the command from default_pv_cmds_level
     default_result = {state.goals_default, state.default_pv_cmds_level}
     goals_store = state.goals_store
-    {pv_cmds, control_state} = Enum.reduce(3..1, default_result, fn (pv_cmd_level, acc) ->
+    {pv_cmds, control_state} = Enum.reduce(CU.cs_sca..CU.cs_rates, default_result, fn (pv_cmd_level, acc) ->
       cmd_values = Map.get(goals_store, pv_cmd_level, %{})
       if Enum.empty?(cmd_values), do: acc, else: {cmd_values, pv_cmd_level}
     end)

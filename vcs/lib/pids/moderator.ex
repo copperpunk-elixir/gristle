@@ -1,6 +1,7 @@
 defmodule Pids.Moderator do
   use GenServer
   require Logger
+  require Command.Utils, as: CU
 
   def start_link(config) do
     Logger.debug("Start Pids.Moderator")
@@ -43,9 +44,9 @@ defmodule Pids.Moderator do
       motor_moments: config[:motor_moments]
     }
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, CU.cs_rates}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, CU.cs_attitude}, self())
+    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, CU.cs_sca}, self())
     Pids.Tecs.Arm.start_link()
     {:noreply, state}
   end
@@ -53,52 +54,37 @@ defmodule Pids.Moderator do
   @impl GenServer
   def handle_cast({{:pv_cmds_values, level}, pv_cmd_map, pv_value_map, airspeed, dt}, state) do
     case level do
-      3 ->
-        # pv_cmd_map will always contain course
-        # course_key = if Map.has_key?(pv_cmd_map, :course_ground), do: :course_ground, else: :course_flight
-        # pv_cmd_map = Map.take(pv_cmd_map, [course_key, :speed, :altitude, :yaw_offset])
-        # pv_value_map = Map.take(pv_value_map, [:course, :speed, :altitude, :vertical, :yaw])
-        # course_cmd = Map.get(pv_cmd_map, course_key)
-        level_2_output_map = apply(state.high_level_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
-
-        pv_cmd_map = Map.put(pv_cmd_map, :course, level_2_output_map.course)
-        # pv_cmd_map = Map.put(pv_cmd_map, course_key, roll_yaw_course_output.course)
+      CU.cs_sca ->
+        attitude_output_map = apply(state.high_level_module, :calculate_outputs, [pv_cmd_map, pv_value_map, airspeed, dt])
         # Logger.debug("#{Common.Utils.eftb_map_deg(level_2_output_map,2)}")
 
-        send_cmds(level_2_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, 2})
-        # pv_cmd_map = if Map.has_key?(level_2_output_map, :yaw) do
-        #   Map.put(pv_cmd_map, :yaw, level_2_output_map.yaw)
-        # else
-        #   Map.put(pv_cmd_map, :yaw, 0)
-        # end
+        pv_cmd_map = Map.put(pv_cmd_map, :course, attitude_output_map.course)
         # Logger.info("#{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
-        publish_cmds(pv_cmd_map, 3)
-      2 ->
+
+        send_cmds(attitude_output_map, state.pv_msg_class, state.pv_msg_time_ms, {:pv_cmds, CU.cs_attitude})
+        store_cmds_with_telemetry(pv_cmd_map, CU.cs_sca)
+      CU.cs_attitude ->
         # Logger.warn("2cmd #{Common.Utils.eftb_map_deg(pv_cmd_map,2)}")
-        # Logger.warn("2val #{Common.Utils.eftb_map_deg(pv_value_map,2)}")
-        level_1_output_map = apply(state.attitude_module, :calculate_outputs, [pv_cmd_map, pv_value_map.attitude, state.attitude_scalar])
+        # Logger.warn("2val #{Common.Utils.eftb_map_deg(pv_value_map.attitude,2)}")
+        # Logger.warn("2val #{Common.Utils.eftb_map_deg(pv_value_map.bodyrate,2)}")
+        rates_output_map = apply(state.attitude_module, :calculate_outputs, [pv_cmd_map, pv_value_map.attitude, state.attitude_scalar])
 
         # Logger.debug(Common.Utils.eftb_map(level_1_output_map,2))
         # output_map turns into input_map for Level I calcs
-        pv_1_cmd_map = level_1_output_map
-        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_1_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
+        rates_cmd_map = rates_output_map
+        actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [rates_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
         # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
-        pv_cmd_map = if Map.has_key?(pv_cmd_map, :yaw) do
-          pv_cmd_map
-        else
-          Map.put(pv_cmd_map, :yaw, 0)
-        end
-        publish_cmds(pv_cmd_map, 2)
-        publish_cmds(pv_1_cmd_map, 1)
-      1 ->
+        store_cmds_with_telemetry(pv_cmd_map, CU.cs_attitude)
+        store_cmds_with_telemetry(rates_cmd_map, CU.cs_rates)
+      CU.cs_rates ->
         # Logger.debug("PID Level 1")
         actuator_outputs = apply(state.bodyrate_module, :calculate_outputs, [pv_cmd_map, pv_value_map.bodyrate, airspeed, dt, state.motor_moments])
         # Logger.debug(Common.Utils.eftb_map(actuator_outputs, 2))
         send_cmds(actuator_outputs, state.act_msg_class, state.act_msg_time_ms, :indirect_actuator_cmds)
-        publish_cmds(pv_cmd_map, 1)
-      0 ->
-        Logger.warn("PID level 0 - How did we get here?")
+        store_cmds_with_telemetry(pv_cmd_map, CU.cs_rates)
+      _other ->
+        Logger.warn("PID level unknown - How did we get here?")
     end
     {:noreply, state}
   end
@@ -107,14 +93,8 @@ defmodule Pids.Moderator do
     MessageSorter.Sorter.add_message(cmd_type, msg_class, msg_time_ms, output_map)
   end
 
-  @spec publish_cmds(map(), integer()) :: atom()
-  def publish_cmds(cmds, level) do
-    cmd_level =
-      case level do
-        1-> :level_1
-        2-> :level_2
-        3-> :level_3
-      end
-    Peripherals.Uart.Telemetry.Operator.store_data(%{cmd_level => cmds})
+  @spec store_cmds_with_telemetry(map(), integer()) :: atom()
+  def store_cmds_with_telemetry(cmds, level) do
+    Peripherals.Uart.Telemetry.Operator.store_data(%{{:cmds, level} => cmds})
   end
 end
