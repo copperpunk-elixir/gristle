@@ -50,8 +50,12 @@ defmodule Navigation.Path.PathFollower do
         path_case.r.altitude + (q.z*Common.Utils.Math.hypot(si1, si2) / Common.Utils.Math.hypot(q.x, q.y))
       end
       chi_q = :math.atan2(q.y, q.x)
-      chi_q = if ((chi_q - course) < -:math.pi), do: chi_q + CC.two_pi, else: chi_q
-      chi_q = if ((chi_q - course) > :math.pi), do: chi_q - CC.two_pi, else: chi_q
+      chi_q = cond do
+        (chi_q - course) < -:math.pi -> chi_q + CC.two_pi
+        (chi_q - course) > :math.pi -> chi_q - CC.two_pi
+        true -> chi_q
+      end
+
       sin_chi_q = :math.sin(chi_q)
       cos_chi_q = :math.cos(chi_q)
 
@@ -82,8 +86,12 @@ defmodule Navigation.Path.PathFollower do
       # Logger.debug("post look: #{dx}/#{dy}")
       orbit_d = Common.Utils.Math.hypot(dx, dy)
       phi = :math.atan2(dy, dx)
-      phi = if ((phi - course) < -:math.pi), do: phi + CC.two_pi, else: phi
-      phi = if ((phi - course) > :math.pi), do: phi - CC.two_pi, else: phi
+      phi = cond do
+        (phi - course) < -:math.pi -> phi + CC.two_pi
+        (phi - course) > :math.pi -> phi - CC.two_pi
+        true -> phi
+      end
+
       course_cmd = phi + path_case.turn_direction*(CC.pi_2 + :math.atan(path_follower.k_orbit*(orbit_d - path_case.rho)/path_case.rho))
       |> Common.Utils.Motion.constrain_angle_to_compass()
 

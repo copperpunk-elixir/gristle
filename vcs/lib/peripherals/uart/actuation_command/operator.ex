@@ -41,7 +41,6 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
       rx: apply(rx_module, :new, []),
       interface: nil,
       interface_module: Keyword.fetch!(config, :interface_module),
-      channels: %{}
     }
 
     uart_port = Keyword.fetch!(config, :uart_port)
@@ -55,15 +54,14 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
 
   @impl GenServer
   def handle_cast({:update_actuators, actuators_and_outputs}, state) do
-    channels = Enum.reduce(actuators_and_outputs, state.channels, fn ({_actuator_name, {actuator, output}}, acc) ->
+    channels = Enum.reduce(actuators_and_outputs, %{}, fn ({_actuator_name, {actuator, output}}, acc) ->
      # Logger.debug("op #{actuator.channel_number}: #{output}")
       pulse_width_us = output_to_us(output, actuator.reversed, actuator.min_pw_us, actuator.max_pw_us)
       Map.put(acc, actuator.channel_number, pulse_width_us)
     end)
-    # Logger.info("#{inspect(channels)}")
     # Logger.debug(Common.Utils.eftb_map(channels, 0))
     apply(state.interface_module, :write_channels, [state.interface, channels])
-    {:noreply, %{state | channels: channels}}
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -92,7 +90,7 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
       parse(rx_module, state.rx, data_list)
     end
     {rx, channel_values} =
-    if rx.payload_ready == true do
+    if rx.payload_ready do
       channel_values = apply(rx_module, :get_channels, [rx])
       # Logger.debug("ready")
       # Logger.debug("omap: #{inspect(rx.channel_map)}")
@@ -110,7 +108,7 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
     # Logger.debug("buffer/rx: #{inspect(buffer)}/#{inspect(rx)}")
     {[byte], buffer} = Enum.split(buffer,1)
     rx = apply(rx_module, :parse, [rx, byte])
-    if (Enum.empty?(buffer)) do
+    if Enum.empty?(buffer) do
       rx
     else
       parse(rx_module, rx, buffer)
@@ -124,16 +122,10 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
 
   def output_to_us(output, reversed, min_pw_us, max_pw_us) do
     # Output will arrive in range [-1,1]
-    if (output < 0) || (output > 1) do
-      nil
-    else
-      # output = 0.5*(output + 1.0)
-      case reversed do
-        false ->
-          min_pw_us + output*(max_pw_us - min_pw_us)
-        true ->
-          max_pw_us - output*(max_pw_us - min_pw_us)
-      end
+    cond do
+      (output < 0) || (output > 1) -> nil
+      reversed -> max_pw_us - output*(max_pw_us - min_pw_us)
+      true -> min_pw_us + output*(max_pw_us - min_pw_us)
     end
   end
 end

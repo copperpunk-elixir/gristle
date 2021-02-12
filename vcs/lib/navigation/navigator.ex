@@ -60,25 +60,38 @@ defmodule Navigation.Navigator do
   @impl GenServer
   def handle_cast({:message_sorter_value, {:goals, level}, goals, status}, state) do
     goals_default = if (level == state.default_control_cmds_level), do: goals, else: state.goals_default
-    goals = if (status == :current), do: goals, else: %{}
-    {:noreply, %{state | goals_store: Map.put(state.goals_store, level, goals), goals_default: goals_default}}
+    goals_store =
+    if (status == :current) do
+      Map.put(state.goals_store, level, goals)
+    else
+      Map.drop(state.goals_store, [level])
+    end
+    {:noreply, %{state | goals_store: goals_store, goals_default: goals_default}}
   end
-
 
   @impl GenServer
   def handle_info(:navigator_loop, state) do
     # Start with Goals cs_rates, move through goals cs_sca
     # If there a no current commands, then take the command from default_control_cmds_level
     default_result = {state.goals_default, state.default_control_cmds_level}
-    goals_store = state.goals_store
-    {control_cmds, control_state} = Enum.reduce(CU.cs_sca..CU.cs_rates, default_result, fn (control_cmd_level, acc) ->
-      cmd_values = Map.get(goals_store, control_cmd_level, %{})
-      if Enum.empty?(cmd_values), do: acc, else: {cmd_values, control_cmd_level}
-    end)
+    {control_cmds, control_state} = get_highest_level_active_goals(CU.cs_sca, state.goals_store, default_result)
 
     MessageSorter.Sorter.add_message(:control_state, state.control_state_msg_classification, state.control_state_msg_time_validity_ms, control_state)
     MessageSorter.Sorter.add_message({:control_cmds, control_state}, state.control_cmds_msg_classification, state.control_cmds_msg_time_validity_ms, control_cmds)
     Peripherals.Uart.Telemetry.Operator.store_data(%{control_state: control_state})
     {:noreply, state}
+  end
+
+  @spec get_highest_level_active_goals(integer(), map(), map()) :: tuple()
+  def get_highest_level_active_goals(_, goals_store, default_result) when goals_store == %{} do
+    default_result
+  end
+
+  @spec get_highest_level_active_goals(integer(), map(), map()) :: tuple()
+  def get_highest_level_active_goals(level, goals_store, default_result) do
+    case Map.pop(goals_store, level) do
+      {nil, remaining_goals} -> get_highest_level_active_goals(level-1, remaining_goals, default_result)
+      {goals, _} -> {goals, level}
+    end
   end
 end
