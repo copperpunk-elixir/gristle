@@ -23,23 +23,12 @@ defmodule Pids.Controller.TecsBalance do
       pv_integrator: 0,
       integrator_factor: Keyword.get(config, :integrator_factor, 1),
       pv_correction_prev: 0,
-      speed_prev: nil,
       output: Keyword.fetch!(config, :output_neutral)
     }
   end
 
   @spec update(map(), map(), float(), float(), map()) :: map()
   def update(cmds, values, _airspeed, dt, state) do
-    speed = values.speed
-
-    # speed_dot =
-    # if is_nil(state.speed_prev) do
-    #   0
-    # else
-    # (speed - state.speed_prev)/dt
-    # end
-
-
     altitude_corr = cmds.altitude_corr
     alt_rate_sp = altitude_corr*state.altitude_kp
     # Logger.debug("alt_rate_sp: #{Common.Utils.eftb(alt_rate_sp,2)}")
@@ -63,38 +52,25 @@ defmodule Pids.Controller.TecsBalance do
     # Integrator
     # Logger.debug("bcorr/pv_int: #{Common.Utils.eftb(balance_corr,3)}/#{Common.Utils.eftb(state.integrator_range_max,3)}")
     in_range = Common.Utils.Math.in_range?(balance_corr, state.integrator_range_min, state.integrator_range_max)
+
     error_positive = cmd_p > 0
     i_positive = state.pv_integrator > 0
+
     pv_mult = if !i_positive and !error_positive, do: 1.0, else: state.integrator_factor
+
     pv_add = balance_corr*dt
-    pv_integrator =
-    if in_range do
-      # Logger.debug("pv_mult: #{Common.Utils.eftb(pv_mult, 1)}")
-      state.pv_integrator + pv_add*pv_mult
-    else
-      if error_positive != i_positive do
-        state.pv_integrator + pv_add*pv_mult
-      else
-        state.pv_integrator
-      end
+    pv_integrator = cond do
+      in_range -> state.pv_integrator + pv_add*pv_mult
+      error_positive != i_positive -> state.pv_integrator + pv_add*pv_mult
+      true -> state.pv_integrator
     end
     # Logger.debug("pv int: #{Common.Utils.eftb(pv_integrator,3)}")
-    # cmd_i_mult =
-    # if i_positive == error_positive do
-    #   state.ki
-    # else
-    #   Logger.debug("int fact")
-    #   state.ki*state.integrator_factor
-    # end
+
     cmd_i = state.ki*pv_integrator
     |> Common.Utils.Math.constrain(-0.175, 0.175)
     # Logger.info("cmd i pre/post: #{Common.Utils.eftb(cmd_i_mult*pv_integrator,3)}/#{Common.Utils.eftb(cmd_i, 3)}")
     pv_integrator =
-    if (state.ki != 0) do
-      cmd_i / state.ki
-    else
-      0.0
-    end
+    if (state.ki != 0), do: cmd_i / state.ki, else: 0
     # Derivative
     cmd_d = balance_rate_corr*state.kd
 
@@ -107,6 +83,6 @@ defmodule Pids.Controller.TecsBalance do
     # Logger.debug("p/i/d/rate/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(cmd_d, 3)}/#{Common.Utils.eftb(cmd_rate,3)}/#{Common.Utils.eftb_deg(output, 3)}")
     # Logger.debug("p/i/total: #{Common.Utils.eftb_deg(cmd_p,3)}/#{Common.Utils.eftb_deg(cmd_i,3)}/#{Common.Utils.eftb_deg(output, 3)}")
 
-    %{state | pv_integrator: pv_integrator, output: output, speed_prev: speed}
+    %{state | pv_integrator: pv_integrator, output: output}
   end
 end

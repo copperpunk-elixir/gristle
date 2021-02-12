@@ -3,7 +3,6 @@ defmodule Simulation.Static do
   use Bitwise
   use GenServer
 
-  # @rad2deg 57.295779513
   @default_latitude 41.769201
   @default_longitude -122.506394
   @default_altitude 1186.0

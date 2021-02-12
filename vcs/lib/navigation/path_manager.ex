@@ -275,8 +275,7 @@ defmodule Navigation.PathManager do
   @spec agl_error(float(), float(), float()) :: float()
   def agl_error(altitude_cmd, landing_altitude, agl) do
     agl_cmd = altitude_cmd - landing_altitude
-    agl_error = agl_cmd - agl
-    agl_error
+    agl_cmd - agl
   end
 
   @spec process_peripheral_path(map(), map()) :: map()
@@ -361,7 +360,6 @@ defmodule Navigation.PathManager do
   def process_load_orbit(orbit_type, position, radius, confirmation, state) do
     course = get_in(state, [:velocity, :course])
     Logger.debug("path manager load orbit: #{radius}")
-    if is_nil(position), do: Logger.warn("no orbit position")
     {_turn_rate, speed, radius} = Navigation.Path.Mission.calculate_orbit_parameters(state.model_type, radius)
     position = if is_nil(position), do: state.position, else: position
     if is_nil(position) or is_nil(course) do

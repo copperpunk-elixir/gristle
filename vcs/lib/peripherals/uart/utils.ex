@@ -48,10 +48,7 @@ defmodule Peripherals.Uart.Utils do
           acc
         end
       end)
-      case length(matching_ports) do
-        0 -> nil
-        _ -> Enum.min(matching_ports)
-      end
+      if length(matching_ports) == 0, do: nil, else: Enum.min(matching_ports)
     end
   end
 end

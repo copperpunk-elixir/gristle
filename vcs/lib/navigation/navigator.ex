@@ -69,7 +69,6 @@ defmodule Navigation.Navigator do
     {:noreply, %{state | goals_store: goals_store, goals_default: goals_default}}
   end
 
-
   @impl GenServer
   def handle_info(:navigator_loop, state) do
     # Start with Goals cs_rates, move through goals cs_sca
@@ -84,10 +83,11 @@ defmodule Navigation.Navigator do
   end
 
   @spec get_highest_level_active_goals(integer(), map(), map()) :: tuple()
-  def get_highest_level_active_goals(_, goals, default_result) when goals == %{} do
+  def get_highest_level_active_goals(_, goals_store, default_result) when goals_store == %{} do
     default_result
   end
 
+  @spec get_highest_level_active_goals(integer(), map(), map()) :: tuple()
   def get_highest_level_active_goals(level, goals_store, default_result) do
     case Map.pop(goals_store, level) do
       {nil, remaining_goals} -> get_highest_level_active_goals(level-1, remaining_goals, default_result)
