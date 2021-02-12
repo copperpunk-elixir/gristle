@@ -63,7 +63,6 @@ defmodule Estimation.Estimator do
     # Logger.debug("Estimator rx: #{inspect(values)}")
     attitude = Map.get(values, :attitude)
     bodyrate = Map.get(values, :bodyrate)
-    {attitude, bodyrate} =
     state =
     if is_nil(attitude) or is_nil(bodyrate) do
       state
