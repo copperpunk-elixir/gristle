@@ -64,13 +64,13 @@ defmodule Estimation.Estimator do
     attitude = Map.get(values, :attitude)
     bodyrate = Map.get(values, :bodyrate)
     {attitude, bodyrate} =
+    state =
     if is_nil(attitude) or is_nil(bodyrate) do
-      {state.attitude, state.bodyrate}
+      state
     else
       Watchdog.Active.feed(:att_rate)
-      {attitude, bodyrate}
+      %{state | attitude: attitude, bodyrate: bodyrate}
     end
-    state = %{state | attitude: attitude, bodyrate: bodyrate}
     {:noreply, state}
   end
 
