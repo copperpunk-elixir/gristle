@@ -25,6 +25,7 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
+    Comms.Operator.join_group(__MODULE__, :gps_time, self())
 
     {:ok, uart_ref} = Circuits.UART.start_link()
     state = %{
@@ -66,11 +67,6 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   def handle_cast({:send_message, message}, state) do
     Circuits.UART.write(state.uart_ref, message)
     {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_call({:get_values, key_list}, _from, state) do
-    {:reply, Map.take(state, key_list), state}
   end
 
   @impl GenServer
@@ -139,17 +135,6 @@ defmodule Peripherals.Uart.Telemetry.Operator do
   def store_data(data_map) do
     GenServer.cast(__MODULE__, {:store_data, data_map})
   end
-
-  def get_accel_gyro() do
-    GenServer.call(__MODULE__, {:get_values, [:accel, :bodyrate]})
-  end
-
-  @spec get_value(list()) :: any()
-  def get_value(keys) do
-    keys = Common.Utils.assert_list(keys)
-    GenServer.call(__MODULE__, {:get_values, keys})
-  end
-
   # def send_local(message, group) do
   #   Comms.Operator.send_local_msg_to_group(__MODULE__, message, group, self())
   # end

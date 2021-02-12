@@ -105,22 +105,6 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
     {:noreply, %{state | rx: rx, channel_values: channel_values}}
   end
 
-  @impl GenServer
-  def handle_call(:get_uart_ref, _from, state) do
-    {:reply, state.uart_ref, state}
-  end
-
-  @impl GenServer
-  def handle_call({:get_channel_value, channel}, _from, state) do
-    value = Enum.at(state.channel_values,channel)
-    {:reply, value, state}
-  end
-
-  @impl GenServer
-  def handle_call(:get_all_channel_values, _from, state) do
-    {:reply, state.channel_values, state}
-  end
-
   @spec parse(atom(), struct(), list()) :: struct()
   def parse(rx_module, rx, buffer) do
     # Logger.debug("buffer/rx: #{inspect(buffer)}/#{inspect(rx)}")
@@ -151,17 +135,5 @@ defmodule Peripherals.Uart.ActuationCommand.Operator do
           max_pw_us - output*(max_pw_us - min_pw_us)
       end
     end
-  end
-
-  def get_value_for_channel(channel) do
-    GenServer.call(__MODULE__, {:get_channel_value, channel})
-  end
-
-  def get_values_for_all_channels() do
-    GenServer.call(__MODULE__, :get_all_channel_values)
-  end
-
-  def get_uart_ref() do
-    GenServer.call(__MODULE__, :get_uart_ref)
   end
 end

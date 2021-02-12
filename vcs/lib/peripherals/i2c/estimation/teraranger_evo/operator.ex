@@ -74,14 +74,9 @@ defmodule Peripherals.I2c.Estimation.TerarangerEvo.Operator do
   def handle_info(:read_range_loop, state) do
     {range, is_new_range} = read_range(state.i2c_ref, state.range)
     if is_new_range do
-      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_measured, :range}, range}, {:pv_measured, :range}, self())
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:estimation_measured, :range}, range}, self())
     end
     {:noreply, %{state | range: range}}
-  end
-
-  @impl GenServer
-  def handle_call(:get_range, _from, state) do
-    {:reply, state.range, state}
   end
 
   @spec read_range(any(), float()) :: tuple()
@@ -136,11 +131,6 @@ defmodule Peripherals.I2c.Estimation.TerarangerEvo.Operator do
   @spec request_read_range() :: atom()
   def request_read_range() do
     GenServer.cast(__MODULE__, :read_range)
-  end
-
-  @spec get_range() :: float()
-  def get_range() do
-    GenServer.call(__MODULE__, :get_range)
   end
 
   @spec max_range() :: float()

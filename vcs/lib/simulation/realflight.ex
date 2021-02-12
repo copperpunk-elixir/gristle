@@ -135,7 +135,7 @@ defmodule Simulation.Realflight do
     unless Enum.empty?(state.bodyrate) or Enum.empty?(state.attitude) or Enum.empty?(state.velocity) or Enum.empty?(state.position) do
       Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
     end
-    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:estimation_calculated, :airspeed}, state.airspeed}, self())
     if !Enum.empty?(state.attitude) and (:rand.uniform(5) == 1) do
       range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
       range_meas = if (range_meas < 0), do: 0, else: range_meas

@@ -49,7 +49,7 @@ defmodule Simulation.XplaneReceive do
   end
 
   @impl GenServer
-  def handle_cast(:publish_pv_measured, state) do
+  def handle_cast(:publish_estimation_measured, state) do
     keys = [:attitude, :bodyrate, :bodyaccel, :velocity, :position]
     value_map = Enum.reduce(keys, %{}, fn (key, acc) ->
       value = Map.get(state,key)
@@ -57,7 +57,7 @@ defmodule Simulation.XplaneReceive do
     end)
 
     unless Enum.empty?(value_map) do
-      Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, value_map}, :pv_measured, self())
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:estimation_measured, value_map}, self())
     end
     {:noreply, state}
   end
@@ -161,7 +161,7 @@ defmodule Simulation.XplaneReceive do
             vel_east_mps = list_to_int(vel_east_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32)
             vel_down_mps = -(list_to_int(vel_up_mps_uint32,4) |> Common.Utils.Math.fp_from_uint(32))
             # Logger.debug("vNED: #{eftb(vel_north_mps,1)}/#{eftb(vel_east_mps, 1)}/#{eftb(vel_down_mps, 1)}")
-            GenServer.cast(__MODULE__, :publish_pv_measured)
+            GenServer.cast(__MODULE__, :publish_estimation_measured)
             %{state | velocity: %{north: vel_north_mps, east: vel_east_mps, down: vel_down_mps}}
           _other ->
             Logger.debug("unknown type")
@@ -183,19 +183,20 @@ defmodule Simulation.XplaneReceive do
   @spec publish_perfect_simulation_data(map()) ::atom()
   def publish_perfect_simulation_data(state) do
     Peripherals.Uart.Estimation.VnIns.Operator.publish_vn_message(state.bodyrate, state.attitude, state.velocity, state.position)
-    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    # Comms.Operator.send_local_msg_to_group(__MODULE__, {{:estimation_calculated, :airspeed}, state.airspeed}, self())
     if !is_nil(state.attitude) and (:rand.uniform(5) == 1) do
       range_meas =state.agl/(:math.cos(state.attitude.roll)*:math.cos(state.attitude.pitch))
+      range_meas = if (range_meas < 0), do: 0, else: range_meas
       Peripherals.Uart.Estimation.TerarangerEvo.Operator.publish_range(range_meas)
     end
   end
 
   @spec publish_simulation_data(map()) ::atom()
   def publish_simulation_data(state) do
-    pv_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {:pv_measured, pv_measured}, :pv_measured, self())
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :agl}, state.agl}, {:pv_calculated, :agl}, self())
-    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:pv_calculated, :airspeed}, state.airspeed}, {:pv_calculated, :airspeed}, self())
+    estimation_measured = %{attitude: state.attitude, bodyrate: state.bodyrate, bodyaccel: state.bodyaccel, position: state.position, velocity: state.velocity}
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {:estimation_measured, estimation_measured}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:estimation_calculated, :agl}, state.agl}, self())
+    Comms.Operator.send_local_msg_to_group(__MODULE__, {{:estimation_calculated, :airspeed}, state.airspeed}, self())
   end
 
   @spec list_to_int(list(), integer()) :: integer()

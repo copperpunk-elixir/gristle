@@ -7,9 +7,12 @@ defmodule Boss.System do
     Logger.debug("Start Application")
     start_link()
     DynamicSupervisor.start_child(__MODULE__,%{id: Boss.Operator.Supervisor, start: {Boss.Operator, :start_link,[model_type, node_type]}})
+    Process.sleep(500)
+    start_module(Comms, model_type, node_type)
     Process.sleep(200)
     start_module(MessageSorter, model_type, node_type)
     Process.sleep(500)
+
     generic_modules = [Cluster, Logging, Time]
     start_modules(generic_modules, model_type, node_type)
   end

@@ -54,15 +54,4 @@ defmodule Health.Power do
     end
     {:noreply, state}
   end
-
-  @impl GenServer
-  def handle_call({:get_battery, battery_id}, _from, state) do
-    Logger.debug("get battery: #{battery_id}")
-    {:reply, Map.get(state.batteries, battery_id), state}
-  end
-
-  @spec get_battery(atom) :: map()
-  def get_battery(id) do
-    Common.Utils.safe_call(__MODULE__, {:get_battery, id}, 200, -1)
-  end
 end

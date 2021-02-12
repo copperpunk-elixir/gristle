@@ -15,7 +15,7 @@ defmodule Comms.TestMemberAllGroups do
         pv_values_estimator: %{},
         pv_values_pid_system: %{},
         pv_calculated: %{},
-        pv_cmds: %{},
+        control_cmds: %{},
         goals: %{},
      }}
   end
@@ -26,9 +26,9 @@ defmodule Comms.TestMemberAllGroups do
     Comms.Operator.join_group(__MODULE__, {:pv_values, :position_velocity}, self())
     # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :attitude_bodyrate}, self())
     # Comms.Operator.join_group(__MODULE__, {:pv_calculated, :position_velocity}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 1}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 2}, self())
-    Comms.Operator.join_group(__MODULE__, {:pv_cmds_values, 3}, self())
+    Comms.Operator.join_group(__MODULE__, {:control_cmds_values, 1}, self())
+    Comms.Operator.join_group(__MODULE__, {:control_cmds_values, 2}, self())
+    Comms.Operator.join_group(__MODULE__, {:control_cmds_values, 3}, self())
     Comms.Operator.join_group(__MODULE__, {:goals, 1}, self())
     {:noreply, state}
   end
@@ -57,9 +57,9 @@ defmodule Comms.TestMemberAllGroups do
   end
 
   @impl GenServer
-  def handle_cast({{:pv_cmds_values, level}, pv_cmd_map, pv_value_map, _dt}, state ) do
-    Logger.debug("Test member rx: pv_cmds_values #{level}, cmds: #{inspect(pv_cmd_map)}")
-    pv_cmds = Map.merge(state.pv_cmds, pv_cmd_map)
+  def handle_cast({{:control_cmds_values, level}, pv_cmd_map, pv_value_map, _dt}, state ) do
+    Logger.debug("Test member rx: control_cmds_values #{level}, cmds: #{inspect(pv_cmd_map)}")
+    control_cmds = Map.merge(state.control_cmds, pv_cmd_map)
     pv_value_type =
       case level do
         3 -> :position_velocity
@@ -67,7 +67,7 @@ defmodule Comms.TestMemberAllGroups do
         1 -> :attitude_bodyrate
       end
     pv_values = get_pvs_from_map(pv_value_map, pv_value_type, state.pv_values_pid_system)
-    {:noreply, %{state | pv_cmds: pv_cmds, pv_values_pid_system: pv_values}}
+    {:noreply, %{state | control_cmds: control_cmds, pv_values_pid_system: pv_values}}
   end
 
   @impl GenServer

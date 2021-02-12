@@ -39,8 +39,6 @@ defmodule Display.Scenic.System do
       ]
     }
 
-    Comms.System.start_link()
-
     viewports = [
       gcs_config,
       planner_config

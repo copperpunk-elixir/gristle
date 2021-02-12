@@ -40,14 +40,14 @@ defmodule Command.Commander do
       control_state: CU.cs_rates,
       pilot_control_mode: CU.pcm_auto,
       reference_cmds: %{},
-      pv_values: %{},
+      estimation_values: %{},
       rx_output_channel_map: Keyword.fetch!(config, :rx_output_channel_map),
       rx_output_time_prev: :erlang.monotonic_time(:millisecond)
     }
 
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :rx_output, self())
-    Comms.Operator.join_group(__MODULE__, :pv_3_local, self())
+    Comms.Operator.join_group(__MODULE__, :sca_values_slow, self())
     {:noreply, state}
   end
 
@@ -59,8 +59,8 @@ defmodule Command.Commander do
   end
 
   @impl GenServer
-  def handle_cast({:pv_3_local, pv_values}, state) do
-    {:noreply, %{state | pv_values: pv_values}}
+  def handle_cast({:sca_values_slow, estimation_values}, state) do
+    {:noreply, %{state | estimation_values: estimation_values}}
   end
 
   @spec convert_rx_output_to_cmds_and_publish(list(), map()) :: atom()
@@ -85,7 +85,7 @@ defmodule Command.Commander do
       reference_cmds =
       if (control_state != state.control_state) or (pilot_control_mode != state.pilot_control_mode) do
         Logger.debug("latch cs: #{control_state}")
-        latch_commands(control_state, state.pv_values)
+        latch_commands(control_state, state.estimation_values)
       else
         state.reference_cmds
       end
@@ -200,14 +200,14 @@ defmodule Command.Commander do
   end
 
   @spec latch_commands(integer(), map()) :: map()
-  def latch_commands(new_control_state, pv_values) do
+  def latch_commands(new_control_state, estimation_values) do
     case new_control_state do
       2 ->
         %{yaw: 0}
       3 ->
-        course = Map.get(pv_values, :course, 0)
-        speed = Map.get(pv_values,:speed, 0)
-        altitude = Map.get(pv_values, :altitude, 0)
+        course = Map.get(estimation_values, :course, 0)
+        speed = Map.get(estimation_values,:speed, 0)
+        altitude = Map.get(estimation_values, :altitude, 0)
         %{speed: speed, course_tilt: course, course_rotate: course, altitude: altitude}
       _other ->
         %{}

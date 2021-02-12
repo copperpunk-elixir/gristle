@@ -40,8 +40,8 @@ defmodule Boss.Utils do
     attach_ringlogger(node_type)
     define_atoms()
     Process.sleep(100)
-    Comms.System.start_link()
-    Process.sleep(1000)
+    # Comms.System.start_link()
+    # Process.sleep(1000)
     {model_type, node_type}
   end
 

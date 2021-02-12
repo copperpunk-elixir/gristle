@@ -82,11 +82,6 @@ defmodule Watchdog.Active do
     GenServer.cast(via_tuple(name), :feed)
   end
 
-  @spec is_fed?(atom()) :: boolean()
-  def is_fed?(name) do
-    GenServer.call(via_tuple(name), :is_fed)
-  end
-
   def via_tuple(name) do
     Comms.ProcessRegistry.via_tuple(__MODULE__,name)
   end

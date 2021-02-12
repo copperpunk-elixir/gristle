@@ -2,6 +2,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
   use Bitwise
   use GenServer
   require Logger
+  require Time.Clock
 
   @start_byte 250
   @deg2rad 0.017453293
@@ -94,14 +95,14 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   defp publish_ins_data(ins_data, expecting_pos_vel) do
     attitude_bodyrate_value_map = %{attitude: ins_data.attitude, bodyrate: ins_data.bodyrate}
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, {:pv_calculated, :attitude_bodyrate}, self())
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:estimation_calculated, :attitude_bodyrate}, attitude_bodyrate_value_map}, self())
     position_velocity_value_map =
     if (expecting_pos_vel) do
       %{position: ins_data.position, velocity: ins_data.velocity}
     else
       %{position: %{latitude: 0.0, longitude: 0.0, altitude: 0.0}, velocity: %{north: 0.0, east: 0.0, down: 0.0}}
     end
-    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:pv_calculated, :position_velocity}, position_velocity_value_map}, {:pv_calculated, :position_velocity}, self())
+    Comms.Operator.send_global_msg_to_group(__MODULE__, {{:estimation_calculated, :position_velocity}, position_velocity_value_map}, self())
   end
 
   @spec parse_data_buffer(list(), map()) :: map()
@@ -386,7 +387,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
     fields_word = <<0xEA, 0x10>>
     now = DateTime.utc_now()
     current_time_ns =
-      DateTime.diff(now, Time.Clock.get_epoch(), :nanosecond)
+      DateTime.diff(now, Time.Clock.epoch, :nanosecond)
       |> Common.Utils.Math.int_little_bin(64)
     yaw_deg = attitude.yaw |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)
     pitch_deg = attitude.pitch |> Kernel.*(@rad2deg) |> Common.Utils.Math.uint_from_fp(32)

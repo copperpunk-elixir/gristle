@@ -12,7 +12,7 @@ defmodule Configuration.Module.Navigation do
       node_type: node_type,
       navigator: [
         navigator_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
-        default_pv_cmds_level: CU.cs_attitude
+        default_control_cmds_level: CU.cs_attitude
       ],
       path_manager:
         [
@@ -49,7 +49,7 @@ defmodule Configuration.Module.Navigation do
       Module.concat(Configuration.Vehicle, String.to_existing_atom(vehicle_type))
       |> Module.concat(Control)
 
-    goals_default_values = apply(vehicle_module, :get_pv_cmds_sorter_default_values, [])
+    goals_default_values = apply(vehicle_module, :get_control_cmds_sorter_default_values, [])
     goals_interval = Configuration.Generic.get_loop_interval_ms(:medium)
 
     Enum.map(CU.cs_rates..CU.cs_sca, fn level ->

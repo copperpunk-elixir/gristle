@@ -42,7 +42,7 @@ defmodule Configuration.Generic do
       #   Command.Commander => [0,1],
       #   Pids.Moderator => [0,2]
       # },
-      :pv_cmds => %{
+      :control_cmds => %{
         Control.Controller => [1,1],
         Navigation.Navigator => [1,2]
       },
@@ -62,7 +62,7 @@ defmodule Configuration.Generic do
       :indirect_override_cmds -> 200
       {:direct_actuator_cmds, _} -> 200
       # :actuation_selector -> 200
-      :pv_cmds -> 300
+      :control_cmds -> 300
       :goals -> 300
       :control_state -> 200
       _other -> 0
