@@ -3,6 +3,9 @@ defmodule MessageSorter.Sorter do
   require Logger
 
   @registry MessageSorterRegistry
+  @classification_length 2
+
+  defmacro registry, do: @registry
 
   def start_link(config) do
     Logger.debug("Start MessageSorter: #{inspect(config[:name])}")
@@ -67,15 +70,13 @@ defmodule MessageSorter.Sorter do
   def handle_cast({:add_message, classification, expiration_mono_ms, value}, state) do
     # Check if message has a valid classification
     messages =
-    if Enum.empty?(state.messages) || is_valid_classification?(Enum.at(state.messages,0).classification, classification) do
+    if is_valid_classification?(classification) do
       # Remove any messages that have the same classification (there should be at most 1)
-      if value == nil || !is_valid_type?(value, state.value_type) do
+      if is_nil(value) or !is_valid_type?(value, state.value_type) do
         Logger.error("Sorter #{inspect(state.name)} add message rejected")
         state.messages
       else
-        unique_msgs = Enum.reject(state.messages, fn msg ->
-          msg.classification == classification
-        end)
+        unique_msgs = Enum.reject(state.messages, &(&1.classification == classification))
         new_msg = MessageSorter.MsgStruct.create_msg(classification, expiration_mono_ms, value)
         [new_msg | unique_msgs]
       end
@@ -142,7 +143,7 @@ defmodule MessageSorter.Sorter do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
     {value, value_status} =
-    if msg == nil do
+    if is_nil(msg) do
       case state.default_message_behavior do
         :last -> {state.last_value, :last}
         :default_value -> {state.default_value, :default_value}
@@ -181,19 +182,8 @@ defmodule MessageSorter.Sorter do
     GenServer.cast(via_tuple(name), :remove_all_messages)
   end
 
-  def is_valid_classification?(current_classification, new_classification) do
-    if length(current_classification) == length(new_classification) do
-      num_errors = Enum.reduce(0..length(current_classification)-1, 0, fn index, acc ->
-        if is_number(Enum.at(current_classification, index)) do
-          acc
-        else
-          acc + 1
-        end
-      end)
-      num_errors == 0
-    else
-      false
-    end
+  def is_valid_classification?(new_classification) do
+    length(new_classification) == @classification_length and Enum.all?(new_classification, fn x-> is_integer(x) end)
   end
 
   def get_most_urgent_msg(msgs) do
@@ -227,9 +217,5 @@ defmodule MessageSorter.Sorter do
       :tuple -> is_tuple(value)
       _other -> false
     end
-  end
-
-  def registry() do
-    @registry
   end
 end

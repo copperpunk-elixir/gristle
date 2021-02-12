@@ -25,8 +25,8 @@ defmodule Navigation.Navigator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {control_cmds_msg_classification, control_cmds_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
-    {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
+    {control_cmds_msg_classification, control_cmds_msg_time_validity_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
+    {control_state_msg_classification, control_state_msg_time_validity_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_state)
     state = %{
       default_control_cmds_level: Keyword.get(config, :default_control_cmds_level, @default_control_cmds_level),
       navigator_loop_timer: nil,

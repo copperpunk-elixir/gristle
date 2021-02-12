@@ -24,8 +24,8 @@ defmodule Navigation.PathManager do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {goals_classification, goals_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {flaps_cmd_class, flaps_cmd_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
+    {goals_classification, goals_time_validity_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {flaps_cmd_class, flaps_cmd_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :flaps})
     state = %{
       vehicle_loiter_speed: Keyword.fetch!(config, :vehicle_loiter_speed),
       vehicle_agl_ground_threshold: Keyword.fetch!(config, :vehicle_agl_ground_threshold),

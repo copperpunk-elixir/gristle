@@ -1,6 +1,7 @@
 defmodule Comms.System do
   use DynamicSupervisor
   require Logger
+  require MessageSorter.Sorter
 
   def start_link(_) do
     Logger.debug("Start Comms DynamicSupervisor")
@@ -24,7 +25,7 @@ defmodule Comms.System do
   def start_message_sorter_registry() do
     # child_spec = %{
       # id: :message_sorter_registry,
-     spec = {Registry, [keys: :duplicate, name: MessageSorter.Sorter.registry()]}
+     spec = {Registry, [keys: :duplicate, name: MessageSorter.Sorter.registry]}
     # }
     DynamicSupervisor.start_child(__MODULE__,spec)
   end

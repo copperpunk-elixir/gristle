@@ -23,8 +23,8 @@ defmodule Control.Controller do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {act_msg_class, act_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
-    {control_cmds_msg_class, control_cmds_msg_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
+    {act_msg_class, act_msg_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_actuator_cmds)
+    {control_cmds_msg_class, control_cmds_msg_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :control_cmds)
     attitude_scalar = Enum.reduce(Keyword.fetch!(config, :attitude_scalar), %{}, fn ({cv_pv, scalar}, acc) ->
       Map.put(acc, cv_pv, Enum.into(scalar, %{}))
     end)
