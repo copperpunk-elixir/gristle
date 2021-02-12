@@ -4,7 +4,6 @@ defmodule Actuation.System do
 
   def start_link(config) do
     Logger.debug("Actuation Supervisor start_link()")
-    Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 

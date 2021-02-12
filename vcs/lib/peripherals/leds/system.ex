@@ -4,7 +4,6 @@ defmodule Peripherals.Leds.System do
 
   def start_link(config) do
     Logger.debug("Start Peripherals.Leds Supervisor")
-    Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 

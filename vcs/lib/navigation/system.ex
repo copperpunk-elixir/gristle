@@ -4,7 +4,6 @@ defmodule Navigation.System do
 
   def start_link(config) do
     Logger.debug("Start Navigation Supervisor")
-    Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 

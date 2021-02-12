@@ -4,19 +4,11 @@ defmodule Simulation.System do
 
   def start_link(config) do
     Logger.debug("Start Simulation Supervisor")
-    Comms.System.start_link()
     Common.Utils.start_link_redundant(Supervisor, __MODULE__, config, __MODULE__)
   end
 
   @impl Supervisor
   def init(config) do
-    # children =
-    #   [
-    #     # {Simulation.XplaneReceive, config[:receive]},
-    #     # {Simulation.XplaneSend, config[:send]},
-    #     # {Simulation.Realflight, config[:realflight]}
-    #     {Simulation.Static, config[:static]}
-    #   ]
     Supervisor.init(config[:children], strategy: :one_for_one)
   end
 end

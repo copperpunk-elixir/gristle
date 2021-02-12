@@ -4,7 +4,7 @@ defmodule Workshop.MultipleUarts do
 
   @default_baud 115_200
   def start_link(config) do
-    Comms.System.start_link()
+    Comms.System.start_link([])
     Comms.ProcessRegistry.start_link()
     Process.sleep(200)
     Logger.debug("Start Uart")
