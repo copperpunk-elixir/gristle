@@ -3,8 +3,8 @@ defmodule Sc.Path do
     Navigation.PathPlanner.Plans.load_lawnmower()
   end
 
-  def fs() do
-    Navigation.PathPlanner.Plans.load_flight_school()
+  def fs(track_type \\ nil) do
+    Navigation.PathPlanner.Plans.load_flight_school(track_type)
   end
 
   def st() do
