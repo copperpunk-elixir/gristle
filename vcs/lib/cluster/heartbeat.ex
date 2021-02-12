@@ -24,7 +24,7 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_cast({:begin, config} , _state) do
-    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
+    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     num_nodes = Keyword.fetch!(config, :num_nodes)
     state = %{
       num_nodes: num_nodes,

@@ -26,9 +26,9 @@ defmodule Command.Commander do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {goals_class, goals_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
-    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
-    {indirect_override_class, indirect_override_time_ms} = Configuration.Generic.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
+    {goals_class, goals_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :goals)
+    {direct_cmds_class, direct_cmds_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, {:direct_actuator_cmds, :all})
+    {indirect_override_class, indirect_override_time_ms} = Configuration.Module.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :indirect_override_cmds)
 
     state = %{
       goals_class: goals_class,

@@ -24,17 +24,19 @@ defmodule Health.Power do
   def handle_cast({:begin, config}, _state) do
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :battery_status, self())
-    Common.Utils.start_loop(self(), Keyword.fetch!(config, :status_loop_interval_ms), :status_loop)
+
+    state = %{
+      batteries: %{}
+    }
     # Start watchdogs
+
     watchdogs = Keyword.fetch!(config, :watchdogs)
     watchdog_interval_ms = Keyword.fetch!(config, :watchdog_interval_ms)
     Enum.each(watchdogs, fn watchdog ->
       Watchdog.Active.start_link(Configuration.Module.Watchdog.get_local(watchdog, watchdog_interval_ms))
     end)
 
-    state = %{
-      batteries: %{}
-    }
+    Common.Utils.start_loop(self(), Keyword.fetch!(config, :status_loop_interval_ms), :status_loop)
     {:noreply, state}
   end
 

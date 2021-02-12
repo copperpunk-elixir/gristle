@@ -42,28 +42,25 @@ defmodule Watchdog.Active do
   @impl GenServer
   def handle_cast(:feed, state) do
     count = Common.Utils.Math.constrain(state.count-2*state.expected_interval_ms, 0, 2*state.loop_interval_ms)
+    fed = process_feed(state, count)
+    {:noreply, %{state | count: count, fed: fed}}
+  end
+
+  @impl GenServer
+  def handle_info(:loop, state) do
+    # Logger.debug("#{state.name} count: #{state.count}")
+    fed = process_feed(state, state.count)
+    {:noreply, %{state | count: state.count + state.loop_interval_ms, fed: fed}}
+  end
+
+  @spec process_feed(map(), integer()) :: atom()
+  def process_feed(state, count) do
     fed = check_fed(count, state.loop_interval_ms)
     # Only send watchdog status if there was a change of state
     if (fed != state.fed) do
       send_status(state.name, state.local_or_global, fed)
     end
-    {:noreply, %{state | count: count, fed: fed}}
-  end
-
-  @impl GenServer
-  def handle_call(:is_fed, _from, state) do
-    {:reply, state.fed, state}
-  end
-
-  @impl GenServer
-  def handle_info(:loop, state) do
-    fed = check_fed(state.count, state.loop_interval_ms)
-    # Only send watchdog status if there was a change of state
-    if (fed != state.fed) do
-      send_status(state.name, state.local_or_global, fed)
-    end
-    # Logger.debug("#{state.name} count: #{state.count}")
-    {:noreply, %{state | count: state.count + state.loop_interval_ms, fed: fed}}
+    fed
   end
 
   @spec send_status(atom(), atom(), boolean()) ::atom()
