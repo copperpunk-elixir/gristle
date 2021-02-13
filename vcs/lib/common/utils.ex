@@ -39,6 +39,7 @@ defmodule Common.Utils do
         Supervisor -> Supervisor.start_link(module, config, name: name)
         DynamicSupervisor -> DynamicSupervisor.start_link(module, config, name: name)
         Registry -> apply(Registry, :start_link, [config])
+        Agent -> Agent.start_link(fn -> config end, name: name)
       end
     case result do
       {:ok, pid} ->
