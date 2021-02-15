@@ -5,20 +5,18 @@
 # is restricted to this project.
 use Mix.Config
 
-config :soap, :globals, version: "1.1"
+# Enable the Nerves integration with Mix
+# Application.start(:nerves_bootstrap)
 
-# import_config "#{Mix.target()}.exs"
+config :demo_cluster, target: Mix.target()
 
-if Mix.target() != :host do
-  config :nerves, :firmware,
-    fwup_conf: "config/fwup_#{Mix.target}.conf"
-end
-
-config :vcs, target: Mix.target()
 # Customize non-Elixir parts of the firmware. See
 # https://hexdocs.pm/nerves/advanced-configuration.html for details.
 
 config :nerves, :firmware, rootfs_overlay: "rootfs_overlay"
+
+# Set the SOURCE_DATE_EPOCH date for reproducible builds.
+# See https://reproducible-builds.org/docs/source-date-epoch/ for more information
 
 config :shoehorn,
   init: [:nerves_runtime, :vintage_net, :nerves_ssh],
@@ -30,28 +28,18 @@ config :vintage_net,
 config :mdns_lite,
   host: :hostname
 
-# Set the SOURCE_DATE_EPOCH date for reproducible builds.
-# See https://reproducible-builds.org/docs/source-date-epoch/ for more information
-
-config :nerves, source_date_epoch: "1585927776"
+config :nerves, source_date_epoch: "1613405372"
 
 # Use Ringlogger as the logger backend and remove :console.
 # See https://hexdocs.pm/ring_logger/readme.html for more information on
 # configuring ring_logger.
 
-# config :logger, backends: [:console, RingLogger]
 config :logger, backends: [RingLogger]
-# config :logger, backends: []
 
 config :logger, RingLogger, max_size: 50_000
 
 config :logger,
   level: :debug
-
-# config :logger, :console,
-#   format: "$time $metadata[$level] $levelpad$message\n",
-#   level: :debug,
-#   metadata: []
 
 config :ring_logger,
   format: "$time $metadata[$level] $levelpad$message\n",
