@@ -25,6 +25,7 @@ defmodule Cluster.Network do
       dest_port: Keyword.fetch!(config, :dest_port),
       cookie: Keyword.fetch!(config, :cookie),
       broadcast_ip_loop_interval_ms: Keyword.fetch!(config, :broadcast_ip_loop_interval_ms),
+      broadcast_ip_loop_timer: nil,
       interface: Keyword.fetch!(config, :interface),
       connected_to_network: false
     }
@@ -73,8 +74,14 @@ defmodule Cluster.Network do
           Cluster.Network.NodeConnection.start_node(unique_node_name_with_domain, state.cookie)
           {socket, src_port} =  open_socket(state.src_port, 0)
           Logger.debug("start broadcast_ip loop")
-          Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
-          %{state | ip_address: ip_address, node_name_with_domain: unique_node_name_with_domain, socket: socket, src_port: src_port}
+          broadcast_ip_loop_timer = Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
+          %{state |
+            ip_address: ip_address,
+            node_name_with_domain: unique_node_name_with_domain,
+            socket: socket,
+            src_port: src_port,
+            broadcast_ip_loop_timer: broadcast_ip_loop_timer
+          }
       end
     {:noreply, state}
   end

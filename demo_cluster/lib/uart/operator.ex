@@ -41,7 +41,7 @@ defmodule Uart.Operator do
     Logger.debug("Uart.Operator setup complete!")
 
     Comms.System.start_operator(__MODULE__)
-    Comms.Operator.join_group(__MODULE__, :update_servo, self())
+    Comms.Operator.join_group(__MODULE__, {:global_msg_sorter, :servo_output}, self())
     Registry.register(MessageSorterRegistry, {:servo_output, :value}, Keyword.fetch!(config, :servo_output_sorter_interval_ms))
     Common.Utils.start_loop(self(), Keyword.fetch!(config, :servo_loop_interval_ms), :servo_loop)
     {:noreply, state}
@@ -56,15 +56,22 @@ defmodule Uart.Operator do
 
   @impl GenServer
   def handle_cast({:message_sorter_value, :servo_output, value, _status}, state) do
-    Logger.debug("message sorter value: #{value}")
+    # Logger.debug("message sorter value: #{value}")
     {:noreply, %{state | servo_output: value}}
+  end
+
+  @impl GenServer
+  def handle_cast({{:global_msg_sorter, :servo_output}, classification, time_validity_ms, value}, state) do
+    # Logger.debug("rx global msg sorter: #{value}")
+    MessageSorter.Sorter.add_message(:servo_output, classification, time_validity_ms, value)
+    {:noreply, state}
   end
 
   @impl GenServer
   def handle_info(:servo_loop, state) do
     servo_output = state.servo_output
     unless is_nil(servo_output) do
-      Logger.debug("write to servo: #{servo_output}")
+      # Logger.debug("write to servo: #{servo_output}")
       Circuits.UART.write(state.uart_ref, <<servo_output>>, state.write_timeout)
     end
     {:noreply, state}
@@ -72,12 +79,11 @@ defmodule Uart.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    data_list = if is_binary(data), do: :binary.bin_to_list(data), else: []
+    data_list = :binary.bin_to_list(data)
     value = Enum.at(data_list, -1)
     unless is_nil(value) do
-      Logger.debug("new value: #{value}")
-      MessageSorter.Sorter.add_message(:servo_output, state.servo_output_classification, state.servo_output_time_validity_ms, value)
-      # Comms.Operator.send_global_msg_to_group(__MODULE__, {:update_servo, value}, nil)
+      # Logger.debug("new value: #{value}")
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:global_msg_sorter, :servo_output}, state.servo_output_classification, state.servo_output_time_validity_ms, value}, nil)
     end
     # Logger.debug("data: #{inspect(data)}")
     {:noreply, state}

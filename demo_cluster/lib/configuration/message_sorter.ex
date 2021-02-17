@@ -30,7 +30,7 @@ defmodule Configuration.MessageSorter do
     time_validity =
     case sorter do
       {:hb, :node} -> 500
-      :servo_output -> 200
+      :servo_output -> 1000
       _other -> 0
     end
 
