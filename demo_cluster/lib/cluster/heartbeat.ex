@@ -22,7 +22,7 @@ defmodule Cluster.Heartbeat do
     num_nodes = Keyword.fetch!(config, :num_nodes)
     state = %{
       num_nodes: num_nodes,
-      all_expected_nodes: Enum.to_list(0..num_nodes-1),
+      all_expected_nodes: Enum.to_list(1..num_nodes),
       node_and_ward: {Keyword.fetch!(config, :node), Keyword.fetch!(config, :ward)},
       heartbeat_time_validity_ms: heartbeat_time_validity_ms,
       cluster_status: -1,

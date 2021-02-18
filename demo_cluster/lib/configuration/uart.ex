@@ -1,8 +1,8 @@
 defmodule Configuration.Uart do
   def get_config(_node_type) do
     [
-      uart_port: "Feather M0",
-      # uart_port: "USB Serial",
+      # uart_port: "Feather M0",
+      uart_port: "ttyAMA0",
       port_options: [speed: 115_200],
       servo_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
       servo_output_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)

@@ -19,12 +19,12 @@ defmodule Configuration.Cluster do
   def get_node_and_ward(node_type) do
     [node_type, metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
     case node_type do
-      "all" -> {0,0,1}
-      "sim" -> {0,0,1}
+      "all" -> {1,1,1}
+      "sim" -> {1,1,1}
       "remote" ->
         num_nodes = 4
         node = String.to_integer(metadata)
-        ward = if (node+1 < num_nodes), do: node + 1, else: 0
+        ward = if (node < num_nodes), do: node + 1, else: 1
         {node, ward, num_nodes}
     end
   end
