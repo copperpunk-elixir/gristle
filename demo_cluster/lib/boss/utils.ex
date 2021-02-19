@@ -10,7 +10,7 @@ defmodule Boss.Utils do
 
   @spec get_remaining_modules() :: list()
   def get_remaining_modules() do
-    [Uart]
+    [Sweep, Uart]
   end
 
 

@@ -1,8 +1,12 @@
 defmodule Configuration.Uart do
-  def get_config(_node_type) do
+  def get_config(node_type) do
+    uart_port =
+      case node_type do
+        "sim" -> "Feather M0"
+        _other -> "ttyAMA0"
+      end
     [
-      # uart_port: "Feather M0",
-      uart_port: "ttyAMA0",
+      uart_port: uart_port,
       port_options: [speed: 115_200],
       servo_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium),
       servo_output_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
@@ -14,8 +18,8 @@ defmodule Configuration.Uart do
       [
         name: :servo_output,
         default_message_behavior: :default_value,
-        default_value: 110,
-        value_type: :number,
+        default_value: %{0 => 4, 1 => 4, 2 => 4, 3 => 4},
+        value_type: :map,
         publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ]
     ]

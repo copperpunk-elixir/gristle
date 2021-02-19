@@ -23,7 +23,8 @@ defmodule Configuration.MessageSorter do
         Cluster.Heartbeat => [1,1]
       },
       :servo_output => %{
-        Uart.Operator => [1, :random.uniform(10000)]
+        Uart.Operator => [1, :rand.uniform(10000)],
+        Sweep.Operator => [2, :rand.uniform(10000)],
       }
     }
 

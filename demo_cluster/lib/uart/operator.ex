@@ -61,9 +61,9 @@ defmodule Uart.Operator do
   end
 
   @impl GenServer
-  def handle_cast({{:global_msg_sorter, :servo_output}, classification, time_validity_ms, value}, state) do
-    # Logger.debug("rx global msg sorter: #{value}")
-    MessageSorter.Sorter.add_message(:servo_output, classification, time_validity_ms, value)
+  def handle_cast({{:global_msg_sorter, :servo_output}, classification, time_validity_ms, servos}, state) do
+    # Logger.debug("rx global msg sorter: #{servos}/#{inspect(classification)}")
+    MessageSorter.Sorter.add_message(:servo_output, classification, time_validity_ms, servos)
     {:noreply, state}
   end
 
@@ -72,7 +72,11 @@ defmodule Uart.Operator do
     servo_output = state.servo_output
     unless is_nil(servo_output) do
       # Logger.debug("write to servo: #{servo_output}")
-      Circuits.UART.write(state.uart_ref, <<servo_output>>, state.write_timeout)
+      Enum.each(state.servo_output, fn {index, servo} ->
+        # Logger.debug("index/output: #{index}/#{servo.value}")
+        # Logger.debug("write: #{:binary.bin_to_list(<<index::2, servo.value::6>>)|>Enum.at(0)}")
+        Circuits.UART.write(state.uart_ref, <<index::2, servo.value::6>>, state.write_timeout)
+      end)
     end
     {:noreply, state}
   end
@@ -83,7 +87,13 @@ defmodule Uart.Operator do
     value = Enum.at(data_list, -1)
     unless is_nil(value) do
       # Logger.debug("new value: #{value}")
-      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:global_msg_sorter, :servo_output}, state.servo_output_classification, state.servo_output_time_validity_ms, value}, nil)
+      servos = %{
+        0 => %{value: value},
+        1 => %{value: value},
+        2 => %{value: 8-value},
+        3 => %{value: 8-value}
+      }
+      Comms.Operator.send_global_msg_to_group(__MODULE__, {{:global_msg_sorter, :servo_output}, state.servo_output_classification, state.servo_output_time_validity_ms, servos}, nil)
     end
     # Logger.debug("data: #{inspect(data)}")
     {:noreply, state}
