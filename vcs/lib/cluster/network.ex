@@ -42,6 +42,7 @@ defmodule Cluster.Network do
       GenServer.cast(__MODULE__, :connect_to_network)
     else
       Logger.debug("Network connection not required.")
+      Logger.debug("Tell Boss to start remaining processes")
       Boss.Operator.start_node_processes()
     end
     {:noreply, state}
@@ -53,7 +54,6 @@ defmodule Cluster.Network do
     if connected do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
-      Boss.Operator.start_node_processes()
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
@@ -80,6 +80,8 @@ defmodule Cluster.Network do
           {socket, src_port} =  open_socket(state.src_port, 0)
           Logger.debug("start broadcast_ip loop")
           broadcast_ip_loop_timer = Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
+          Logger.debug("Tell Boss to start remaining processes")
+          Boss.Operator.start_node_processes()
           %{state |
             ip_address: ip_address,
             node_name_with_domain: unique_node_name_with_domain,
