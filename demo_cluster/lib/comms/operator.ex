@@ -17,7 +17,6 @@ defmodule Comms.Operator do
 
   def handle_cast({:begin, config}, _state) do
     state = %{
-      refresh_groups_timer: nil,
       groups: %{},
       name: Keyword.fetch!(config, :name) #purely for dianostics
     }

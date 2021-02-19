@@ -30,13 +30,16 @@ defmodule Cluster.Network do
       connected_to_network: false
     }
     Comms.System.start_operator(__MODULE__)
+    Process.sleep(500)
     if Common.Utils.is_target?() and !is_nil(state.interface) do
       Logger.debug("Connect to network interface: #{inspect(state.interface)}")
       VintageNet.configure(state.interface, Keyword.fetch!(config, :vintage_net_config))
       GenServer.cast(__MODULE__, :connect_to_network)
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:network_status, :searching}, self())
     else
       Logger.debug("Network connection not required.")
       Logger.debug("Tell Boss to start remaining processes")
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:network_status, :valid_ip}, self())
       Boss.Operator.start_node_processes()
     end
     {:noreply, state}
@@ -48,6 +51,7 @@ defmodule Cluster.Network do
     if connected do
       Logger.debug("Network connected.")
       GenServer.cast(__MODULE__, :start_node_and_broadcast)
+      Comms.Operator.send_local_msg_to_group(__MODULE__, {:network_status, :connected}, self())
     else
       Logger.debug("No network connection. Retrying in 1 second.")
       Process.sleep(1000)
@@ -74,6 +78,7 @@ defmodule Cluster.Network do
           {socket, src_port} =  open_socket(state.src_port, 0)
           Logger.debug("start broadcast_ip loop")
           broadcast_ip_loop_timer = Common.Utils.start_loop(self(), state.broadcast_ip_loop_interval_ms, :broadcast_ip_loop)
+          Comms.Operator.send_local_msg_to_group(__MODULE__, {:network_status, :valid_ip}, self())
           Logger.debug("Tell Boss to start remaining processes")
           Boss.Operator.start_node_processes()
           %{state |

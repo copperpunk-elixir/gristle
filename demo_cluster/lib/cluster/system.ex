@@ -11,6 +11,7 @@ defmodule Cluster.System do
   def init(config) do
     children =
       [
+        {Cluster.Led, config[:led]},
         {Cluster.Heartbeat, config[:heartbeat]},
         {Cluster.Network, config[:network]}
       ]

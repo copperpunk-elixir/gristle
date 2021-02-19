@@ -5,7 +5,8 @@ defmodule Configuration.Cluster do
   def get_config(node_type) do
     [
       heartbeat: get_heartbeat_config(node_type),
-      network: get_network_config()
+      network: get_network_config(),
+      led: get_led_config()
     ]
   end
 
@@ -100,6 +101,13 @@ defmodule Configuration.Cluster do
         method: :dhcp
       }
     }
+  end
+
+  @spec get_led_config() :: list()
+  def get_led_config do
+    [
+      led_loop_interval_ms: 1000
+    ]
   end
 
   @spec get_sorter_configs() :: list()
