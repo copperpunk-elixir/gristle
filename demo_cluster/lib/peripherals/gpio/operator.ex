@@ -3,10 +3,6 @@ defmodule Peripherals.Gpio.Operator do
   require Logger
   require Peripherals.Gpio.Utils
 
-  @node_mux_healthy 0
-  @guardian_mux_healthy 1
-  @mux_unhealthy 2
-
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
     Logger.debug("Start Gpio.Operator")
@@ -44,8 +40,8 @@ defmodule Peripherals.Gpio.Operator do
 
     Comms.System.start_operator(__MODULE__)
     Comms.Operator.join_group(__MODULE__, :mux_status, self())
-    Registry.register(MessageSorterRegistry, {:mux_status, :messages}, Keyword.fetch!(config, :mux_status_sorter_interval_ms))
-    Common.Utils.start_loop(self(), Keyword.fetch!(config, :mux_status_loop_interval_ms), :mux_status_loop)
+    # Registry.register(MessageSorterRegistry, {:mux_status, :messages}, Keyword.fetch!(config, :mux_status_sorter_interval_ms))
+    # Common.Utils.start_loop(self(), Keyword.fetch!(config, :mux_status_loop_interval_ms), :mux_status_loop)
 
     :erlang.send_after(2000, self(), {:set_gpio_interrupts, pins_options})
     {:noreply, state}
@@ -65,17 +61,17 @@ defmodule Peripherals.Gpio.Operator do
   end
 
 
-  @impl GenServer
-  def handle_cast({:message_sorter_messages, :mux_status, all_mux_messages}, state) do
-    # Logger.debug("message sorter message: #{inspect(all_node_messages)}")
-    # Nodes and Wards stored as key/value pair, i.e., %{node => ward}
-    healthy_muxes =
-      Enum.map(all_mux_messages, fn message ->
-        message.value
-      end)
-    Logger.debug("healthy muxes: #{inspect(healthy_muxes)}")
-    {:noreply, %{state | healthy_muxes: healthy_muxes}}
-  end
+  # @impl GenServer
+  # def handle_cast({:message_sorter_messages, :mux_status, all_mux_messages}, state) do
+  #   # Logger.debug("message sorter message: #{inspect(all_node_messages)}")
+  #   # Nodes and Wards stored as key/value pair, i.e., %{node => ward}
+  #   healthy_muxes =
+  #     Enum.map(all_mux_messages, fn message ->
+  #       message.value
+  #     end)
+  #   Logger.debug("healthy muxes: #{inspect(healthy_muxes)}")
+  #   {:noreply, %{state | healthy_muxes: healthy_muxes}}
+  # end
 
   @impl GenServer
   def handle_info({:set_gpio_interrupts, pins_options}, state) do
@@ -101,27 +97,27 @@ defmodule Peripherals.Gpio.Operator do
     {:noreply, state}
   end
 
-  @impl GenServer
-  def handle_info(:mux_status_loop, state) do
-    mux_status = cond do
-      Enum.member?(state.healthy_muxes, state.node) -> @node_mux_healthy
-      Enum.member?(state.healthy_muxes, state.guardian) -> @guardian_mux_healthy
-      true -> @mux_unhealthy
-    end
-    # Logger.debug("mux status current/new: #{state.mux_status}/#{mux_status}")
-    if mux_status != state.mux_status do
-      {node_led, guardian_led} =
-        case mux_status do
-          @node_mux_healthy -> {1, 0}
-          @guardian_mux_healthy -> {0, 1}
-          _unhealthy -> {0,0}
-        end
-      Logger.debug("node/guardian led: #{node_led}/#{guardian_led}")
-      set_gpio(Map.get(state.gpio_refs, Peripherals.Gpio.Utils.node_led_pin), node_led)
-      set_gpio(Map.get(state.gpio_refs, Peripherals.Gpio.Utils.guardian_led_pin), guardian_led)
-    end
-    {:noreply, %{state | mux_status: mux_status}}
-  end
+  # @impl GenServer
+  # def handle_info(:mux_status_loop, state) do
+  #   mux_status = cond do
+  #     Enum.member?(state.healthy_muxes, state.node) -> @node_mux_healthy
+  #     Enum.member?(state.healthy_muxes, state.guardian) -> @guardian_mux_healthy
+  #     true -> @mux_unhealthy
+  #   end
+  #   # Logger.debug("mux status current/new: #{state.mux_status}/#{mux_status}")
+  #   if mux_status != state.mux_status do
+  #     {node_led, guardian_led} =
+  #       case mux_status do
+  #         @node_mux_healthy -> {1, 0}
+  #         @guardian_mux_healthy -> {0, 1}
+  #         _unhealthy -> {0,0}
+  #       end
+  #     Logger.debug("node/guardian led: #{node_led}/#{guardian_led}")
+  #     set_gpio(Map.get(state.gpio_refs, Peripherals.Gpio.Utils.node_led_pin), node_led)
+  #     set_gpio(Map.get(state.gpio_refs, Peripherals.Gpio.Utils.guardian_led_pin), guardian_led)
+  #   end
+  #   {:noreply, %{state | mux_status: mux_status}}
+  # end
 
   @impl GenServer
   def handle_call(:get_pid, _from, state) do

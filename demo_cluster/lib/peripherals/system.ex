@@ -12,6 +12,7 @@ defmodule Peripherals.System do
     children = [
       {Peripherals.Uart.Operator, config[:uart]},
       {Peripherals.Gpio.Operator, config[:gpio]},
+      {Peripherals.I2c.Operator, config[:i2c]},
     ]
     Supervisor.init(children, strategy: :one_for_one)
   end

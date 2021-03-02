@@ -4,6 +4,8 @@ defmodule Configuration.Peripherals do
     [
       uart: Configuration.Peripherals.Uart.get_config(node_type),
       gpio: Configuration.Peripherals.Gpio.get_config(node_type),
+      i2c: Configuration.Peripherals.I2c.get_config(node_type),
+
     ]
   end
 

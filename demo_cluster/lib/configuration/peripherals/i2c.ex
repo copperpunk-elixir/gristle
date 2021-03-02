@@ -1,5 +1,4 @@
-defmodule Configuration.Peripherals.Gpio do
-  require Peripherals.Gpio.Utils, as: PGU
+defmodule Configuration.Peripherals.I2c do
   @spec get_config(binary()) :: list()
   def get_config(node_type) do
     {node, _ward, num_nodes} = Configuration.Cluster.get_node_and_ward(node_type)
@@ -8,18 +7,12 @@ defmodule Configuration.Peripherals.Gpio do
       node: node,
       guardian: guardian,
       mux_status_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
-      pins: %{
-      #   PGU.node_led_pin => [
-      #   direction: :output
-      # ],
-      #   PGU.guardian_led_pin => [
-      #     direction: :output
-      #   ],
-        PGU.mux_status_pin => [
-          direction: :input,
-          pull_mode: :pullup,
-          interrupts: :both
-        ]
+      servo_output_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+      mux_status_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
+      leds: %{
+        self: 0x0A,
+        mux: 0x09,
+        control: 0x08
       }
     ]
   end
