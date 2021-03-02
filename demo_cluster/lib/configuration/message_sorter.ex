@@ -7,7 +7,7 @@ defmodule Configuration.MessageSorter do
 
   @spec get_sorter_configs() :: list()
   def get_sorter_configs() do
-    generic_modules = [Cluster, Uart]
+    generic_modules = [Cluster, Peripherals]
 
     Enum.reduce(generic_modules, [], fn (module, acc) ->
       module = Module.concat(Configuration, module)
@@ -15,16 +15,16 @@ defmodule Configuration.MessageSorter do
     end)
   end
 
-  @spec get_message_sorter_classification_time_validity_ms(atom(), any()) :: tuple()
-  def get_message_sorter_classification_time_validity_ms(sender, sorter) do
+  @spec get_message_sorter_classification_time_validity_ms(atom(), any(), integer()) :: tuple()
+  def get_message_sorter_classification_time_validity_ms(sender, sorter, metadata \\ 1_000_000) do
     # Logger.debug("sender: #{inspect(sender)}")
     classification_all = %{
       {:hb, :node} => %{
         Cluster.Heartbeat => [1,1]
       },
       :servo_output => %{
-        Uart.Operator => [1, :rand.uniform(10000)],
-        Sweep.Operator => [2, :rand.uniform(10000)],
+        Peripherals.Uart.Operator => [1, metadata],
+        Sweep.Operator => [2, metadata]
       }
     }
 

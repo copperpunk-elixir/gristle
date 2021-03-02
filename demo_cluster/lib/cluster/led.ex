@@ -34,6 +34,7 @@ defmodule Cluster.Led do
     {:noreply, %{state | network_status: status}}
   end
 
+
   @impl GenServer
   def handle_info(:led_loop, state) do
     # Logger.debug "blinking led for status #{inspect(state.network_status)}"
@@ -46,35 +47,46 @@ defmodule Cluster.Led do
     {:noreply, state}
   end
 
+
+  @impl GenServer
+  def handle_info({:set_led, led, on}, state) do
+    set_led(led, on)
+    {:noreply, state}
+  end
+
   @spec blink_unknown() :: atom()
   def blink_unknown() do
-    Nerves.Leds.set(@led, true)
-    :timer.sleep(900)
-    Nerves.Leds.set(@led, false)
+    # Nerves.Leds.set(@led, true)
+    set_led(@led, true)
+    :erlang.send_after(900, self(), {:set_led, @led, false})
   end
 
   @spec blink_searching() :: atom()
   def blink_searching() do
-    Nerves.Leds.set(@led, true)
-    :timer.sleep(500)
-    Nerves.Leds.set(@led, false)
+    set_led(@led, true)
+    :erlang.send_after(500, self(), {:set_led, @led, false})
   end
 
   @spec blink_connected() :: atom()
   def blink_connected() do
-    Nerves.Leds.set(@led, true)
-    :timer.sleep(50)
-    Nerves.Leds.set(@led, false)
-    :timer.sleep(100)
-    Nerves.Leds.set(@led, true)
-    :timer.sleep(50)
-    Nerves.Leds.set(@led, false)
+    set_led(@led, true)
+    :erlang.send_after(50, self(), {:set_led, @led, false})
+    :erlang.send_after(150, self(), {:set_led, @led, true})
+    :erlang.send_after(200, self(), {:set_led, @led, false})
   end
 
   @spec blink_valid_ip() :: atom()
   def blink_valid_ip() do
-    Nerves.Leds.set(@led, true)
-    :timer.sleep(100)
-    Nerves.Leds.set(@led, false)
+    set_led(@led, true)
+    :erlang.send_after(100, self(), {:set_led, @led, false})
+  end
+
+  @spec set_led(binary(), boolean()) :: atom()
+  def set_led(led, on) do
+    if Common.Utils.is_target?() do
+      Nerves.Leds.set(led, on)
+    else
+      Logger.debug("#{led} on: #{on}")
+    end
   end
 end

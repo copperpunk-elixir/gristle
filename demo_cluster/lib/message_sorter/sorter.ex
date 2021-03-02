@@ -81,6 +81,20 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
+  def handle_cast({:remove_message, classification}, state) do
+    # Check if message has a valid classification
+    messages =
+    if is_valid_classification?(classification) do
+      # Remove any messages that have the same classification (there should be at most 1)
+        Enum.reject(state.messages, &(&1.classification == classification))
+    else
+      state.messages
+    end
+    {:noreply, %{state | messages: messages}}
+  end
+
+
+  @impl GenServer
   def handle_cast(:remove_all_messages, state) do
     {:noreply, %{state | messages: []}}
   end
@@ -168,8 +182,9 @@ defmodule MessageSorter.Sorter do
     GenServer.cast(via_tuple(name), {:get_value_async, name, sender_pid})
   end
 
-  def remove_messages_for_classification(name, classification) do
-    Logger.debug("remove messages for #{name}/#{inspect(classification)} not implemented yet")
+  def remove_message_for_classification(name, classification) do
+    Logger.debug("remove messages for #{name}/#{inspect(classification)}")
+    GenServer.cast(via_tuple(name), {:remove_message, classification})
   end
 
   def remove_all_messages(name) do

@@ -36,6 +36,9 @@ defmodule Cluster.Network do
       VintageNet.configure(state.interface, Keyword.fetch!(config, :vintage_net_config))
       GenServer.cast(__MODULE__, :connect_to_network)
       Comms.Operator.send_local_msg_to_group(__MODULE__, {:network_status, :searching}, self())
+      unless Keyword.get(config, :network_required_for_boot, false) do
+        Boss.Operator.start_node_processes()
+      end
     else
       Logger.debug("Network connection not required.")
       Logger.debug("Tell Boss to start remaining processes")

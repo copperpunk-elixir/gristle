@@ -1,4 +1,4 @@
-defmodule Uart.Operator do
+defmodule Peripherals.Uart.Operator do
   use GenServer
   require Logger
 

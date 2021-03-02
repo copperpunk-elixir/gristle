@@ -5,7 +5,7 @@ defmodule Configuration.Cluster do
   def get_config(node_type) do
     [
       heartbeat: get_heartbeat_config(node_type),
-      network: get_network_config(),
+      network: get_network_config(node_type),
       led: get_led_config()
     ]
   end
@@ -30,6 +30,12 @@ defmodule Configuration.Cluster do
     end
   end
 
+  @spec get_guardian_for_node(integer(), integer()) :: integer()
+  def get_guardian_for_node(node, num_nodes) do
+    if (node > 1), do: node-1, else: num_nodes
+  end
+
+
   @spec get_heartbeat_config(integer(), integer(), integer()) :: list()
   def get_heartbeat_config(node, ward, num_nodes) do
     [
@@ -41,10 +47,12 @@ defmodule Configuration.Cluster do
     ]
   end
 
-  @spec get_network_config() :: list()
-  def get_network_config() do
+  @spec get_network_config(binary()) :: list()
+  def get_network_config(node_type) do
+    {_node, _ward, num_nodes} = get_node_and_ward(node_type)
     {interface, vintage_net_config} = get_interface_and_config()
     [
+      network_required_for_boot: num_nodes > 1,
       interface: interface,
       vintage_net_config: vintage_net_config,
       broadcast_ip_loop_interval_ms: 1000,
