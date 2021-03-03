@@ -9,7 +9,7 @@ defmodule Peripherals.I2c.Operator do
 
   def start_link(config) do
     {:ok, pid} = Common.Utils.start_link_singular(GenServer, __MODULE__, nil, __MODULE__)
-    Logger.debug("Start Gpio.Operator")
+    Logger.debug("Start I2c.Operator")
     GenServer.cast(__MODULE__, {:begin, config})
     {:ok, pid}
   end
@@ -41,11 +41,12 @@ defmodule Peripherals.I2c.Operator do
       guardian: Keyword.fetch!(config, :guardian),
       healthy_muxes: [],
       mux_status: nil,
+      servo_output: nil
     }
 
     Comms.System.start_operator(__MODULE__)
     Registry.register(MessageSorterRegistry, {:mux_status, :messages}, Keyword.fetch!(config, :mux_status_sorter_interval_ms))
-    # Registry.register(MessageSorterRegistry, {:servo_output, :messages}, Keyword.fetch!(config, :servo_output_sorter_interval_ms))
+    Registry.register(MessageSorterRegistry, {:servo_output, :value}, Keyword.fetch!(config, :servo_output_sorter_interval_ms))
     Common.Utils.start_loop(self(), Keyword.fetch!(config, :mux_status_loop_interval_ms), :mux_status_loop)
     color = PIU.get_color_for_node_number(node)
     Logger.debug("self_led_node/color: #{node}/#{inspect(color)}")
@@ -66,6 +67,11 @@ defmodule Peripherals.I2c.Operator do
     {:noreply, %{state | healthy_muxes: healthy_muxes}}
   end
 
+  @impl GenServer
+  def handle_cast({:message_sorter_value, :servo_output, classification, value, _status}, state) do
+    Logger.debug("I2C rx message sorter value: #{inspect(classification)}/#{inspect(value)}")
+    {:noreply, %{state | servo_output: value}}
+  end
 
   @impl GenServer
   def handle_info(:mux_status_loop, state) do
@@ -89,5 +95,4 @@ defmodule Peripherals.I2c.Operator do
     end
     {:noreply, %{state | mux_status: mux_status}}
   end
-
 end

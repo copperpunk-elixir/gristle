@@ -5,7 +5,7 @@ defmodule Configuration.Module.Cluster do
   def get_config(_model_type, node_type) do
     [
       heartbeat: get_heartbeat_config(node_type),
-      network: get_network_config()
+      network: get_network_config(node_type)
     ]
   end
 
@@ -43,10 +43,17 @@ defmodule Configuration.Module.Cluster do
     ]
   end
 
-  @spec get_network_config() :: list()
-  def get_network_config() do
+  @spec get_network_config(binary()) :: list()
+  def get_network_config(node_type) do
+    {_node, _ward, num_nodes} = get_node_and_ward(node_type)
+    network_required_for_boot = num_nodes > 1
     {interface, vintage_net_config} = get_interface_and_config()
+    if network_required_for_boot and is_nil(interface) do
+      raise "Network is required for boot, but Interface is missing"
+    end
+
     [
+      network_required_for_boot: network_required_for_boot,
       interface: interface,
       vintage_net_config: vintage_net_config,
       broadcast_ip_loop_interval_ms: 1000,

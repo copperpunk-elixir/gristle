@@ -37,7 +37,7 @@ defmodule Peripherals.Uart.Operator do
     uart_port = Keyword.fetch!(config, :uart_port)
     port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
 
-    Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
+    # Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
     Logger.debug("Uart.Operator setup complete!")
 
     Comms.System.start_operator(__MODULE__)
@@ -55,8 +55,8 @@ defmodule Peripherals.Uart.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :servo_output, value, _status}, state) do
-    # Logger.debug("message sorter value: #{value}")
+  def handle_cast({:message_sorter_value, :servo_output, classification, value, _status}, state) do
+    # Logger.debug("UART message sorter value: #{inspect(classification)}/#{inspect(value)}")
     {:noreply, %{state | servo_output: value}}
   end
 
@@ -71,7 +71,7 @@ defmodule Peripherals.Uart.Operator do
   def handle_info(:servo_loop, state) do
     servo_output = state.servo_output
     unless is_nil(servo_output) do
-      # Logger.debug("write to servo: #{servo_output}")
+      # Logger.debug("write to servo: #{inspect(servo_output)}")
       Enum.each(state.servo_output, fn {index, servo} ->
         # Logger.debug("index/output: #{index}/#{servo.value}")
         # Logger.debug("write: #{:binary.bin_to_list(<<index::2, servo.value::6>>)|>Enum.at(0)}")

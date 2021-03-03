@@ -219,4 +219,9 @@ defmodule Common.Utils do
       Module.concat(module1, String.to_existing_atom(binary2))
       |> Module.concat(module3)
   end
+
+  @spec is_target?() :: boolean()
+  def is_target? do
+    String.contains?(File.cwd!(), "/srv/erlang")
+  end
 end

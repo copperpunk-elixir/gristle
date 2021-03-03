@@ -87,6 +87,18 @@ defmodule MessageSorter.Sorter do
   end
 
   @impl GenServer
+  def handle_cast({:remove_message, classification}, state) do
+    messages =
+    if is_valid_classification?(classification) do
+      # Remove any messages that have the same classification (there should be at most 1)
+      Enum.reject(state.messages, &(&1.classification == classification))
+    else
+      state.messages
+    end
+    {:noreply, %{state | messages: messages}}
+  end
+
+  @impl GenServer
   def handle_cast(:remove_all_messages, state) do
     {:noreply, %{state | messages: []}}
   end
@@ -94,8 +106,8 @@ defmodule MessageSorter.Sorter do
   @impl GenServer
   def handle_cast({:get_value_async, name, sender_pid}, state) do
     # Logger.warn("get value async: #{inspect(name)}/#{inspect(sender_pid)}")
-    {state, value, status} = get_current_value(state)
-    GenServer.cast(sender_pid, {:message_sorter_value, name, value, status})
+    {state, classification, value, status} = get_current_value(state)
+    GenServer.cast(sender_pid, {:message_sorter_value, name, classification, value, status})
     {:noreply, state}
   end
 
@@ -103,11 +115,11 @@ defmodule MessageSorter.Sorter do
   def handle_info({:publish_loop, :value}, state) do
     publish_looper = Common.DiscreteLooper.step(state.publish_loopers.value)
 
-    {state, value, status} = get_current_value(state)
+    {state, classification, value, status} = get_current_value(state)
     name = state.name
     Enum.each(Common.DiscreteLooper.get_members_now(publish_looper), fn dest ->
       # Logger.debug("Send #{inspect(value)}/#{status} to #{inspect(dest)}")
-      GenServer.cast(dest, {:message_sorter_value, name, value, status})
+      GenServer.cast(dest, {:message_sorter_value, name, classification, value, status})
     end)
     publish_loopers = Map.put(state.publish_loopers, :value, publish_looper)
     {:noreply, %{state | publish_loopers: publish_loopers}}
@@ -142,16 +154,16 @@ defmodule MessageSorter.Sorter do
   def get_current_value(state) do
     messages = prune_old_messages(state.messages)
     msg = get_most_urgent_msg(messages)
-    {value, value_status} =
+    {classification, value, value_status} =
     if is_nil(msg) do
       case state.default_message_behavior do
-        :last -> {state.last_value, :last}
-        :default_value -> {state.default_value, :default_value}
+        :last -> {nil, state.last_value, :last}
+        :default_value -> {nil, state.default_value, :default_value}
       end
     else
-      {msg.value, :current}
+      {msg.classification, msg.value, :current}
     end
-    {%{state | messages: messages, last_value: value}, value, value_status}
+    {%{state | messages: messages, last_value: value}, classification, value, value_status}
   end
 
   @spec get_all_messages(map()) :: list()

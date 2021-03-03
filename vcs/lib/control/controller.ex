@@ -58,12 +58,12 @@ defmodule Control.Controller do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :control_state, control_state, _status}, state) do
+  def handle_cast({:message_sorter_value, :control_state, _classification, control_state, _status}, state) do
     {:noreply, %{state | control_state: control_state}}
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, {:control_cmds, level}, control_cmds, _status}, state) do
+  def handle_cast({:message_sorter_value, {:control_cmds, level}, _classification, control_cmds, _status}, state) do
     # Logger.info("rx level: #{level}")
     control_cmds = Map.put(state.control_cmds, level, control_cmds)
     {:noreply, %{state | control_cmds: control_cmds}}

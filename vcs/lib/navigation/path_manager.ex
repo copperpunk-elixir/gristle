@@ -87,7 +87,7 @@ defmodule Navigation.PathManager do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :peripheral_paths, path_command, _status}, state) do
+  def handle_cast({:message_sorter_value, :peripheral_paths, _classification, path_command, _status}, state) do
     on_deck_peripheral_path = if state.peripheral_control_allowed, do: path_command, else: nil
     {:noreply, %{state | on_deck_peripheral_path: on_deck_peripheral_path}}
   end

@@ -65,19 +65,19 @@ defmodule Actuation.SwInterface do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, {:direct_actuator_cmds, name}, cmd, _status}, state) do
+  def handle_cast({:message_sorter_value, {:direct_actuator_cmds, name}, _classification, cmd, _status}, state) do
     direct_actuator_cmds = Map.put(state.direct_actuator_cmds, name, cmd)
     # Logger.debug("dir: #{inspect(direct_actuator_cmds)}")
     {:noreply, %{state | direct_actuator_cmds: direct_actuator_cmds}}
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :indirect_actuator_cmds, cmds, _status}, state) do
+  def handle_cast({:message_sorter_value, :indirect_actuator_cmds, _classification, cmds, _status}, state) do
     {:noreply, %{state | indirect_actuator_cmds: cmds}}
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :indirect_override_actuator_cmds, cmds, status}, state) do
+  def handle_cast({:message_sorter_value, :indirect_override_actuator_cmds, _classification, cmds, status}, state) do
     cmds = if status == :current, do: cmds, else: %{}
     # Logger.debug("indirect override: #{inspect(cmds)}")
     {:noreply, %{state | indirect_override_actuator_cmds: cmds}}

@@ -19,15 +19,16 @@ defmodule Common.DiscreteLooper do
   #   Enum.reduce(1..num_intervals, %{}, &(Map.put(&2, &1*interval_ms, [])))
   # end
 
-  @spec add_member(struct(), any(), integer()) :: struct()
-  def add_member(looper, pid, interval_ms) do
-    members = add_member_to_members(looper, pid, interval_ms)
-    %{looper | members: members}
-  end
+  # @spec add_member(struct(), any(), integer()) :: struct()
+  # def add_member(looper, pid, interval_ms) do
+  #   members = add_member_to_members(looper, pid, interval_ms)
+  #   %{looper | members: members}
+  # end
 
-  @spec add_member_to_members(struct(), any(), integer()) :: struct()
-  def add_member_to_members(looper, pid, new_interval_ms) do
+  @spec add_member_to_looper(struct(), any(), integer()) :: struct()
+  def add_member_to_looper(looper, pid, new_interval_ms) do
     looper_interval_ms = looper.interval_ms
+    members =
     if valid_interval?(new_interval_ms, looper_interval_ms) do
       members = looper.members
       # Logger.info("add #{inspect(pid)} to #{new_interval_ms} member list")
@@ -46,9 +47,11 @@ defmodule Common.DiscreteLooper do
         if Enum.empty?(pids), do: members_acc, else: Map.put(members_acc, single_interval_ms, pids)
       end)
     else
-      Logger.warn("Add Members Interval #{new_interval_ms} is invalid: #{looper_interval_ms} for #{inspect(looper.name)}")
+      # Logger.warn("Add Members Interval #{new_interval_ms} is invalid: #{looper_interval_ms} for #{inspect(looper.name)}")
       looper.members
     end
+    # Logger.debug("#{inspect(looper.name)} updated all members: #{inspect(members)}")
+    %{looper | members: members}
   end
 
   @spec update_members_for_interval(struct(), list(), integer()) :: struct()
@@ -57,7 +60,7 @@ defmodule Common.DiscreteLooper do
     if valid_interval?(interval_ms, looper.interval_ms) do
       Map.put(looper.members, interval_ms, new_member_list)
     else
-      Logger.warn("Update Members Interval #{interval_ms} is invalid for #{inspect(looper.name)}")
+      # Logger.warn("Update Members Interval #{interval_ms} is invalid for #{inspect(looper.name)}")
       looper.members
     end
     %{looper | members: members}
@@ -67,11 +70,10 @@ defmodule Common.DiscreteLooper do
   def update_all_members(looper, member_interval_list) do
     # looper_interval_ms = looper.interval_ms
     looper = new(looper.name, looper.interval_ms)
-    members = Enum.reduce(member_interval_list, looper, fn ({pid, interval_ms}, acc) ->
-      add_member_to_members(acc, pid, interval_ms)
+    Enum.reduce(member_interval_list, looper, fn ({pid, interval_ms}, acc) ->
+      add_member_to_looper(acc, pid, interval_ms)
     end)
-    # Logger.debug("updated all members: #{inspect(members)}")
-    %{looper | members: members}
+    # %{looper | members: members}
   end
 
   @spec step(struct()) :: struct()

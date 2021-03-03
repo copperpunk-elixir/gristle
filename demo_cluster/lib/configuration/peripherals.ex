@@ -14,7 +14,7 @@ defmodule Configuration.Peripherals do
       [
         name: :servo_output,
         default_message_behavior: :default_value,
-        default_value: %{0 => 4, 1 => 4, 2 => 4, 3 => 4},
+        default_value: %{0 => %{value: 4}, 1 => %{value: 4}, 2 => %{value: 4}, 3 => %{value: 4}},
         value_type: :map,
         publish_value_interval_ms: Configuration.Generic.get_loop_interval_ms(:medium)
       ],

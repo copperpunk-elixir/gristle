@@ -36,10 +36,13 @@ defmodule Cluster.Network do
       connected_to_network: false
     }
     Comms.System.start_operator(__MODULE__)
-    if Mix.target() != :host and !is_nil(state.interface) do
+    if Common.Utils.is_target?() and !is_nil(state.interface) do
       Logger.debug("Connect to network interface: #{inspect(state.interface)}")
       VintageNet.configure(state.interface, Keyword.fetch!(config, :vintage_net_config))
       GenServer.cast(__MODULE__, :connect_to_network)
+      unless Keyword.get(config, :network_required_for_boot, false) do
+        Boss.Operator.start_node_processes()
+      end
     else
       Logger.debug("Network connection not required.")
       Logger.debug("Tell Boss to start remaining processes")

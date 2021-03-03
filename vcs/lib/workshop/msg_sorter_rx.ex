@@ -23,7 +23,7 @@ defmodule Workshop.MsgSorterRx do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, name, value, status}, state) do
+  def handle_cast({:message_sorter_value, name, _classification, value, status}, state) do
     Logger.debug("#{inspect(self())} received sorter: #{inspect(name)} with value: #{inspect(value)}/#{status}")
     state = put_in(state, [:values, name], value)
     {:noreply, state}

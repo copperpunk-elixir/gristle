@@ -58,7 +58,7 @@ defmodule Navigation.Navigator do
 
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, {:goals, level}, goals, status}, state) do
+  def handle_cast({:message_sorter_value, {:goals, level}, _classification, goals, status}, state) do
     goals_default = if (level == state.default_control_cmds_level), do: goals, else: state.goals_default
     goals_store =
     if (status == :current) do
