@@ -23,21 +23,19 @@ defmodule Peripherals.Uart.Operator do
 
   @impl GenServer
   def handle_cast({:begin, config}, _state) do
-    {servo_output_classification, servo_output_time_validity_ms} = Configuration.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, :servo_output)
-
     {:ok, uart_ref} = Circuits.UART.start_link()
     state = %{
       uart_ref: uart_ref,
       write_timeout: 10,
       servo_output: nil,
-      servo_output_classification: servo_output_classification,
-      servo_output_time_validity_ms: servo_output_time_validity_ms
+      servo_output_classification: Keyword.fetch!(config, :servo_output_classification),
+      servo_output_time_validity_ms: Keyword.fetch!(config, :servo_output_time_validity_ms),
     }
 
     uart_port = Keyword.fetch!(config, :uart_port)
     port_options = Keyword.fetch!(config, :port_options) ++ [active: true]
 
-    # Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
+    Uart.Utils.open_interface_connection_infinite(state.uart_ref, uart_port, port_options)
     Logger.debug("Uart.Operator setup complete!")
 
     Comms.System.start_operator(__MODULE__)
@@ -55,7 +53,7 @@ defmodule Peripherals.Uart.Operator do
   end
 
   @impl GenServer
-  def handle_cast({:message_sorter_value, :servo_output, classification, value, _status}, state) do
+  def handle_cast({:message_sorter_value, :servo_output, _classification, value, _status}, state) do
     # Logger.debug("UART message sorter value: #{inspect(classification)}/#{inspect(value)}")
     {:noreply, %{state | servo_output: value}}
   end

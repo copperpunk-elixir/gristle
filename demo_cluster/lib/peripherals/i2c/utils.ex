@@ -1,7 +1,7 @@
 defmodule Peripherals.I2c.Utils do
   @brightness 50
   defmacro self_led_address, do: 0x08
-  defmacro control_led_address, do: 0x09
+  defmacro servo_output_led_address, do: 0x09
   defmacro mux_led_address, do: 0x10
 
   def get_color_for_node_number(node) do

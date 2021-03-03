@@ -12,7 +12,7 @@ defmodule Configuration.Peripherals.I2c do
       leds: %{
         self: 0x0A,
         mux: 0x09,
-        control: 0x08
+        servo_output: 0x08
       }
     ]
   end

@@ -16,15 +16,15 @@ defmodule Configuration.MessageSorter do
   end
 
   @spec get_message_sorter_classification_time_validity_ms(atom(), any(), integer()) :: tuple()
-  def get_message_sorter_classification_time_validity_ms(sender, sorter, metadata \\ 1_000_000) do
+  def get_message_sorter_classification_time_validity_ms(sender, sorter, node_id) do
     # Logger.debug("sender: #{inspect(sender)}")
     classification_all = %{
       {:hb, :node} => %{
         Cluster.Heartbeat => [1,1]
       },
       :servo_output => %{
-        Peripherals.Uart.Operator => [1, metadata],
-        Sweep.Operator => [2, metadata]
+        Peripherals.Uart.Operator => [1, node_id],
+        Sweep.Operator => [2, node_id]
       }
     }
 

@@ -41,7 +41,7 @@ defmodule Peripherals.I2c.Operator do
       guardian: Keyword.fetch!(config, :guardian),
       healthy_muxes: [],
       mux_status: nil,
-      servo_output: nil
+      servo_output_node: nil
     }
 
     Comms.System.start_operator(__MODULE__)
@@ -70,7 +70,13 @@ defmodule Peripherals.I2c.Operator do
   @impl GenServer
   def handle_cast({:message_sorter_value, :servo_output, classification, value, _status}, state) do
     Logger.debug("I2C rx message sorter value: #{inspect(classification)}/#{inspect(value)}")
-    {:noreply, %{state | servo_output: value}}
+    servo_output_node = if is_nil(classification), do: nil, else: Enum.at(classification, 1)
+    if servo_output_node != state.servo_output_node do
+      color = PIU.get_color_for_node_number(servo_output_node)
+      Logger.debug("servo_output_led_node/color: #{servo_output_node}/#{inspect(color)}")
+      Peripherals.I2c.Led.set_color(state.leds.servo_output, color)
+    end
+    {:noreply, %{state | servo_output_node: servo_output_node}}
   end
 
   @impl GenServer

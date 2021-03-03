@@ -18,13 +18,12 @@ defmodule Cluster.Heartbeat do
 
   @impl GenServer
   def handle_cast({:begin, config} , _state) do
-    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.MessageSorter.get_message_sorter_classification_time_validity_ms(__MODULE__, {:hb, :node})
     num_nodes = Keyword.fetch!(config, :num_nodes)
     state = %{
       num_nodes: num_nodes,
       all_expected_nodes: Enum.to_list(1..num_nodes),
       node_and_ward: {Keyword.fetch!(config, :node), Keyword.fetch!(config, :ward)},
-      heartbeat_time_validity_ms: heartbeat_time_validity_ms,
+      heartbeat_time_validity_ms: Keyword.fetch!(config, :heartbeat_time_validity_ms),
       cluster_status: -1,
       all_nodes_wards: %{},
       store_cluster_status: Keyword.fetch!(config, :node) > -1

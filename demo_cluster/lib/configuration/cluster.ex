@@ -38,7 +38,10 @@ defmodule Configuration.Cluster do
 
   @spec get_heartbeat_config(integer(), integer(), integer()) :: list()
   def get_heartbeat_config(node, ward, num_nodes) do
+    {_heartbeat_classification, heartbeat_time_validity_ms} = Configuration.MessageSorter.get_message_sorter_classification_time_validity_ms(Cluster.Heartbeat, {:hb, :node}, nil)
+
     [
+      heartbeat_time_validity_ms: heartbeat_time_validity_ms,
       heartbeat_loop_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
       heartbeat_node_sorter_interval_ms: Configuration.Generic.get_loop_interval_ms(:slow),
       node: node,

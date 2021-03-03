@@ -1,8 +1,7 @@
 defmodule Configuration.Sweep do
   def get_config(node_type) do
-    [_node_type, metadata] = Common.Utils.Configuration.split_safely(node_type, "_")
-    metadata = if is_nil(metadata), do: :rand.uniform(10000), else: String.to_integer(metadata)
-    {servo_output_classification, servo_output_time_validity_ms} = Configuration.MessageSorter.get_message_sorter_classification_time_validity_ms(Sweep.Operator, :servo_output, metadata)
+    {node, _, _} = Configuration.Cluster.get_node_and_ward(node_type)
+    {servo_output_classification, servo_output_time_validity_ms} = Configuration.MessageSorter.get_message_sorter_classification_time_validity_ms(Sweep.Operator, :servo_output, node)
 
     [
       # min_values: [0, 0, 0, 0],
