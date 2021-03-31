@@ -68,6 +68,10 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   @impl GenServer
   def handle_cast({:write, msg}, state) do
+    Logger.debug("write msg: ")
+    str = Enum.reduce(:binary.bin_to_list(msg),"", fn (x,acc)-> acc <> "#{x}," end)
+    Logger.debug(str)
+    Logger.debug("len: #{length(:binary.bin_to_list(msg))}")
     Circuits.UART.write(state.uart_ref, msg)
 #    Circuits.UART.drain(state.uart_ref)
     {:noreply, state}
@@ -75,7 +79,7 @@ defmodule Peripherals.Uart.Estimation.VnIns.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.debug("vn data: #{inspect(data)}")
+    Logger.debug("vn data: #{inspect(data)}")
     data_list = state.remaining_buffer ++ :binary.bin_to_list(data)
     state = parse_data_buffer(data_list, state)
     ins = state.ins

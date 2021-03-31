@@ -44,9 +44,13 @@ defmodule Pids.Controller.Generic do
   def update(pv_cmd, pv_value, airspeed, dt, state) do
     correction = pv_cmd - pv_value
     in_range = Common.Utils.Math.in_range?(correction, state.integrator_range_min, state.integrator_range_max)
-    pv_add = if in_range, do: correction*dt, else: 0
+    pv_add = correction*dt#if in_range, do: correction*dt, else: 0
 
-    pv_integrator = if airspeed > state.integrator_airspeed_min, do: state.pv_integrator + pv_add, else: 0
+    pv_integrator =
+    if airspeed > state.integrator_airspeed_min and in_range, do: state.pv_integrator + pv_add, else: 0
+        # correction * state.pv_integrator >= 0  ->
+          # state.pv_integrator + pv_add
+        # true -> 0#state.pv_integrator
 
     cmd_p = state.kp*correction
     cmd_i = state.ki*pv_integrator
@@ -64,9 +68,9 @@ defmodule Pids.Controller.Generic do
     output = state.output + delta_output
     |> Common.Utils.Math.constrain(state.output_min, state.output_max)
 
-    # if state.process_variable == :course_rotate do# and state.control_variable == :thrust do
-    #   Logger.debug("cmd/value/corr/p/i/d/ff/dO/out: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(delta_output, 3)}/#{Common.Utils.eftb(output, 3)}")
-    # end
+    if state.process_variable == :pitchrate do# and state.control_variable == :thrust do
+      Logger.debug("cmd/value/corr/p/i/d/ff/dO/out: #{Common.Utils.eftb(pv_cmd,3)}/#{Common.Utils.eftb(pv_value,3)}/#{Common.Utils.eftb(correction,3)}/#{Common.Utils.eftb(cmd_p, 3)}/#{Common.Utils.eftb(cmd_i, 3)}/#{Common.Utils.eftb(cmd_d, 3)}/#{Common.Utils.eftb(feed_forward,3)}/#{Common.Utils.eftb(delta_output, 3)}/#{Common.Utils.eftb(output, 3)}")
+    end
 
     pv_integrator = if (state.ki != 0), do: cmd_i / state.ki, else: 0
 

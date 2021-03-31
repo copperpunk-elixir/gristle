@@ -45,7 +45,7 @@ defmodule Pids.Tecs.Plane do
       speed: speed
     }
 
-    thrust_output = Pids.Pid.update_pid(:tecs, :thrust, energy_cmds, energy_values, values.airspeed, dt)
+    thrust_output = 0.8#Pids.Pid.update_pid(:tecs, :thrust, energy_cmds, energy_values, values.airspeed, dt)
 
     # Balance (pitch)
     balance_cmds = %{
@@ -61,7 +61,7 @@ defmodule Pids.Tecs.Plane do
       speed: speed
     }
 
-    pitch_output = Pids.Pid.update_pid(:tecs, :pitch, balance_cmds, balance_values, values.airspeed, dt)
+    pitch_output = Pids.Pid.update_pid(:tecs, :pitch, speed_cmd, speed, values.airspeed, dt)
     %{pitch: pitch_output, thrust: thrust_output}
   end
 end

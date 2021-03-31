@@ -14,7 +14,7 @@ defmodule Configuration.Vehicle.Plane.Pids.Cessna do
       course_rotate: [yaw: Keyword.merge([type: :Generic, kp: 0.3, ki: 0.1, integrator_range: 0.0104, integrator_airspeed_min: integrator_airspeed_min, ff: get_feed_forward(:course_rotate, :yaw)], constraints[:yaw])],
       tecs: [
         thrust: Keyword.merge(get_tecs_energy(), constraints[:thrust]),
-        pitch: Keyword.merge(get_tecs_balance(), constraints[:pitch])
+        pitch: Keyword.merge([type: :Generic, kp: -0.03, ki: -0.01, integrator_range: 5.0, integrator_airspeed_min: 30], constraints[:pitch])#Keyword.merge(get_tecs_balance(), constraints[:pitch])
       ]
     ]
   end

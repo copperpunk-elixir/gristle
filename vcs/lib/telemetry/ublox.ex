@@ -182,6 +182,7 @@ defmodule Telemetry.Ublox do
   @spec get_bytes_for_msg(atom()) :: list()
   def get_bytes_for_msg(msg_type) do
     case msg_type do
+      :ublox_posllh -> [4, -4, -4, -4, -4, 4, 4]
       :accel_gyro -> [4, -4, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
       {:telemetry, :pvat} -> [4, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0]
       {:tx_goals, 1} -> [4, 4.0, 4.0, 4.0, 4.0]
@@ -213,6 +214,7 @@ defmodule Telemetry.Ublox do
   @spec get_class_and_id_for_msg(any())::tuple()
   def get_class_and_id_for_msg(msg_type) do
     case msg_type do
+      :ublox_posllh -> {0x01, 0x02}
       :accel_gyro -> {0x01, 0x69}
       {:telemetry, :pvat} -> {0x45, 0x00}
       {:tx_goals, 1} -> {0x45, 0x11}

@@ -124,7 +124,7 @@ defmodule Peripherals.Uart.Generic.Operator do
 
   @impl GenServer
   def handle_info({:circuits_uart, _port, data}, state) do
-    # Logger.debug("rx'd data: #{inspect(data)}")
+    Logger.debug("rx'd data: #{inspect(data)}")
     ublox = Peripherals.Uart.Generic.parse(state.ublox, :binary.bin_to_list(data), state.name, state.sorter_classification)
     {:noreply, %{state | ublox: ublox}}
   end
@@ -148,6 +148,10 @@ defmodule Peripherals.Uart.Generic.Operator do
   def subscribe_to_msg(msg_id, interval_ms, module) do
     Logger.debug("cast sub: #{inspect(module)}")
     GenServer.cast(module, {:subscribe, msg_id, interval_ms})
+  end
+
+  def send_message(uart_port, message) do
+    GenServer.cast(via_tuple(uart_port), {:send_message, message})
   end
 
   @spec via_tuple(binary()) :: tuple()

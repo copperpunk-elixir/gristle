@@ -28,6 +28,9 @@ defmodule Peripherals.Uart.Generic do
     case msg_class do
       1 ->
         case msg_id do
+          0x02 ->
+            values = Telemetry.Ublox.deconstruct_message(:ublox_posllh, payload)
+            Workshop.UbloxInsLooper.print_values(values)
           0x69 ->
             [_itow, _nano, ax, ay, az, gx, gy, gz] = Telemetry.Ublox.deconstruct_message(:accel_gyro, payload)
             # Logger.debug("accel xyz: #{ax}/#{ay}/#{az}")
